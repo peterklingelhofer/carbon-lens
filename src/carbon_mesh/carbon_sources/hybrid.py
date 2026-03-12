@@ -14,6 +14,7 @@ Priority order:
 11. Mock (static fallback for anything remaining)
 """
 
+import asyncio
 import logging
 
 from carbon_mesh.carbon_sources.aemo import AEMOCarbonSource, AEMO_ZONES
@@ -105,25 +106,43 @@ class HybridCarbonSource:
     async def get_carbon_intensity_batch(
         self, grid_zones: list[str]
     ) -> dict[str, CarbonIntensity]:
-        results: dict[str, CarbonIntensity] = {}
-        remaining = list(grid_zones)
+        """Fetch carbon data for multiple zones, fanning out to providers concurrently.
 
-        for name, provider, supported_zones in self._provider_chain():
-            if not remaining:
-                break
-            batch_zones = remaining if not supported_zones else [z for z in remaining if z in supported_zones]
+        All applicable providers are called in parallel via asyncio.gather.
+        Results are merged in priority order so higher-priority providers win
+        when multiple providers cover the same zone.
+        """
+        zone_set = set(grid_zones)
+
+        # Build (priority, name, coroutine) for each provider that has matching zones
+        tasks: list[tuple[int, str, asyncio.Task]] = []
+        for priority, (name, provider, supported_zones) in enumerate(self._provider_chain()):
+            batch_zones = list(zone_set) if not supported_zones else [z for z in zone_set if z in supported_zones]
             if not batch_zones:
                 continue
-            try:
-                batch_results = await provider.get_carbon_intensity_batch(batch_zones)
+            coro = provider.get_carbon_intensity_batch(batch_zones)
+            tasks.append((priority, name, asyncio.ensure_future(coro)))
+
+        # Await all concurrently
+        if tasks:
+            await asyncio.gather(*(t for _, _, t in tasks), return_exceptions=True)
+
+        # Merge in reverse priority order (lowest priority first) so highest-priority wins
+        results: dict[str, CarbonIntensity] = {}
+        for priority, name, task in sorted(tasks, key=lambda t: -t[0]):
+            if task.cancelled():
+                continue
+            exc = task.exception()
+            if exc is not None:
+                logger.warning("%s batch failed: %s", name, exc)
+                continue
+            batch_results = task.result()
+            if batch_results:
+                logger.debug("%s batch: got %d zones", name, len(batch_results))
                 results.update(batch_results)
-                remaining = [z for z in remaining if z not in results]
-                if batch_results:
-                    logger.debug("%s batch: got %d zones", name, len(batch_results))
-            except Exception as e:
-                logger.warning("%s batch failed: %s", name, e)
 
         # Mock for anything remaining
+        remaining = [z for z in grid_zones if z not in results]
         if remaining:
             mock_results = await self._mock.get_carbon_intensity_batch(remaining)
             results.update(mock_results)

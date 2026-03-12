@@ -6,7 +6,7 @@ Data from Grid India real-time reports.
 
 from datetime import datetime, timezone
 
-import httpx
+from carbon_mesh.carbon_sources.http_pool import shared_client
 
 from carbon_mesh.models.carbon import CarbonIntensity
 
@@ -28,7 +28,7 @@ API_URL = "https://report.grid-india.in/api/data/current-generation"
 
 class GridIndiaCarbonSource:
     def __init__(self) -> None:
-        self._client = httpx.AsyncClient(timeout=10.0)
+        self._client = shared_client(timeout=10.0)
 
     def can_handle(self, grid_zone: str) -> bool:
         return grid_zone in INDIA_ZONES

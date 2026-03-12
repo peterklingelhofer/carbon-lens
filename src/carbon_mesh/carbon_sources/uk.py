@@ -8,6 +8,8 @@ from datetime import datetime, timezone
 
 import httpx
 
+from carbon_mesh.carbon_sources.http_pool import shared_client
+
 from carbon_mesh.models.carbon import CarbonIntensity
 
 API_BASE = "https://api.carbonintensity.org.uk"
@@ -23,7 +25,7 @@ _ZONE_TO_REGION_ID: dict[str, int] = {
 
 class UKCarbonSource:
     def __init__(self) -> None:
-        self._client = httpx.AsyncClient(base_url=API_BASE, timeout=10.0)
+        self._client = shared_client(base_url=API_BASE, timeout=10.0)
 
     def can_handle(self, grid_zone: str) -> bool:
         return grid_zone in UK_ZONES
