@@ -6,7 +6,7 @@ Endpoint: /v2/electricity/rto/fuel-type-data/data
 
 from datetime import datetime, timezone
 
-import httpx
+from carbon_mesh.carbon_sources.http_pool import shared_client
 
 from carbon_mesh.carbon_sources.emission_factors import (
     EIA_FUEL_MAP,
@@ -32,7 +32,7 @@ _GRID_ZONE_TO_EIA: dict[str, str] = {
 class EIACarbonSource:
     def __init__(self, api_key: str) -> None:
         self._api_key = api_key
-        self._client = httpx.AsyncClient(base_url=API_BASE, timeout=15.0)
+        self._client = shared_client(base_url=API_BASE, timeout=15.0)
 
     def _can_handle(self, grid_zone: str) -> bool:
         return grid_zone in _GRID_ZONE_TO_EIA

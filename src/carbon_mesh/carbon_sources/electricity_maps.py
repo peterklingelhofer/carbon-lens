@@ -2,6 +2,8 @@ from datetime import datetime, timezone
 
 import httpx
 
+from carbon_mesh.carbon_sources.http_pool import shared_client
+
 from carbon_mesh.models.carbon import CarbonIntensity
 
 API_BASE = "https://api.electricitymap.org/v3"
@@ -10,7 +12,7 @@ API_BASE = "https://api.electricitymap.org/v3"
 class ElectricityMapsCarbonSource:
     def __init__(self, api_key: str) -> None:
         self._api_key = api_key
-        self._client = httpx.AsyncClient(
+        self._client = shared_client(
             base_url=API_BASE,
             headers={"auth-token": api_key},
             timeout=10.0,
