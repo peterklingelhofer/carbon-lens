@@ -7,7 +7,7 @@ Data from ONS (Operador Nacional do Sistema Elétrico).
 
 from datetime import datetime, timezone
 
-import httpx
+from carbon_mesh.carbon_sources.http_pool import shared_client
 
 from carbon_mesh.models.carbon import CarbonIntensity
 
@@ -37,7 +37,7 @@ _SUBSYSTEM_MAP = {
 
 class ONSBrazilCarbonSource:
     def __init__(self) -> None:
-        self._client = httpx.AsyncClient(timeout=10.0)
+        self._client = shared_client(timeout=10.0)
 
     def can_handle(self, grid_zone: str) -> bool:
         return grid_zone in BRAZIL_ZONES

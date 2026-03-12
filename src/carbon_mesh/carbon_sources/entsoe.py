@@ -9,6 +9,8 @@ from xml.etree import ElementTree
 
 import httpx
 
+from carbon_mesh.carbon_sources.http_pool import shared_client
+
 from carbon_mesh.carbon_sources.emission_factors import (
     calculate_carbon_intensity,
     calculate_renewable_percentage,
@@ -89,7 +91,7 @@ _PRODUCTION_TYPE_MAP = {
 class ENTSOECarbonSource:
     def __init__(self, security_token: str) -> None:
         self._token = security_token
-        self._client = httpx.AsyncClient(timeout=15.0)
+        self._client = shared_client(timeout=15.0)
 
     def can_handle(self, grid_zone: str) -> bool:
         return grid_zone in ENTSOE_ZONES
