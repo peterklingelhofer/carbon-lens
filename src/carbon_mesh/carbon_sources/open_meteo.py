@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 
 import httpx
 
+from carbon_mesh.carbon_sources.http_pool import shared_client
 from carbon_mesh.models.carbon import CarbonIntensity
 
 API_URL = "https://api.open-meteo.com/v1/forecast"
@@ -87,7 +88,7 @@ _BASELINE_INTENSITY: dict[str, float] = {
 
 class OpenMeteoCarbonSource:
     def __init__(self) -> None:
-        self._client = httpx.AsyncClient(timeout=10.0)
+        self._client = shared_client(timeout=10.0)
 
     def can_handle(self, grid_zone: str) -> bool:
         return grid_zone in ZONE_COORDINATES

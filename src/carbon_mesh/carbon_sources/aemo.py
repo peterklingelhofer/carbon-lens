@@ -6,7 +6,7 @@ Updates every 5 minutes.
 
 from datetime import datetime, timezone
 
-import httpx
+from carbon_mesh.carbon_sources.http_pool import shared_client
 
 from carbon_mesh.carbon_sources.emission_factors import (
     calculate_carbon_intensity,
@@ -52,7 +52,7 @@ _FUEL_MAP = {
 
 class AEMOCarbonSource:
     def __init__(self) -> None:
-        self._client = httpx.AsyncClient(timeout=10.0)
+        self._client = shared_client(timeout=10.0)
 
     def can_handle(self, grid_zone: str) -> bool:
         return grid_zone in AEMO_ZONES

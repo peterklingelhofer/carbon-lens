@@ -8,6 +8,8 @@ from datetime import datetime, timezone
 
 import httpx
 
+from carbon_mesh.carbon_sources.http_pool import shared_client
+
 from carbon_mesh.carbon_sources.emission_factors import (
     GRIDSTATUS_FUEL_MAP,
     calculate_carbon_intensity,
@@ -33,7 +35,7 @@ _SUPPORTED_ISOS = {"caiso", "ercot", "isone", "miso", "nyiso", "pjm", "spp", "ie
 class GridStatusCarbonSource:
     def __init__(self, api_key: str) -> None:
         self._api_key = api_key
-        self._client = httpx.AsyncClient(
+        self._client = shared_client(
             base_url=API_BASE,
             headers={"x-api-key": api_key},
             timeout=15.0,
