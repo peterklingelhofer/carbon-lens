@@ -1,0 +1,42 @@
+# Python
+.venv
+__pycache__
+*.pyc
+*.pyo
+.ruff_cache
+.pytest_cache
+.mypy_cache
+
+# Git
+.git
+.gitignore
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Frontend (built separately)
+web/node_modules
+web/dist
+web/.cache
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Docs and config not needed in runtime
+docs/
+tests/
+*.md
+LICENSE
+.pre-commit-config.yaml
+.github/
+terraform/
+openapi-generator.yaml
+Makefile
+render.yaml
+fly.toml
+railway.toml

@@ -1,0 +1,97 @@
+name: "Carbon Mesh Green Route"
+description: "Find the greenest cloud region for your deployment based on real-time grid carbon intensity"
+branding:
+  icon: "globe"
+  color: "green"
+
+inputs:
+  providers:
+    description: "Comma-separated cloud providers (aws, gcp, azure)"
+    required: true
+  data-residency:
+    description: "Data residency constraint (e.g. EU, US)"
+    required: false
+  carbon-weight:
+    description: "Carbon optimization weight (0-1, default 1.0)"
+    required: false
+    default: "1.0"
+  api-url:
+    description: "Carbon Mesh API URL"
+    required: false
+    default: "http://localhost:8000"
+  api-key:
+    description: "Carbon Mesh API key"
+    required: false
+
+outputs:
+  provider:
+    description: "Recommended cloud provider"
+    value: ${{ steps.route.outputs.provider }}
+  region:
+    description: "Recommended region"
+    value: ${{ steps.route.outputs.region }}
+  grid-zone:
+    description: "Electricity grid zone"
+    value: ${{ steps.route.outputs.grid_zone }}
+  carbon-intensity:
+    description: "Carbon intensity in gCO2/kWh"
+    value: ${{ steps.route.outputs.carbon_intensity }}
+  renewable-percentage:
+    description: "Renewable energy percentage"
+    value: ${{ steps.route.outputs.renewable_pct }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Find greenest region
+      id: route
+      shell: bash
+      run: |
+        # Build providers JSON array
+        PROVIDERS_JSON=$(echo "${{ inputs.providers }}" | tr ',' '\n' | jq -R . | jq -s .)
+
+        # Build cost weight
+        COST_WEIGHT=$(echo "1 - ${{ inputs.carbon-weight }}" | bc)
+
+        # Build request body
+        BODY=$(jq -n \
+          --argjson providers "$PROVIDERS_JSON" \
+          --arg carbon_weight "${{ inputs.carbon-weight }}" \
+          --arg cost_weight "$COST_WEIGHT" \
+          '{constraints: {providers: $providers, carbon_weight: ($carbon_weight | tonumber), cost_weight: ($cost_weight | tonumber)}}')
+
+        # Add residency if provided
+        if [ -n "${{ inputs.data-residency }}" ]; then
+          RESIDENCY_JSON=$(echo "${{ inputs.data-residency }}" | tr ',' '\n' | jq -R . | jq -s .)
+          BODY=$(echo "$BODY" | jq --argjson r "$RESIDENCY_JSON" '.constraints.data_residency = $r')
+        fi
+
+        # Make the request
+        RESPONSE=$(curl -sf -X POST "${{ inputs.api-url }}/api/v1/route" \
+          -H "Content-Type: application/json" \
+          ${API_KEY:+-H "X-API-Key: ${{ inputs.api-key }}"} \
+          -d "$BODY")
+
+        if [ $? -ne 0 ] || [ -z "${RESPONSE}" ]; then
+          echo "::error::Failed to reach Carbon Mesh API at ${{ inputs.api-url }}"
+          exit 1
+        fi
+
+        # Parse and set outputs
+        echo "provider=$(echo "$RESPONSE" | jq -r '.recommended.provider')" >> "$GITHUB_OUTPUT"
+        echo "region=$(echo "$RESPONSE" | jq -r '.recommended.region')" >> "$GITHUB_OUTPUT"
+        echo "grid_zone=$(echo "$RESPONSE" | jq -r '.recommended.grid_zone')" >> "$GITHUB_OUTPUT"
+        echo "carbon_intensity=$(echo "$RESPONSE" | jq -r '.recommended.carbon_intensity_gco2_kwh')" >> "$GITHUB_OUTPUT"
+        echo "renewable_pct=$(echo "$RESPONSE" | jq -r '.recommended.renewable_percentage')" >> "$GITHUB_OUTPUT"
+
+        # Summary
+        echo "### Carbon Mesh Routing Result" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "| Field | Value |" >> "$GITHUB_STEP_SUMMARY"
+        echo "|-------|-------|" >> "$GITHUB_STEP_SUMMARY"
+        echo "| Provider | $(echo "$RESPONSE" | jq -r '.recommended.provider') |" >> "$GITHUB_STEP_SUMMARY"
+        echo "| Region | $(echo "$RESPONSE" | jq -r '.recommended.region') |" >> "$GITHUB_STEP_SUMMARY"
+        echo "| Grid Zone | $(echo "$RESPONSE" | jq -r '.recommended.grid_zone') |" >> "$GITHUB_STEP_SUMMARY"
+        echo "| Carbon Intensity | $(echo "$RESPONSE" | jq -r '.recommended.carbon_intensity_gco2_kwh') gCO2/kWh |" >> "$GITHUB_STEP_SUMMARY"
+        echo "| Renewable | $(echo "$RESPONSE" | jq -r '.recommended.renewable_percentage')% |" >> "$GITHUB_STEP_SUMMARY"
+        echo "| Savings | $(echo "$RESPONSE" | jq -r '.recommended.carbon_savings_vs_worst_pct')% greener |" >> "$GITHUB_STEP_SUMMARY"
