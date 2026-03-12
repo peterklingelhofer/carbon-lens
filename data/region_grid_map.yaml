@@ -1,0 +1,550 @@
+# Cloud region → electricity grid zone mapping
+# grid_zone: Electricity Maps zone ID (also used as our canonical zone identifier)
+# eia_respondent: EIA Form 930 balancing authority code (US only)
+# gridstatus_iso: GridStatus.io ISO identifier for fuel mix dataset (NA only)
+#
+# Providers by zone:
+#   US zones:     EIA (live) → GridStatus → Mock
+#   UK zones:     UK Carbon Intensity API (free, no key)
+#   EU zones:     ENTSO-E (free token) → Open-Meteo → Mock
+#   AU zones:     AEMO (free, no key)
+#   IN zones:     Grid India (free, no key)
+#   BR zones:     ONS Brazil (free, no key)
+#   ZA zone:      Eskom (heuristic)
+#   Other zones:  Open-Meteo (weather) → Mock
+
+aws:
+  us-east-1:
+    grid_zone: US-MIDA-PJM
+    eia_respondent: PJM
+    gridstatus_iso: pjm
+    location: N. Virginia
+    latitude: 39.0
+    longitude: -77.5
+  us-east-2:
+    grid_zone: US-MIDA-PJM
+    eia_respondent: PJM
+    gridstatus_iso: pjm
+    location: Ohio
+    latitude: 40.4
+    longitude: -82.9
+  us-west-1:
+    grid_zone: US-CAL-CISO
+    eia_respondent: CISO
+    gridstatus_iso: caiso
+    location: N. California
+    latitude: 37.4
+    longitude: -121.9
+  us-west-2:
+    grid_zone: US-NW-BPAT
+    eia_respondent: BPAT
+    location: Oregon
+    latitude: 45.8
+    longitude: -119.3
+  ca-central-1:
+    grid_zone: CA-ON
+    gridstatus_iso: ieso
+    location: Montreal
+    latitude: 45.5
+    longitude: -73.6
+  ca-west-1:
+    grid_zone: CA-AB
+    location: Calgary
+    latitude: 51.0
+    longitude: -114.1
+  eu-west-1:
+    grid_zone: IE
+    location: Ireland
+    latitude: 53.3
+    longitude: -6.3
+  eu-west-2:
+    grid_zone: GB
+    location: London
+    latitude: 51.5
+    longitude: -0.1
+  eu-west-3:
+    grid_zone: FR
+    location: Paris
+    latitude: 48.9
+    longitude: 2.3
+  eu-central-1:
+    grid_zone: DE
+    location: Frankfurt
+    latitude: 50.1
+    longitude: 8.7
+  eu-central-2:
+    grid_zone: CH
+    location: Zurich
+    latitude: 47.4
+    longitude: 8.5
+  eu-north-1:
+    grid_zone: SE-SE3
+    location: Stockholm
+    latitude: 59.3
+    longitude: 18.1
+  eu-south-1:
+    grid_zone: IT-NO
+    location: Milan
+    latitude: 45.5
+    longitude: 9.2
+  eu-south-2:
+    grid_zone: ES
+    location: Spain
+    latitude: 40.4
+    longitude: -3.7
+  ap-southeast-1:
+    grid_zone: SG
+    location: Singapore
+    latitude: 1.4
+    longitude: 103.8
+  ap-southeast-2:
+    grid_zone: AU-NSW
+    location: Sydney
+    latitude: -33.9
+    longitude: 151.2
+  ap-northeast-1:
+    grid_zone: JP-TK
+    location: Tokyo
+    latitude: 35.7
+    longitude: 139.7
+  ap-northeast-2:
+    grid_zone: KR
+    location: Seoul
+    latitude: 37.6
+    longitude: 127.0
+  ap-northeast-3:
+    grid_zone: JP-KN
+    location: Osaka
+    latitude: 34.7
+    longitude: 135.5
+  ap-south-1:
+    grid_zone: IN-WE
+    location: Mumbai
+    latitude: 19.1
+    longitude: 72.9
+  ap-south-2:
+    grid_zone: IN-SO
+    location: Hyderabad
+    latitude: 17.4
+    longitude: 78.5
+  ap-east-1:
+    grid_zone: HK
+    location: Hong Kong
+    latitude: 22.3
+    longitude: 114.2
+  sa-east-1:
+    grid_zone: BR-SE
+    location: São Paulo
+    latitude: -23.5
+    longitude: -46.6
+  me-south-1:
+    grid_zone: AE
+    location: Bahrain
+    latitude: 26.1
+    longitude: 50.5
+  me-central-1:
+    grid_zone: AE
+    location: UAE
+    latitude: 25.3
+    longitude: 55.3
+  af-south-1:
+    grid_zone: ZA
+    location: Cape Town
+    latitude: -33.9
+    longitude: 18.4
+
+gcp:
+  us-central1:
+    grid_zone: US-MIDW-MISO
+    eia_respondent: MISO
+    gridstatus_iso: miso
+    location: Iowa
+    latitude: 41.6
+    longitude: -93.6
+  us-east1:
+    grid_zone: US-SE-SOCO
+    eia_respondent: SOCO
+    location: South Carolina
+    latitude: 33.8
+    longitude: -81.1
+  us-east4:
+    grid_zone: US-MIDA-PJM
+    eia_respondent: PJM
+    gridstatus_iso: pjm
+    location: N. Virginia
+    latitude: 39.0
+    longitude: -77.5
+  us-east5:
+    grid_zone: US-MIDA-PJM
+    eia_respondent: PJM
+    gridstatus_iso: pjm
+    location: Columbus
+    latitude: 39.9
+    longitude: -82.9
+  us-west1:
+    grid_zone: US-NW-BPAT
+    eia_respondent: BPAT
+    location: Oregon
+    latitude: 45.6
+    longitude: -121.2
+  us-west2:
+    grid_zone: US-CAL-CISO
+    eia_respondent: CISO
+    gridstatus_iso: caiso
+    location: Los Angeles
+    latitude: 34.1
+    longitude: -118.2
+  us-west3:
+    grid_zone: US-CAL-CISO
+    eia_respondent: CISO
+    gridstatus_iso: caiso
+    location: Salt Lake City
+    latitude: 40.8
+    longitude: -111.9
+  us-west4:
+    grid_zone: US-SW-NEVP
+    eia_respondent: NEVP
+    location: Las Vegas
+    latitude: 36.2
+    longitude: -115.1
+  us-south1:
+    grid_zone: US-TEX-ERCO
+    eia_respondent: ERCO
+    gridstatus_iso: ercot
+    location: Dallas
+    latitude: 32.8
+    longitude: -96.8
+  northamerica-northeast1:
+    grid_zone: CA-QC
+    gridstatus_iso: ieso
+    location: Montreal
+    latitude: 45.5
+    longitude: -73.6
+  northamerica-northeast2:
+    grid_zone: CA-ON
+    gridstatus_iso: ieso
+    location: Toronto
+    latitude: 43.7
+    longitude: -79.4
+  europe-west1:
+    grid_zone: BE
+    location: Belgium
+    latitude: 50.8
+    longitude: 4.4
+  europe-west2:
+    grid_zone: GB
+    location: London
+    latitude: 51.5
+    longitude: -0.1
+  europe-west3:
+    grid_zone: DE
+    location: Frankfurt
+    latitude: 50.1
+    longitude: 8.7
+  europe-west4:
+    grid_zone: NL
+    location: Netherlands
+    latitude: 53.4
+    longitude: 6.9
+  europe-west6:
+    grid_zone: CH
+    location: Zurich
+    latitude: 47.4
+    longitude: 8.5
+  europe-west8:
+    grid_zone: IT-NO
+    location: Milan
+    latitude: 45.5
+    longitude: 9.2
+  europe-west9:
+    grid_zone: FR
+    location: Paris
+    latitude: 48.9
+    longitude: 2.3
+  europe-north1:
+    grid_zone: FI
+    location: Finland
+    latitude: 60.6
+    longitude: 27.0
+  europe-central2:
+    grid_zone: PL
+    location: Warsaw
+    latitude: 52.2
+    longitude: 21.0
+  europe-southwest1:
+    grid_zone: ES
+    location: Madrid
+    latitude: 40.4
+    longitude: -3.7
+  asia-east1:
+    grid_zone: TW
+    location: Taiwan
+    latitude: 24.0
+    longitude: 121.0
+  asia-east2:
+    grid_zone: HK
+    location: Hong Kong
+    latitude: 22.3
+    longitude: 114.2
+  asia-northeast1:
+    grid_zone: JP-TK
+    location: Tokyo
+    latitude: 35.7
+    longitude: 139.7
+  asia-northeast2:
+    grid_zone: JP-KN
+    location: Osaka
+    latitude: 34.7
+    longitude: 135.5
+  asia-northeast3:
+    grid_zone: KR
+    location: Seoul
+    latitude: 37.6
+    longitude: 127.0
+  asia-southeast1:
+    grid_zone: SG
+    location: Singapore
+    latitude: 1.4
+    longitude: 103.8
+  asia-southeast2:
+    grid_zone: ID
+    location: Jakarta
+    latitude: -6.2
+    longitude: 106.8
+  asia-south1:
+    grid_zone: IN-WE
+    location: Mumbai
+    latitude: 19.1
+    longitude: 72.9
+  asia-south2:
+    grid_zone: IN-SO
+    location: Delhi
+    latitude: 28.6
+    longitude: 77.2
+  australia-southeast1:
+    grid_zone: AU-NSW
+    location: Sydney
+    latitude: -33.9
+    longitude: 151.2
+  australia-southeast2:
+    grid_zone: AU-VIC
+    location: Melbourne
+    latitude: -37.8
+    longitude: 145.0
+  southamerica-east1:
+    grid_zone: BR-SE
+    location: São Paulo
+    latitude: -23.5
+    longitude: -46.6
+  southamerica-west1:
+    grid_zone: CL-SEN
+    location: Santiago
+    latitude: -33.4
+    longitude: -70.7
+  me-west1:
+    grid_zone: IL
+    location: Tel Aviv
+    latitude: 32.1
+    longitude: 34.8
+  me-central1:
+    grid_zone: AE
+    location: Doha
+    latitude: 25.3
+    longitude: 51.5
+  africa-south1:
+    grid_zone: ZA
+    location: Johannesburg
+    latitude: -26.2
+    longitude: 28.0
+
+azure:
+  eastus:
+    grid_zone: US-MIDA-PJM
+    eia_respondent: PJM
+    gridstatus_iso: pjm
+    location: Virginia
+    latitude: 37.4
+    longitude: -79.5
+  eastus2:
+    grid_zone: US-MIDA-PJM
+    eia_respondent: PJM
+    gridstatus_iso: pjm
+    location: Virginia
+    latitude: 36.7
+    longitude: -78.9
+  westus:
+    grid_zone: US-CAL-CISO
+    eia_respondent: CISO
+    gridstatus_iso: caiso
+    location: California
+    latitude: 37.8
+    longitude: -122.4
+  westus2:
+    grid_zone: US-NW-BPAT
+    eia_respondent: BPAT
+    location: Washington
+    latitude: 47.2
+    longitude: -119.9
+  westus3:
+    grid_zone: US-SW-AZPS
+    eia_respondent: AZPS
+    location: Arizona
+    latitude: 33.4
+    longitude: -112.1
+  centralus:
+    grid_zone: US-MIDW-MISO
+    eia_respondent: MISO
+    gridstatus_iso: miso
+    location: Iowa
+    latitude: 41.6
+    longitude: -93.6
+  southcentralus:
+    grid_zone: US-TEX-ERCO
+    eia_respondent: ERCO
+    gridstatus_iso: ercot
+    location: Texas
+    latitude: 29.4
+    longitude: -98.5
+  northcentralus:
+    grid_zone: US-MIDW-MISO
+    eia_respondent: MISO
+    gridstatus_iso: miso
+    location: Illinois
+    latitude: 41.9
+    longitude: -87.6
+  canadacentral:
+    grid_zone: CA-ON
+    gridstatus_iso: ieso
+    location: Toronto
+    latitude: 43.7
+    longitude: -79.4
+  canadaeast:
+    grid_zone: CA-QC
+    location: Quebec City
+    latitude: 46.8
+    longitude: -71.2
+  uksouth:
+    grid_zone: GB
+    location: London
+    latitude: 51.5
+    longitude: -0.1
+  ukwest:
+    grid_zone: GB
+    location: Cardiff
+    latitude: 51.5
+    longitude: -3.2
+  northeurope:
+    grid_zone: IE
+    location: Ireland
+    latitude: 53.3
+    longitude: -6.3
+  westeurope:
+    grid_zone: NL
+    location: Netherlands
+    latitude: 52.4
+    longitude: 4.9
+  francecentral:
+    grid_zone: FR
+    location: Paris
+    latitude: 46.3
+    longitude: 2.4
+  germanywestcentral:
+    grid_zone: DE
+    location: Frankfurt
+    latitude: 50.1
+    longitude: 8.7
+  switzerlandnorth:
+    grid_zone: CH
+    location: Zurich
+    latitude: 47.4
+    longitude: 8.5
+  norwayeast:
+    grid_zone: NO-NO1
+    location: Oslo
+    latitude: 59.9
+    longitude: 10.8
+  swedencentral:
+    grid_zone: SE-SE3
+    location: Stockholm
+    latitude: 60.7
+    longitude: 17.2
+  polandcentral:
+    grid_zone: PL
+    location: Warsaw
+    latitude: 52.2
+    longitude: 21.0
+  italynorth:
+    grid_zone: IT-NO
+    location: Milan
+    latitude: 45.5
+    longitude: 9.2
+  spaincentral:
+    grid_zone: ES
+    location: Madrid
+    latitude: 40.4
+    longitude: -3.7
+  japaneast:
+    grid_zone: JP-TK
+    location: Tokyo
+    latitude: 35.7
+    longitude: 139.7
+  japanwest:
+    grid_zone: JP-KN
+    location: Osaka
+    latitude: 34.7
+    longitude: 135.5
+  koreacentral:
+    grid_zone: KR
+    location: Seoul
+    latitude: 37.6
+    longitude: 127.0
+  southeastasia:
+    grid_zone: SG
+    location: Singapore
+    latitude: 1.3
+    longitude: 103.8
+  eastasia:
+    grid_zone: HK
+    location: Hong Kong
+    latitude: 22.3
+    longitude: 114.2
+  centralindia:
+    grid_zone: IN-WE
+    location: Pune
+    latitude: 18.5
+    longitude: 73.9
+  southindia:
+    grid_zone: IN-SO
+    location: Chennai
+    latitude: 13.1
+    longitude: 80.3
+  australiaeast:
+    grid_zone: AU-NSW
+    location: Sydney
+    latitude: -33.9
+    longitude: 151.2
+  australiasoutheast:
+    grid_zone: AU-VIC
+    location: Melbourne
+    latitude: -37.8
+    longitude: 145.0
+  brazilsouth:
+    grid_zone: BR-SE
+    location: São Paulo
+    latitude: -23.5
+    longitude: -46.6
+  southafricanorth:
+    grid_zone: ZA
+    location: Johannesburg
+    latitude: -26.2
+    longitude: 28.0
+  uaenorth:
+    grid_zone: AE
+    location: Dubai
+    latitude: 25.3
+    longitude: 55.3
+  israelcentral:
+    grid_zone: IL
+    location: Tel Aviv
+    latitude: 32.1
+    longitude: 34.8

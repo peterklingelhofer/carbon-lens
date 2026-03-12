@@ -1,0 +1,144 @@
+"""WebSocket endpoint for real-time carbon intensity streaming."""
+
+import asyncio
+import logging
+from datetime import datetime, timezone
+from typing import Any
+
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel
+
+from carbon_mesh.api.deps import get_carbon_source, get_grid_mapper
+
+logger = logging.getLogger("carbon_mesh.ws")
+
+ws_router = APIRouter()
+
+# Default interval between broadcasts (seconds). Callers may override via the
+# initial subscription message.
+DEFAULT_INTERVAL_SECONDS = 60
+
+# Popular regions used when the client does not specify a subscription list.
+DEFAULT_REGIONS: list[dict[str, str]] = [
+    {"provider": "aws", "region": "us-east-1"},
+    {"provider": "aws", "region": "eu-west-1"},
+    {"provider": "aws", "region": "us-west-2"},
+    {"provider": "gcp", "region": "us-central1"},
+    {"provider": "gcp", "region": "europe-west1"},
+    {"provider": "azure", "region": "eastus"},
+    {"provider": "azure", "region": "westeurope"},
+]
+
+
+class RegionSubscription(BaseModel):
+    provider: str
+    region: str
+
+
+class SubscriptionMessage(BaseModel):
+    regions: list[RegionSubscription] | None = None
+    interval_seconds: int | None = None
+
+
+async def _fetch_intensity(
+    provider: str, region: str
+) -> dict[str, Any] | None:
+    """Fetch the current carbon intensity for a single provider/region pair."""
+    source = get_carbon_source()
+    mapper = get_grid_mapper()
+
+    try:
+        zone = mapper.get_grid_zone(provider, region)
+        intensity = await source.get_carbon_intensity(zone)
+        return {
+            "provider": provider,
+            "region": region,
+            **intensity.model_dump(mode="json"),
+        }
+    except Exception:
+        logger.warning(
+            "Failed to fetch intensity for %s/%s", provider, region, exc_info=True
+        )
+        return None
+
+
+async def _build_update(
+    regions: list[dict[str, str]],
+) -> dict[str, Any]:
+    """Fetch intensities for all subscribed regions and package as a message."""
+    tasks = [
+        _fetch_intensity(r["provider"], r["region"]) for r in regions
+    ]
+    results = await asyncio.gather(*tasks)
+    return {
+        "type": "carbon_update",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "data": [r for r in results if r is not None],
+    }
+
+
+@ws_router.websocket("/ws/carbon")
+async def carbon_intensity_stream(websocket: WebSocket) -> None:
+    """Stream real-time carbon intensity data over a WebSocket connection.
+
+    Protocol
+    --------
+    1. Client connects to ``/ws/carbon``.
+    2. (Optional) Client sends a JSON message to configure the subscription::
+
+           {
+               "regions": [
+                   {"provider": "aws", "region": "us-east-1"},
+                   {"provider": "gcp", "region": "europe-west1"}
+               ],
+               "interval_seconds": 30
+           }
+
+       If no message is received within 5 seconds the server falls back to
+       ``DEFAULT_REGIONS`` and ``DEFAULT_INTERVAL_SECONDS``.
+    3. The server pushes a ``carbon_update`` JSON message every *interval*
+       seconds until the client disconnects.
+    """
+    await websocket.accept()
+    logger.info("WebSocket client connected: %s", websocket.client)
+
+    # --- Negotiate subscription ------------------------------------------------
+    regions = [dict(r) for r in DEFAULT_REGIONS]
+    interval = DEFAULT_INTERVAL_SECONDS
+
+    try:
+        # Give the client a short window to send subscription preferences.
+        raw = await asyncio.wait_for(websocket.receive_text(), timeout=5.0)
+        try:
+            msg = SubscriptionMessage.model_validate_json(raw)
+            if msg.regions:
+                regions = [r.model_dump() for r in msg.regions]
+            if msg.interval_seconds and msg.interval_seconds > 0:
+                interval = msg.interval_seconds
+        except Exception:
+            logger.warning("Invalid subscription message, using defaults")
+    except (asyncio.TimeoutError, WebSocketDisconnect):
+        # No subscription message — proceed with defaults.
+        pass
+
+    logger.info(
+        "Streaming %d region(s) every %ds to %s",
+        len(regions),
+        interval,
+        websocket.client,
+    )
+
+    # --- Streaming loop --------------------------------------------------------
+    try:
+        while True:
+            update = await _build_update(regions)
+            await websocket.send_json(update)
+            await asyncio.sleep(interval)
+    except WebSocketDisconnect:
+        logger.info("WebSocket client disconnected: %s", websocket.client)
+    except Exception:
+        logger.exception("Unexpected error in WebSocket stream")
+        try:
+            await websocket.close(code=1011, reason="Internal server error")
+        except Exception:
+            pass
