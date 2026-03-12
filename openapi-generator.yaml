@@ -1,0 +1,26 @@
+# OpenAPI Generator configuration for Carbon Mesh client SDKs
+#
+# Prerequisites:
+#   npm install @openapitools/openapi-generator-cli -g
+#
+# Generate a TypeScript SDK:
+#   openapi-generator-cli generate -c openapi-generator.yaml -g typescript-fetch -o sdk/typescript
+#
+# Generate a Python SDK:
+#   openapi-generator-cli generate -c openapi-generator.yaml -g python -o sdk/python
+#
+# First, export the OpenAPI spec from the running API:
+#   curl -s http://localhost:8000/openapi.json > openapi.json
+
+inputSpec: openapi.json
+globalProperties:
+  skipFormModel: true
+
+additionalProperties:
+  packageName: carbon_mesh_client
+  projectName: carbon-mesh-client
+  npmName: "@carbon-mesh/client"
+  npmVersion: "0.1.0"
+  supportsES6: true
+  withInterfaces: true
+  useSingleRequestParameter: true

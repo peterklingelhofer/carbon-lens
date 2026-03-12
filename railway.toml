@@ -1,0 +1,13 @@
+# Railway deployment config
+# Deploy: connect repo at railway.app, add Postgres plugin
+# Set env vars in Railway dashboard
+
+[build]
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+healthcheckPath = "/ready"
+healthcheckTimeout = 10
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3

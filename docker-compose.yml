@@ -1,0 +1,52 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: carbon_mesh
+      POSTGRES_PASSWORD: carbon_mesh
+      POSTGRES_DB: carbon_mesh
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U carbon_mesh"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      CARBON_MESH_USE_DATABASE: "true"
+      CARBON_MESH_DATABASE_URL: postgresql+asyncpg://carbon_mesh:carbon_mesh@db:5432/carbon_mesh
+      CARBON_MESH_HOST: "0.0.0.0"
+      CARBON_MESH_PORT: "8000"
+      CARBON_MESH_LOG_FORMAT: "json"
+      CARBON_MESH_API_KEY_REQUIRED: "true"
+      CARBON_MESH_AUTO_MIGRATE: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:8000/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
