@@ -99,7 +99,7 @@ class IntensityCache:
 
         async def _refresh() -> None:
             try:
-                value = await fetcher(zone)
+                value = await asyncio.wait_for(fetcher(zone), timeout=30.0)
                 self._store[zone] = (time.monotonic(), value)
                 logger.debug("SWR refresh for %s", zone)
             except Exception as e:
@@ -121,7 +121,7 @@ class IntensityCache:
 
         async def _refresh() -> None:
             try:
-                fetched = await batch_fetcher(to_refresh)
+                fetched = await asyncio.wait_for(batch_fetcher(to_refresh), timeout=30.0)
                 fetch_time = time.monotonic()
                 for zone, value in fetched.items():
                     self._store[zone] = (fetch_time, value)

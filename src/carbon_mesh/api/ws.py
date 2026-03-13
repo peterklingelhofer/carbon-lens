@@ -40,40 +40,51 @@ class SubscriptionMessage(BaseModel):
     interval_seconds: int | None = None
 
 
-async def _fetch_intensity(
-    provider: str, region: str
-) -> dict[str, Any] | None:
-    """Fetch the current carbon intensity for a single provider/region pair."""
-    source = get_carbon_source()
-    mapper = get_grid_mapper()
-
-    try:
-        zone = mapper.get_grid_zone(provider, region)
-        intensity = await source.get_carbon_intensity(zone)
-        return {
-            "provider": provider,
-            "region": region,
-            **intensity.model_dump(mode="json"),
-        }
-    except Exception:
-        logger.warning(
-            "Failed to fetch intensity for %s/%s", provider, region, exc_info=True
-        )
-        return None
-
-
 async def _build_update(
     regions: list[dict[str, str]],
 ) -> dict[str, Any]:
-    """Fetch intensities for all subscribed regions and package as a message."""
-    tasks = [
-        _fetch_intensity(r["provider"], r["region"]) for r in regions
-    ]
-    results = await asyncio.gather(*tasks)
+    """Fetch intensities for all subscribed regions using batch fetching."""
+    source = get_carbon_source()
+    mapper = get_grid_mapper()
+
+    # Map regions to grid zones, batch-fetch, then reassemble
+    zone_to_regions: dict[str, list[dict[str, str]]] = {}
+    for r in regions:
+        try:
+            zone = mapper.get_grid_zone(r["provider"], r["region"])
+            zone_to_regions.setdefault(zone, []).append(r)
+        except Exception:
+            logger.warning("Unknown region %s/%s, skipping", r["provider"], r["region"])
+
+    if not zone_to_regions:
+        return {
+            "type": "carbon_update",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "data": [],
+        }
+
+    try:
+        intensities = await source.get_carbon_intensity_batch(list(zone_to_regions.keys()))
+    except Exception:
+        logger.warning("Batch fetch failed for WebSocket update", exc_info=True)
+        intensities = {}
+
+    data = []
+    for zone, region_list in zone_to_regions.items():
+        intensity = intensities.get(zone)
+        if intensity is None:
+            continue
+        for r in region_list:
+            data.append({
+                "provider": r["provider"],
+                "region": r["region"],
+                **intensity.model_dump(mode="json"),
+            })
+
     return {
         "type": "carbon_update",
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "data": [r for r in results if r is not None],
+        "data": data,
     }
 
 

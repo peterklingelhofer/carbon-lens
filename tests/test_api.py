@@ -132,3 +132,53 @@ def test_provider_status_counts(client: TestClient):
     assert any("UK" in n for n in configured_names)
     assert any("AEMO" in n for n in configured_names)
     assert any("Open-Meteo" in n for n in configured_names)
+
+
+def test_request_body_too_large(client: TestClient):
+    """Requests exceeding max_request_body_bytes get 413."""
+    oversized = {"data": "x" * (1_048_576 + 1)}
+    resp = client.post("/api/v1/route", json=oversized)
+    assert resp.status_code == 413
+    assert resp.json()["error"] == "request_too_large"
+
+
+def test_request_body_within_limit(client: TestClient):
+    """Normal-sized requests pass the size check (may fail validation, but not 413)."""
+    resp = client.post(
+        "/api/v1/route",
+        json={"constraints": {"providers": ["aws"]}},
+    )
+    assert resp.status_code != 413
+
+
+def test_websocket_default_regions(client: TestClient):
+    """WebSocket connects and sends a carbon_update with default regions."""
+    import json
+
+    with client.websocket_connect("/ws/carbon") as ws:
+        ws.send_text(json.dumps({"interval_seconds": 1}))
+        data = ws.receive_json()
+        assert data["type"] == "carbon_update"
+        assert "timestamp" in data
+        assert isinstance(data["data"], list)
+        assert len(data["data"]) > 0
+        entry = data["data"][0]
+        assert "provider" in entry
+        assert "region" in entry
+        assert "carbon_intensity_gco2_kwh" in entry
+
+
+def test_websocket_custom_subscription(client: TestClient):
+    """WebSocket accepts custom region subscription."""
+    import json
+
+    with client.websocket_connect("/ws/carbon") as ws:
+        ws.send_text(json.dumps({
+            "regions": [{"provider": "aws", "region": "us-east-1"}],
+            "interval_seconds": 1,
+        }))
+        data = ws.receive_json()
+        assert data["type"] == "carbon_update"
+        assert len(data["data"]) == 1
+        assert data["data"][0]["provider"] == "aws"
+        assert data["data"][0]["region"] == "us-east-1"
