@@ -79,3 +79,34 @@ export interface CarbonUpdate {
     source: string;
   }>;
 }
+
+export interface Organization {
+  id: string;
+  name: string;
+  slug: string;
+  tier: string;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+}
+
+export interface PlanInfo {
+  tier: string;
+  name: string;
+  daily_limit: number;
+  price_cents: number;
+  features: string[];
+}
+
+export interface BillingStatus {
+  api_key_id: string | null;
+  tier: string;
+  plan: PlanInfo;
+  today_usage: number;
+  daily_limit: number;
+  remaining: number;
+}
+
+export interface RegionLookup {
+  provider: string;
+  region: string;
+}

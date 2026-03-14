@@ -21,6 +21,7 @@ from carbon_mesh.api.routes import router
 from carbon_mesh.api.ws import ws_router
 from carbon_mesh.billing.routes import billing_router
 from carbon_mesh.config import settings
+from carbon_mesh.orgs.routes import org_router, webhook_router
 
 from carbon_mesh.logging_config import setup_logging
 
@@ -28,6 +29,33 @@ setup_logging()
 logger = logging.getLogger("carbon_mesh")
 
 limiter = Limiter(key_func=get_remote_address, default_limits=[settings.rate_limit_default])
+
+
+async def _warmup_cache() -> None:
+    """Pre-fetch carbon intensity for popular zones so first requests are instant."""
+    from carbon_mesh.api.deps import get_carbon_source, get_grid_mapper
+    from carbon_mesh.api.ws import DEFAULT_REGIONS
+
+    source = get_carbon_source()
+    mapper = get_grid_mapper()
+
+    zones: list[str] = []
+    for r in DEFAULT_REGIONS:
+        try:
+            zone = mapper.get_grid_zone(r["provider"], r["region"])
+            if zone and zone not in zones:
+                zones.append(zone)
+        except Exception:
+            pass
+
+    if not zones:
+        return
+
+    try:
+        results = await source.get_carbon_intensity_batch(zones)
+        logger.info("Cache warmup: pre-fetched %d/%d popular zones", len(results), len(zones))
+    except Exception as e:
+        logger.warning("Cache warmup failed (non-fatal): %s", e)
 
 
 def _log_provider_status() -> None:
@@ -96,11 +124,13 @@ async def lifespan(app: FastAPI):
                 logger.warning("Database not ready, retrying in %ds: %s", attempt * 2, e)
                 await asyncio.sleep(attempt * 2)
 
+        await _warmup_cache()
         yield
         await async_engine.dispose()
         logger.info("Database connection closed.")
     else:
         logger.info("Running without database (in-memory mode).")
+        await _warmup_cache()
         yield
 
 
@@ -243,6 +273,8 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 app.include_router(router, prefix="/api/v1", tags=["Carbon Routing"])
 app.include_router(admin_router, prefix="/api/v1", tags=["Admin"])
 app.include_router(billing_router, prefix="/api/v1", tags=["Billing"])
+app.include_router(org_router, prefix="/api/v1", tags=["Organizations"])
+app.include_router(webhook_router, prefix="/api/v1")
 app.include_router(ws_router)
 
 # Prometheus metrics at /metrics
