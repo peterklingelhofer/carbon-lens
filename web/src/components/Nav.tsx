@@ -2,76 +2,72 @@ import { NavLink } from "react-router-dom";
 
 const linkStyle = ({ isActive }: { isActive: boolean }) =>
   ({
-    padding: "0.5rem 1rem",
     borderRadius: "6px",
     fontWeight: isActive ? 600 : 400,
     background: isActive ? "var(--green-100)" : "transparent",
     color: isActive ? "var(--green-800)" : "inherit",
     textDecoration: "none",
-    fontSize: "0.95rem",
+    whiteSpace: "nowrap",
   }) as const;
 
 export function Nav() {
   return (
     <>
       <style>{`
-        .nav-link-label {
-          display: inline;
+        .nav-bar {
+          display: flex;
+          align-items: center;
+          gap: clamp(0.15rem, 1vw, 0.5rem);
+          padding: 0.75rem clamp(0.5rem, 3vw, 2rem);
+          border-bottom: 1px solid var(--gray-200);
+          background: var(--nav-bg);
+          position: sticky;
+          top: 0;
+          z-index: 10;
         }
-        @media (max-width: 600px) {
-          .nav-bar {
-            padding: 0.5rem 1rem !important;
-            gap: 0.25rem !important;
-          }
-          .nav-bar .nav-brand {
-            margin-right: 0.5rem !important;
-            font-size: 1rem !important;
-          }
-          .nav-link-label {
-            font-size: 0.8rem !important;
-          }
+        .nav-brand {
+          font-weight: 700;
+          font-size: clamp(0.85rem, 2.5vw, 1.2rem);
+          margin-right: clamp(0.25rem, 2vw, 1rem);
+          color: var(--green-700);
+          text-decoration: none;
+          flex-shrink: 0;
+        }
+        .nav-links {
+          display: flex;
+          align-items: center;
+          gap: clamp(0rem, 0.5vw, 0.25rem);
+          min-width: 0;
+        }
+        .nav-links a {
+          padding: clamp(0.3rem, 0.8vw, 0.5rem) clamp(0.35rem, 1.2vw, 1rem);
+          font-size: clamp(0.7rem, 1.8vw, 0.95rem);
         }
       `}</style>
-      <nav
-        className="nav-bar"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "0.5rem",
-          padding: "0.75rem 2rem",
-          borderBottom: "1px solid var(--gray-200)",
-          background: "var(--nav-bg)",
-          position: "sticky",
-          top: 0,
-          zIndex: 10,
-        }}
-      >
-        <span
-          className="nav-brand"
-          style={{
-            fontWeight: 700,
-            fontSize: "1.2rem",
-            marginRight: "2rem",
-            color: "var(--green-700)",
-          }}
-        >
+      <nav className="nav-bar">
+        <NavLink to="/" className="nav-brand">
           Carbon Mesh
-        </span>
-        <NavLink to="/" style={linkStyle} end>
-          <span className="nav-link-label">Home</span>
         </NavLink>
-        <NavLink to="/dashboard" style={linkStyle}>
-          <span className="nav-link-label">Dashboard</span>
-        </NavLink>
-        <NavLink to="/route" style={linkStyle}>
-          <span className="nav-link-label">Route Demo</span>
-        </NavLink>
-        <NavLink to="/plans" style={linkStyle}>
-          <span className="nav-link-label">Plans</span>
-        </NavLink>
-        <NavLink to="/settings" style={linkStyle}>
-          <span className="nav-link-label">Settings</span>
-        </NavLink>
+        <div className="nav-links">
+          <NavLink to="/" style={linkStyle} end>
+            Home
+          </NavLink>
+          <NavLink to="/dashboard" style={linkStyle}>
+            Dashboard
+          </NavLink>
+          <NavLink to="/route" style={linkStyle}>
+            Route
+          </NavLink>
+          <NavLink to="/plans" style={linkStyle}>
+            Plans
+          </NavLink>
+          <NavLink to="/orgs" style={linkStyle}>
+            Orgs
+          </NavLink>
+          <NavLink to="/settings" style={linkStyle}>
+            Settings
+          </NavLink>
+        </div>
       </nav>
     </>
   );

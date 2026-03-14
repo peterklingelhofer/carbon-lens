@@ -1,0 +1,45 @@
+repositories:
+  - name: bitnami
+    url: https://charts.bitnami.com/bitnami
+
+environments:
+  default:
+    values:
+      - environments/default.yaml
+  staging:
+    values:
+      - environments/staging.yaml
+  production:
+    values:
+      - environments/production.yaml
+
+releases:
+  - name: carbon-mesh-db
+    namespace: carbon-mesh
+    chart: bitnami/postgresql
+    version: "16.*"
+    condition: database.bundled.enabled
+    values:
+      - auth:
+          postgresPassword: {{ .Values | get "database.bundled.auth.postgresPassword" "carbon_mesh" | quote }}
+          database: {{ .Values | get "database.bundled.auth.database" "carbon_mesh" | quote }}
+        primary:
+          persistence:
+            size: 5Gi
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+
+  - name: carbon-mesh
+    namespace: carbon-mesh
+    chart: ./helm/carbon-mesh
+    needs:
+      - carbon-mesh/carbon-mesh-db
+    values:
+      - helm/carbon-mesh/values.yaml
+      - database:
+          enabled: true
+          url: postgresql+asyncpg://postgres:{{ .Values | get "database.bundled.auth.postgresPassword" "carbon_mesh" }}@carbon-mesh-db-postgresql:5432/{{ .Values | get "database.bundled.auth.database" "carbon_mesh" }}
+    secrets:
+      - secrets.yaml

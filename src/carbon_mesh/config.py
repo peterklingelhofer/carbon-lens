@@ -48,6 +48,12 @@ class Settings(BaseSettings):
     # Request limits
     max_request_body_bytes: int = 1_048_576  # 1 MB
 
+    # Stripe (leave empty to disable billing integration)
+    stripe_secret_key: str = ""
+    stripe_webhook_secret: str = ""
+    stripe_price_id_pro: str = ""  # Stripe Price ID for Pro plan
+    stripe_price_id_enterprise: str = ""  # Stripe Price ID for Enterprise plan
+
     @property
     def configured_providers(self) -> dict[str, bool]:
         """Return which data providers have credentials configured."""

@@ -1,0 +1,12 @@
+apiVersion: v2
+name: carbon-mesh
+description: Carbon-aware multi-cloud routing control plane
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - carbon
+  - sustainability
+  - cloud-routing
+  - green-computing
+home: https://github.com/peterklingelhofer/carbon-mesh-control-plane
