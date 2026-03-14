@@ -1,5 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import JSONResponse
+import hashlib
+import json as _json
+
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from carbon_mesh.accounting.tracker import CarbonTracker, DBCarbonTracker
@@ -64,14 +67,22 @@ async def route_workload(
 
 @router.get("/regions", response_model=list[CloudRegion], tags=["Regions"])
 async def list_regions(
+    request: Request,
     provider: str | None = None,
     mapper: GridMapper = Depends(get_grid_mapper),
 ):
     """List all supported cloud regions."""
     regions = mapper.list_regions(provider)
-    response = JSONResponse(content=[r.model_dump() for r in regions])
-    # Region list is static — cache aggressively
+    content = [r.model_dump() for r in regions]
+
+    # ETag — region list is static, skip resending if unchanged
+    etag = '"' + hashlib.md5(_json.dumps(content, sort_keys=True).encode()).hexdigest() + '"'
+    if request.headers.get("if-none-match") == etag:
+        return Response(status_code=304, headers={"ETag": etag})
+
+    response = JSONResponse(content=content)
     response.headers["Cache-Control"] = "public, max-age=3600"
+    response.headers["ETag"] = etag
     return response
 
 
@@ -87,6 +98,35 @@ async def get_carbon_intensity(
     if zone is None:
         raise HTTPException(status_code=404, detail=f"Unknown region: {provider}/{region}")
     return await source.get_carbon_intensity(zone)
+
+
+@router.post("/carbon/batch", response_model=dict[str, CarbonIntensity], tags=["Carbon Data"])
+async def get_carbon_intensity_batch(
+    regions: list[dict[str, str]],
+    mapper: GridMapper = Depends(get_grid_mapper),
+    source: CarbonDataSource = Depends(get_carbon_source),
+) -> dict[str, CarbonIntensity]:
+    """Get carbon intensity for multiple regions in a single request.
+
+    Body: list of ``{"provider": "aws", "region": "us-east-1"}`` objects.
+    Returns a map of ``"provider/region"`` to carbon intensity.
+    """
+    zone_to_key: dict[str, str] = {}
+    for r in regions:
+        zone = mapper.get_grid_zone(r["provider"], r["region"])
+        if zone is not None:
+            zone_to_key[zone] = f"{r['provider']}/{r['region']}"
+
+    if not zone_to_key:
+        raise HTTPException(status_code=400, detail="No valid regions provided")
+
+    intensities = await source.get_carbon_intensity_batch(list(zone_to_key.keys()))
+
+    return {
+        zone_to_key[zone]: intensity
+        for zone, intensity in intensities.items()
+        if zone in zone_to_key
+    }
 
 
 @router.get("/accounting/savings", response_model=CarbonSavingsReport, tags=["Accounting"])

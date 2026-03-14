@@ -1,0 +1,28 @@
+# Staging environment values
+database:
+  bundled:
+    enabled: true
+    auth:
+      postgresPassword: change-me-staging
+      database: carbon_mesh
+
+config:
+  carbonSource: hybrid
+  apiKeyRequired: true
+  logFormat: json
+  logLevel: INFO
+  autoMigrate: true
+  rateLimit: "100/minute"
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 3
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi

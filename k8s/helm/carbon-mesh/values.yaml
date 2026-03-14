@@ -1,0 +1,72 @@
+replicaCount: 2
+
+image:
+  repository: ghcr.io/peterklingelhofer/carbon-mesh-control-plane
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8000
+
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: carbon-mesh.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+# Carbon data provider API keys (store in a Secret)
+carbonProviders:
+  eiaApiKey: ""
+  gridStatusApiKey: ""
+  entsoeToken: ""
+  electricityMapsApiKey: ""
+
+# Database
+database:
+  enabled: true
+  # Use an external database URL or deploy the bundled PostgreSQL
+  url: ""
+  # If url is empty, the chart will use the bundled PostgreSQL subchart
+  bundled:
+    enabled: true
+    auth:
+      postgresPassword: carbon_mesh
+      database: carbon_mesh
+
+# Stripe billing (optional)
+stripe:
+  secretKey: ""
+  webhookSecret: ""
+  priceIdPro: ""
+  priceIdEnterprise: ""
+
+# App settings
+config:
+  carbonSource: hybrid
+  cacheTtlSeconds: 300
+  apiKeyRequired: false
+  adminSecret: ""
+  logFormat: json
+  logLevel: INFO
+  autoMigrate: true
+  rateLimit: "100/minute"

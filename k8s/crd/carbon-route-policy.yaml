@@ -1,0 +1,91 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: carbonroutepolicies.carbon-mesh.io
+spec:
+  group: carbon-mesh.io
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required:
+                - providers
+              properties:
+                providers:
+                  type: array
+                  items:
+                    type: string
+                    enum: [aws, gcp, azure]
+                  description: Cloud providers to consider for routing
+                carbonWeight:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+                  default: 0.7
+                  description: Weight given to carbon intensity in scoring (0-1)
+                costWeight:
+                  type: number
+                  minimum: 0
+                  maximum: 1
+                  default: 0.3
+                  description: Weight given to cost in scoring (0-1)
+                dataResidency:
+                  type: array
+                  items:
+                    type: string
+                  description: Restrict to regions matching these residency codes (US, EU, etc.)
+                candidateRegions:
+                  type: array
+                  items:
+                    type: string
+                  description: Restrict to these specific cloud regions
+                refreshIntervalSeconds:
+                  type: integer
+                  minimum: 60
+                  default: 300
+                  description: How often to re-evaluate the greenest region
+            status:
+              type: object
+              properties:
+                recommendedProvider:
+                  type: string
+                recommendedRegion:
+                  type: string
+                carbonIntensity:
+                  type: number
+                renewablePercentage:
+                  type: number
+                lastUpdated:
+                  type: string
+                  format: date-time
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Provider
+          type: string
+          jsonPath: .status.recommendedProvider
+        - name: Region
+          type: string
+          jsonPath: .status.recommendedRegion
+        - name: Carbon (gCO2/kWh)
+          type: number
+          jsonPath: .status.carbonIntensity
+        - name: Renewable %
+          type: number
+          jsonPath: .status.renewablePercentage
+        - name: Updated
+          type: date
+          jsonPath: .status.lastUpdated
+  scope: Namespaced
+  names:
+    plural: carbonroutepolicies
+    singular: carbonroutepolicy
+    kind: CarbonRoutePolicy
+    shortNames:
+      - crp

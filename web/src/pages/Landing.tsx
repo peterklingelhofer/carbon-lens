@@ -8,7 +8,20 @@ export function Landing() {
   return (
     <div>
       {/* Hero */}
+      <style>{`
+        .hero-title { font-size: 3rem; }
+        .hero-subtitle { font-size: 1.25rem; }
+        .hero-section { padding: 5rem 2rem 4rem; }
+        @media (max-width: 600px) {
+          .hero-title { font-size: 1.75rem !important; }
+          .hero-subtitle { font-size: 1rem !important; }
+          .hero-section { padding: 3rem 1rem 2.5rem !important; }
+          .hero-cta { flex-direction: column !important; align-items: stretch !important; }
+          .hero-cta a { text-align: center; }
+        }
+      `}</style>
       <div
+        className="hero-section"
         style={{
           background: "linear-gradient(135deg, var(--green-700), var(--green-900))",
           color: "white",
@@ -16,12 +29,16 @@ export function Landing() {
           textAlign: "center",
         }}
       >
-        <h1 style={{ fontSize: "3rem", margin: "0 0 1rem", fontWeight: 700 }}>
-          The cloud runs on coal at night.
+        <h1
+          className="hero-title"
+          style={{ fontSize: "3rem", margin: "0 0 1rem", fontWeight: 700 }}
+        >
+          The cloud runs on fossil fuels at night.
           <br />
           We fix that.
         </h1>
         <p
+          className="hero-subtitle"
           style={{
             fontSize: "1.25rem",
             maxWidth: 700,
@@ -33,7 +50,7 @@ export function Landing() {
           on the cleanest energy right now — verified by government grid data, not
           corporate press releases.
         </p>
-        <div style={{ display: "flex", gap: "1rem", justifyContent: "center" }}>
+        <div className="hero-cta" style={{ display: "flex", gap: "1rem", justifyContent: "center" }}>
           <Link
             to="/route"
             style={{

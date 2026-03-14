@@ -3,7 +3,7 @@
 export const section = (maxWidth = 900): React.CSSProperties => ({
   maxWidth,
   margin: "0 auto",
-  padding: "2rem",
+  padding: "2rem 1rem",
 });
 
 export const card: React.CSSProperties = {

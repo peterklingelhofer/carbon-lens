@@ -1,12 +1,32 @@
 import uuid
 from datetime import date, datetime, timezone
 
-from sqlalchemy import Date, DateTime, Float, Integer, String, Boolean, func, UniqueConstraint
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import Date, DateTime, Float, ForeignKey, Integer, String, Boolean, func, UniqueConstraint
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
 class Base(DeclarativeBase):
     pass
+
+
+class Organization(Base):
+    """Multi-tenant organization — all API keys and usage are scoped to an org."""
+
+    __tablename__ = "organizations"
+
+    id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    slug: Mapped[str] = mapped_column(String(100), nullable=False, unique=True, index=True)
+    tier: Mapped[str] = mapped_column(String(20), nullable=False, default="free")
+    stripe_customer_id: Mapped[str | None] = mapped_column(String(255), nullable=True, unique=True)
+    stripe_subscription_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.now()
+    )
+
+    api_keys: Mapped[list["ApiKeyRecord"]] = relationship(back_populates="organization")
 
 
 class ApiKeyRecord(Base):
@@ -14,6 +34,9 @@ class ApiKeyRecord(Base):
 
     id: Mapped[str] = mapped_column(
         String(36), primary_key=True, default=lambda: str(uuid.uuid4())
+    )
+    org_id: Mapped[str | None] = mapped_column(
+        String(36), ForeignKey("organizations.id"), nullable=True, index=True
     )
     org_name: Mapped[str] = mapped_column(String(255), nullable=False)
     key_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
@@ -24,6 +47,8 @@ class ApiKeyRecord(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    organization: Mapped[Organization | None] = relationship(back_populates="api_keys")
 
 
 class EmissionsRecordDB(Base):
