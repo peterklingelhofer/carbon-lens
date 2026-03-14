@@ -1,0 +1,20 @@
+# Default (local dev) environment values
+database:
+  bundled:
+    enabled: true
+    auth:
+      postgresPassword: carbon_mesh
+      database: carbon_mesh
+
+carbonProviders:
+  eiaApiKey: ""
+  gridStatusApiKey: ""
+  entsoeToken: ""
+  electricityMapsApiKey: ""
+
+config:
+  carbonSource: hybrid
+  apiKeyRequired: false
+  logFormat: text
+  logLevel: DEBUG
+  autoMigrate: true

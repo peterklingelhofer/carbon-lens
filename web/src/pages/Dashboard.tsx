@@ -404,22 +404,27 @@ function LivePanel() {
 function useRegionIntensities(regions: CloudRegion[]) {
   const [data, setData] = useState<Record<string, CarbonIntensity>>({});
 
-  // Fetch all on mount / region change
+  // Batch fetch all regions in a single request
   useEffect(() => {
+    if (regions.length === 0) return;
     let cancelled = false;
-    regions.forEach(async (r) => {
-      try {
-        const intensity = await api.carbonIntensity(r.provider, r.region);
-        if (!cancelled) {
-          setData((prev) => ({ ...prev, [`${r.provider}/${r.region}`]: intensity }));
-        }
-      } catch {
-        // swallow — just won't show data for this region
-      }
+
+    const lookups = regions.map((r) => ({ provider: r.provider, region: r.region }));
+    api.carbonIntensityBatch(lookups).then((result) => {
+      if (!cancelled) setData(result);
+    }).catch(() => {
+      // Batch failed — fall back to individual calls
+      regions.forEach(async (r) => {
+        try {
+          const intensity = await api.carbonIntensity(r.provider, r.region);
+          if (!cancelled) {
+            setData((prev) => ({ ...prev, [`${r.provider}/${r.region}`]: intensity }));
+          }
+        } catch { /* swallow */ }
+      });
     });
-    return () => {
-      cancelled = true;
-    };
+
+    return () => { cancelled = true; };
   }, [regions]);
 
   return data;

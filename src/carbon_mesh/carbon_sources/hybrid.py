@@ -58,8 +58,11 @@ class HybridCarbonSource:
         # Ultimate fallback
         self._mock = mock or MockCarbonSource()
 
-    def _provider_chain(self) -> list[tuple[str, object, set[str]]]:
-        """Build the ordered provider chain (name, instance, supported zones).
+        # Precompute the provider chain once (immutable after init)
+        self._chain = self._build_provider_chain()
+
+    def _build_provider_chain(self) -> list[tuple[str, object, set[str]]]:
+        """Build the ordered provider chain once at init time.
 
         Providers with ``None`` instances (missing API key) are skipped.
         Electricity Maps accepts any zone so uses an empty sentinel set handled
@@ -87,7 +90,7 @@ class HybridCarbonSource:
         return chain
 
     async def get_carbon_intensity(self, grid_zone: str) -> CarbonIntensity:
-        for name, provider, supported_zones in self._provider_chain():
+        for name, provider, supported_zones in self._chain:
             # Empty supported_zones means "accepts any zone" (e.g. Electricity Maps)
             if supported_zones and grid_zone not in supported_zones:
                 continue
@@ -116,7 +119,7 @@ class HybridCarbonSource:
 
         # Build (priority, name, coroutine) for each provider that has matching zones
         tasks: list[tuple[int, str, asyncio.Task]] = []
-        for priority, (name, provider, supported_zones) in enumerate(self._provider_chain()):
+        for priority, (name, provider, supported_zones) in enumerate(self._chain):
             batch_zones = list(zone_set) if not supported_zones else [z for z in zone_set if z in supported_zones]
             if not batch_zones:
                 continue

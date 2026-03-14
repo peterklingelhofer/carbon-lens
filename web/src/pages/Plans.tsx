@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
 import { section as sectionFn } from "../styles";
@@ -10,6 +11,9 @@ function formatPrice(cents: number): string {
 }
 
 export function Plans() {
+  const [upgrading, setUpgrading] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
   const { data: plans, isLoading } = useQuery({
     queryKey: ["plans"],
     queryFn: () => api.plans(),
@@ -26,12 +30,45 @@ export function Plans() {
     Enterprise: "var(--blue-500)",
   };
 
+  async function handleUpgrade(tier: string) {
+    setUpgrading(tier);
+    setError(null);
+    try {
+      const plan = tier.toLowerCase() as "pro" | "enterprise";
+      // Uses the billing status org context; for now pass a placeholder
+      // that the backend will resolve from the API key
+      const { checkout_url } = await api.orgs.checkout("current", plan);
+      window.location.href = checkout_url;
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Upgrade failed";
+      setError(msg);
+      setUpgrading(null);
+    }
+  }
+
   return (
     <div style={section}>
       <h1 style={{ marginBottom: "0.5rem", textAlign: "center" }}>Plans & Pricing</h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2.5rem", textAlign: "center" }}>
         Start free. Scale when you're ready.
       </p>
+
+      {error && (
+        <div
+          style={{
+            background: "var(--red-50, #fef2f2)",
+            border: "1px solid var(--red-200, #fecaca)",
+            borderRadius: 8,
+            padding: "0.75rem 1rem",
+            marginBottom: "1.5rem",
+            color: "var(--red-700, #b91c1c)",
+            fontSize: "0.85rem",
+            textAlign: "center",
+          }}
+        >
+          {error}
+        </div>
+      )}
 
       {isLoading ? (
         <p style={{ textAlign: "center", color: "var(--gray-400)" }}>Loading plans...</p>
@@ -45,7 +82,9 @@ export function Plans() {
           }}
         >
           {plans.map((plan) => {
-            const isCurrent = billing?.tier.toLowerCase() === plan.name.toLowerCase();
+            const tierKey = plan.name.toLowerCase();
+            const isCurrent = billing?.tier.toLowerCase() === tierKey;
+            const canUpgrade = !isCurrent && tierKey !== "free";
             return (
               <div
                 key={plan.name}
@@ -107,7 +146,7 @@ export function Plans() {
                   style={{
                     listStyle: "none",
                     padding: 0,
-                    margin: 0,
+                    margin: "0 0 1.5rem",
                   }}
                 >
                   {plan.features.map((f, i) => (
@@ -132,6 +171,48 @@ export function Plans() {
                     </li>
                   ))}
                 </ul>
+                {canUpgrade ? (
+                  <button
+                    onClick={() => handleUpgrade(plan.name)}
+                    disabled={upgrading === plan.name}
+                    style={{
+                      width: "100%",
+                      padding: "0.75rem",
+                      borderRadius: 8,
+                      border: "none",
+                      background:
+                        tierKey === "enterprise"
+                          ? "var(--blue-500, #3b82f6)"
+                          : "var(--green-500, #22c55e)",
+                      color: "white",
+                      fontWeight: 600,
+                      fontSize: "0.9rem",
+                      cursor: upgrading ? "wait" : "pointer",
+                      opacity: upgrading && upgrading !== plan.name ? 0.5 : 1,
+                    }}
+                  >
+                    {upgrading === plan.name
+                      ? "Redirecting..."
+                      : tierKey === "enterprise"
+                        ? "Contact Sales"
+                        : `Upgrade to ${plan.name}`}
+                  </button>
+                ) : isCurrent ? (
+                  <div
+                    style={{
+                      width: "100%",
+                      padding: "0.75rem",
+                      borderRadius: 8,
+                      background: "var(--gray-100, #f3f4f6)",
+                      color: "var(--gray-500)",
+                      fontWeight: 600,
+                      fontSize: "0.9rem",
+                      textAlign: "center",
+                    }}
+                  >
+                    Current Plan
+                  </div>
+                ) : null}
               </div>
             );
           })}

@@ -38,6 +38,13 @@ export function Settings() {
 
   return (
     <div style={section}>
+      <style>{`
+        @media (max-width: 600px) {
+          .settings-table { font-size: 0.75rem !important; }
+          .settings-table th, .settings-table td { padding: 0.35rem !important; }
+          .settings-table code { font-size: 0.65rem !important; word-break: break-all; }
+        }
+      `}</style>
       <h1 style={{ marginBottom: "0.5rem" }}>Settings</h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
         System status, provider credentials, and usage overview.
@@ -146,12 +153,12 @@ export function Settings() {
       </div>
 
       {/* Setup Guide */}
-      <div style={card}>
+      <div style={{ ...card, overflow: "auto" }}>
         <h2 style={{ margin: "0 0 1rem", fontSize: "1.1rem" }}>Add Provider Credentials</h2>
         <p style={{ color: "var(--gray-500)", fontSize: "0.85rem", marginBottom: "1rem" }}>
           All data providers are free. Add API keys to your <code>.env</code> file or platform dashboard:
         </p>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
+        <table className="settings-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
           <thead>
             <tr style={{ borderBottom: "2px solid var(--gray-200)" }}>
               <th style={{ textAlign: "left", padding: "0.5rem" }}>Provider</th>

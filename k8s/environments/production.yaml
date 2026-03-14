@@ -1,0 +1,43 @@
+# Production environment values
+database:
+  bundled:
+    enabled: false
+  # Use a managed Postgres (set via secrets.yaml or --set)
+  url: ""
+
+config:
+  carbonSource: hybrid
+  apiKeyRequired: true
+  logFormat: json
+  logLevel: INFO
+  autoMigrate: true
+  rateLimit: "100/minute"
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: api.carbon-mesh.io
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: carbon-mesh-tls
+      hosts:
+        - api.carbon-mesh.io
