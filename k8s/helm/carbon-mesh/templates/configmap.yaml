@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+  labels:
+    app.kubernetes.io/name: carbon-mesh
+    app.kubernetes.io/instance: {{ .Release.Name }}
+data:
+  CARBON_MESH_CARBON_SOURCE: {{ .Values.config.carbonSource | quote }}
+  CARBON_MESH_CACHE_TTL_SECONDS: {{ .Values.config.cacheTtlSeconds | quote }}
+  CARBON_MESH_API_KEY_REQUIRED: {{ .Values.config.apiKeyRequired | quote }}
+  CARBON_MESH_LOG_FORMAT: {{ .Values.config.logFormat | quote }}
+  CARBON_MESH_LOG_LEVEL: {{ .Values.config.logLevel | quote }}
+  CARBON_MESH_AUTO_MIGRATE: {{ .Values.config.autoMigrate | quote }}
+  CARBON_MESH_RATE_LIMIT_DEFAULT: {{ .Values.config.rateLimit | quote }}
+  CARBON_MESH_USE_DATABASE: {{ .Values.database.enabled | quote }}
+  CARBON_MESH_HOST: "0.0.0.0"
+  CARBON_MESH_PORT: "8000"
