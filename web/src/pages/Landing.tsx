@@ -33,26 +33,37 @@ export function Landing() {
           className="hero-title"
           style={{ fontSize: "3rem", margin: "0 0 1rem", fontWeight: 700 }}
         >
-          The cloud runs on fossil fuels at night.
+          Measure, report, and reduce
           <br />
-          We fix that.
+          your cloud carbon footprint.
         </h1>
         <p
           className="hero-subtitle"
           style={{
             fontSize: "1.25rem",
             maxWidth: 700,
-            margin: "0 auto 2rem",
+            margin: "0 auto 0.75rem",
             opacity: 0.9,
           }}
         >
-          Carbon Mesh routes your compute to whichever region is physically running
-          on the cleanest energy right now — verified by government grid data, not
-          corporate press releases.
+          CSRD-compliant Scope 2 &amp; 3 emissions reporting for cloud infrastructure.
+          Powered by 11 government-verified grid data sources — not corporate estimates.
+        </p>
+        <p
+          className="hero-subtitle"
+          style={{
+            fontSize: "1rem",
+            maxWidth: 600,
+            margin: "0 auto 2rem",
+            opacity: 0.7,
+          }}
+        >
+          EU regulations now require companies to measure and disclose cloud
+          emissions. Carbon Mesh makes it auditable, automated, and actionable.
         </p>
         <div className="hero-cta" style={{ display: "flex", gap: "1rem", justifyContent: "center" }}>
           <Link
-            to="/route"
+            to="/compliance"
             style={{
               padding: "0.75rem 2rem",
               borderRadius: 8,
@@ -62,7 +73,7 @@ export function Landing() {
               textDecoration: "none",
             }}
           >
-            Try the Router
+            Try Compliance Reporting
           </Link>
           <Link
             to="/dashboard"
@@ -75,7 +86,7 @@ export function Landing() {
               textDecoration: "none",
             }}
           >
-            View Dashboard
+            View Live Grid Data
           </Link>
         </div>
       </div>
@@ -167,11 +178,10 @@ export function Landing() {
             marginTop: "3rem",
           }}
         >
-          What Carbon Mesh Does Differently
+          How Carbon Mesh Works
         </h2>
         <p style={{ textAlign: "center", color: "var(--gray-500)", marginBottom: "2rem" }}>
-          Instead of buying offsets after the fact, we move the compute to where the
-          energy is already clean.
+          Measure your actual cloud emissions. Get audit-ready reports. Optimize automatically.
         </p>
 
         <div style={card}>
@@ -186,11 +196,10 @@ export function Landing() {
             }}
           >
             <div style={{ color: "var(--gray-400)" }}>
-              Traditional cloud: Pick region &rarr; Run job &rarr; Buy carbon offsets later
+              Traditional: Guess emissions &rarr; Buy offsets &rarr; Put in annual report
             </div>
             <div style={{ color: "var(--green-700)", fontWeight: 600 }}>
-              Carbon Mesh: &nbsp;&nbsp;&nbsp;&nbsp;Check grid data &rarr; Find cleanest
-              region NOW &rarr; Run job there
+              Carbon Mesh: Ingest cloud usage &rarr; Calculate with real grid data &rarr; CSRD-ready report
             </div>
           </div>
         </div>
@@ -198,28 +207,28 @@ export function Landing() {
         <div style={grid3}>
           {[
             {
+              title: "CSRD / ESRS E1 Compliant",
+              desc: "Reports aligned with EU Corporate Sustainability Reporting Directive. Scope 2 (location + market-based) and Scope 3 Category 1.",
+            },
+            {
+              title: "GHG Protocol Methodology",
+              desc: "Every calculation follows the GHG Protocol Corporate Standard with full audit trail — data source, timestamp, methodology version.",
+            },
+            {
               title: "Government-Verified Data",
-              desc: "We use official grid operator data (EIA, ENTSO-E, AEMO), not self-reported corporate numbers.",
+              desc: "11 official grid operator sources (EIA, ENTSO-E, AEMO, POSOCO). Not estimates — actual measured emissions factors.",
             },
             {
-              title: "Hourly, Not Annual",
-              desc: "We track actual grid conditions per hour, not annual averages or offset spreadsheets.",
+              title: "Multi-Cloud Coverage",
+              desc: "Ingest usage from AWS Cost Explorer, GCP Billing, and Azure Cost Management. 75+ regions across all three providers.",
             },
             {
-              title: "Multi-Cloud",
-              desc: "Not locked to one provider. We arbitrage across AWS, GCP, and Azure — 75+ regions.",
+              title: "Hourly Granularity",
+              desc: "Track actual grid conditions per hour, not annual averages. Identify when and where your workloads generate the most emissions.",
             },
             {
-              title: "11 Data Sources",
-              desc: "Cascading through UK, EIA, AEMO, Grid India, ONS Brazil, Eskom, ENTSO-E, and more.",
-            },
-            {
-              title: "Open Source",
-              desc: "Transparent methodology. Anyone can verify our claims. The control plane is fully open.",
-            },
-            {
-              title: "Price Competitive",
-              desc: "Green doesn't cost more. Clean energy during off-peak is often the cheapest energy.",
+              title: "Actionable Optimization",
+              desc: "Beyond reporting: route workloads to the cleanest region in real-time. Reduce emissions, not just measure them.",
             },
           ].map((item) => (
             <div key={item.title} style={card}>
@@ -286,7 +295,7 @@ export function Landing() {
         {/* CTA */}
         <div style={{ textAlign: "center", margin: "3rem 0 1rem" }}>
           <Link
-            to="/route"
+            to="/compliance"
             style={{
               display: "inline-block",
               padding: "0.85rem 2.5rem",
@@ -298,8 +307,11 @@ export function Landing() {
               textDecoration: "none",
             }}
           >
-            Try the Green Router Now
+            Generate Your First Compliance Report
           </Link>
+          <p style={{ marginTop: "0.75rem", color: "var(--gray-400)", fontSize: "0.85rem" }}>
+            Free demo with mock data — no account required
+          </p>
         </div>
       </section>
     </div>

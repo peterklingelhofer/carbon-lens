@@ -32,8 +32,8 @@ class TestTiers:
     def test_pro_tier_pricing(self):
         pro = TIERS["pro"]
         assert pro.tier == "pro"
-        assert pro.price_cents == 2900
-        assert pro.daily_limit == 10_000
+        assert pro.price_cents == 49900
+        assert pro.daily_limit == 50_000
 
     def test_enterprise_tier(self):
         ent = TIERS["enterprise"]
