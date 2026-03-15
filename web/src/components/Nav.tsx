@@ -52,11 +52,11 @@ export function Nav() {
           <NavLink to="/" style={linkStyle} end>
             Home
           </NavLink>
-          <NavLink to="/dashboard" style={linkStyle}>
-            Dashboard
+          <NavLink to="/broker" style={linkStyle}>
+            Broker
           </NavLink>
-          <NavLink to="/compliance" style={linkStyle}>
-            Compliance
+          <NavLink to="/dashboard" style={linkStyle}>
+            Grid Data
           </NavLink>
           <NavLink to="/route" style={linkStyle}>
             Route
