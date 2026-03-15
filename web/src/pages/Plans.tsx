@@ -50,7 +50,7 @@ export function Plans() {
     <div style={section}>
       <h1 style={{ marginBottom: "0.5rem", textAlign: "center" }}>Plans & Pricing</h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2.5rem", textAlign: "center" }}>
-        CSRD compliance reporting for cloud infrastructure. Start free, scale to enterprise.
+        Green ZK proof brokering. Start free, scale to enterprise.
       </p>
 
       {error && (
