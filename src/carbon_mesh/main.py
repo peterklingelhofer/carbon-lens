@@ -21,6 +21,7 @@ from carbon_mesh.api.routes import router
 from carbon_mesh.api.ws import ws_router
 from carbon_mesh.billing.routes import billing_router
 from carbon_mesh.config import settings
+from carbon_mesh.compliance.routes import router as compliance_router
 from carbon_mesh.orgs.routes import org_router, webhook_router
 
 from carbon_mesh.logging_config import setup_logging
@@ -137,14 +138,17 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Carbon Mesh Control Plane",
     description=(
-        "Carbon-aware multi-cloud routing engine that routes workloads to the greenest "
-        "cloud region based on real-time government grid data.\n\n"
-        "## Key Features\n"
-        "- **11 carbon data providers** — UK, EIA, AEMO, Grid India, ONS Brazil, "
-        "Eskom, GridStatus, ENTSO-E, Open-Meteo, Electricity Maps, Mock\n"
+        "Cloud carbon emissions measurement, compliance reporting, and optimization platform.\n\n"
+        "## Compliance & Reporting\n"
+        "- **CSRD / ESRS E1 aligned** — Scope 2 (location + market-based) and Scope 3 Cat 1\n"
+        "- **GHG Protocol methodology** — auditable calculations with full data provenance\n"
+        "- **Cloud usage ingestion** — AWS Cost Explorer, GCP Billing, Azure Cost Management, CSV\n"
+        "- **Export** — JSON and CSV reports for auditors and regulators\n\n"
+        "## Carbon Intelligence\n"
+        "- **11 government-verified data sources** — UK, EIA, AEMO, Grid India, ONS Brazil, "
+        "Eskom, GridStatus, ENTSO-E, Open-Meteo, Electricity Maps\n"
         "- **75+ cloud regions** across AWS, GCP, and Azure\n"
-        "- **Multi-objective scoring** with configurable carbon/cost weights\n"
-        "- **Per-request carbon accounting** with savings tracking\n\n"
+        "- **Real-time optimization** — route workloads to lowest-carbon regions\n\n"
         "## Authentication\n"
         "When `CARBON_MESH_API_KEY_REQUIRED=true`, pass your key via the `X-API-Key` header."
     ),
@@ -156,6 +160,7 @@ app = FastAPI(
         {"name": "Routing", "description": "Find the greenest cloud region for your workload"},
         {"name": "Regions", "description": "Explore supported cloud regions across AWS, GCP, and Azure"},
         {"name": "Carbon Data", "description": "Get real-time carbon intensity for specific regions"},
+        {"name": "Compliance", "description": "CSRD-aligned emissions measurement, calculation, and reporting"},
         {"name": "Accounting", "description": "Track carbon savings from routed workloads"},
         {"name": "Billing", "description": "Usage tracking, tier limits, and plan management"},
         {"name": "Admin", "description": "API key management (requires admin secret)"},
@@ -275,6 +280,7 @@ app.include_router(admin_router, prefix="/api/v1", tags=["Admin"])
 app.include_router(billing_router, prefix="/api/v1", tags=["Billing"])
 app.include_router(org_router, prefix="/api/v1", tags=["Organizations"])
 app.include_router(webhook_router, prefix="/api/v1")
+app.include_router(compliance_router)
 app.include_router(ws_router)
 
 # Prometheus metrics at /metrics

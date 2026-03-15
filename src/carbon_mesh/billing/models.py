@@ -31,24 +31,32 @@ class BillingStatus(BaseModel):
     remaining: int
 
 
-# Tier definitions
+# Tier definitions — compliance SaaS pricing
 TIERS: dict[str, PlanInfo] = {
     "free": PlanInfo(
         tier="free",
         name="Free",
         daily_limit=100,
         price_cents=0,
-        features=["100 route requests/day", "Mock data only", "Community support"],
+        features=[
+            "100 API requests/day",
+            "Mock carbon data",
+            "Basic compliance report (demo)",
+            "Community support",
+        ],
     ),
     "pro": PlanInfo(
         tier="pro",
         name="Pro",
-        daily_limit=10_000,
-        price_cents=2900,
+        daily_limit=50_000,
+        price_cents=49900,  # $499/mo
         features=[
-            "10,000 route requests/day",
-            "Live grid data (EIA, ENTSO-E, AEMO, etc.)",
-            "Carbon accounting dashboard",
+            "50,000 API requests/day",
+            "11 live government data sources",
+            "CSRD / ESRS E1 compliance reports",
+            "Scope 2 + Scope 3 Cat 1 calculations",
+            "AWS, GCP, Azure usage ingestion",
+            "CSV/JSON report export",
             "Email support",
         ],
     ),
@@ -56,14 +64,18 @@ TIERS: dict[str, PlanInfo] = {
         tier="enterprise",
         name="Enterprise",
         daily_limit=1_000_000,
-        price_cents=0,  # Custom pricing
+        price_cents=0,  # Custom pricing — $2K-$10K/mo
         features=[
-            "Unlimited route requests",
-            "Live grid data from all providers",
-            "Carbon SLA guarantee",
-            "Scope 3 emissions reports",
+            "Unlimited API requests",
+            "All government data sources",
+            "Full CSRD + EU Taxonomy reporting",
+            "Scope 2 (location + market) + Scope 3",
+            "Multi-org tenant isolation",
+            "SSO / SAML integration",
+            "Custom cloud provider adapters",
+            "Audit trail with data provenance",
             "Dedicated support + SLA",
-            "Custom integrations",
+            "On-premise deployment option",
         ],
     ),
 }
