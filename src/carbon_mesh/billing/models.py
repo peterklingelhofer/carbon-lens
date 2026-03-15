@@ -31,7 +31,7 @@ class BillingStatus(BaseModel):
     remaining: int
 
 
-# Tier definitions — compliance SaaS pricing
+# Tier definitions — Green ZK Broker pricing
 TIERS: dict[str, PlanInfo] = {
     "free": PlanInfo(
         tier="free",
@@ -40,8 +40,9 @@ TIERS: dict[str, PlanInfo] = {
         price_cents=0,
         features=[
             "100 API requests/day",
-            "Mock carbon data",
-            "Basic compliance report (demo)",
+            "Simulated proof routing",
+            "Mock prover networks",
+            "Live carbon intensity data",
             "Community support",
         ],
     ),
@@ -49,14 +50,15 @@ TIERS: dict[str, PlanInfo] = {
         tier="pro",
         name="Pro",
         daily_limit=50_000,
-        price_cents=49900,  # $499/mo
+        price_cents=9900,  # $99/mo + 5% of bounties
         features=[
             "50,000 API requests/day",
-            "11 live government data sources",
-            "CSRD / ESRS E1 compliance reports",
-            "Scope 2 + Scope 3 Cat 1 calculations",
-            "AWS, GCP, Azure usage ingestion",
-            "CSV/JSON report export",
+            "Live prover network connections",
+            "All 11 carbon data sources",
+            "Automated job dispatch",
+            "Carbon policy engine",
+            "Earnings dashboard + CSV export",
+            "5% broker fee on bounties",
             "Email support",
         ],
     ),
@@ -64,18 +66,17 @@ TIERS: dict[str, PlanInfo] = {
         tier="enterprise",
         name="Enterprise",
         daily_limit=1_000_000,
-        price_cents=0,  # Custom pricing — $2K-$10K/mo
+        price_cents=0,  # Custom — negotiated broker fee
         features=[
             "Unlimited API requests",
-            "All government data sources",
-            "Full CSRD + EU Taxonomy reporting",
-            "Scope 2 (location + market) + Scope 3",
+            "Custom prover network integrations",
+            "Private GPU fleet management",
+            "Behind-the-meter facility routing",
+            "Custom carbon policy + SLAs",
             "Multi-org tenant isolation",
-            "SSO / SAML integration",
-            "Custom cloud provider adapters",
-            "Audit trail with data provenance",
+            "Negotiated broker fee",
+            "White-label API",
             "Dedicated support + SLA",
-            "On-premise deployment option",
         ],
     ),
 }

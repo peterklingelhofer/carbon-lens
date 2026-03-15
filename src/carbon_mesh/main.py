@@ -23,6 +23,7 @@ from carbon_mesh.billing.routes import billing_router
 from carbon_mesh.config import settings
 from carbon_mesh.compliance.routes import router as compliance_router
 from carbon_mesh.orgs.routes import org_router, webhook_router
+from carbon_mesh.zk.routes import router as zk_router
 
 from carbon_mesh.logging_config import setup_logging
 
@@ -138,17 +139,17 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Carbon Mesh Control Plane",
     description=(
-        "Cloud carbon emissions measurement, compliance reporting, and optimization platform.\n\n"
-        "## Compliance & Reporting\n"
-        "- **CSRD / ESRS E1 aligned** — Scope 2 (location + market-based) and Scope 3 Cat 1\n"
-        "- **GHG Protocol methodology** — auditable calculations with full data provenance\n"
-        "- **Cloud usage ingestion** — AWS Cost Explorer, GCP Billing, Azure Cost Management, CSV\n"
-        "- **Export** — JSON and CSV reports for auditors and regulators\n\n"
+        "Green ZK Proof Broker — routes zero-knowledge proof generation to the "
+        "cheapest, greenest GPU compute on Earth.\n\n"
+        "## ZK Broker\n"
+        "- **Decentralized prover networks** — Boundless, Succinct, Gevulot, Aleo, Scroll, zkSync\n"
+        "- **Green compute routing** — hyperscaler spot, hydro-powered ASIC centers, alt-cloud GPUs\n"
+        "- **Carbon policy engine** — reject dirty compute, prefer behind-the-meter renewables\n"
+        "- **Profit optimization** — only dispatch when bounty > compute cost + margin\n\n"
         "## Carbon Intelligence\n"
         "- **11 government-verified data sources** — UK, EIA, AEMO, Grid India, ONS Brazil, "
         "Eskom, GridStatus, ENTSO-E, Open-Meteo, Electricity Maps\n"
-        "- **75+ cloud regions** across AWS, GCP, and Azure\n"
-        "- **Real-time optimization** — route workloads to lowest-carbon regions\n\n"
+        "- **Real-time grid carbon intensity** for every compute provider region\n\n"
         "## Authentication\n"
         "When `CARBON_MESH_API_KEY_REQUIRED=true`, pass your key via the `X-API-Key` header."
     ),
@@ -160,6 +161,7 @@ app = FastAPI(
         {"name": "Routing", "description": "Find the greenest cloud region for your workload"},
         {"name": "Regions", "description": "Explore supported cloud regions across AWS, GCP, and Azure"},
         {"name": "Carbon Data", "description": "Get real-time carbon intensity for specific regions"},
+        {"name": "ZK Broker", "description": "Green ZK proof generation — job routing, dispatch, and earnings"},
         {"name": "Compliance", "description": "CSRD-aligned emissions measurement, calculation, and reporting"},
         {"name": "Accounting", "description": "Track carbon savings from routed workloads"},
         {"name": "Billing", "description": "Usage tracking, tier limits, and plan management"},
@@ -281,6 +283,7 @@ app.include_router(billing_router, prefix="/api/v1", tags=["Billing"])
 app.include_router(org_router, prefix="/api/v1", tags=["Organizations"])
 app.include_router(webhook_router, prefix="/api/v1")
 app.include_router(compliance_router)
+app.include_router(zk_router)
 app.include_router(ws_router)
 
 # Prometheus metrics at /metrics
