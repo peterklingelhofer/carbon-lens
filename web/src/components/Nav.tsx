@@ -55,6 +55,9 @@ export function Nav() {
           <NavLink to="/dashboard" style={linkStyle}>
             Dashboard
           </NavLink>
+          <NavLink to="/compliance" style={linkStyle}>
+            Compliance
+          </NavLink>
           <NavLink to="/route" style={linkStyle}>
             Route
           </NavLink>

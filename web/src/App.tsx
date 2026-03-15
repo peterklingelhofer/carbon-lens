@@ -7,6 +7,7 @@ import { RouteDemo } from "./pages/RouteDemo";
 import { Settings } from "./pages/Settings";
 import { Plans } from "./pages/Plans";
 import { Organizations } from "./pages/Organizations";
+import { Compliance } from "./pages/Compliance";
 import { NotFound } from "./pages/NotFound";
 
 export default function App() {
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="/route" element={<RouteDemo />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/plans" element={<Plans />} />
+        <Route path="/compliance" element={<Compliance />} />
         <Route path="/orgs" element={<Organizations />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
