@@ -1,14 +1,19 @@
 import type {
   BillingStatus,
+  CalculationResponse,
   CarbonIntensity,
   CarbonSavingsReport,
   CloudRegion,
+  ComplianceReport,
+  ComplianceReportSummary,
   HealthResponse,
   Organization,
   PlanInfo,
   RegionLookup,
   RouteRequest,
   RouteResponse,
+  UsageIngestionRequest,
+  UsageIngestionResponse,
 } from "./types";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -85,5 +90,40 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ plan }),
       }),
+  },
+
+  // Compliance
+  compliance: {
+    ingestUsage: (body: UsageIngestionRequest) =>
+      request<UsageIngestionResponse>("/api/v1/compliance/usage/ingest", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+
+    calculate: (orgId: string, method: string = "location_based") =>
+      request<CalculationResponse>("/api/v1/compliance/calculate", {
+        method: "POST",
+        body: JSON.stringify({ org_id: orgId, method }),
+      }),
+
+    generateReport: (body: {
+      org_id: string;
+      org_name: string;
+      report_name?: string;
+    }) =>
+      request<ComplianceReport>("/api/v1/compliance/reports/generate", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+
+    listReports: (orgId: string) =>
+      request<ComplianceReportSummary[]>(
+        `/api/v1/compliance/reports?org_id=${orgId}`
+      ),
+
+    getReport: (reportId: string, orgId: string) =>
+      request<ComplianceReport>(
+        `/api/v1/compliance/reports/${reportId}?org_id=${orgId}`
+      ),
   },
 };
