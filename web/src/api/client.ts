@@ -1,17 +1,22 @@
 import type {
   BillingStatus,
+  BrokerStats,
   CalculationResponse,
   CarbonIntensity,
+  CarbonPolicy,
   CarbonSavingsReport,
   CloudRegion,
   ComplianceReport,
   ComplianceReportSummary,
+  ComputeOption,
   HealthResponse,
   Organization,
   PlanInfo,
+  ProofJob,
   RegionLookup,
   RouteRequest,
   RouteResponse,
+  SimulateResponse,
   UsageIngestionRequest,
   UsageIngestionResponse,
 } from "./types";
@@ -90,6 +95,41 @@ export const api = {
         method: "POST",
         body: JSON.stringify({ plan }),
       }),
+  },
+
+  // ZK Broker
+  zk: {
+    availableJobs: (network?: string) =>
+      request<ProofJob[]>(
+        `/api/v1/zk/jobs/available${network ? `?network=${network}` : ""}`
+      ),
+
+    simulate: (body: {
+      network?: string;
+      bounty_usd?: number;
+      circuit_size?: number;
+      min_vram_gb?: number;
+      max_carbon_intensity?: number | null;
+    }) =>
+      request<SimulateResponse>("/api/v1/zk/simulate", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+
+    stats: () => request<BrokerStats>("/api/v1/zk/stats"),
+
+    policy: () => request<CarbonPolicy>("/api/v1/zk/policy"),
+
+    updatePolicy: (policy: CarbonPolicy) =>
+      request<CarbonPolicy>("/api/v1/zk/policy", {
+        method: "PUT",
+        body: JSON.stringify(policy),
+      }),
+
+    computeOptions: (minVram?: number) =>
+      request<ComputeOption[]>(
+        `/api/v1/zk/compute/available${minVram ? `?min_vram_gb=${minVram}` : ""}`
+      ),
   },
 
   // Compliance
