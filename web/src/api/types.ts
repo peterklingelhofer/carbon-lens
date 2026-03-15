@@ -110,3 +110,73 @@ export interface RegionLookup {
   provider: string;
   region: string;
 }
+
+// --- Compliance types ---
+
+export interface UsageIngestionRequest {
+  org_id: string;
+  provider: string;
+  period_start: string;
+  period_end: string;
+  credentials?: Record<string, string>;
+}
+
+export interface UsageIngestionResponse {
+  records_ingested: number;
+  total_energy_kwh: number;
+  providers_covered: string[];
+  regions_covered: string[];
+}
+
+export interface CalculationResponse {
+  calculations_count: number;
+  total_emissions_kgco2e: number;
+  scope2_kgco2e: number;
+  scope3_kgco2e: number;
+  data_sources_used: string[];
+}
+
+export interface ComplianceReportSummary {
+  id: string;
+  report_name: string;
+  period_start: string;
+  period_end: string;
+  generated_at: string;
+  total_kgco2e: number;
+  total_energy_kwh: number;
+  carbon_saved_percentage: number;
+}
+
+export interface ComplianceReport {
+  id: string;
+  org_id: string;
+  org_name: string;
+  report_name: string;
+  period_start: string;
+  period_end: string;
+  generated_at: string;
+  scope2_location_kgco2e: number;
+  scope2_location_by_provider: Record<string, number>;
+  scope2_location_by_region: Record<string, number>;
+  scope2_market_kgco2e: number;
+  scope2_market_by_provider: Record<string, number>;
+  scope2_market_by_region: Record<string, number>;
+  scope3_cat1_kgco2e: number;
+  scope3_cat1_by_provider: Record<string, number>;
+  scope3_cat1_by_service: Record<string, number>;
+  total_kgco2e: number;
+  total_energy_kwh: number;
+  avg_renewable_percentage: number;
+  total_cloud_regions_used: number;
+  total_providers_used: number;
+  carbon_saved_kgco2e: number;
+  carbon_saved_percentage: number;
+  methodology: string;
+  data_sources: string[];
+  data_quality_summary: Record<string, number>;
+  reporting_standard: string;
+  calculation_count: number;
+  eu_taxonomy_eligible: boolean;
+  eu_taxonomy_aligned: boolean;
+  taxonomy_notes: string;
+}
