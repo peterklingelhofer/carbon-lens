@@ -34,6 +34,21 @@ _orchestrator: JobOrchestrator | None = None
 _executor = None
 _spot_feed = None
 _wallet = None
+_poller = None
+
+
+def _policy_from_config() -> CarbonPolicy:
+    """Build CarbonPolicy from environment variables."""
+    from carbon_mesh.config import settings
+    return CarbonPolicy(
+        max_carbon_intensity_gco2_kwh=settings.zk_max_carbon_intensity,
+        min_renewable_percentage=settings.zk_min_renewable_pct,
+        require_behind_the_meter=settings.zk_require_behind_the_meter,
+        prefer_behind_the_meter=settings.zk_prefer_behind_the_meter,
+        carbon_weight=settings.zk_carbon_weight,
+        cost_weight=settings.zk_cost_weight,
+        min_profit_margin_pct=settings.zk_min_profit_margin_pct,
+    )
 
 
 def _get_orchestrator() -> JobOrchestrator:
@@ -42,6 +57,7 @@ def _get_orchestrator() -> JobOrchestrator:
         _orchestrator = JobOrchestrator(
             carbon_source=get_carbon_source(),
             grid_mapper=get_grid_mapper(),
+            policy=_policy_from_config(),
         )
     return _orchestrator
 
@@ -51,7 +67,11 @@ def _get_executor():
     if _executor is None:
         from carbon_mesh.zk.executor import JobExecutor
         orchestrator = _get_orchestrator()
-        _executor = JobExecutor(store=orchestrator.store, metrics=broker_metrics)
+        _executor = JobExecutor(
+            store=orchestrator.store,
+            metrics=broker_metrics,
+            carbon_policy=orchestrator.policy,
+        )
     return _executor
 
 
@@ -316,13 +336,17 @@ async def get_policy() -> CarbonPolicy:
 
 @router.put("/policy", response_model=CarbonPolicy)
 async def update_policy(policy: CarbonPolicy) -> CarbonPolicy:
-    """Update carbon routing policy."""
+    """Update carbon routing policy (applies to both orchestrator and executor)."""
     orchestrator = _get_orchestrator()
     orchestrator.policy = policy
+    # Sync policy to executor so pre-dispatch re-validation uses new thresholds
+    executor = _get_executor()
+    executor.policy = policy
     logger.info(
-        "Carbon policy updated: max_intensity=%s, min_renewable=%s%%",
+        "Carbon policy updated: max_intensity=%s gCO2/kWh, min_renewable=%s%%, btm_required=%s",
         policy.max_carbon_intensity_gco2_kwh,
         policy.min_renewable_percentage,
+        policy.require_behind_the_meter,
     )
     return policy
 
@@ -373,3 +397,37 @@ async def get_wallet_transactions() -> list[dict]:
     """Get recent wallet transactions (proof submissions and bounty claims)."""
     wallet = _get_wallet()
     return [tx.model_dump() for tx in wallet.get_transaction_log()]
+
+
+@router.get("/poller/status")
+async def poller_status() -> dict:
+    """Get the background job poller status."""
+    global _poller
+    if _poller is None:
+        return {"running": False, "message": "Poller not started. Set CARBON_MESH_ZK_EXECUTOR_ENABLED=true."}
+    return _poller.get_status()
+
+
+@router.post("/poller/start")
+async def start_poller() -> dict:
+    """Start the background job poller."""
+    global _poller
+    if _poller is None:
+        from carbon_mesh.zk.poller import JobPoller
+        _poller = JobPoller(
+            orchestrator=_get_orchestrator(),
+            executor=_get_executor(),
+            auto_execute=False,  # Evaluate-only by default; set True for autopilot
+        )
+    await _poller.start()
+    return _poller.get_status()
+
+
+@router.post("/poller/stop")
+async def stop_poller() -> dict:
+    """Stop the background job poller."""
+    global _poller
+    if _poller is None:
+        return {"running": False}
+    await _poller.stop()
+    return _poller.get_status()
