@@ -9,14 +9,19 @@ import type {
   ComplianceReport,
   ComplianceReportSummary,
   ComputeOption,
+  ExecuteResponse,
   HealthResponse,
+  JobEvent,
+  JobResult,
   Organization,
   PlanInfo,
+  PollerStatus,
   ProofJob,
   RegionLookup,
   RouteRequest,
   RouteResponse,
   SimulateResponse,
+  SpotPriceQuote,
   UsageIngestionRequest,
   UsageIngestionResponse,
 } from "./types";
@@ -130,6 +135,56 @@ export const api = {
       request<ComputeOption[]>(
         `/api/v1/zk/compute/available${minVram ? `?min_vram_gb=${minVram}` : ""}`
       ),
+
+    execute: (body: { job: ProofJob }) =>
+      request<ExecuteResponse>("/api/v1/zk/jobs/execute", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+
+    jobStatus: (jobId: string) =>
+      request<JobResult | null>(`/api/v1/zk/jobs/${jobId}/status`),
+
+    cancelJob: (jobId: string) =>
+      request<{ job_id: string; cancelled: boolean }>(
+        `/api/v1/zk/jobs/${jobId}/cancel`,
+        { method: "POST" }
+      ),
+
+    activeJobs: () =>
+      request<{ count: number; jobs: Record<string, unknown> }>(
+        "/api/v1/zk/jobs/active"
+      ),
+
+    spotPrices: () =>
+      request<SpotPriceQuote[]>("/api/v1/zk/compute/spot-prices"),
+
+    metrics: () => request<Record<string, unknown>>("/api/v1/zk/metrics"),
+
+    events: (limit?: number) =>
+      request<JobEvent[]>(
+        `/api/v1/zk/events${limit ? `?limit=${limit}` : ""}`
+      ),
+
+    proverNetworks: () =>
+      request<
+        Array<{
+          network: string;
+          proof_system: string;
+          image: string;
+          gpu_required: boolean;
+          min_vram_gb: number;
+        }>
+      >("/api/v1/zk/runtime/networks"),
+
+    pollerStatus: () =>
+      request<PollerStatus>("/api/v1/zk/poller/status"),
+
+    startPoller: () =>
+      request<PollerStatus>("/api/v1/zk/poller/start", { method: "POST" }),
+
+    stopPoller: () =>
+      request<PollerStatus>("/api/v1/zk/poller/stop", { method: "POST" }),
   },
 
   // Compliance

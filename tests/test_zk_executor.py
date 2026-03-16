@@ -553,13 +553,14 @@ async def test_executor_handles_failure_gracefully():
     from carbon_mesh.zk.persistence import InMemoryJobStore
 
     # The LocalDockerBackend will fail because the prover image doesn't exist locally
-    # This tests the error handling path
+    # This tests the error handling path (with retries)
     store = InMemoryJobStore()
     metrics = BrokerMetrics()
     executor = JobExecutor(
         compute_backend=LocalDockerBackend(),
         store=store,
         metrics=metrics,
+        max_retries=0,  # Disable retries for this test
     )
 
     job = _make_job()
@@ -650,3 +651,295 @@ def test_transaction_receipt_model():
     receipt = TransactionReceipt(tx_hash="0x" + "b" * 64)
     assert receipt.status == "pending"
     assert receipt.block_number == 0
+
+
+# --- Deadline scheduling tests ---
+
+
+@pytest.mark.asyncio
+async def test_orchestrator_rejects_infeasible_deadline():
+    """Jobs that can't complete before deadline should be rejected."""
+    from carbon_mesh.zk.orchestrator import JobOrchestrator
+    from carbon_mesh.carbon_sources.mock import MockCarbonSource
+    from carbon_mesh.grid.mapper import GridMapper
+    from carbon_mesh.config import settings
+
+    orch = JobOrchestrator(
+        carbon_source=MockCarbonSource(),
+        grid_mapper=GridMapper(settings.region_map_path),
+        policy=CarbonPolicy(max_carbon_intensity_gco2_kwh=500, min_renewable_percentage=0, min_profit_margin_pct=0),
+    )
+    now = datetime.now(timezone.utc)
+    # Job with deadline 30 seconds from now, but needs 3 minutes of GPU time
+    job = ProofJob(
+        id="deadline-test-1",
+        network=ProverNetwork.BOUNDLESS,
+        proof_system=ProofSystem.RISC_ZERO,
+        circuit_size=20,
+        input_size_bytes=1024,
+        bounty_usd=10.0,
+        bounty_token="USDC",
+        bounty_amount=10.0,
+        deadline=now + timedelta(seconds=30),
+        posted_at=now,
+        estimated_gpu_minutes=3.0,
+        min_vram_gb=16,
+    )
+    decision = await orch.evaluate_job(job)
+    assert decision is None
+    result = orch._results.get(job.id)
+    assert result is not None
+    assert "infeasible" in result.error.lower()
+
+
+@pytest.mark.asyncio
+async def test_orchestrator_accepts_feasible_deadline():
+    """Jobs with enough time should not be rejected by deadline check."""
+    from carbon_mesh.zk.orchestrator import JobOrchestrator
+    from carbon_mesh.carbon_sources.mock import MockCarbonSource
+    from carbon_mesh.grid.mapper import GridMapper
+    from carbon_mesh.config import settings
+
+    orch = JobOrchestrator(
+        carbon_source=MockCarbonSource(),
+        grid_mapper=GridMapper(settings.region_map_path),
+        policy=CarbonPolicy(max_carbon_intensity_gco2_kwh=500, min_renewable_percentage=0, min_profit_margin_pct=0),
+    )
+    now = datetime.now(timezone.utc)
+    job = ProofJob(
+        id="deadline-test-2",
+        network=ProverNetwork.BOUNDLESS,
+        proof_system=ProofSystem.RISC_ZERO,
+        circuit_size=20,
+        input_size_bytes=1024,
+        bounty_usd=10.0,
+        bounty_token="USDC",
+        bounty_amount=10.0,
+        deadline=now + timedelta(minutes=15),
+        posted_at=now,
+        estimated_gpu_minutes=3.0,
+        min_vram_gb=16,
+    )
+    decision = await orch.evaluate_job(job)
+    assert decision is not None
+
+
+# --- Executor retry tests ---
+
+
+@pytest.mark.asyncio
+async def test_executor_retryable_error_detection():
+    from carbon_mesh.zk.executor import JobExecutor
+
+    executor = JobExecutor()
+    assert executor._is_retryable("Instance failed to start: timeout")
+    assert executor._is_retryable("container failed with OOM")
+    assert executor._is_retryable("SSH not ready after 300s")
+    assert executor._is_retryable("Prover produced no output")
+    assert not executor._is_retryable("Proof verification failed: invalid proof")
+    assert not executor._is_retryable("Insufficient margin")
+
+
+@pytest.mark.asyncio
+async def test_executor_has_time_remaining():
+    from carbon_mesh.zk.executor import JobExecutor
+
+    executor = JobExecutor()
+    now = datetime.now(timezone.utc)
+
+    job_plenty = _make_job()  # Default: 15 min deadline
+    assert executor._has_time_remaining(job_plenty)
+
+    job_expired = ProofJob(
+        id="expired",
+        network=ProverNetwork.BOUNDLESS,
+        proof_system=ProofSystem.RISC_ZERO,
+        circuit_size=20,
+        input_size_bytes=1024,
+        bounty_usd=5.0,
+        bounty_token="USDC",
+        bounty_amount=5.0,
+        deadline=now - timedelta(minutes=1),  # Already expired
+        posted_at=now - timedelta(minutes=16),
+        estimated_gpu_minutes=3.0,
+        min_vram_gb=16,
+    )
+    assert not executor._has_time_remaining(job_expired)
+
+
+# --- Poller tests ---
+
+
+@pytest.mark.asyncio
+async def test_poller_status():
+    from carbon_mesh.zk.poller import JobPoller
+    from carbon_mesh.zk.orchestrator import JobOrchestrator
+    from carbon_mesh.carbon_sources.mock import MockCarbonSource
+    from carbon_mesh.grid.mapper import GridMapper
+    from carbon_mesh.config import settings
+
+    orch = JobOrchestrator(
+        carbon_source=MockCarbonSource(),
+        grid_mapper=GridMapper(settings.region_map_path),
+    )
+    poller = JobPoller(orchestrator=orch, poll_interval_seconds=60)
+
+    status = poller.get_status()
+    assert status["running"] is False
+    assert status["polls_completed"] == 0
+    assert len(status["networks"]) == 8
+
+
+@pytest.mark.asyncio
+async def test_poller_poll_once():
+    from carbon_mesh.zk.poller import JobPoller
+    from carbon_mesh.zk.orchestrator import JobOrchestrator
+    from carbon_mesh.carbon_sources.mock import MockCarbonSource
+    from carbon_mesh.grid.mapper import GridMapper
+    from carbon_mesh.config import settings
+
+    orch = JobOrchestrator(
+        carbon_source=MockCarbonSource(),
+        grid_mapper=GridMapper(settings.region_map_path),
+    )
+    poller = JobPoller(orchestrator=orch)
+
+    await poller._poll_once()
+    assert poller.polls_completed == 1
+    assert poller.jobs_discovered > 0  # Should find mock jobs
+
+
+# --- Carbon policy enforcement tests ---
+
+
+def test_carbon_policy_defaults_are_strict():
+    """Default CarbonPolicy should enforce near-zero-carbon compute."""
+    policy = CarbonPolicy()
+    assert policy.max_carbon_intensity_gco2_kwh == 10.0  # Near-zero
+    assert policy.min_renewable_percentage == 95.0  # 95%+
+    assert policy.require_behind_the_meter is True  # BTM only
+    assert policy.prefer_behind_the_meter is True
+    assert policy.carbon_weight == 0.7  # Carbon-heavy scoring
+
+
+@pytest.mark.asyncio
+async def test_orchestrator_btm_only_rejects_grid_connected():
+    """With require_behind_the_meter=True, grid-connected providers should be rejected."""
+    from carbon_mesh.zk.orchestrator import JobOrchestrator
+    from carbon_mesh.carbon_sources.mock import MockCarbonSource
+    from carbon_mesh.grid.mapper import GridMapper
+    from carbon_mesh.config import settings
+
+    # Default policy: BTM required, near-zero carbon
+    policy = CarbonPolicy()
+    orch = JobOrchestrator(
+        carbon_source=MockCarbonSource(),
+        grid_mapper=GridMapper(settings.region_map_path),
+        policy=policy,
+    )
+
+    # The mock carbon source returns ~100 gCO2/kWh for grid zones,
+    # and BTM providers have hardcoded low values.
+    # With default strict policy, only BTM providers should pass.
+    job = _make_job(bounty_usd=100.0)  # High bounty to ensure profitability
+    decision = await orch.evaluate_job(job)
+
+    if decision is not None:
+        # If a decision was made, it MUST be a BTM provider
+        assert decision.chosen_provider.is_behind_the_meter, (
+            f"Policy requires BTM but chose {decision.chosen_provider.provider.value} "
+            f"(BTM={decision.chosen_provider.is_behind_the_meter})"
+        )
+        assert decision.chosen_provider.carbon_intensity_gco2_kwh <= policy.max_carbon_intensity_gco2_kwh
+        assert decision.chosen_provider.renewable_percentage >= policy.min_renewable_percentage
+
+
+@pytest.mark.asyncio
+async def test_orchestrator_relaxed_policy_allows_grid():
+    """With require_behind_the_meter=False and high thresholds, grid providers should pass."""
+    from carbon_mesh.zk.orchestrator import JobOrchestrator
+    from carbon_mesh.carbon_sources.mock import MockCarbonSource
+    from carbon_mesh.grid.mapper import GridMapper
+    from carbon_mesh.config import settings
+
+    policy = CarbonPolicy(
+        max_carbon_intensity_gco2_kwh=500,
+        min_renewable_percentage=0,
+        require_behind_the_meter=False,
+        min_profit_margin_pct=0,
+    )
+    orch = JobOrchestrator(
+        carbon_source=MockCarbonSource(),
+        grid_mapper=GridMapper(settings.region_map_path),
+        policy=policy,
+    )
+
+    job = _make_job(bounty_usd=100.0)
+    decision = await orch.evaluate_job(job)
+    assert decision is not None  # Should find options with relaxed policy
+
+
+@pytest.mark.asyncio
+async def test_executor_blocks_non_compliant_provider():
+    """Executor should block dispatch if provider no longer meets carbon policy."""
+    from carbon_mesh.zk.executor import JobExecutor
+    from carbon_mesh.zk.gpu_lifecycle import LocalDockerBackend
+    from carbon_mesh.zk.monitoring import BrokerMetrics
+    from carbon_mesh.zk.persistence import InMemoryJobStore
+
+    store = InMemoryJobStore()
+    metrics = BrokerMetrics()
+    # Strict policy: BTM required, 0 gCO2/kWh max
+    strict_policy = CarbonPolicy(
+        max_carbon_intensity_gco2_kwh=0,
+        min_renewable_percentage=100,
+        require_behind_the_meter=True,
+    )
+    executor = JobExecutor(
+        compute_backend=LocalDockerBackend(),
+        store=store,
+        metrics=metrics,
+        max_retries=0,
+        carbon_policy=strict_policy,
+    )
+
+    job = _make_job()
+    # Create a decision with a NON-BTM provider (e.g., AWS spot)
+    non_green_decision = DispatchDecision(
+        job_id=job.id,
+        chosen_provider=ComputeOption(
+            provider=ComputeProvider.AWS_SPOT,
+            region="us-east-1",
+            gpu_type=GPUType.A100_40GB,
+            gpu_count=1,
+            vram_gb=40,
+            cost_per_gpu_hour_usd=1.10,
+            estimated_job_cost_usd=0.055,
+            grid_zone="US-MIDA-PJM",
+            carbon_intensity_gco2_kwh=350.0,  # Dirty!
+            renewable_percentage=20.0,
+            is_behind_the_meter=False,
+        ),
+        carbon_score=0.7,
+        cost_score=0.01,
+        combined_score=0.5,
+        estimated_profit_usd=4.0,
+        profit_margin_pct=80.0,
+        carbon_grams_co2=100.0,
+        carbon_saved_vs_grid_avg_grams=0.0,
+        dispatched_at=datetime.now(timezone.utc),
+    )
+
+    await store.save_job(job)
+    result = await executor.execute(job, non_green_decision)
+
+    assert result.status == JobStatus.FAILED
+    assert "carbon policy violation" in result.error.lower()
+
+
+def test_executor_carbon_violation_not_retryable():
+    """Carbon policy violations must never be retried."""
+    from carbon_mesh.zk.executor import JobExecutor
+    assert not JobExecutor._is_retryable("Carbon policy violation: aws_spot has 350 gCO2/kWh")
+    # Infrastructure failures should still be retryable
+    assert JobExecutor._is_retryable("Instance failed to start: timeout")

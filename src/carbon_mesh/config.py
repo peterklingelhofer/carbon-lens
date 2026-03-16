@@ -67,6 +67,15 @@ class Settings(BaseSettings):
     # SSH compute hosts (JSON string: {"iren": {"host": "...", "port": 22, "user": "root"}})
     zk_ssh_hosts: str = ""
 
+    # ZK Broker — carbon policy (enforced at evaluation AND execution)
+    zk_max_carbon_intensity: float = 10.0  # gCO2/kWh — 10 = near-zero, 0 = absolute zero
+    zk_min_renewable_pct: float = 95.0  # Minimum renewable energy percentage
+    zk_require_behind_the_meter: bool = True  # Only dispatch to BTM renewable facilities
+    zk_prefer_behind_the_meter: bool = True  # Prefer BTM when not required
+    zk_carbon_weight: float = 0.7  # Carbon vs cost weight (0-1)
+    zk_cost_weight: float = 0.3  # Cost vs carbon weight (0-1)
+    zk_min_profit_margin_pct: float = 10.0  # Minimum profit margin to accept a job
+
     @property
     def configured_providers(self) -> dict[str, bool]:
         """Return which data providers have credentials configured."""

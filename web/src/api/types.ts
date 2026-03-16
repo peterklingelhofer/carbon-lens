@@ -195,6 +195,60 @@ export interface CarbonPolicy {
   min_profit_margin_pct: number;
 }
 
+export interface JobResult {
+  job_id: string;
+  status: string;
+  proof_hash: string;
+  proof_size_bytes: number;
+  verification_tx: string;
+  gpu_seconds: number;
+  total_seconds: number;
+  started_at: string | null;
+  completed_at: string | null;
+  compute_cost_usd: number;
+  bounty_earned_usd: number;
+  profit_usd: number;
+  carbon_grams_co2: number;
+  renewable_percentage: number;
+  error: string;
+}
+
+export interface ExecuteResponse {
+  decision: DispatchDecision | null;
+  result: JobResult | null;
+  rejected: boolean;
+  rejection_reason: string;
+}
+
+export interface SpotPriceQuote {
+  provider: string;
+  region: string;
+  gpu_type: string;
+  price_per_hour_usd: number;
+  available: boolean;
+  interruption_rate_pct: number;
+  fetched_at: string;
+}
+
+export interface JobEvent {
+  job_id: string;
+  event_type: string;
+  timestamp: string;
+  details: Record<string, unknown>;
+  duration_ms: number;
+}
+
+export interface PollerStatus {
+  running: boolean;
+  poll_interval_seconds?: number;
+  auto_execute?: boolean;
+  networks?: string[];
+  polls_completed?: number;
+  jobs_discovered?: number;
+  jobs_auto_dispatched?: number;
+  message?: string;
+}
+
 // --- Compliance types ---
 
 export interface UsageIngestionRequest {

@@ -20,6 +20,7 @@ import time
 from datetime import datetime, timezone
 
 from carbon_mesh.models.zk import (
+    CarbonPolicy,
     DispatchDecision,
     GPUInstance,
     InstanceStatus,
@@ -56,6 +57,8 @@ class JobExecutor:
         metrics: BrokerMetrics | None = None,
         max_concurrent_jobs: int = 4,
         auto_claim_bounty: bool = True,
+        max_retries: int = 2,
+        carbon_policy: CarbonPolicy | None = None,
     ) -> None:
         self._compute = compute_backend or LocalDockerBackend()
         self._runtime = prover_runtime or ProverRuntime()
@@ -65,13 +68,27 @@ class JobExecutor:
         self._metrics = metrics or broker_metrics
         self._semaphore = asyncio.Semaphore(max_concurrent_jobs)
         self._auto_claim = auto_claim_bounty
+        self._max_retries = max_retries
+        self._policy = carbon_policy or CarbonPolicy()
 
         # Active jobs tracking
         self._active_jobs: dict[str, GPUInstance] = {}
         self._running = False
 
+    @property
+    def policy(self) -> CarbonPolicy:
+        return self._policy
+
+    @policy.setter
+    def policy(self, value: CarbonPolicy) -> None:
+        self._policy = value
+
     async def execute(self, job: ProofJob, decision: DispatchDecision) -> JobResult:
         """Execute a single proof job through the full pipeline.
+
+        Includes automatic retry on spot instance interruptions —
+        if a GPU is preempted mid-proof, the job is retried on the
+        next available green compute option (up to max_retries).
 
         Steps:
         1. Persist job state as DISPATCHED
@@ -84,7 +101,82 @@ class JobExecutor:
         8. Record final result
         """
         async with self._semaphore:
-            return await self._execute_inner(job, decision)
+            result = await self._execute_inner(job, decision)
+
+            # Retry on infrastructure failures (spot interruption, OOM, etc.)
+            retries = 0
+            while (
+                result.status == JobStatus.FAILED
+                and retries < self._max_retries
+                and self._is_retryable(result.error)
+                and self._has_time_remaining(job)
+            ):
+                retries += 1
+                logger.warning(
+                    "Retrying job %s (attempt %d/%d): %s",
+                    job.id, retries + 1, self._max_retries + 1, result.error,
+                )
+                result = await self._execute_inner(job, decision)
+
+            return result
+
+    def _check_carbon_compliance(self, provider: "ComputeOption") -> bool:
+        """Verify a compute option still meets carbon policy.
+
+        Called immediately before GPU provisioning to catch policy changes
+        that occurred between evaluation and execution.
+        """
+        if provider.carbon_intensity_gco2_kwh > self._policy.max_carbon_intensity_gco2_kwh:
+            logger.warning(
+                "Carbon compliance BLOCKED: %s/%s has %.1f gCO2/kWh > max %.1f",
+                provider.provider.value, provider.region,
+                provider.carbon_intensity_gco2_kwh,
+                self._policy.max_carbon_intensity_gco2_kwh,
+            )
+            return False
+        if provider.renewable_percentage < self._policy.min_renewable_percentage:
+            logger.warning(
+                "Carbon compliance BLOCKED: %s/%s has %.1f%% renewable < min %.1f%%",
+                provider.provider.value, provider.region,
+                provider.renewable_percentage,
+                self._policy.min_renewable_percentage,
+            )
+            return False
+        if self._policy.require_behind_the_meter and not provider.is_behind_the_meter:
+            logger.warning(
+                "Carbon compliance BLOCKED: %s/%s is not behind-the-meter (required by policy)",
+                provider.provider.value, provider.region,
+            )
+            return False
+        return True
+
+    @staticmethod
+    def _is_retryable(error: str) -> bool:
+        """Determine if a failure is retryable (infrastructure vs. logic error)."""
+        # Carbon policy violations are NEVER retryable
+        if "carbon policy violation" in error.lower():
+            return False
+        retryable_patterns = [
+            "Instance failed to start",
+            "Prover produced no output",
+            "container failed",
+            "SSH not ready",
+            "Connection refused",
+            "timeout",
+            "preempted",
+            "interrupted",
+            "OOM",
+            "out of memory",
+        ]
+        error_lower = error.lower()
+        return any(p.lower() in error_lower for p in retryable_patterns)
+
+    @staticmethod
+    def _has_time_remaining(job: ProofJob) -> bool:
+        """Check if there's enough time to retry before the deadline."""
+        remaining = (job.deadline - datetime.now(timezone.utc)).total_seconds()
+        # Need at least 3 minutes for a retry attempt
+        return remaining > 180
 
     async def _execute_inner(self, job: ProofJob, decision: DispatchDecision) -> JobResult:
         start_time = time.monotonic()
@@ -92,6 +184,19 @@ class JobExecutor:
         result: JobResult
 
         try:
+            # 0. Re-validate carbon policy (may have tightened since evaluation)
+            provider = decision.chosen_provider
+            if not self._check_carbon_compliance(provider):
+                raise RuntimeError(
+                    f"Carbon policy violation: {provider.provider.value}/{provider.region} "
+                    f"has {provider.carbon_intensity_gco2_kwh} gCO2/kWh, "
+                    f"{provider.renewable_percentage}% renewable, "
+                    f"BTM={provider.is_behind_the_meter} — "
+                    f"policy requires ≤{self._policy.max_carbon_intensity_gco2_kwh} gCO2/kWh, "
+                    f"≥{self._policy.min_renewable_percentage}% renewable"
+                    + (", BTM only" if self._policy.require_behind_the_meter else "")
+                )
+
             # 1. Update status to DISPATCHED
             await self._store.update_status(job.id, JobStatus.DISPATCHED)
             self._metrics.record_dispatch(job, decision)
