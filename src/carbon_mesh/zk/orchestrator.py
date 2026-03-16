@@ -8,7 +8,8 @@ Flow:
 5. Score remaining options (carbon × cost)
 6. Check profitability (bounty - cost > min margin)
 7. Dispatch to best option
-8. Track job lifecycle through completion
+8. Execute via JobExecutor (provision → prove → verify → submit → claim)
+9. Track job lifecycle through completion
 """
 
 from __future__ import annotations
@@ -30,6 +31,8 @@ from carbon_mesh.models.zk import (
     ProofJob,
 )
 from carbon_mesh.zk.compute_providers import MockGPUProvider, enrich_with_carbon
+from carbon_mesh.zk.monitoring import BrokerMetrics, broker_metrics
+from carbon_mesh.zk.persistence import InMemoryJobStore, JobStore
 
 logger = logging.getLogger(__name__)
 
@@ -42,13 +45,17 @@ class JobOrchestrator:
         carbon_source: CarbonDataSource,
         grid_mapper: GridMapper,
         policy: CarbonPolicy | None = None,
+        store: JobStore | None = None,
+        metrics: BrokerMetrics | None = None,
     ) -> None:
         self._carbon_source = carbon_source
         self._grid_mapper = grid_mapper
         self._policy = policy or CarbonPolicy()
         self._gpu_provider = MockGPUProvider()
+        self._store = store or InMemoryJobStore()
+        self._metrics = metrics or broker_metrics
 
-        # In-memory job tracking (DB-backed in production)
+        # In-memory caches (also backed by store for durability)
         self._jobs: dict[str, ProofJob] = {}
         self._decisions: dict[str, DispatchDecision] = {}
         self._results: dict[str, JobResult] = {}
@@ -61,12 +68,18 @@ class JobOrchestrator:
     def policy(self, value: CarbonPolicy) -> None:
         self._policy = value
 
+    @property
+    def store(self) -> JobStore:
+        return self._store
+
     async def evaluate_job(self, job: ProofJob) -> DispatchDecision | None:
         """Evaluate a proof job and return the optimal dispatch decision.
 
         Returns None if no green, profitable compute is available.
         """
         self._jobs[job.id] = job
+        await self._store.save_job(job)
+        self._metrics.record_job_received(job)
 
         # 1. Get available GPU options
         options = await self._gpu_provider.list_available(
@@ -75,9 +88,11 @@ class JobOrchestrator:
 
         if not options:
             logger.warning("No GPU options available for job %s", job.id)
-            self._results[job.id] = JobResult(
+            result = JobResult(
                 job_id=job.id, status=JobStatus.REJECTED, error="No GPU options available"
             )
+            self._results[job.id] = result
+            await self._store.save_result(result)
             return None
 
         # 2. Enrich with live carbon data
@@ -104,11 +119,13 @@ class JobOrchestrator:
                 self._policy.max_carbon_intensity_gco2_kwh,
                 self._policy.min_renewable_percentage,
             )
-            self._results[job.id] = JobResult(
+            result = JobResult(
                 job_id=job.id,
                 status=JobStatus.REJECTED,
                 error=f"No compute within carbon policy: max {self._policy.max_carbon_intensity_gco2_kwh} gCO2/kWh",
             )
+            self._results[job.id] = result
+            await self._store.save_result(result)
             return None
 
         # 5. Filter by profitability
@@ -124,11 +141,13 @@ class JobOrchestrator:
                 "Job %s rejected: best margin %.1f%% < min %.1f%%",
                 job.id, margin, self._policy.min_profit_margin_pct,
             )
-            self._results[job.id] = JobResult(
+            result = JobResult(
                 job_id=job.id,
                 status=JobStatus.REJECTED,
                 error=f"Insufficient margin: best {margin:.1f}% < min {self._policy.min_profit_margin_pct}%",
             )
+            self._results[job.id] = result
+            await self._store.save_result(result)
             return None
 
         # 6. Score and rank
@@ -165,6 +184,7 @@ class JobOrchestrator:
         )
 
         self._decisions[job.id] = decision
+        await self._store.save_decision(decision)
         return decision
 
     async def complete_job(
@@ -207,6 +227,8 @@ class JobOrchestrator:
             renewable_percentage=decision.chosen_provider.renewable_percentage,
         )
         self._results[job_id] = result
+        await self._store.save_result(result)
+        self._metrics.record_job_completed(result)
         return result
 
     def get_stats(self) -> BrokerStats:

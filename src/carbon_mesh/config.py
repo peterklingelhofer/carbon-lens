@@ -54,6 +54,19 @@ class Settings(BaseSettings):
     stripe_price_id_pro: str = ""  # Stripe Price ID for Pro plan
     stripe_price_id_enterprise: str = ""  # Stripe Price ID for Enterprise plan
 
+    # ZK Broker — executor settings
+    zk_executor_enabled: bool = False  # Enable full job execution pipeline
+    zk_max_concurrent_jobs: int = 4
+    zk_auto_claim_bounty: bool = True
+    zk_compute_backend: str = "local_docker"  # "local_docker", "ssh", "mock"
+    zk_wallet_private_key: str = ""  # Ethereum private key (use env var, never commit)
+    zk_wallet_chain_id: int = 1  # 1=mainnet, 11155111=sepolia
+    zk_prefer_native_verifiers: bool = True  # Use native binaries over Docker for verification
+    zk_spot_price_cache_ttl: int = 300  # Spot price cache TTL in seconds
+
+    # SSH compute hosts (JSON string: {"iren": {"host": "...", "port": 22, "user": "root"}})
+    zk_ssh_hosts: str = ""
+
     @property
     def configured_providers(self) -> dict[str, bool]:
         """Return which data providers have credentials configured."""
