@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from carbon_mesh.carbon_sources.base import CarbonDataSource
 from carbon_mesh.grid.mapper import GridMapper
@@ -81,6 +81,29 @@ class JobOrchestrator:
         await self._store.save_job(job)
         self._metrics.record_job_received(job)
 
+        # 0. Deadline feasibility check — reject if impossible to complete in time
+        now = datetime.now(timezone.utc)
+        time_remaining = (job.deadline - now).total_seconds()
+        if time_remaining > 0:
+            # Need startup time + GPU time + submission buffer (60s)
+            min_startup = 15  # Best case: behind-the-meter green datacenter
+            gpu_seconds = job.estimated_gpu_minutes * 60
+            submission_buffer = 60
+            time_needed = min_startup + gpu_seconds + submission_buffer
+            if time_needed > time_remaining * 0.9:  # 90% safety margin
+                logger.info(
+                    "Job %s rejected: deadline infeasible (need %.0fs, have %.0fs)",
+                    job.id, time_needed, time_remaining,
+                )
+                result = JobResult(
+                    job_id=job.id,
+                    status=JobStatus.REJECTED,
+                    error=f"Deadline infeasible: need {time_needed:.0f}s, only {time_remaining:.0f}s remaining",
+                )
+                self._results[job.id] = result
+                await self._store.save_result(result)
+                return None
+
         # 1. Get available GPU options
         options = await self._gpu_provider.list_available(
             min_vram_gb=job.min_vram_gb,
@@ -112,17 +135,23 @@ class JobOrchestrator:
         rejected = [o for o in options if o not in green_options]
 
         if not green_options:
+            btm_msg = ", BTM required" if self._policy.require_behind_the_meter else ""
             logger.info(
                 "Job %s rejected: no compute meets carbon policy "
-                "(max %s gCO2/kWh, min %s%% renewable)",
+                "(max %s gCO2/kWh, min %s%% renewable%s)",
                 job.id,
                 self._policy.max_carbon_intensity_gco2_kwh,
                 self._policy.min_renewable_percentage,
+                btm_msg,
             )
             result = JobResult(
                 job_id=job.id,
                 status=JobStatus.REJECTED,
-                error=f"No compute within carbon policy: max {self._policy.max_carbon_intensity_gco2_kwh} gCO2/kWh",
+                error=(
+                    f"No compute within carbon policy: max {self._policy.max_carbon_intensity_gco2_kwh} gCO2/kWh, "
+                    f"min {self._policy.min_renewable_percentage}% renewable"
+                    + (", behind-the-meter only" if self._policy.require_behind_the_meter else "")
+                ),
             )
             self._results[job.id] = result
             await self._store.save_result(result)
@@ -293,11 +322,22 @@ class JobOrchestrator:
         )
 
     def _filter_by_policy(self, options: list[ComputeOption]) -> list[ComputeOption]:
-        """Filter compute options by carbon policy."""
+        """Filter compute options by carbon policy.
+
+        Enforcement chain:
+        1. BTM-only gate (if require_behind_the_meter=True, grid-connected providers are rejected)
+        2. Carbon intensity ceiling (max gCO2/kWh)
+        3. Renewable floor (min renewable %)
+        """
         filtered: list[ComputeOption] = []
         for opt in options:
+            # Gate 1: BTM-only mode — reject anything not directly connected to renewables
+            if self._policy.require_behind_the_meter and not opt.is_behind_the_meter:
+                continue
+            # Gate 2: Carbon intensity ceiling
             if opt.carbon_intensity_gco2_kwh > self._policy.max_carbon_intensity_gco2_kwh:
                 continue
+            # Gate 3: Renewable floor
             if opt.renewable_percentage < self._policy.min_renewable_percentage:
                 continue
             filtered.append(opt)
