@@ -223,31 +223,40 @@ class BrokerStats(BaseModel):
 
 
 class CarbonPolicy(BaseModel):
-    """Carbon policy configuration for the broker."""
+    """Carbon policy configuration for the broker.
+
+    Defaults enforce zero-carbon compute: only behind-the-meter renewable
+    facilities with ≤10 gCO2/kWh and ≥95% renewable energy pass the filter.
+    Set require_behind_the_meter=True to restrict to BTM facilities only.
+    """
 
     max_carbon_intensity_gco2_kwh: float = Field(
-        default=50.0,
+        default=10.0,
         ge=0,
-        description="Maximum allowed carbon intensity. Set to 0 for zero-carbon only.",
+        description="Maximum allowed carbon intensity. Default 10 gCO2/kWh (near-zero). Set to 0 for absolute zero.",
     )
     prefer_behind_the_meter: bool = Field(
         default=True,
         description="Prefer facilities with direct renewable connections",
     )
+    require_behind_the_meter: bool = Field(
+        default=True,
+        description="Only allow behind-the-meter renewable facilities (strictest mode)",
+    )
     min_renewable_percentage: float = Field(
-        default=80.0,
+        default=95.0,
         ge=0,
         le=100,
         description="Minimum renewable energy percentage",
     )
     carbon_weight: float = Field(
-        default=0.6,
+        default=0.7,
         ge=0,
         le=1,
         description="Weight for carbon score in routing (vs cost)",
     )
     cost_weight: float = Field(
-        default=0.4,
+        default=0.3,
         ge=0,
         le=1,
         description="Weight for cost score in routing (vs carbon)",

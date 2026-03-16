@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
-import type { SimulateResponse, ComputeOption } from "../api/types";
+import type { SimulateResponse, ComputeOption, ProofJob, ExecuteResponse, JobEvent } from "../api/types";
 import { section as sectionFn, card } from "../styles";
 
 const section = sectionFn(1100);
@@ -18,11 +18,13 @@ const NETWORKS = [
 ];
 
 export function ZKBroker() {
+  const queryClient = useQueryClient();
   const [network, setNetwork] = useState("boundless");
   const [bountyUsd, setBountyUsd] = useState(5.0);
   const [circuitSize, setCircuitSize] = useState(20);
   const [maxCarbon, setMaxCarbon] = useState(50);
   const [result, setResult] = useState<SimulateResponse | null>(null);
+  const [executeResult, setExecuteResult] = useState<ExecuteResponse | null>(null);
 
   const { data: stats } = useQuery({
     queryKey: ["zk-stats"],
@@ -35,6 +37,24 @@ export function ZKBroker() {
     queryFn: () => api.zk.availableJobs(network),
   });
 
+  const { data: activeJobs } = useQuery({
+    queryKey: ["zk-active"],
+    queryFn: () => api.zk.activeJobs(),
+    refetchInterval: 5000,
+  });
+
+  const { data: events } = useQuery({
+    queryKey: ["zk-events"],
+    queryFn: () => api.zk.events(20),
+    refetchInterval: 5000,
+  });
+
+  const { data: pollerStatus } = useQuery({
+    queryKey: ["zk-poller"],
+    queryFn: () => api.zk.pollerStatus(),
+    refetchInterval: 10000,
+  });
+
   const simulateMutation = useMutation({
     mutationFn: () =>
       api.zk.simulate({
@@ -44,6 +64,21 @@ export function ZKBroker() {
         max_carbon_intensity: maxCarbon,
       }),
     onSuccess: setResult,
+  });
+
+  const executeMutation = useMutation({
+    mutationFn: (job: ProofJob) => api.zk.execute({ job }),
+    onSuccess: (response) => {
+      setExecuteResult(response);
+      queryClient.invalidateQueries({ queryKey: ["zk-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["zk-events"] });
+    },
+  });
+
+  const pollerMutation = useMutation({
+    mutationFn: (action: "start" | "stop") =>
+      action === "start" ? api.zk.startPoller() : api.zk.stopPoller(),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["zk-poller"] }),
   });
 
   return (
@@ -216,6 +251,91 @@ export function ZKBroker() {
       {/* Simulation Result */}
       {result && <SimulationResult result={result} />}
 
+      {/* Execution Result */}
+      {executeResult && (
+        <div style={{ ...card, marginBottom: "2rem", border: executeResult.result?.status === "completed" ? "1px solid var(--green-300)" : "1px solid var(--red-300, #fca5a5)" }}>
+          <h2 style={{ margin: "0 0 1rem", fontSize: "1.1rem" }}>
+            Execution Result
+            <span style={{
+              marginLeft: 8, fontSize: "0.75rem", color: "white",
+              background: executeResult.result?.status === "completed" ? "var(--green-600)" : "var(--red-400, #f87171)",
+              padding: "2px 8px", borderRadius: 4,
+            }}>
+              {executeResult.result?.status?.toUpperCase() || (executeResult.rejected ? "REJECTED" : "UNKNOWN")}
+            </span>
+          </h2>
+          {executeResult.rejected ? (
+            <div style={{ padding: "0.75rem", borderRadius: 8, background: "rgba(239, 68, 68, 0.08)", color: "var(--red-700, #b91c1c)", fontSize: "0.9rem" }}>
+              {executeResult.rejection_reason}
+            </div>
+          ) : executeResult.result ? (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "0.75rem" }}>
+              <StatCard label="Bounty Earned" value={`$${executeResult.result.bounty_earned_usd.toFixed(4)}`} positive />
+              <StatCard label="Compute Cost" value={`$${executeResult.result.compute_cost_usd.toFixed(4)}`} />
+              <StatCard label="Profit" value={`$${executeResult.result.profit_usd.toFixed(4)}`} positive={executeResult.result.profit_usd > 0} />
+              <StatCard label="GPU Time" value={`${executeResult.result.gpu_seconds.toFixed(1)}s`} />
+              <StatCard label="CO2" value={`${executeResult.result.carbon_grams_co2.toFixed(2)}g`} positive={executeResult.result.carbon_grams_co2 === 0} />
+              <StatCard label="Renewable" value={`${executeResult.result.renewable_percentage.toFixed(0)}%`} positive />
+            </div>
+          ) : null}
+        </div>
+      )}
+
+      {/* Poller Controls + Active Jobs */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "2rem" }}>
+        <div style={card}>
+          <h2 style={{ margin: "0 0 0.75rem", fontSize: "1.1rem" }}>Autopilot</h2>
+          <p style={{ fontSize: "0.8rem", color: "var(--gray-500)", margin: "0 0 0.75rem" }}>
+            Background poller fetches jobs from all prover networks automatically.
+          </p>
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginBottom: "0.5rem" }}>
+            <span style={{
+              width: 8, height: 8, borderRadius: "50%",
+              background: pollerStatus?.running ? "var(--green-500)" : "var(--gray-300)",
+              display: "inline-block",
+            }} />
+            <span style={{ fontSize: "0.85rem", fontWeight: 600 }}>
+              {pollerStatus?.running ? "Running" : "Stopped"}
+            </span>
+          </div>
+          {pollerStatus?.running && (
+            <div style={{ fontSize: "0.8rem", color: "var(--gray-500)", marginBottom: "0.5rem" }}>
+              {pollerStatus.polls_completed} polls | {pollerStatus.jobs_discovered} jobs found | {pollerStatus.jobs_auto_dispatched} dispatched
+            </div>
+          )}
+          <button
+            onClick={() => pollerMutation.mutate(pollerStatus?.running ? "stop" : "start")}
+            disabled={pollerMutation.isPending}
+            style={{
+              padding: "0.5rem 1.5rem", borderRadius: 6, border: "none",
+              background: pollerStatus?.running ? "var(--gray-200)" : "var(--green-600)",
+              color: pollerStatus?.running ? "var(--gray-700)" : "white",
+              fontWeight: 600, cursor: "pointer", fontSize: "0.85rem",
+            }}
+          >
+            {pollerStatus?.running ? "Stop Poller" : "Start Poller"}
+          </button>
+        </div>
+
+        <div style={card}>
+          <h2 style={{ margin: "0 0 0.75rem", fontSize: "1.1rem" }}>Active Jobs</h2>
+          {activeJobs && activeJobs.count > 0 ? (
+            <div>
+              <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--green-700)" }}>
+                {activeJobs.count}
+              </div>
+              <div style={{ fontSize: "0.8rem", color: "var(--gray-500)" }}>
+                jobs currently executing
+              </div>
+            </div>
+          ) : (
+            <div style={{ fontSize: "0.85rem", color: "var(--gray-400)" }}>
+              No active jobs
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Available Jobs */}
       {jobs && jobs.length > 0 && (
         <div style={{ ...card, marginBottom: "2rem" }}>
@@ -232,6 +352,7 @@ export function ZKBroker() {
                   <th style={{ ...th, textAlign: "right" }}>Bounty</th>
                   <th style={{ ...th, textAlign: "right" }}>Est. GPU Min</th>
                   <th style={{ ...th, textAlign: "right" }}>VRAM</th>
+                  <th style={th}>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -274,10 +395,60 @@ export function ZKBroker() {
                     <td style={{ ...td, textAlign: "right" }}>
                       {job.min_vram_gb} GB
                     </td>
+                    <td style={td}>
+                      <button
+                        onClick={() => executeMutation.mutate(job)}
+                        disabled={executeMutation.isPending}
+                        style={{
+                          padding: "0.3rem 0.75rem", borderRadius: 4, border: "none",
+                          background: "var(--green-600)", color: "white",
+                          fontWeight: 600, cursor: "pointer", fontSize: "0.75rem",
+                        }}
+                      >
+                        {executeMutation.isPending ? "..." : "Execute"}
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Recent Events */}
+      {events && events.length > 0 && (
+        <div style={{ ...card, marginBottom: "2rem" }}>
+          <h2 style={{ margin: "0 0 1rem", fontSize: "1.1rem" }}>
+            Recent Activity
+          </h2>
+          <div style={{ maxHeight: 300, overflow: "auto" }}>
+            {events.map((evt, i) => (
+              <div key={i} style={{
+                padding: "0.4rem 0", borderBottom: "1px solid var(--gray-100)",
+                display: "flex", gap: "0.75rem", alignItems: "center", fontSize: "0.8rem",
+              }}>
+                <span style={{
+                  background: evt.event_type.includes("completed") ? "var(--green-100)" :
+                              evt.event_type.includes("failed") ? "rgba(239,68,68,0.1)" : "var(--gray-100)",
+                  color: evt.event_type.includes("completed") ? "var(--green-700)" :
+                         evt.event_type.includes("failed") ? "var(--red-700, #b91c1c)" : "var(--gray-600)",
+                  padding: "2px 6px", borderRadius: 4, fontWeight: 600, fontSize: "0.7rem",
+                  minWidth: 100, textAlign: "center",
+                }}>
+                  {evt.event_type.replace("_", " ")}
+                </span>
+                <span style={{ fontFamily: "var(--mono)", color: "var(--gray-400)", fontSize: "0.75rem" }}>
+                  {evt.job_id.substring(0, 12)}
+                </span>
+                <span style={{ color: "var(--gray-500)" }}>
+                  {Object.entries(evt.details).map(([k, v]) => `${k}=${typeof v === "number" ? (v as number).toFixed(2) : v}`).join(", ")}
+                </span>
+                <span style={{ marginLeft: "auto", color: "var(--gray-400)", fontSize: "0.7rem" }}>
+                  {new Date(evt.timestamp).toLocaleTimeString()}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       )}
