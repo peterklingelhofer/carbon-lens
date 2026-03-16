@@ -227,8 +227,9 @@ def test_proof_system_estimates():
 
 def test_carbon_policy_defaults():
     policy = CarbonPolicy()
-    assert policy.max_carbon_intensity_gco2_kwh == 50.0
-    assert policy.min_renewable_percentage == 80.0
+    assert policy.max_carbon_intensity_gco2_kwh == 10.0  # Near-zero default
+    assert policy.min_renewable_percentage == 95.0  # 95%+ renewable
+    assert policy.require_behind_the_meter is True  # BTM only
     assert policy.carbon_weight + policy.cost_weight == 1.0
 
 
