@@ -1,4 +1,4 @@
-"""ZK Broker API endpoints — job submission, status, stats, policy config."""
+"""ZK Broker API endpoints — job submission, execution, status, stats, policy config."""
 
 from __future__ import annotations
 
@@ -14,10 +14,15 @@ from carbon_mesh.models.zk import (
     CarbonPolicy,
     ComputeOption,
     DispatchDecision,
+    JobEvent,
     JobResult,
+    JobStatus,
     ProofJob,
     ProverNetwork,
+    SpotPriceQuote,
+    WalletInfo,
 )
+from carbon_mesh.zk.monitoring import broker_metrics
 from carbon_mesh.zk.orchestrator import JobOrchestrator
 from carbon_mesh.zk.prover_networks import MockProverNetwork
 
@@ -26,6 +31,9 @@ router = APIRouter(prefix="/api/v1/zk", tags=["ZK Broker"])
 
 # Singleton orchestrator (production would use DI)
 _orchestrator: JobOrchestrator | None = None
+_executor = None
+_spot_feed = None
+_wallet = None
 
 
 def _get_orchestrator() -> JobOrchestrator:
@@ -38,11 +46,48 @@ def _get_orchestrator() -> JobOrchestrator:
     return _orchestrator
 
 
+def _get_executor():
+    global _executor
+    if _executor is None:
+        from carbon_mesh.zk.executor import JobExecutor
+        orchestrator = _get_orchestrator()
+        _executor = JobExecutor(store=orchestrator.store, metrics=broker_metrics)
+    return _executor
+
+
+def _get_spot_feed():
+    global _spot_feed
+    if _spot_feed is None:
+        from carbon_mesh.zk.spot_prices import SpotPriceFeed
+        _spot_feed = SpotPriceFeed()
+    return _spot_feed
+
+
+def _get_wallet():
+    global _wallet
+    if _wallet is None:
+        from carbon_mesh.zk.wallet import LocalWallet
+        _wallet = LocalWallet()
+    return _wallet
+
+
 # --- Request/response models ---
 
 
 class EvaluateResponse(BaseModel):
     decision: DispatchDecision | None
+    rejected: bool
+    rejection_reason: str = ""
+
+
+class ExecuteRequest(BaseModel):
+    """Submit a job for full execution (evaluate + prove + submit)."""
+    job: ProofJob
+
+
+class ExecuteResponse(BaseModel):
+    decision: DispatchDecision | None
+    result: JobResult | None
     rejected: bool
     rejection_reason: str = ""
 
@@ -99,6 +144,25 @@ async def evaluate_job(job: ProofJob) -> EvaluateResponse:
     return EvaluateResponse(decision=decision, rejected=False)
 
 
+@router.post("/jobs/execute", response_model=ExecuteResponse)
+async def execute_job(req: ExecuteRequest) -> ExecuteResponse:
+    """Evaluate and execute a proof job end-to-end.
+
+    Full pipeline: evaluate → provision GPU → generate proof → verify → submit → claim bounty.
+    """
+    orchestrator = _get_orchestrator()
+    executor = _get_executor()
+
+    decision = await orchestrator.evaluate_job(req.job)
+    if decision is None:
+        result = orchestrator._results.get(req.job.id)
+        reason = result.error if result else "Unknown"
+        return ExecuteResponse(decision=None, result=None, rejected=True, rejection_reason=reason)
+
+    result = await executor.execute(req.job, decision)
+    return ExecuteResponse(decision=decision, result=result, rejected=False)
+
+
 @router.post("/jobs/{job_id}/complete", response_model=JobResult)
 async def complete_job(
     job_id: str,
@@ -113,6 +177,41 @@ async def complete_job(
         gpu_seconds=gpu_seconds,
         proof_hash=f"0x{'a' * 64}",
     )
+
+
+@router.get("/jobs/{job_id}/status", response_model=JobResult | None)
+async def get_job_status(job_id: str) -> JobResult | None:
+    """Get the current status and result of a job."""
+    orchestrator = _get_orchestrator()
+    return await orchestrator.store.get_result(job_id)
+
+
+@router.post("/jobs/{job_id}/cancel")
+async def cancel_job(job_id: str) -> dict:
+    """Cancel a running job and terminate its GPU instance."""
+    executor = _get_executor()
+    cancelled = await executor.cancel_job(job_id)
+    return {"job_id": job_id, "cancelled": cancelled}
+
+
+@router.get("/jobs/active")
+async def list_active_jobs() -> dict:
+    """List currently executing jobs and their GPU instances."""
+    executor = _get_executor()
+    active = executor.get_active_jobs()
+    return {
+        "count": len(active),
+        "jobs": {
+            jid: {
+                "instance_id": inst.instance_id,
+                "provider": inst.provider.value,
+                "region": inst.region,
+                "gpu_type": inst.gpu_type.value,
+                "status": inst.status.value,
+            }
+            for jid, inst in active.items()
+        },
+    }
 
 
 @router.post("/simulate", response_model=SimulateResponse)
@@ -197,6 +296,18 @@ async def broker_stats() -> BrokerStats:
     return orchestrator.get_stats()
 
 
+@router.get("/metrics")
+async def broker_metrics_endpoint() -> dict:
+    """Get detailed broker metrics (job throughput, revenue, carbon, performance)."""
+    return broker_metrics.get_summary()
+
+
+@router.get("/events", response_model=list[JobEvent])
+async def broker_events(limit: int = 100) -> list[JobEvent]:
+    """Get recent job lifecycle events for the activity feed."""
+    return broker_metrics.get_recent_events(limit)
+
+
 @router.get("/policy", response_model=CarbonPolicy)
 async def get_policy() -> CarbonPolicy:
     """Get current carbon routing policy."""
@@ -225,3 +336,40 @@ async def list_compute(min_vram_gb: int = 0) -> list[ComputeOption]:
     return await enrich_with_carbon(
         options, get_carbon_source(), get_grid_mapper()
     )
+
+
+@router.get("/compute/spot-prices", response_model=list[SpotPriceQuote])
+async def list_spot_prices() -> list[SpotPriceQuote]:
+    """Get live GPU spot prices from all providers."""
+    feed = _get_spot_feed()
+    return await feed.get_prices()
+
+
+@router.get("/runtime/networks")
+async def list_prover_networks() -> list[dict]:
+    """List supported prover networks with their Docker images and configs."""
+    from carbon_mesh.zk.prover_runtime import ProverRuntime
+    runtime = ProverRuntime()
+    return runtime.list_supported_networks()
+
+
+@router.get("/runtime/verifiers")
+async def check_verifiers() -> dict:
+    """Check which proof verifiers are available on this system."""
+    from carbon_mesh.zk.verification import ProofVerifier
+    verifier = ProofVerifier()
+    return await verifier.check_verifiers()
+
+
+@router.get("/wallet", response_model=WalletInfo)
+async def get_wallet_info() -> WalletInfo:
+    """Get broker wallet address and balance."""
+    wallet = _get_wallet()
+    return await wallet.get_info()
+
+
+@router.get("/wallet/transactions")
+async def get_wallet_transactions() -> list[dict]:
+    """Get recent wallet transactions (proof submissions and bounty claims)."""
+    wallet = _get_wallet()
+    return [tx.model_dump() for tx in wallet.get_transaction_log()]
