@@ -280,3 +280,205 @@ PROOF_SYSTEM_GPU_MINUTES: dict[ProofSystem, float] = {
     ProofSystem.RISC_ZERO: 3.0,
     ProofSystem.NOVA: 2.5,
 }
+
+
+# --- GPU Instance lifecycle ---
+
+
+class InstanceStatus(str, Enum):
+    """Lifecycle states for a provisioned GPU instance."""
+
+    PENDING = "pending"
+    STARTING = "starting"
+    RUNNING = "running"
+    PROVING = "proving"
+    STOPPING = "stopping"
+    TERMINATED = "terminated"
+    FAILED = "failed"
+
+
+class GPUInstance(BaseModel):
+    """A provisioned GPU compute instance."""
+
+    instance_id: str
+    provider: ComputeProvider
+    region: str
+    gpu_type: GPUType
+    gpu_count: int = 1
+    vram_gb: int
+
+    status: InstanceStatus = InstanceStatus.PENDING
+    ip_address: str = ""
+    ssh_port: int = 22
+    cost_per_hour_usd: float = 0.0
+
+    started_at: datetime | None = None
+    terminated_at: datetime | None = None
+    job_id: str = ""
+
+
+# --- Prover Docker images ---
+
+
+class ProverDockerImage(BaseModel):
+    """Docker image configuration for a prover network."""
+
+    network: ProverNetwork
+    proof_system: ProofSystem
+    image: str  # e.g. "risczero/risc0-groth16-prover:latest"
+    entrypoint: list[str] = []  # Override entrypoint if needed
+    env_vars: dict[str, str] = {}
+    gpu_required: bool = True
+    min_vram_gb: int = 16
+    proof_output_path: str = "/output/proof.bin"  # Path inside container
+    input_mount_path: str = "/input"  # Where witness data is mounted
+
+
+# Canonical prover Docker images per network
+PROVER_IMAGES: dict[ProverNetwork, ProverDockerImage] = {
+    ProverNetwork.BOUNDLESS: ProverDockerImage(
+        network=ProverNetwork.BOUNDLESS,
+        proof_system=ProofSystem.RISC_ZERO,
+        image="risczero/risc0-groth16-prover:1.2",
+        entrypoint=["risc0-prover", "--witness", "/input/witness.bin", "--output", "/output/proof.bin"],
+        env_vars={"RISC0_PROVER": "cuda", "RUST_LOG": "info"},
+        min_vram_gb=16,
+    ),
+    ProverNetwork.SUCCINCT: ProverDockerImage(
+        network=ProverNetwork.SUCCINCT,
+        proof_system=ProofSystem.SP1,
+        image="succinctlabs/sp1-prover:latest",
+        entrypoint=["sp1-prover", "prove", "--input", "/input", "--output", "/output/proof.bin"],
+        env_vars={"SP1_PROVER": "cuda", "RUST_LOG": "info"},
+        min_vram_gb=16,
+    ),
+    ProverNetwork.SCROLL: ProverDockerImage(
+        network=ProverNetwork.SCROLL,
+        proof_system=ProofSystem.HALO2,
+        image="scrolltech/scroll-prover:latest",
+        entrypoint=["scroll-prover", "--params", "/input/params.bin", "--witness", "/input/witness.bin"],
+        env_vars={"SCROLL_PROVER_GPU": "1"},
+        min_vram_gb=40,
+        proof_output_path="/output/scroll_proof.bin",
+    ),
+    ProverNetwork.ALEO: ProverDockerImage(
+        network=ProverNetwork.ALEO,
+        proof_system=ProofSystem.GROTH16,
+        image="aleohq/snarkos-prover:latest",
+        entrypoint=["snarkos-prover", "--input", "/input/assignment.bin", "--output", "/output/proof.bin"],
+        env_vars={"ALEO_GPU": "1"},
+        min_vram_gb=8,
+    ),
+    ProverNetwork.GEVULOT: ProverDockerImage(
+        network=ProverNetwork.GEVULOT,
+        proof_system=ProofSystem.STARK,
+        image="gevulot/prover:latest",
+        entrypoint=["gevulot-prove", "--trace", "/input/trace.bin", "--output", "/output/proof.bin"],
+        env_vars={"GEVULOT_GPU": "1"},
+        min_vram_gb=24,
+    ),
+    ProverNetwork.ZKSYNC: ProverDockerImage(
+        network=ProverNetwork.ZKSYNC,
+        proof_system=ProofSystem.PLONK,
+        image="matterlabs/zksync-prover:latest",
+        entrypoint=["zksync-prover", "--input", "/input", "--output", "/output/proof.bin"],
+        env_vars={"ZKSYNC_PROVER_GPU": "1"},
+        min_vram_gb=24,
+    ),
+    ProverNetwork.STARKNET: ProverDockerImage(
+        network=ProverNetwork.STARKNET,
+        proof_system=ProofSystem.STARK,
+        image="starkware/stone-prover:latest",
+        entrypoint=["cpu_air_prover", "--input", "/input/input.json", "--output", "/output/proof.json"],
+        gpu_required=False,  # Stone prover is CPU-based
+        min_vram_gb=0,
+    ),
+    ProverNetwork.TAIKO: ProverDockerImage(
+        network=ProverNetwork.TAIKO,
+        proof_system=ProofSystem.RISC_ZERO,
+        image="taikoxyz/raiko:latest",
+        entrypoint=["raiko-host", "--proof-type", "risc0", "--input", "/input", "--output", "/output/proof.bin"],
+        env_vars={"RAIKO_GPU": "1"},
+        min_vram_gb=16,
+    ),
+}
+
+
+# --- Spot pricing ---
+
+
+class SpotPriceQuote(BaseModel):
+    """Live spot/preemptible GPU price from a cloud provider."""
+
+    provider: ComputeProvider
+    region: str
+    gpu_type: GPUType
+    price_per_hour_usd: float
+    available: bool = True
+    interruption_rate_pct: float = 0.0  # Historical interruption frequency
+    fetched_at: datetime
+
+
+# --- Proof artifacts ---
+
+
+class ProofArtifact(BaseModel):
+    """Generated ZK proof ready for submission."""
+
+    job_id: str
+    network: ProverNetwork
+    proof_system: ProofSystem
+    proof_data: bytes = b""
+    proof_hash: str = ""
+    proof_size_bytes: int = 0
+    generation_gpu_seconds: float = 0
+    generated_at: datetime | None = None
+
+
+class VerificationResult(BaseModel):
+    """Result of locally verifying a proof before submission."""
+
+    job_id: str
+    valid: bool
+    verifier: str = ""  # Which verifier was used
+    verification_time_ms: float = 0
+    error: str = ""
+    verified_at: datetime | None = None
+
+
+# --- Wallet / on-chain ---
+
+
+class WalletInfo(BaseModel):
+    """Ethereum wallet used for proof submission and bounty claiming."""
+
+    address: str
+    chain_id: int = 1  # Ethereum mainnet
+    balance_eth: float = 0.0
+    balance_usdc: float = 0.0
+    nonce: int = 0
+
+
+class TransactionReceipt(BaseModel):
+    """On-chain transaction receipt for proof submission or bounty claim."""
+
+    tx_hash: str
+    block_number: int = 0
+    gas_used: int = 0
+    gas_price_gwei: float = 0.0
+    cost_eth: float = 0.0
+    status: str = "pending"  # pending, confirmed, failed
+    confirmed_at: datetime | None = None
+
+
+# --- Monitoring events ---
+
+
+class JobEvent(BaseModel):
+    """Structured event emitted during job lifecycle for monitoring."""
+
+    job_id: str
+    event_type: str  # job_received, dispatched, proving_started, proof_generated, submitted, bounty_claimed, failed
+    timestamp: datetime
+    details: dict = {}
+    duration_ms: float = 0
