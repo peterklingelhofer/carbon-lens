@@ -23,6 +23,8 @@ from carbon_mesh.billing.routes import billing_router
 from carbon_mesh.config import settings
 from carbon_mesh.compliance.routes import router as compliance_router
 from carbon_mesh.orgs.routes import org_router, webhook_router
+from carbon_mesh.scheduler.routes import router as scheduler_router
+from carbon_mesh.sla.routes import router as sla_router
 from carbon_mesh.zk.routes import router as zk_router
 
 from carbon_mesh.logging_config import setup_logging
@@ -139,17 +141,26 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Carbon Mesh Control Plane",
     description=(
-        "Green ZK Proof Broker — routes zero-knowledge proof generation to the "
-        "cheapest, greenest GPU compute on Earth.\n\n"
-        "## ZK Broker\n"
-        "- **Decentralized prover networks** — Boundless, Succinct, Gevulot, Aleo, Scroll, zkSync\n"
-        "- **Green compute routing** — hyperscaler spot, hydro-powered ASIC centers, alt-cloud GPUs\n"
-        "- **Carbon policy engine** — reject dirty compute, prefer behind-the-meter renewables\n"
-        "- **Profit optimization** — only dispatch when bounty > compute cost + margin\n\n"
-        "## Carbon Intelligence\n"
+        "Real-time carbon intensity data API + compliance reporting platform.\n\n"
+        "## Carbon Data API\n"
         "- **11 government-verified data sources** — UK, EIA, AEMO, Grid India, ONS Brazil, "
         "Eskom, GridStatus, ENTSO-E, Open-Meteo, Electricity Maps\n"
-        "- **Real-time grid carbon intensity** for every compute provider region\n\n"
+        "- **Real-time grid carbon intensity** for 90+ cloud regions\n"
+        "- **Batch queries** for multiple regions in a single call\n\n"
+        "## Compliance Reporting\n"
+        "- **CSRD / ESRS E1** aligned emissions reporting\n"
+        "- **Scope 2 + 3** with GHG Protocol methodology\n"
+        "- **EU Taxonomy** eligibility assessment\n\n"
+        "## Green SLA Monitoring\n"
+        "- **Define carbon targets** — max gCO2/kWh, min renewable %\n"
+        "- **Continuous monitoring** with configurable frequency\n"
+        "- **Attestation reports** for auditors\n"
+        "- **Webhook alerts** on SLA breach\n\n"
+        "## Carbon-Aware Scheduling\n"
+        "- **Find optimal time windows** for batch jobs, CI/CD, ML training\n"
+        "- **Multi-region evaluation** across AWS, GCP, Azure\n"
+        "- **Three strategies** — lowest carbon, highest renewable, balanced\n"
+        "- **Recurring schedules** with automatic green window recommendations\n\n"
         "## Authentication\n"
         "When `CARBON_MESH_API_KEY_REQUIRED=true`, pass your key via the `X-API-Key` header."
     ),
@@ -161,8 +172,10 @@ app = FastAPI(
         {"name": "Routing", "description": "Find the greenest cloud region for your workload"},
         {"name": "Regions", "description": "Explore supported cloud regions across AWS, GCP, and Azure"},
         {"name": "Carbon Data", "description": "Get real-time carbon intensity for specific regions"},
-        {"name": "ZK Broker", "description": "Green ZK proof generation — job routing, dispatch, and earnings"},
-        {"name": "Compliance", "description": "CSRD-aligned emissions measurement, calculation, and reporting"},
+        {"name": "Scheduling", "description": "Carbon-aware scheduling — find optimal low-carbon time windows for batch jobs"},
+        {"name": "SLA Monitoring", "description": "Green SLA definitions, compliance checks, attestation reports, and alerts"},
+        {"name": "ZK Broker", "description": "Carbon-aware compute demo (ZK proof routing)"},
+        {"name": "Compliance", "description": "CSRD/SEC/SB-253 emissions measurement, calculation, and reporting"},
         {"name": "Accounting", "description": "Track carbon savings from routed workloads"},
         {"name": "Billing", "description": "Usage tracking, tier limits, and plan management"},
         {"name": "Admin", "description": "API key management (requires admin secret)"},
@@ -283,6 +296,8 @@ app.include_router(billing_router, prefix="/api/v1", tags=["Billing"])
 app.include_router(org_router, prefix="/api/v1", tags=["Organizations"])
 app.include_router(webhook_router, prefix="/api/v1")
 app.include_router(compliance_router)
+app.include_router(scheduler_router)
+app.include_router(sla_router)
 app.include_router(zk_router)
 app.include_router(ws_router)
 

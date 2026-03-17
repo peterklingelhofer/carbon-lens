@@ -187,6 +187,128 @@ export const api = {
       request<PollerStatus>("/api/v1/zk/poller/stop", { method: "POST" }),
   },
 
+  // SLA Monitoring
+  sla: {
+    list: (orgId: string) =>
+      request<Array<Record<string, unknown>>>(`/api/v1/sla/list?org_id=${orgId}`),
+
+    create: (body: {
+      org_id: string;
+      name: string;
+      max_carbon_intensity_gco2_kwh: number;
+      min_renewable_percentage: number;
+      providers?: string[];
+    }) =>
+      request<Record<string, unknown>>("/api/v1/sla/create", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+
+    get: (slaId: string) =>
+      request<Record<string, unknown>>(`/api/v1/sla/${slaId}`),
+
+    check: (slaId: string) =>
+      request<Record<string, unknown>>(`/api/v1/sla/${slaId}/check`, {
+        method: "POST",
+      }),
+
+    status: (slaId: string) =>
+      request<Record<string, unknown> | null>(`/api/v1/sla/${slaId}/status`),
+
+    checks: (slaId: string, limit?: number) =>
+      request<Array<Record<string, unknown>>>(
+        `/api/v1/sla/${slaId}/checks${limit ? `?limit=${limit}` : ""}`
+      ),
+
+    generateReport: (slaId: string, body: { org_name: string; period_days?: number }) =>
+      request<Record<string, unknown>>(`/api/v1/sla/${slaId}/report`, {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+
+    reports: (slaId: string) =>
+      request<Array<Record<string, unknown>>>(`/api/v1/sla/${slaId}/reports`),
+
+    startMonitor: (orgId: string) =>
+      request<Record<string, unknown>>(`/api/v1/sla/monitor/start?org_id=${orgId}`, {
+        method: "POST",
+      }),
+
+    stopMonitor: () =>
+      request<Record<string, unknown>>("/api/v1/sla/monitor/stop", {
+        method: "POST",
+      }),
+
+    monitorStatus: () =>
+      request<Record<string, unknown>>("/api/v1/sla/monitor/status"),
+
+    alerts: (limit?: number) =>
+      request<Array<Record<string, unknown>>>(
+        `/api/v1/sla/monitor/alerts${limit ? `?limit=${limit}` : ""}`
+      ),
+  },
+
+  // Scheduler
+  scheduler: {
+    findWindow: (body: {
+      job_duration_minutes?: number;
+      providers?: string[];
+      preferred_regions?: string[];
+      strategy?: "lowest_carbon" | "highest_renewable" | "balanced";
+      max_delay_hours?: number;
+    }) =>
+      request<Record<string, unknown>>("/api/v1/scheduler/find-window", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+
+    bestNow: (durationMinutes?: number, providers?: string) =>
+      request<Record<string, unknown>>(
+        `/api/v1/scheduler/now?duration_minutes=${durationMinutes ?? 30}&providers=${providers ?? "aws,gcp,azure"}`
+      ),
+
+    createSchedule: (body: {
+      name: string;
+      org_id: string;
+      job_duration_minutes?: number;
+      providers?: string[];
+      preferred_regions?: string[];
+      strategy?: "lowest_carbon" | "highest_renewable" | "balanced";
+      max_delay_hours?: number;
+    }) =>
+      request<Record<string, unknown>>("/api/v1/scheduler/schedules", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+
+    listSchedules: (orgId: string) =>
+      request<Array<Record<string, unknown>>>(
+        `/api/v1/scheduler/schedules?org_id=${orgId}`
+      ),
+
+    getSchedule: (id: string) =>
+      request<Record<string, unknown>>(`/api/v1/scheduler/schedules/${id}`),
+
+    deleteSchedule: (id: string) =>
+      request<{ deleted: string }>(`/api/v1/scheduler/schedules/${id}`, {
+        method: "DELETE",
+      }),
+
+    nextWindow: (id: string) =>
+      request<Record<string, unknown>>(
+        `/api/v1/scheduler/schedules/${id}/next`,
+        { method: "POST" }
+      ),
+  },
+
+  // Carbon zones
+  carbonZones: () =>
+    request<Array<Record<string, unknown>>>("/api/v1/carbon/zones"),
+
+  // Source health
+  sourceHealth: () =>
+    request<Record<string, unknown>>("/api/v1/status/sources"),
+
   // Compliance
   compliance: {
     ingestUsage: (body: UsageIngestionRequest) =>
