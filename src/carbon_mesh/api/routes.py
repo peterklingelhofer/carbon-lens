@@ -129,6 +129,95 @@ async def get_carbon_intensity_batch(
     }
 
 
+@router.get("/carbon/zones", tags=["Carbon Data"])
+async def list_grid_zones(
+    mapper: GridMapper = Depends(get_grid_mapper),
+) -> list[dict[str, str | list[str]]]:
+    """List all supported electricity grid zones and the cloud regions mapped to each.
+
+    Returns an array of objects with ``grid_zone``, ``regions`` (list of
+    ``provider/region`` strings), and ``location`` for the first mapped region.
+    """
+    all_regions = mapper.list_regions()
+    zone_map: dict[str, dict] = {}
+    for r in all_regions:
+        if r.grid_zone not in zone_map:
+            zone_map[r.grid_zone] = {
+                "grid_zone": r.grid_zone,
+                "location": r.location,
+                "regions": [],
+            }
+        zone_map[r.grid_zone]["regions"].append(f"{r.provider}/{r.region}")
+
+    return sorted(zone_map.values(), key=lambda z: z["grid_zone"])
+
+
+@router.get("/status/sources", tags=["System"])
+async def source_health(
+    source: CarbonDataSource = Depends(get_carbon_source),
+) -> dict:
+    """Check health and latency of each configured carbon data source.
+
+    Queries a representative zone for each source and measures response time.
+    """
+    import asyncio
+    import time
+
+    from carbon_mesh.config import settings
+
+    # Test zones — one per major source
+    test_zones = {
+        "UK Carbon Intensity": "GB",
+        "EIA (US grid)": "US-MIDA-PJM",
+        "AEMO (Australia)": "AU-NSW",
+        "Grid India": "IN-NO",
+        "ONS Brazil": "BR-SE",
+        "Eskom (South Africa)": "ZA",
+        "Open-Meteo (weather)": "DE",
+    }
+
+    if settings.eia_api_key:
+        test_zones["EIA (US grid)"] = "US-MIDA-PJM"
+    if settings.grid_status_api_key:
+        test_zones["GridStatus (US ISOs)"] = "US-CAL-CISO"
+    if settings.entsoe_token:
+        test_zones["ENTSO-E (Europe)"] = "DE"
+
+    results: dict[str, dict] = {}
+
+    async def _check_source(name: str, zone: str) -> None:
+        start = time.perf_counter()
+        try:
+            intensity = await source.get_carbon_intensity(zone)
+            latency_ms = (time.perf_counter() - start) * 1000
+            results[name] = {
+                "status": "ok",
+                "latency_ms": round(latency_ms, 1),
+                "test_zone": zone,
+                "carbon_intensity_gco2_kwh": intensity.carbon_intensity_gco2_kwh,
+                "source": intensity.source,
+            }
+        except Exception as e:
+            latency_ms = (time.perf_counter() - start) * 1000
+            results[name] = {
+                "status": "error",
+                "latency_ms": round(latency_ms, 1),
+                "test_zone": zone,
+                "error": str(e),
+            }
+
+    await asyncio.gather(*[
+        _check_source(name, zone) for name, zone in test_zones.items()
+    ])
+
+    healthy = sum(1 for r in results.values() if r["status"] == "ok")
+    return {
+        "sources": results,
+        "healthy": healthy,
+        "total": len(results),
+    }
+
+
 @router.get("/accounting/savings", response_model=CarbonSavingsReport, tags=["Accounting"])
 async def get_savings(
     tracker: CarbonTracker = Depends(get_tracker),

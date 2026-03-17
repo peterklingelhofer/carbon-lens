@@ -33,9 +33,9 @@ export function Landing() {
           className="hero-title"
           style={{ fontSize: "3rem", margin: "0 0 1rem", fontWeight: 700 }}
         >
-          Zero-knowledge proofs.
+          Real-time carbon data
           <br />
-          Zero-carbon compute.
+          for every cloud region.
         </h1>
         <p
           className="hero-subtitle"
@@ -46,9 +46,8 @@ export function Landing() {
             opacity: 0.9,
           }}
         >
-          Carbon Mesh brokers ZK proof generation to the greenest GPU compute on
-          Earth — hydro-powered data centers, geothermal facilities, and
-          behind-the-meter renewables.
+          11 government-verified data sources. 90+ cloud regions. One API.
+          Know the exact carbon intensity of your compute — every minute.
         </p>
         <p
           className="hero-subtitle"
@@ -59,15 +58,15 @@ export function Landing() {
             opacity: 0.7,
           }}
         >
-          Earn bounties from Boundless, Succinct, Scroll, Aleo, and more.
-          We route your proofs. You keep the profit. The planet keeps the carbon.
+          CSRD, SEC, and SB 253 compliance reporting built in.
+          Stop buying offsets. Start measuring reality.
         </p>
         <div
           className="hero-cta"
           style={{ display: "flex", gap: "1rem", justifyContent: "center" }}
         >
           <Link
-            to="/broker"
+            to="/api-explorer"
             style={{
               padding: "0.75rem 2rem",
               borderRadius: 8,
@@ -77,10 +76,10 @@ export function Landing() {
               textDecoration: "none",
             }}
           >
-            Try the Broker
+            Try the API
           </Link>
           <Link
-            to="/dashboard"
+            to="/compliance"
             style={{
               padding: "0.75rem 2rem",
               borderRadius: 8,
@@ -90,13 +89,12 @@ export function Landing() {
               textDecoration: "none",
             }}
           >
-            View Live Grid Data
+            Compliance Reports
           </Link>
         </div>
       </div>
 
       <section style={section}>
-        {/* The Play */}
         <h2
           style={{
             textAlign: "center",
@@ -104,7 +102,7 @@ export function Landing() {
             marginBottom: "0.5rem",
           }}
         >
-          Proof of Work 2.0 — Without the Guilt
+          The "100% Renewable" Lie
         </h2>
         <p
           style={{
@@ -113,8 +111,7 @@ export function Landing() {
             marginBottom: "2rem",
           }}
         >
-          ZK-Rollups need massive GPU power to generate proofs.
-          The industry is decentralizing. You can earn by providing that compute.
+          Cloud providers buy annual offsets. Carbon Mesh shows you the real-time truth.
         </p>
 
         <div style={card}>
@@ -129,12 +126,12 @@ export function Landing() {
             }}
           >
             <div style={{ color: "var(--gray-400)" }}>
-              Traditional prover: Rent AWS GPU &rarr; Run 24/7 &rarr; Hope grid
-              is clean &rarr; Collect bounty
+              Cloud providers: Run 24/7 &rarr; Buy RECs at year-end &rarr;
+              Claim "100% renewable" on annual report
             </div>
             <div style={{ color: "var(--green-700)", fontWeight: 600 }}>
-              Carbon Mesh: &nbsp;Job posted &rarr; Find greenest GPU NOW &rarr;
-              Spin up &rarr; Prove &rarr; Collect bounty &rarr; Shut down
+              Carbon Mesh: &nbsp;Query real-time grid data &rarr; Know actual
+              gCO2/kWh right now &rarr; Make informed decisions
             </div>
           </div>
         </div>
@@ -142,28 +139,28 @@ export function Landing() {
         <div style={grid3}>
           {[
             {
-              title: "Green Gatekeeper",
-              desc: "Hardcoded carbon policy: only dispatch to compute that meets your threshold. Zero-carbon mode available — behind-the-meter hydro, geothermal, wind.",
+              title: "Carbon Intensity API",
+              desc: "Real-time gCO2/kWh for 90+ cloud regions. One REST call. 11 cascading data sources with automatic fallback. Sub-second response times.",
             },
             {
-              title: "8 Prover Networks",
-              desc: "Connected to Boundless, Succinct, Gevulot, Aleo, Scroll, zkSync, StarkNet, and Taiko. One API to broker them all.",
+              title: "Compliance Reporting",
+              desc: "Generate CSRD, SEC Climate, and California SB 253 reports. Scope 2 + 3 emissions, GHG Protocol methodology, EU Taxonomy assessment.",
             },
             {
-              title: "12+ Compute Sources",
-              desc: "AWS Spot, GCP Preemptible, plus green ASIC centers: IREN (BC hydro), TeraWulf (NY hydro), Hive Digital (Iceland geothermal), Bitdeer (Norway), CoreWeave, Lambda Labs, Vast.ai, Akash.",
+              title: "Carbon-Aware Routing",
+              desc: "Find the greenest cloud region across AWS, GCP, and Azure. Multi-objective scoring balances carbon intensity and cost.",
             },
             {
-              title: "Energy Arbitrage",
-              desc: "No hardware to buy. Rent spot GPUs for 10 minutes, generate the proof, collect the bounty, shut down. Pure software margin.",
+              title: "11 Data Sources",
+              desc: "EIA (US), ENTSO-E (Europe), AEMO (Australia), UK Carbon Intensity, Grid India, ONS Brazil, Eskom, and more. Government-verified, not self-reported.",
             },
             {
-              title: "Real-Time Grid Data",
-              desc: "11 government-verified carbon sources (EIA, ENTSO-E, AEMO). We know the exact gCO2/kWh of every compute option, every minute.",
+              title: "Live WebSocket Feed",
+              desc: "Stream carbon intensity updates in real-time. Build dashboards, trigger alerts, or shift workloads automatically when the grid gets dirty.",
             },
             {
-              title: "Profit Optimization",
-              desc: "Only accepts jobs where bounty > compute cost + your minimum margin. Automatic profitability gating — no losing trades.",
+              title: "Green SLA Monitoring",
+              desc: "Coming soon: continuous monitoring + quarterly attestation reports proving your workloads met carbon targets. Independent verification for auditors.",
             },
           ].map((item) => (
             <div key={item.title} style={card}>
@@ -198,23 +195,23 @@ export function Landing() {
             {[
               {
                 step: "1",
-                title: "Jobs Appear",
-                desc: "Prover networks (Scroll, Boundless, etc.) post proof jobs with bounties. Our broker polls continuously.",
+                title: "Query",
+                desc: "Call our API with a cloud provider and region. Get real-time carbon intensity, renewable percentage, and data source.",
               },
               {
                 step: "2",
-                title: "Green Routing",
-                desc: "We query every GPU provider, fetch live carbon intensity, and filter by your carbon policy.",
+                title: "Route",
+                desc: "Or let us find the greenest region. Post your constraints, we score every option and return the best match.",
               },
               {
                 step: "3",
-                title: "Profit Check",
-                desc: "Only dispatch if bounty minus compute cost exceeds your minimum margin. No unprofitable jobs.",
+                title: "Report",
+                desc: "Ingest your cloud usage data. We calculate Scope 2+3 emissions using real grid data and generate compliance reports.",
               },
               {
                 step: "4",
-                title: "Prove & Earn",
-                desc: "Spin up the GPU, generate the ZK proof, submit to the network, collect the bounty, shut down.",
+                title: "Monitor",
+                desc: "Coming soon: set carbon SLAs, get continuous monitoring, and receive attestation reports for your auditors.",
               },
             ].map((s) => (
               <div key={s.step}>
@@ -252,7 +249,7 @@ export function Landing() {
           </div>
         </div>
 
-        {/* Green Compute Providers */}
+        {/* Data Sources */}
         <h2
           style={{
             textAlign: "center",
@@ -261,7 +258,7 @@ export function Landing() {
             marginBottom: "1rem",
           }}
         >
-          Green Compute Providers
+          Data Sources
         </h2>
         <div style={{ ...card, overflow: "auto" }}>
           <table
@@ -277,50 +274,45 @@ export function Landing() {
                   Provider
                 </th>
                 <th style={{ textAlign: "left", padding: "0.5rem" }}>
-                  Location
+                  Coverage
                 </th>
                 <th style={{ textAlign: "left", padding: "0.5rem" }}>
-                  Energy Source
+                  Resolution
                 </th>
                 <th style={{ textAlign: "left", padding: "0.5rem" }}>
-                  Behind-the-Meter
+                  Auth
                 </th>
-                <th style={{ textAlign: "left", padding: "0.5rem" }}>GPUs</th>
               </tr>
             </thead>
             <tbody>
               {[
-                ["IREN (Iris Energy)", "British Columbia", "100% Hydro", "Yes", "RTX 4090, A100"],
-                ["TeraWulf", "Upstate New York", "90%+ Hydro (Lake Mariner)", "Yes", "RTX 4090"],
-                ["Hive Digital", "Iceland / Sweden", "Geothermal + Hydro", "Yes", "A100, RTX 4090"],
-                ["Bitdeer", "Norway / Bhutan", "Hydro", "Yes", "A100"],
-                ["CoreWeave", "US (multi-region)", "Grid (varies)", "No", "H100, A100"],
-                ["Lambda Labs", "US (Texas, CA)", "Grid (varies)", "No", "A100"],
-                ["AWS Spot", "Global (75+ regions)", "Grid (varies)", "No", "T4, A100"],
-                ["GCP Preemptible", "Global (35+ regions)", "Grid (varies)", "No", "T4, A100, L4"],
-              ].map(([name, loc, energy, btm, gpus]) => (
+                ["UK Carbon Intensity", "Great Britain (18 zones)", "30 min", "Free, no key"],
+                ["EIA (US DOE)", "US (60+ balancing authorities)", "Hourly", "Free key"],
+                ["AEMO", "Australia (5 states)", "5 min", "Free, no key"],
+                ["Grid India", "India (5 regions)", "Heuristic", "Free, no key"],
+                ["ONS Brazil", "Brazil (5 regions)", "Heuristic", "Free, no key"],
+                ["Eskom", "South Africa", "Heuristic", "Free, no key"],
+                ["GridStatus.io", "US ISOs (7)", "5 min", "Free key"],
+                ["ENTSO-E", "Europe (36+ countries)", "Hourly", "Free token"],
+                ["Open-Meteo", "Worldwide (40+ zones)", "Hourly", "Free, no key"],
+                ["Electricity Maps", "Global (200+ zones)", "Real-time", "Paid key"],
+              ].map(([name, coverage, res, auth]) => (
                 <tr
                   key={name}
                   style={{ borderBottom: "1px solid var(--gray-100)" }}
                 >
                   <td style={{ padding: "0.5rem", fontWeight: 500 }}>{name}</td>
-                  <td style={{ padding: "0.5rem" }}>{loc}</td>
-                  <td style={{ padding: "0.5rem" }}>{energy}</td>
+                  <td style={{ padding: "0.5rem" }}>{coverage}</td>
+                  <td style={{ padding: "0.5rem" }}>{res}</td>
                   <td style={{ padding: "0.5rem" }}>
-                    {btm === "Yes" ? (
-                      <span
-                        style={{
-                          color: "var(--green-600)",
-                          fontWeight: 600,
-                        }}
-                      >
-                        Yes
+                    {auth?.includes("no key") ? (
+                      <span style={{ color: "var(--green-600)", fontWeight: 600 }}>
+                        {auth}
                       </span>
                     ) : (
-                      <span style={{ color: "var(--gray-400)" }}>No</span>
+                      <span>{auth}</span>
                     )}
                   </td>
-                  <td style={{ padding: "0.5rem" }}>{gpus}</td>
                 </tr>
               ))}
             </tbody>
@@ -330,7 +322,7 @@ export function Landing() {
         {/* CTA */}
         <div style={{ textAlign: "center", margin: "3rem 0 1rem" }}>
           <Link
-            to="/broker"
+            to="/api-explorer"
             style={{
               display: "inline-block",
               padding: "0.85rem 2.5rem",
@@ -342,7 +334,7 @@ export function Landing() {
               textDecoration: "none",
             }}
           >
-            Simulate Your First Green Proof
+            Try the Carbon API
           </Link>
           <p
             style={{
@@ -351,7 +343,7 @@ export function Landing() {
               fontSize: "0.85rem",
             }}
           >
-            Free demo — see which GPU the broker picks and why
+            Free tier — 100 queries/day, no credit card required
           </p>
         </div>
       </section>
