@@ -1,17 +1,17 @@
-# Carbon Mesh Terraform Data Source
+# CarbonLens Terraform Data Source
 #
-# This uses Terraform's built-in HTTP data source to query the Carbon Mesh API
+# This uses Terraform's built-in HTTP data source to query the CarbonLens API
 # for the greenest cloud region. No custom provider needed.
 #
 # Usage:
-#   1. Start the Carbon Mesh API: `uv run serve`
+#   1. Start the CarbonLens API: `uv run serve`
 #   2. Run: `terraform init && terraform plan`
 #
 # The output `greenest_region` can be used in other resources:
 #   region = data.external.carbon_mesh_route.result.region
 
 variable "carbon_mesh_api_url" {
-  description = "Carbon Mesh API base URL"
+  description = "CarbonLens API base URL"
   type        = string
   default     = "http://localhost:8000"
 }
@@ -34,7 +34,7 @@ variable "carbon_weight" {
   default     = 1.0
 }
 
-# Use the external data source to call the Carbon Mesh API
+# Use the external data source to call the CarbonLens API
 data "external" "carbon_mesh_route" {
   program = ["bash", "-c", <<-EOT
     RESPONSE=$(curl -sf -X POST "${var.carbon_mesh_api_url}/api/v1/route" \

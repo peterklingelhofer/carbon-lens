@@ -1,13 +1,13 @@
-# Deploying Carbon Mesh
+# Deploying CarbonLens
 
-Carbon Mesh is designed for one-click deployment. Pick your platform:
+CarbonLens is designed for one-click deployment. Pick your platform:
 
 ## Quick Start (any platform)
 
 ```bash
 # 1. Clone and setup
-git clone https://github.com/yourorg/carbon-mesh-control-plane.git
-cd carbon-mesh-control-plane
+git clone https://github.com/yourorg/carbonlens.git
+cd carbonlens
 make setup   # installs deps, copies .env, builds frontend
 
 # 2. Add API keys to .env (all free, no credit card)

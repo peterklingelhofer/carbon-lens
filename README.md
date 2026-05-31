@@ -1,8 +1,8 @@
-# Carbon Mesh
+# CarbonLens
 
 **Real-time carbon intensity data API + compliance reporting platform.**
 
-Carbon Mesh aggregates electricity-grid carbon data into a single developer-friendly API, behind one cascading interface. Six providers are live integrations against real grid-operator APIs (UK, EIA, AEMO, GridStatus, ENTSO-E, Electricity Maps); the rest are transparent heuristic estimators and a mock fallback, each labeled in the `source` field of every response so you always know what you're getting. On top of the data layer it adds carbon-aware routing, GHG-Protocol-structured compliance reporting, and Green SLA monitoring.
+CarbonLens aggregates electricity-grid carbon data into a single developer-friendly API, behind one cascading interface. Six providers are live integrations against real grid-operator APIs (UK, EIA, AEMO, GridStatus, ENTSO-E, Electricity Maps); the rest are transparent heuristic estimators and a mock fallback, each labeled in the `source` field of every response so you always know what you're getting. On top of the data layer it adds carbon-aware routing, GHG-Protocol-structured compliance reporting, and Green SLA monitoring.
 
 > **Status:** This is a portfolio / demo project, not a production service. See [What's real vs. estimated vs. mock](#whats-real-vs-estimated-vs-mock) for an honest breakdown of which parts are live integrations and which are stubs.
 
@@ -10,15 +10,15 @@ Carbon Mesh aggregates electricity-grid carbon data into a single developer-frie
 
 Every major cloud provider claims "100% renewable energy." Most rely on **annual REC matching** — buying solar credits at noon to offset coal burned at midnight. Your 2 AM batch job in Virginia may run on a largely fossil grid while the provider settles up with offsets later.
 
-**Carbon Mesh surfaces the underlying grid numbers.** Where a real grid-operator API exists for a region, it serves live gCO2/kWh from that source. Where one doesn't, it falls back to a labeled heuristic or mock value rather than pretending — so the data's provenance is always visible.
+**CarbonLens surfaces the underlying grid numbers.** Where a real grid-operator API exists for a region, it serves live gCO2/kWh from that source. Where one doesn't, it falls back to a labeled heuristic or mock value rather than pretending — so the data's provenance is always visible.
 
 ---
 
 ## Quick Start
 
 ```bash
-git clone https://github.com/your-org/carbon-mesh-control-plane.git
-cd carbon-mesh-control-plane
+git clone https://github.com/your-org/carbonlens.git
+cd carbonlens
 make setup    # install deps, copy .env, build frontend
 make dev      # API on :8000 + frontend on :5173
 ```
@@ -46,7 +46,7 @@ curl -X POST http://localhost:8000/api/v1/carbon/batch \
 ```python
 import httpx
 
-client = httpx.Client(base_url="https://api.carbonmesh.dev", headers={"X-API-Key": "your_key"})
+client = httpx.Client(base_url="https://api.carbonlens.dev", headers={"X-API-Key": "your_key"})
 
 # Real-time carbon intensity
 data = client.get("/api/v1/carbon/aws/us-east-1").json()
@@ -61,7 +61,7 @@ print(f"Deploy to {route['recommended']['provider']} {route['recommended']['regi
 
 **JavaScript/TypeScript:**
 ```typescript
-const res = await fetch("https://api.carbonmesh.dev/api/v1/carbon/aws/us-east-1", {
+const res = await fetch("https://api.carbonlens.dev/api/v1/carbon/aws/us-east-1", {
   headers: { "X-API-Key": "your_key" }
 });
 const { carbon_intensity_gco2_kwh, renewable_percentage } = await res.json();
@@ -103,7 +103,7 @@ Define carbon targets, run on-demand and background compliance checks against li
 
 ## Data Sources
 
-Carbon Mesh cascades through 11 providers, using the highest-priority source that covers each grid zone. The **Type** column is the honest part: only `Live API` providers fetch and parse a real grid-operator response.
+CarbonLens cascades through 11 providers, using the highest-priority source that covers each grid zone. The **Type** column is the honest part: only `Live API` providers fetch and parse a real grid-operator response.
 
 | # | Provider | Coverage | Type | Auth |
 |---|----------|----------|------|------|
@@ -186,7 +186,7 @@ Interactive docs at `/docs` (Swagger) or `/redoc` (ReDoc) when the server is run
 
 ## Adding Credentials
 
-Carbon Mesh works out of the box with 6 no-key providers. Add API keys for more real-time government data:
+CarbonLens works out of the box with 6 no-key providers. Add API keys for more real-time government data:
 
 ```bash
 # .env
@@ -227,7 +227,7 @@ src/carbon_mesh/
   accounting/       Per-request carbon tracking + savings reports
   db/               SQLAlchemy async models + Alembic migrations
   orgs/             Multi-tenant organization management
-  cli/              Typer CLI (carbon-mesh route, intensity, regions)
+  cli/              Typer CLI (carbonlens route, intensity, regions)
   zk/               Carbon-aware compute orchestration demo (mock-backed ZK broker)
   config.py         Environment-based config with validation
   main.py           FastAPI app, middleware, lifespan
@@ -328,7 +328,7 @@ make down       # stop everything
 
 ## The Vision
 
-Carbon Mesh demonstrates the **carbon data layer** that carbon-aware infrastructure decisions
+CarbonLens demonstrates the **carbon data layer** that carbon-aware infrastructure decisions
 would be built on: a single cascading API over multiple grid sources, plus the routing,
 reporting, and monitoring tooling that sits on top of it.
 
