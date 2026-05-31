@@ -46,7 +46,7 @@ export function Nav() {
       `}</style>
       <nav className="nav-bar">
         <NavLink to="/" className="nav-brand">
-          Carbon Mesh
+          CarbonLens
         </NavLink>
         <div className="nav-links">
           <NavLink to="/" style={linkStyle} end>
