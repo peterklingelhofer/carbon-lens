@@ -10,6 +10,7 @@ RUN uv sync --no-dev --no-install-project
 
 COPY src/ src/
 COPY data/ data/
+COPY README.md ./
 RUN uv sync --no-dev
 
 # --- Runtime stage ---
