@@ -1,4 +1,4 @@
-# Carbon Mesh SaaS Roadmap
+# CarbonLens SaaS Roadmap
 
 ## Where We Are Now (Control Plane MVP)
 
@@ -15,7 +15,7 @@ What's missing to become a real SaaS:
 
 ## Phase 1: API-as-a-Service (Month 1-2)
 
-**Goal:** People can sign up, get an API key, and integrate Carbon Mesh into their existing deployment pipelines.
+**Goal:** People can sign up, get an API key, and integrate CarbonLens into their existing deployment pipelines.
 
 ### Auth & Multi-tenancy
 - [ ] API key authentication (issue keys per org)
@@ -48,7 +48,7 @@ What's missing to become a real SaaS:
 
 ## Phase 2: Managed Compute (Month 3-6)
 
-**Goal:** Users deploy workloads directly to Carbon Mesh. We handle placement on the cleanest infrastructure. Think "Hetzner meets green routing."
+**Goal:** Users deploy workloads directly to CarbonLens. We handle placement on the cleanest infrastructure. Think "Hetzner meets green routing."
 
 ### Compute Provisioning
 - [ ] Hetzner Cloud API integration (cheapest bare-metal provider, EU-focused, actual green DC in Finland)
@@ -97,7 +97,7 @@ For batch/flexible workloads (CI/CD, ML training), prices can be *lower* than He
 ### Carbon Dashboard (Frontend)
 - [ ] Real-time world map showing grid carbon intensity
 - [ ] Per-org dashboard: total carbon saved, greenest jobs, trends
-- [ ] Badge generator: "Powered by Carbon Mesh — 94% renewable this month"
+- [ ] Badge generator: "Powered by CarbonLens — 94% renewable this month"
 - [ ] Scope 3 emissions report export (PDF/CSV) for ESG compliance
 
 ### Kubernetes Operator
@@ -129,7 +129,7 @@ For batch/flexible workloads (CI/CD, ML training), prices can be *lower* than He
 - [ ] Anycast DNS routing to cleanest healthy edge
 
 ### Carbon API Marketplace
-- [ ] Third-party developers build on Carbon Mesh data
+- [ ] Third-party developers build on CarbonLens data
 - [ ] "Carbon intensity as a service" for non-compute use cases
 - [ ] IoT, EV charging, smart home energy optimization
 
@@ -150,10 +150,10 @@ For batch/flexible workloads (CI/CD, ML training), prices can be *lower* than He
 5. **EU data residency** — GDPR-friendly by default
 
 ### Why Not Just Wrap Existing Providers
-Wrapping AWS/GCP/Azure adds their markup (~3-10x over bare metal). For Carbon Mesh to be price-competitive with Hetzner:
+Wrapping AWS/GCP/Azure adds their markup (~3-10x over bare metal). For CarbonLens to be price-competitive with Hetzner:
 - Use bare-metal/VPS providers (Hetzner, OVH, Vultr) as the primary compute layer
 - Use hyperscalers only for regions where bare-metal isn't available
-- Pass through near-cost pricing + small Carbon Mesh fee
+- Pass through near-cost pricing + small CarbonLens fee
 
 ### Pricing Strategy
 1. **Control plane (API):** Free tier + $29/mo pro — this is the land. Low friction, developers try it.

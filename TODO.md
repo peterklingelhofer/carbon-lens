@@ -1,7 +1,7 @@
-# Carbon Mesh — Carbon Data API + Compliance Platform
+# CarbonLens — Carbon Data API + Compliance Platform
 
 ## Product Vision
-**Carbon Mesh** is a real-time carbon intensity data API and compliance reporting platform.
+**CarbonLens** is a real-time carbon intensity data API and compliance reporting platform.
 We aggregate 11 government-verified carbon data sources into a single developer-friendly API,
 and provide turnkey CSRD/SEC/SB-253 compliance reporting for cloud workloads.
 

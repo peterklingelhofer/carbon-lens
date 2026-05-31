@@ -1,7 +1,7 @@
 [project]
-name = "carbon-mesh-control-plane"
+name = "carbonlens"
 version = "0.1.0"
-description = "Carbon-aware multi-cloud routing — chase the sun and wind for 100% green compute"
+description = "Carbon-intensity data API for cloud regions, with carbon-aware routing and GHG-Protocol compliance reporting"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -30,7 +30,7 @@ dev = [
 
 [project.scripts]
 serve = "carbon_mesh.main:run"
-carbon-mesh = "carbon_mesh.cli.main:app"
+carbonlens = "carbon_mesh.cli.main:app"
 
 [build-system]
 requires = ["hatchling"]

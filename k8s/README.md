@@ -1,6 +1,6 @@
 # Kubernetes manifests — illustrative
 
-These manifests show how Carbon Mesh *would* run on Kubernetes. They are
+These manifests show how CarbonLens *would* run on Kubernetes. They are
 deployable demos, not a hardened production setup. Read this before relying on them.
 
 ## What's here and what works

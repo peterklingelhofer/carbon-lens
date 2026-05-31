@@ -158,7 +158,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Carbon Mesh Control Plane",
+    title="CarbonLens",
     description=(
         "Carbon intensity data API + compliance reporting platform.\n\n"
         "## Carbon Data API\n"

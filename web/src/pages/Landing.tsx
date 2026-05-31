@@ -111,7 +111,7 @@ export function Landing() {
             marginBottom: "2rem",
           }}
         >
-          Cloud providers buy annual offsets. Carbon Mesh shows you the real-time truth.
+          Cloud providers buy annual offsets. CarbonLens shows you the real-time truth.
         </p>
 
         <div style={card}>
@@ -130,7 +130,7 @@ export function Landing() {
               Claim "100% renewable" on annual report
             </div>
             <div style={{ color: "var(--green-700)", fontWeight: 600 }}>
-              Carbon Mesh: &nbsp;Query real-time grid data &rarr; Know actual
+              CarbonLens: &nbsp;Query real-time grid data &rarr; Know actual
               gCO2/kWh right now &rarr; Make informed decisions
             </div>
           </div>

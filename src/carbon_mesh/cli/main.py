@@ -1,4 +1,4 @@
-"""Carbon Mesh CLI — Find the greenest cloud region for your workload."""
+"""CarbonLens CLI — Find the greenest cloud region for your workload."""
 
 from typing import Optional
 
@@ -9,7 +9,7 @@ from rich.table import Table
 from carbon_mesh.cli import client
 
 app = typer.Typer(
-    name="carbon-mesh",
+    name="carbonlens",
     help="Carbon-aware multi-cloud routing CLI",
     no_args_is_help=True,
 )
@@ -222,7 +222,7 @@ def config_show():
     """Show current CLI configuration."""
     config = client.load_config()
     console.print()
-    console.print("[bold]Carbon Mesh CLI Config[/bold]")
+    console.print("[bold]CarbonLens CLI Config[/bold]")
     console.print(f"  API URL: {config.get('api_url', 'http://localhost:8000 (default)')}")
     key = config.get("api_key")
     if key:
