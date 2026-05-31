@@ -46,8 +46,8 @@ export function Landing() {
             opacity: 0.9,
           }}
         >
-          11 government-verified data sources. 90+ cloud regions. One API.
-          Know the exact carbon intensity of your compute — every minute.
+          6 live grid-operator integrations + transparent fallbacks. 75+ cloud regions. One API.
+          Every response is tagged with its data source, so you always know what you're getting.
         </p>
         <p
           className="hero-subtitle"
@@ -140,27 +140,27 @@ export function Landing() {
           {[
             {
               title: "Carbon Intensity API",
-              desc: "Real-time gCO2/kWh for 90+ cloud regions. One REST call. 11 cascading data sources with automatic fallback. Sub-second response times.",
+              desc: "gCO2/kWh for 75+ cloud regions in one REST call. A cascading chain of 11 providers with automatic fallback — and every response is tagged with the source that produced it.",
             },
             {
               title: "Compliance Reporting",
-              desc: "Generate CSRD, SEC Climate, and California SB 253 reports. Scope 2 + 3 emissions, GHG Protocol methodology, EU Taxonomy assessment.",
+              desc: "Draft CSRD / SEC Climate / California SB 253 emissions reports. Scope 2 (location-based) + Scope 3 Cat 1, GHG-Protocol-structured, with a documented methodology and data-quality summary.",
             },
             {
               title: "Carbon-Aware Routing",
               desc: "Find the greenest cloud region across AWS, GCP, and Azure. Multi-objective scoring balances carbon intensity and cost.",
             },
             {
-              title: "11 Data Sources",
-              desc: "EIA (US), ENTSO-E (Europe), AEMO (Australia), UK Carbon Intensity, Grid India, ONS Brazil, Eskom, and more. Government-verified, not self-reported.",
+              title: "6 Live Grid Integrations",
+              desc: "EIA (US), ENTSO-E (Europe), AEMO (Australia), UK Carbon Intensity, GridStatus, and Electricity Maps fetch real grid-operator data. Heuristic and mock sources cover the rest — each clearly labeled.",
             },
             {
               title: "Live WebSocket Feed",
-              desc: "Stream carbon intensity updates in real-time. Build dashboards, trigger alerts, or shift workloads automatically when the grid gets dirty.",
+              desc: "Stream carbon intensity updates over a WebSocket. Build dashboards, trigger alerts, or shift workloads when the grid gets dirty.",
             },
             {
-              title: "Green SLA Monitoring",
-              desc: "Coming soon: continuous monitoring + quarterly attestation reports proving your workloads met carbon targets. Independent verification for auditors.",
+              title: "Green SLA Monitoring (Beta)",
+              desc: "Define carbon targets, run on-demand and background compliance checks against live grid data, and generate attestation-style summary reports. (In-memory; not yet a third-party-assured standard.)",
             },
           ].map((item) => (
             <div key={item.title} style={card}>
@@ -211,7 +211,7 @@ export function Landing() {
               {
                 step: "4",
                 title: "Monitor",
-                desc: "Coming soon: set carbon SLAs, get continuous monitoring, and receive attestation reports for your auditors.",
+                desc: "Beta: set carbon SLAs, run on-demand and background compliance checks, and generate attestation-style summary reports.",
               },
             ].map((s) => (
               <div key={s.step}>
@@ -277,7 +277,7 @@ export function Landing() {
                   Coverage
                 </th>
                 <th style={{ textAlign: "left", padding: "0.5rem" }}>
-                  Resolution
+                  Type
                 </th>
                 <th style={{ textAlign: "left", padding: "0.5rem" }}>
                   Auth
@@ -286,16 +286,16 @@ export function Landing() {
             </thead>
             <tbody>
               {[
-                ["UK Carbon Intensity", "Great Britain (18 zones)", "30 min", "Free, no key"],
-                ["EIA (US DOE)", "US (60+ balancing authorities)", "Hourly", "Free key"],
-                ["AEMO", "Australia (5 states)", "5 min", "Free, no key"],
+                ["UK Carbon Intensity", "Great Britain (18 zones)", "Live API", "Free, no key"],
+                ["EIA (US DOE)", "US (60+ balancing authorities)", "Live API", "Free key"],
+                ["AEMO", "Australia (5 states)", "Live API", "Free, no key"],
                 ["Grid India", "India (5 regions)", "Heuristic", "Free, no key"],
                 ["ONS Brazil", "Brazil (5 regions)", "Heuristic", "Free, no key"],
                 ["Eskom", "South Africa", "Heuristic", "Free, no key"],
-                ["GridStatus.io", "US ISOs (7)", "5 min", "Free key"],
-                ["ENTSO-E", "Europe (36+ countries)", "Hourly", "Free token"],
-                ["Open-Meteo", "Worldwide (40+ zones)", "Hourly", "Free, no key"],
-                ["Electricity Maps", "Global (200+ zones)", "Real-time", "Paid key"],
+                ["GridStatus.io", "US ISOs (7)", "Live API", "Paid key"],
+                ["ENTSO-E", "Europe (36+ countries)", "Live API", "Free token"],
+                ["Open-Meteo", "Worldwide (40+ zones)", "Weather estimate", "Free, no key"],
+                ["Electricity Maps", "Global (200+ zones)", "Live API", "Paid key"],
               ].map(([name, coverage, res, auth]) => (
                 <tr
                   key={name}

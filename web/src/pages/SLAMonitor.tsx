@@ -211,7 +211,7 @@ export function SLAMonitor() {
                 </tr>
               </thead>
               <tbody>
-                {slas.map((sla: Record<string, string | number | boolean | null>) => (
+                {slas.map((sla) => (
                   <tr key={sla.id as string} style={{ borderBottom: "1px solid var(--gray-100)" }}>
                     <td style={{ ...td, fontWeight: 600 }}>{sla.name as string}</td>
                     <td style={td}>
@@ -291,7 +291,7 @@ export function SLAMonitor() {
                     </tr>
                   </thead>
                   <tbody>
-                    {checkMutation.data.breached_regions.map((r: Record<string, string | number | boolean>, i: number) => (
+                    {checkMutation.data.breached_regions.map((r, i: number) => (
                       <tr key={i} style={{ borderBottom: "1px solid var(--gray-100)" }}>
                         <td style={{ ...td, fontWeight: 600, textTransform: "uppercase", fontSize: "0.8rem" }}>
                           {r.provider as string}

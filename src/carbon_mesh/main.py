@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
 
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -69,12 +70,29 @@ def _log_provider_status() -> None:
     missing = [name for name, ok in providers.items() if not ok]
     logger.info(
         "Carbon data providers ready (%d/%d): %s",
-        len(configured), len(providers), ", ".join(configured),
+        len(configured),
+        len(providers),
+        ", ".join(configured),
     )
     if missing:
         logger.warning(
             "Providers missing credentials (%d): %s — add API keys to .env for live data",
-            len(missing), ", ".join(missing),
+            len(missing),
+            ", ".join(missing),
+        )
+
+
+def _check_security_posture() -> None:
+    """Warn loudly about insecure config and reject the unsafe wildcard-CORS combination."""
+    if not settings.api_key_required:
+        logger.warning(
+            "CARBON_MESH_API_KEY_REQUIRED=false — running in OPEN demo mode with no authentication. "
+            "Set it to true for any non-demo deployment."
+        )
+    if "*" in settings.cors_origins:
+        raise RuntimeError(
+            "CORS origins include '*'. Wildcard origins are not allowed — "
+            "set CARBON_MESH_CORS_ORIGINS to an explicit allowlist."
         )
 
 
@@ -93,6 +111,7 @@ async def lifespan(app: FastAPI):
 
     app.state.shutdown_event = shutdown_event
 
+    _check_security_posture()
     _log_provider_status()
 
     if settings.use_database:
@@ -141,20 +160,20 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="Carbon Mesh Control Plane",
     description=(
-        "Real-time carbon intensity data API + compliance reporting platform.\n\n"
+        "Carbon intensity data API + compliance reporting platform.\n\n"
         "## Carbon Data API\n"
-        "- **11 government-verified data sources** — UK, EIA, AEMO, Grid India, ONS Brazil, "
-        "Eskom, GridStatus, ENTSO-E, Open-Meteo, Electricity Maps\n"
-        "- **Real-time grid carbon intensity** for 90+ cloud regions\n"
+        "- **6 live grid-operator integrations** (UK, EIA, AEMO, GridStatus, ENTSO-E, "
+        "Electricity Maps) plus labeled heuristic and mock fallbacks — 11 sources total, cascading\n"
+        "- **Grid carbon intensity** for 75+ cloud regions; every response is tagged with its `source`\n"
         "- **Batch queries** for multiple regions in a single call\n\n"
         "## Compliance Reporting\n"
-        "- **CSRD / ESRS E1** aligned emissions reporting\n"
-        "- **Scope 2 + 3** with GHG Protocol methodology\n"
-        "- **EU Taxonomy** eligibility assessment\n\n"
-        "## Green SLA Monitoring\n"
+        "- **GHG-Protocol-structured** Scope 2 (location-based) + Scope 3 Cat 1 reporting\n"
+        "- Drafts aimed at **CSRD / SEC Climate / SB 253** workflows (not an assured report)\n"
+        "- **EU Taxonomy** eligibility flag (simplified screening)\n\n"
+        "## Green SLA Monitoring (Beta)\n"
         "- **Define carbon targets** — max gCO2/kWh, min renewable %\n"
-        "- **Continuous monitoring** with configurable frequency\n"
-        "- **Attestation reports** for auditors\n"
+        "- **On-demand + background checks** (in-memory state)\n"
+        "- **Attestation-style summary reports**\n"
         "- **Webhook alerts** on SLA breach\n\n"
         "## Carbon-Aware Scheduling\n"
         "- **Find optimal time windows** for batch jobs, CI/CD, ML training\n"
@@ -170,12 +189,30 @@ app = FastAPI(
     lifespan=lifespan,
     openapi_tags=[
         {"name": "Routing", "description": "Find the greenest cloud region for your workload"},
-        {"name": "Regions", "description": "Explore supported cloud regions across AWS, GCP, and Azure"},
-        {"name": "Carbon Data", "description": "Get real-time carbon intensity for specific regions"},
-        {"name": "Scheduling", "description": "Carbon-aware scheduling — find optimal low-carbon time windows for batch jobs"},
-        {"name": "SLA Monitoring", "description": "Green SLA definitions, compliance checks, attestation reports, and alerts"},
-        {"name": "ZK Broker", "description": "Carbon-aware compute demo (ZK proof routing)"},
-        {"name": "Compliance", "description": "CSRD/SEC/SB-253 emissions measurement, calculation, and reporting"},
+        {
+            "name": "Regions",
+            "description": "Explore supported cloud regions across AWS, GCP, and Azure",
+        },
+        {
+            "name": "Carbon Data",
+            "description": "Get real-time carbon intensity for specific regions",
+        },
+        {
+            "name": "Scheduling",
+            "description": "Carbon-aware scheduling — find optimal low-carbon time windows for batch jobs",
+        },
+        {
+            "name": "SLA Monitoring",
+            "description": "Green SLA definitions, compliance checks, attestation reports, and alerts",
+        },
+        {
+            "name": "ZK Broker",
+            "description": "Carbon-aware compute orchestration demo (mock-backed)",
+        },
+        {
+            "name": "Compliance",
+            "description": "CSRD/SEC/SB-253 emissions measurement, calculation, and reporting",
+        },
         {"name": "Accounting", "description": "Track carbon savings from routed workloads"},
         {"name": "Billing", "description": "Usage tracking, tier limits, and plan management"},
         {"name": "Admin", "description": "API key management (requires admin secret)"},
@@ -192,7 +229,12 @@ app.add_middleware(
     allow_origins=settings.cors_origins,
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type", "X-API-Key"],
-    expose_headers=["X-Request-ID", "X-RateLimit-Limit", "X-RateLimit-Remaining", "X-RateLimit-Reset"],
+    expose_headers=[
+        "X-Request-ID",
+        "X-RateLimit-Limit",
+        "X-RateLimit-Remaining",
+        "X-RateLimit-Reset",
+    ],
 )
 
 
@@ -276,6 +318,8 @@ async def generic_error_handler(request: Request, exc: Exception):
 
 
 app.state.limiter = limiter
+# Enforce the default rate limit (settings.rate_limit_default) on every route
+app.add_middleware(SlowAPIMiddleware)
 
 
 @app.exception_handler(RateLimitExceeded)
@@ -328,7 +372,9 @@ async def health() -> dict:
         "status": "ok",
         "version": "0.1.0",
         "carbon_source": settings.carbon_source,
-        "database": "disabled" if not settings.use_database else ("connected" if db_error is None else "unreachable"),
+        "database": "disabled"
+        if not settings.use_database
+        else ("connected" if db_error is None else "unreachable"),
     }
     if db_error is not None:
         result["status"] = "degraded"

@@ -1,25 +1,21 @@
-"""Eskom South Africa provider — free, no API key required.
+"""Eskom South Africa provider — heuristic estimate, no API key required.
 
 Covers 1 zone: ZA (South Africa national grid).
 South Africa's grid is ~85% coal, making it one of the dirtiest in the world.
+
+NOTE: This is a static time-of-day heuristic, not a live grid feed. Eskom does
+not publish a free real-time fuel-mix / carbon-intensity API, so this returns a
+modeled estimate tagged `source="eskom_heuristic"`. Treat it as illustrative.
 """
 
 from datetime import datetime, timezone
-
-from carbon_mesh.carbon_sources.http_pool import shared_client
 
 from carbon_mesh.models.carbon import CarbonIntensity
 
 ESKOM_ZONES = {"ZA"}
 
-# Eskom API endpoint for current supply
-API_URL = "https://developer.sepush.co.za/business/2.0/status"
-
 
 class EskomCarbonSource:
-    def __init__(self) -> None:
-        self._client = shared_client(timeout=10.0)
-
     def can_handle(self, grid_zone: str) -> bool:
         return grid_zone in ESKOM_ZONES
 
@@ -61,9 +57,7 @@ class EskomCarbonSource:
             source="eskom_heuristic",
         )
 
-    async def get_carbon_intensity_batch(
-        self, grid_zones: list[str]
-    ) -> dict[str, CarbonIntensity]:
+    async def get_carbon_intensity_batch(self, grid_zones: list[str]) -> dict[str, CarbonIntensity]:
         results: dict[str, CarbonIntensity] = {}
         for zone in grid_zones:
             if self.can_handle(zone):

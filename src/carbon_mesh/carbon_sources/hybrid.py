@@ -73,12 +73,14 @@ class HybridCarbonSource:
         ]
         if self._eia:
             chain.append(("EIA", self._eia, set(_GRID_ZONE_TO_EIA.keys())))
-        chain.extend([
-            ("AEMO", self._aemo, AEMO_ZONES),
-            ("Grid India", self._grid_india, INDIA_ZONES),
-            ("ONS Brazil", self._ons_brazil, BRAZIL_ZONES),
-            ("Eskom", self._eskom, ESKOM_ZONES),
-        ])
+        chain.extend(
+            [
+                ("AEMO", self._aemo, AEMO_ZONES),
+                ("Grid India", self._grid_india, INDIA_ZONES),
+                ("ONS Brazil", self._ons_brazil, BRAZIL_ZONES),
+                ("Eskom", self._eskom, ESKOM_ZONES),
+            ]
+        )
         if self._gridstatus:
             chain.append(("GridStatus", self._gridstatus, set(_GRID_ZONE_TO_ISO.keys())))
         if self._entsoe:
@@ -96,19 +98,24 @@ class HybridCarbonSource:
                 continue
             try:
                 result = await provider.get_carbon_intensity(grid_zone)
-                logger.debug("%s hit for %s: %.1f gCO2/kWh", name, grid_zone, result.carbon_intensity_gco2_kwh)
+                logger.debug(
+                    "%s hit for %s: %.1f gCO2/kWh",
+                    name,
+                    grid_zone,
+                    result.carbon_intensity_gco2_kwh,
+                )
                 return result
             except Exception as e:
                 logger.warning("%s failed for %s: %s", name, grid_zone, e)
 
         # Mock (static fallback — always succeeds)
         result = await self._mock.get_carbon_intensity(grid_zone)
-        logger.debug("Mock fallback for %s: %.1f gCO2/kWh", grid_zone, result.carbon_intensity_gco2_kwh)
+        logger.debug(
+            "Mock fallback for %s: %.1f gCO2/kWh", grid_zone, result.carbon_intensity_gco2_kwh
+        )
         return result
 
-    async def get_carbon_intensity_batch(
-        self, grid_zones: list[str]
-    ) -> dict[str, CarbonIntensity]:
+    async def get_carbon_intensity_batch(self, grid_zones: list[str]) -> dict[str, CarbonIntensity]:
         """Fetch carbon data for multiple zones, fanning out to providers concurrently.
 
         All applicable providers are called in parallel via asyncio.gather.
@@ -120,7 +127,11 @@ class HybridCarbonSource:
         # Build (priority, name, coroutine) for each provider that has matching zones
         tasks: list[tuple[int, str, asyncio.Task]] = []
         for priority, (name, provider, supported_zones) in enumerate(self._chain):
-            batch_zones = list(zone_set) if not supported_zones else [z for z in zone_set if z in supported_zones]
+            batch_zones = (
+                list(zone_set)
+                if not supported_zones
+                else [z for z in zone_set if z in supported_zones]
+            )
             if not batch_zones:
                 continue
             coro = provider.get_carbon_intensity_batch(batch_zones)

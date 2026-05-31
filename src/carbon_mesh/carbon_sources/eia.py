@@ -89,9 +89,7 @@ class EIACarbonSource:
             source="eia",
         )
 
-    async def get_carbon_intensity_batch(
-        self, grid_zones: list[str]
-    ) -> dict[str, CarbonIntensity]:
+    async def get_carbon_intensity_batch(self, grid_zones: list[str]) -> dict[str, CarbonIntensity]:
         # Collect all respondents we need
         respondents = set()
         zone_to_respondent: dict[str, str] = {}
@@ -116,9 +114,7 @@ class EIACarbonSource:
         for r in respondents:
             params.append(("facets[respondent][]", r))
 
-        resp = await self._client.get(
-            "/electricity/rto/fuel-type-data/data", params=params
-        )
+        resp = await self._client.get("/electricity/rto/fuel-type-data/data", params=params)
         resp.raise_for_status()
         data = resp.json()
 

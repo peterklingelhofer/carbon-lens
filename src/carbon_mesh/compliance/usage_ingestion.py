@@ -53,7 +53,11 @@ def estimate_energy_kwh(
 
     if usage_unit == "vcpu_hours":
         # Try to match instance family
-        family = resource_type.lower().split(".")[0] if "." in resource_type else resource_type.lower().replace("-", "_")
+        family = (
+            resource_type.lower().split(".")[0]
+            if "." in resource_type
+            else resource_type.lower().replace("-", "_")
+        )
         kwh_per_unit = VCPU_HOUR_KWH.get(family, VCPU_HOUR_KWH["default"])
         return usage_quantity * kwh_per_unit * pue
 
@@ -169,7 +173,9 @@ class AWSCostExplorerAdapter:
 
         records: list[CloudUsageRecord] = []
         for result in response.get("ResultsByTime", []):
-            p_start = datetime.fromisoformat(result["TimePeriod"]["Start"]).replace(tzinfo=timezone.utc)
+            p_start = datetime.fromisoformat(result["TimePeriod"]["Start"]).replace(
+                tzinfo=timezone.utc
+            )
             p_end = datetime.fromisoformat(result["TimePeriod"]["End"]).replace(tzinfo=timezone.utc)
 
             for group in result.get("Groups", []):
@@ -267,8 +273,12 @@ class GCPBillingAdapter:
                     usage_quantity=qty,
                     usage_unit=unit,
                     energy_kwh=energy,
-                    period_start=datetime.combine(row.period_start, datetime.min.time(), tzinfo=timezone.utc),
-                    period_end=datetime.combine(row.period_end, datetime.min.time(), tzinfo=timezone.utc),
+                    period_start=datetime.combine(
+                        row.period_start, datetime.min.time(), tzinfo=timezone.utc
+                    ),
+                    period_end=datetime.combine(
+                        row.period_end, datetime.min.time(), tzinfo=timezone.utc
+                    ),
                     source="gcp_billing",
                 )
             )
@@ -401,6 +411,7 @@ class MockUsageAdapter:
 
 
 # --- Helpers ---
+
 
 def _aws_service_to_unit(service: str) -> str:
     """Heuristic: map AWS service name to usage unit."""

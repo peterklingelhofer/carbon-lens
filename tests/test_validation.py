@@ -12,6 +12,7 @@ from carbon_mesh.auth.api_keys import generate_api_key, hash_key, key_prefix
 # Model-level validation tests
 # ---------------------------------------------------------------------------
 
+
 class TestJobConstraintsValidation:
     def test_valid_providers(self):
         jc = JobConstraints(providers=["aws", "gcp"])
@@ -52,6 +53,7 @@ class TestJobConstraintsValidation:
 # API-level validation tests
 # ---------------------------------------------------------------------------
 
+
 class TestAPIValidation:
     def test_invalid_provider_returns_422(self, client: TestClient):
         resp = client.post(
@@ -91,6 +93,7 @@ class TestAPIValidation:
 # Health check tests
 # ---------------------------------------------------------------------------
 
+
 class TestHealthCheck:
     def test_health_returns_version(self, client: TestClient):
         resp = client.get("/health")
@@ -108,6 +111,7 @@ class TestHealthCheck:
 # Request ID middleware tests
 # ---------------------------------------------------------------------------
 
+
 class TestRequestID:
     def test_response_has_request_id(self, client: TestClient):
         resp = client.get("/api/v1/regions")
@@ -122,6 +126,7 @@ class TestRequestID:
 # ---------------------------------------------------------------------------
 # API key utility tests (no DB required)
 # ---------------------------------------------------------------------------
+
 
 class TestAPIKeyUtils:
     def test_generate_key_format(self):
@@ -149,6 +154,7 @@ class TestAPIKeyUtils:
 # ---------------------------------------------------------------------------
 # Error response format tests
 # ---------------------------------------------------------------------------
+
 
 class TestErrorResponses:
     def test_404_has_detail(self, client: TestClient):

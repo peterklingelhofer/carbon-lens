@@ -1,6 +1,5 @@
 """Tests for Green SLA monitoring — engine, monitor, and models."""
 
-import asyncio
 import uuid
 from datetime import datetime, timezone, timedelta
 
@@ -22,6 +21,7 @@ from carbon_mesh.sla.monitor import SLAMonitor, FREQUENCY_SECONDS
 
 # --- Fixtures ---
 
+
 class MockCarbonSource:
     """Mock carbon source that returns predictable data."""
 
@@ -31,6 +31,7 @@ class MockCarbonSource:
 
     async def get_carbon_intensity(self, grid_zone: str):
         from carbon_mesh.models.carbon import CarbonIntensity
+
         return CarbonIntensity(
             grid_zone=grid_zone,
             carbon_intensity_gco2_kwh=self._intensity,
@@ -62,18 +63,21 @@ class MockGridMapper:
 
     def list_regions(self, provider: str | None = None):
         from carbon_mesh.models.region import CloudRegion
+
         regions = []
         for (prov, reg), zone in self._regions.items():
             if provider and prov != provider:
                 continue
-            regions.append(CloudRegion(
-                provider=prov,
-                region=reg,
-                grid_zone=zone,
-                location="Test",
-                latitude=0,
-                longitude=0,
-            ))
+            regions.append(
+                CloudRegion(
+                    provider=prov,
+                    region=reg,
+                    grid_zone=zone,
+                    location="Test",
+                    latitude=0,
+                    longitude=0,
+                )
+            )
         return regions
 
 
@@ -98,6 +102,7 @@ def _make_sla(**kwargs) -> GreenSLA:
 
 
 # --- Model tests ---
+
 
 def test_sla_model_creation():
     sla = _make_sla()
@@ -198,6 +203,7 @@ def test_frequency_seconds():
 
 # --- Engine tests ---
 
+
 @pytest.mark.asyncio
 async def test_check_sla_compliant():
     """SLA check should be compliant when carbon is below threshold."""
@@ -297,10 +303,18 @@ async def test_generate_report_from_checks():
             regions_checked=4,
             regions_compliant=4 if i < 4 else 2,
             regions_breached=0 if i < 4 else 2,
-            breached_regions=[] if i < 4 else [
-                {"provider": "aws", "region": "us-east-1", "grid_zone": "US-MIDA-PJM",
-                 "carbon_intensity_gco2_kwh": 120.0, "renewable_breached": False,
-                 "carbon_breached": True, "renewable_percentage": 60.0},
+            breached_regions=[]
+            if i < 4
+            else [
+                {
+                    "provider": "aws",
+                    "region": "us-east-1",
+                    "grid_zone": "US-MIDA-PJM",
+                    "carbon_intensity_gco2_kwh": 120.0,
+                    "renewable_breached": False,
+                    "carbon_breached": True,
+                    "renewable_percentage": 60.0,
+                },
             ],
             target_max_carbon=100.0,
             target_min_renewable=50.0,
@@ -385,6 +399,7 @@ def test_summarize_sla_no_checks():
 
 
 # --- Monitor tests ---
+
 
 @pytest.mark.asyncio
 async def test_monitor_status_when_stopped():

@@ -36,11 +36,7 @@ def _build_carbon_source() -> CarbonDataSource:
             if settings.grid_status_api_key
             else None
         )
-        eia = (
-            EIACarbonSource(api_key=settings.eia_api_key)
-            if settings.eia_api_key
-            else None
-        )
+        eia = EIACarbonSource(api_key=settings.eia_api_key) if settings.eia_api_key else None
         entsoe = (
             ENTSOECarbonSource(security_token=settings.entsoe_token)
             if settings.entsoe_token

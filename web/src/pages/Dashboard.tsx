@@ -120,7 +120,7 @@ export function Dashboard() {
     <div style={section}>
       <h1 style={{ marginBottom: "0.5rem" }}>Carbon Dashboard</h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
-        Live carbon intensity data powering the API. 11 sources, 90+ cloud regions, updated every minute.
+        Live carbon intensity data powering the API. 11 cascading sources (6 live integrations), 75+ cloud regions.
       </p>
 
       {/* Stats cards */}

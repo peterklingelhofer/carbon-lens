@@ -13,50 +13,44 @@ jobs:
   test:
     uses: ./.github/workflows/ci.yml
 
-  # --- Fly.io Deploy (uncomment when ready) ---
-  # deploy-fly:
-  #   needs: test
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: superfly/flyctl-actions/setup-flyctl@master
-  #     - run: flyctl deploy --remote-only
-  #       env:
-  #         FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+  # Build and publish container images to GHCR on every green merge to main.
+  # Uses the built-in GITHUB_TOKEN — no external accounts or secrets required.
+  push-images:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
 
-  # --- Render Deploy (auto-deploys from git, no action needed) ---
+      - name: Lowercase image namespace
+        id: ns
+        run: echo "repo=${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
 
-  # --- Railway Deploy (uncomment when ready) ---
-  # deploy-railway:
-  #   needs: test
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: bervProject/railway-deploy@main
-  #       with:
-  #         railway_token: ${{ secrets.RAILWAY_TOKEN }}
-  #         service: carbon-mesh-api
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-  # --- Docker Hub / GHCR (uncomment to push images) ---
-  # push-images:
-  #   needs: test
-  #   runs-on: ubuntu-latest
-  #   permissions:
-  #     packages: write
-  #     contents: read
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: docker/login-action@v3
-  #       with:
-  #         registry: ghcr.io
-  #         username: ${{ github.actor }}
-  #         password: ${{ secrets.GITHUB_TOKEN }}
-  #     - uses: docker/build-push-action@v6
-  #       with:
-  #         push: true
-  #         tags: ghcr.io/${{ github.repository }}/api:latest
-  #     - uses: docker/build-push-action@v6
-  #       with:
-  #         context: ./web
-  #         push: true
-  #         tags: ghcr.io/${{ github.repository }}/web:latest
+      - name: Build & push API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ steps.ns.outputs.repo }}/api:latest
+            ghcr.io/${{ steps.ns.outputs.repo }}/api:${{ github.sha }}
+
+      - name: Build & push web image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./web
+          push: true
+          tags: |
+            ghcr.io/${{ steps.ns.outputs.repo }}/web:latest
+            ghcr.io/${{ steps.ns.outputs.repo }}/web:${{ github.sha }}
+
+  # PaaS deploys (Fly / Render / Railway) need account secrets — see docs/DEPLOY.md.
+  # Render auto-deploys from git; Fly/Railway examples live in that doc.

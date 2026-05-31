@@ -25,6 +25,7 @@ from carbon_mesh.carbon_sources.uk import UKCarbonSource
 # Zone coverage tests
 # ---------------------------------------------------------------------------
 
+
 class TestZoneCoverage:
     def test_uk_zones(self):
         source = UKCarbonSource()
@@ -89,6 +90,7 @@ class TestZoneCoverage:
 # Eskom heuristic tests (no API needed)
 # ---------------------------------------------------------------------------
 
+
 class TestEskomHeuristic:
     @pytest.mark.asyncio
     async def test_returns_high_intensity(self):
@@ -112,6 +114,7 @@ class TestEskomHeuristic:
 # Grid India heuristic tests (fallback when API is unavailable)
 # ---------------------------------------------------------------------------
 
+
 class TestGridIndiaHeuristic:
     @pytest.mark.asyncio
     async def test_all_regions(self):
@@ -132,6 +135,7 @@ class TestGridIndiaHeuristic:
 # ---------------------------------------------------------------------------
 # ONS Brazil heuristic tests
 # ---------------------------------------------------------------------------
+
 
 class TestONSBrazilHeuristic:
     @pytest.mark.asyncio
@@ -155,6 +159,7 @@ class TestONSBrazilHeuristic:
 # Mock source tests (all zones)
 # ---------------------------------------------------------------------------
 
+
 class TestMockSource:
     @pytest.mark.asyncio
     async def test_known_zone(self):
@@ -175,15 +180,28 @@ class TestMockSource:
         """Verify all newly added zones have mock data."""
         source = MockCarbonSource()
         new_zones = [
-            "AU-NSW", "AU-TAS", "IN-NO", "IN-SO",
-            "BR-SE", "BR-NE", "ZA", "KR", "HK",
-            "NO-NO1", "PL", "ES", "IS", "UY", "CR",
+            "AU-NSW",
+            "AU-TAS",
+            "IN-NO",
+            "IN-SO",
+            "BR-SE",
+            "BR-NE",
+            "ZA",
+            "KR",
+            "HK",
+            "NO-NO1",
+            "PL",
+            "ES",
+            "IS",
+            "UY",
+            "CR",
         ]
         for zone in new_zones:
             result = await source.get_carbon_intensity(zone)
             # Should NOT return the default (250, 30) — should have specific data
-            assert (result.carbon_intensity_gco2_kwh, result.renewable_percentage) != (250, 30), \
+            assert (result.carbon_intensity_gco2_kwh, result.renewable_percentage) != (250, 30), (
                 f"Zone {zone} is using default mock data"
+            )
 
     @pytest.mark.asyncio
     async def test_batch(self):
@@ -198,6 +216,7 @@ class TestMockSource:
 # ---------------------------------------------------------------------------
 # UK source tests (structure only — actual API tested via integration)
 # ---------------------------------------------------------------------------
+
 
 class TestUKSource:
     def test_zone_mapping(self):
@@ -219,10 +238,12 @@ class TestUKSource:
 # ENTSO-E zone map tests
 # ---------------------------------------------------------------------------
 
+
 class TestENTSOE:
     def test_zone_map_complete(self):
         """ENTSO-E should have EIC codes for all major EU countries."""
         from carbon_mesh.carbon_sources.entsoe import ENTSOE_ZONE_MAP
+
         required = ["DE", "FR", "ES", "NL", "BE", "PL", "FI", "IE", "NO-NO1", "SE-SE3"]
         for zone in required:
             assert zone in ENTSOE_ZONE_MAP, f"Missing ENTSO-E zone: {zone}"
@@ -238,6 +259,7 @@ class TestENTSOE:
 # ---------------------------------------------------------------------------
 # Open-Meteo tests
 # ---------------------------------------------------------------------------
+
 
 class TestOpenMeteo:
     def test_coordinate_coverage(self):
@@ -257,6 +279,7 @@ class TestOpenMeteo:
 # ---------------------------------------------------------------------------
 # Hybrid source tests (using mock internals)
 # ---------------------------------------------------------------------------
+
 
 class TestHybridSource:
     @pytest.mark.asyncio

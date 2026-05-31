@@ -30,7 +30,9 @@ logger = logging.getLogger(__name__)
 class ProverRuntime:
     """Maps proof jobs to their Docker container configuration."""
 
-    def __init__(self, image_overrides: dict[ProverNetwork, ProverDockerImage] | None = None) -> None:
+    def __init__(
+        self, image_overrides: dict[ProverNetwork, ProverDockerImage] | None = None
+    ) -> None:
         self._images = dict(PROVER_IMAGES)
         if image_overrides:
             self._images.update(image_overrides)

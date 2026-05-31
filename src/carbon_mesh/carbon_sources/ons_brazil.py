@@ -17,10 +17,10 @@ API_URL = "https://integra.ons.org.br/api/energiaagora/Get"
 
 # Typical defaults (Brazil is ~60-70% hydro)
 _REGION_DEFAULTS: dict[str, tuple[float, float]] = {
-    "BR-S": (80, 85),    # South — heavy hydro
+    "BR-S": (80, 85),  # South — heavy hydro
     "BR-SE": (120, 70),  # Southeast — hydro + thermal
     "BR-NE": (100, 75),  # Northeast — wind + hydro
-    "BR-N": (60, 90),    # North — almost all hydro
+    "BR-N": (60, 90),  # North — almost all hydro
     "BR-CS": (110, 72),  # Centro-South — mixed
 }
 
@@ -113,9 +113,7 @@ class ONSBrazilCarbonSource:
             source="ons_brazil_heuristic",
         )
 
-    async def get_carbon_intensity_batch(
-        self, grid_zones: list[str]
-    ) -> dict[str, CarbonIntensity]:
+    async def get_carbon_intensity_batch(self, grid_zones: list[str]) -> dict[str, CarbonIntensity]:
         results: dict[str, CarbonIntensity] = {}
         for zone in grid_zones:
             if self.can_handle(zone):

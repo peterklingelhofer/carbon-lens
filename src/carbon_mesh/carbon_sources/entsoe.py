@@ -66,25 +66,25 @@ ENTSOE_ZONES = set(ENTSOE_ZONE_MAP.keys())
 
 # ENTSO-E production type → normalized fuel
 _PRODUCTION_TYPE_MAP = {
-    "B01": "biomass",        # Biomass
-    "B02": "coal",           # Fossil Brown coal/Lignite
-    "B04": "natural_gas",    # Fossil Gas
-    "B05": "coal",           # Fossil Hard coal
-    "B06": "petroleum",      # Fossil Oil
-    "B07": "petroleum",      # Fossil Oil shale
-    "B08": "other",          # Fossil Peat
-    "B09": "geothermal",     # Geothermal
-    "B10": "hydro",          # Hydro Pumped Storage
-    "B11": "hydro",          # Hydro Run-of-river and poundage
-    "B12": "hydro",          # Hydro Water Reservoir
-    "B13": "other",          # Marine
-    "B14": "nuclear",        # Nuclear
-    "B15": "other",          # Other renewable
-    "B16": "solar",          # Solar
-    "B17": "other",          # Waste
-    "B18": "wind",           # Wind Offshore
-    "B19": "wind",           # Wind Onshore
-    "B20": "other",          # Other
+    "B01": "biomass",  # Biomass
+    "B02": "coal",  # Fossil Brown coal/Lignite
+    "B04": "natural_gas",  # Fossil Gas
+    "B05": "coal",  # Fossil Hard coal
+    "B06": "petroleum",  # Fossil Oil
+    "B07": "petroleum",  # Fossil Oil shale
+    "B08": "other",  # Fossil Peat
+    "B09": "geothermal",  # Geothermal
+    "B10": "hydro",  # Hydro Pumped Storage
+    "B11": "hydro",  # Hydro Run-of-river and poundage
+    "B12": "hydro",  # Hydro Water Reservoir
+    "B13": "other",  # Marine
+    "B14": "nuclear",  # Nuclear
+    "B15": "other",  # Other renewable
+    "B16": "solar",  # Solar
+    "B17": "other",  # Waste
+    "B18": "wind",  # Wind Offshore
+    "B19": "wind",  # Wind Onshore
+    "B20": "other",  # Other
 }
 
 
@@ -111,7 +111,7 @@ class ENTSOECarbonSource:
             params={
                 "securityToken": self._token,
                 "documentType": "A75",  # Actual generation per type
-                "processType": "A16",   # Realised
+                "processType": "A16",  # Realised
                 "in_Domain": eic,
                 "periodStart": period_start,
                 "periodEnd": period_end,
@@ -158,9 +158,7 @@ class ENTSOECarbonSource:
 
         return fuel_mix
 
-    async def get_carbon_intensity_batch(
-        self, grid_zones: list[str]
-    ) -> dict[str, CarbonIntensity]:
+    async def get_carbon_intensity_batch(self, grid_zones: list[str]) -> dict[str, CarbonIntensity]:
         results: dict[str, CarbonIntensity] = {}
         for zone in grid_zones:
             if self.can_handle(zone):

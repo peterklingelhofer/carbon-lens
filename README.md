@@ -2,13 +2,15 @@
 
 **Real-time carbon intensity data API + compliance reporting platform.**
 
-Carbon Mesh aggregates 11 government-verified electricity grid data sources into a single developer-friendly API. Know the exact carbon intensity of any cloud region, any time. Generate CSRD/SEC/SB-253 compliance reports. Monitor Green SLAs.
+Carbon Mesh aggregates electricity-grid carbon data into a single developer-friendly API, behind one cascading interface. Six providers are live integrations against real grid-operator APIs (UK, EIA, AEMO, GridStatus, ENTSO-E, Electricity Maps); the rest are transparent heuristic estimators and a mock fallback, each labeled in the `source` field of every response so you always know what you're getting. On top of the data layer it adds carbon-aware routing, GHG-Protocol-structured compliance reporting, and Green SLA monitoring.
+
+> **Status:** This is a portfolio / demo project, not a production service. See [What's real vs. estimated vs. mock](#whats-real-vs-estimated-vs-mock) for an honest breakdown of which parts are live integrations and which are stubs.
 
 ## Why This Exists
 
-Every major cloud provider claims "100% renewable energy." They're not. They use **annual REC matching** — buying solar credits at noon to offset coal burned at midnight. Your 2 AM batch job in Virginia runs on 70% fossil fuels. The provider just buys offsets later.
+Every major cloud provider claims "100% renewable energy." Most rely on **annual REC matching** — buying solar credits at noon to offset coal burned at midnight. Your 2 AM batch job in Virginia may run on a largely fossil grid while the provider settles up with offsets later.
 
-**Carbon Mesh gives you the real numbers.** Real-time gCO2/kWh for every cloud region, every minute, from government sources — not corporate sustainability reports.
+**Carbon Mesh surfaces the underlying grid numbers.** Where a real grid-operator API exists for a region, it serves live gCO2/kWh from that source. Where one doesn't, it falls back to a labeled heuristic or mock value rather than pretending — so the data's provenance is always visible.
 
 ---
 
@@ -70,7 +72,7 @@ const { carbon_intensity_gco2_kwh, renewable_percentage } = await res.json();
 ## Products
 
 ### 1. Carbon Intensity API
-Real-time electricity grid carbon data for 90+ cloud regions worldwide. 11 data sources with cascading fallback.
+Electricity-grid carbon data for 75+ cloud regions worldwide, behind one cascading interface — 6 live grid-operator integrations plus labeled heuristic and mock fallbacks.
 
 | Feature | Free | Pro ($99/mo) | Enterprise |
 |---------|------|-------------|------------|
@@ -81,41 +83,52 @@ Real-time electricity grid carbon data for 90+ cloud regions worldwide. 11 data 
 | Support | Community | Email | Dedicated |
 
 ### 2. Compliance Reporting
-Turnkey CSRD / SEC Climate / California SB 253 emissions reporting for cloud workloads.
+GHG-Protocol-structured Scope 2 + Scope 3 (Cat 1) emissions reporting for cloud workloads, aimed at CSRD / SEC Climate / California SB 253 disclosure workflows.
 
-- **Scope 2** location-based and market-based emissions
-- **Scope 3** Category 1 (purchased cloud services)
-- **GHG Protocol** aligned methodology
-- **EU Taxonomy** eligibility assessment
-- Export as JSON, CSV, or PDF
+- **Scope 2** location-based emissions (real-time grid intensity × estimated energy)
+- **Scope 3** Category 1 (purchased cloud services), estimated from grid intensity
+- **GHG Protocol** report structure with documented methodology and data-quality summary
+- **EU Taxonomy** eligibility flag (simplified screening, not a full DNSH assessment)
+- Export as JSON or CSV
+
+> Scope: this generates a structured, defensible *first draft* of an emissions report. Market-based accounting (RECs/PPAs/residual mix), supplier-specific Scope 3 factors, utilization-aware energy modeling, and signed PDF output are **not** implemented — see the [roadmap](#whats-next). It is not a substitute for an assured CSRD report.
 
 ### 3. Carbon-Aware Routing
-Route workloads to the greenest cloud region in real-time. Works with AWS, GCP, and Azure.
+Route workloads to the greenest cloud region in real-time. Works with AWS, GCP, and Azure region sets.
 
-### 4. Green SLA Monitoring (Coming Soon)
-Continuous monitoring + quarterly attestation reports proving your workloads met carbon targets.
+### 4. Green SLA Monitoring (Beta)
+Define carbon targets, run on-demand and background compliance checks against live grid data, and generate attestation-style summary reports. Note: the background monitor and all SLA/check/report state are currently **in-memory** (reset on restart, single-worker); the "attestation" format is a self-defined summary, not an assured third-party standard.
 
 ---
 
 ## Data Sources
 
-Carbon Mesh cascades through 11 providers, using the most accurate source for each grid zone:
+Carbon Mesh cascades through 11 providers, using the highest-priority source that covers each grid zone. The **Type** column is the honest part: only `Live API` providers fetch and parse a real grid-operator response.
 
-| # | Provider | Coverage | Resolution | Auth |
-|---|----------|----------|-----------|------|
-| 1 | UK Carbon Intensity | UK (18 zones) | 30 min | Free, no key |
-| 2 | EIA (US DOE) | US (60+ balancing authorities) | Hourly | Free key |
-| 3 | AEMO | Australia (5 states) | 5 min | Free, no key |
-| 4 | Grid India | India (5 regions) | Heuristic | Free, no key |
-| 5 | ONS Brazil | Brazil (5 regions) | Heuristic | Free, no key |
-| 6 | Eskom | South Africa | Heuristic | Free, no key |
-| 7 | GridStatus.io | US ISOs (7) | 5 min | Free key |
-| 8 | ENTSO-E | Europe (36+ countries) | Hourly | Free token |
-| 9 | Open-Meteo | Worldwide (40+ zones) | Hourly | Free, no key |
-| 10 | Electricity Maps | Global (200+ zones) | Real-time | Paid key |
-| 11 | Mock (fallback) | All zones | Static | None |
+| # | Provider | Coverage | Type | Auth |
+|---|----------|----------|------|------|
+| 1 | UK Carbon Intensity | UK (18 zones) | **Live API** (renewable % estimated) | Free, no key |
+| 2 | EIA (US DOE) | US (60+ balancing authorities) | **Live API** (intensity from fuel mix) | Free key |
+| 3 | AEMO | Australia (5 states) | **Live API** (unofficial endpoint) | Free, no key |
+| 4 | Grid India | India (5 regions) | Heuristic fallback | Free, no key |
+| 5 | ONS Brazil | Brazil (5 regions) | Heuristic fallback | Free, no key |
+| 6 | Eskom | South Africa | Heuristic (time-of-day model) | Free, no key |
+| 7 | GridStatus.io | US ISOs (7) | **Live API** | Paid key |
+| 8 | ENTSO-E | Europe (36+ countries) | **Live API** (IEC-62325 XML) | Free token |
+| 9 | Open-Meteo | Worldwide (40+ zones) | **Estimate from weather** (not measured carbon) | Free, no key |
+| 10 | Electricity Maps | Global (200+ zones) | **Live API** | Paid key |
+| 11 | Mock (fallback) | All zones | Static demo data | None |
 
 **Priority chain:** UK > EIA > AEMO > Grid India > ONS Brazil > Eskom > GridStatus > ENTSO-E > Open-Meteo > Electricity Maps > Mock
+
+Every response includes a `source` field (e.g. `uk`, `eskom_heuristic`, `open_meteo`, `mock`) so callers can see exactly how a number was produced. The chain never errors out to the caller — if every real source fails for a zone, it falls through to labeled mock data rather than returning an error.
+
+### What's real vs. estimated vs. mock
+
+- **Live grid-operator APIs (6):** UK, EIA, AEMO, GridStatus, ENTSO-E, Electricity Maps. These fetch and parse real upstream responses. Three (GridStatus, Electricity Maps, plus EIA's higher tiers) need keys; ENTSO-E needs a free token.
+- **Heuristic estimators (4):** Grid India and ONS Brazil attempt a live fetch but fall back to per-region constants with a time-of-day curve; Eskom always uses a time-of-day model; Open-Meteo derives a rough intensity from solar/wind weather data (it is **not** a carbon-measuring source). These are useful demo coverage, not authoritative data, and are tagged accordingly.
+- **Mock (1):** static fixtures, clearly labeled, used only as a last-resort fallback so the API always returns *something*.
+- **ZK broker (`src/carbon_mesh/zk/`):** a carbon-aware compute-orchestration **demo**. The orchestration, retry, and carbon-policy logic are real; the blockchain wallet, prover networks, spot-price feed, and proof verification are mocked (no `web3`/ZK libraries). Treat it as an adapter framework with mock backends, not a working ZK proof broker.
 
 ---
 
@@ -215,7 +228,7 @@ src/carbon_mesh/
   db/               SQLAlchemy async models + Alembic migrations
   orgs/             Multi-tenant organization management
   cli/              Typer CLI (carbon-mesh route, intensity, regions)
-  zk/               Carbon-aware compute demo (ZK proof routing)
+  zk/               Carbon-aware compute orchestration demo (mock-backed ZK broker)
   config.py         Environment-based config with validation
   main.py           FastAPI app, middleware, lifespan
 
@@ -226,7 +239,7 @@ web/                Vite + React 19 + TypeScript frontend
 terraform/          Terraform data source for green routing
 data/               region_grid_map.yaml (75+ regions -> grid zones)
 alembic/            Database migrations
-tests/              217 tests
+tests/              258 tests
 ```
 
 ```
@@ -236,7 +249,7 @@ tests/              217 tests
                 └──────┬───────┘
                        │
                 ┌──────▼───────┐
-                │   API Server │  Fly.io / Render / Railway
+                │   API Server │  Fly.io / Render / Docker
                 │   (FastAPI)  │
                 └──┬───┬───┬───┘
                    │   │   │
@@ -288,11 +301,12 @@ tests/              217 tests
 
 | Platform | How | Config |
 |----------|-----|--------|
+| **Docker** | `make up` | `Dockerfile`, `docker-compose.yml` |
 | **Render** | New Blueprint Instance | `render.yaml` |
 | **Fly.io** | `fly launch --copy-config --yes` | `fly.toml` |
-| **Railway** | Connect repo | `railway.toml` |
-| **Docker** | `make up` | `docker-compose.yml` |
+| **GHCR images** | published by CI on merge to `main` | `.github/workflows/cd.yml` |
 | **Vercel** (frontend) | Connect repo, root = `web/` | `web/vercel.json` |
+| **Kubernetes** | illustrative Helm chart (see `k8s/README.md`) | `k8s/` |
 
 ---
 
@@ -302,7 +316,7 @@ tests/              217 tests
 make help       # show all commands
 make setup      # install deps + copy .env + build frontend
 make dev        # API + frontend with hot reload
-make test       # 217 tests
+make test       # 258 tests
 make lint       # ruff + tsc
 make fix        # auto-fix lint
 make migrate    # run Alembic migrations
@@ -314,24 +328,27 @@ make down       # stop everything
 
 ## The Vision
 
-Carbon Mesh is a **carbon data infrastructure company**. We provide the real-time data layer
-that powers carbon-aware decisions across the cloud computing industry.
+Carbon Mesh demonstrates the **carbon data layer** that carbon-aware infrastructure decisions
+would be built on: a single cascading API over multiple grid sources, plus the routing,
+reporting, and monitoring tooling that sits on top of it.
 
-**What's built:**
-- Real-time carbon intensity API with 11 government-verified data sources
+**What's built (and real):**
+- Cascading carbon intensity API with **6 live grid-operator integrations** + labeled heuristic/mock fallbacks
 - 75+ cloud regions mapped to electricity grid zones
-- CSRD/ESRS E1 compliance reporting with Scope 2+3 emissions
-- Carbon-aware routing engine (find the greenest region)
-- Multi-tenant SaaS with Stripe billing
-- React dashboard with live WebSocket carbon feeds
-- 217 tests, one-click deploy
+- Carbon-aware routing engine (find the greenest region) with stale-while-revalidate caching
+- GHG-Protocol-structured Scope 2 + Scope 3 (Cat 1) compliance reporting (location-based)
+- Green SLA check engine with on-demand + background monitoring (in-memory)
+- Multi-tenant orgs with hashed API keys and Stripe billing integration
+- React 19 dashboard with a live WebSocket carbon feed
+- 258 tests, multi-stage Docker build, Alembic migrations
 
-**What's next:**
-- Green SLA monitoring and attestation
-- Cloud bill ingestion (AWS/GCP/Azure)
-- Carbon-aware Kubernetes scheduler
-- Historical carbon data and forecasting API
-- PDF compliance report generation
+**What's next (not yet real):**
+- Market-based Scope 2 accounting (RECs/PPAs/residual mix) and supplier-specific Scope 3 factors
+- Utilization-aware energy modeling (current model assumes flat draw per vCPU-hour)
+- Signed PDF compliance reports and a recognized attestation standard
+- Durable (Postgres-backed) SLA monitoring that starts at boot and survives restarts
+- Cloud bill ingestion (AWS/GCP/Azure) and historical/forecast carbon endpoints
+- Real ZK proving/verification + on-chain settlement to back the ZK broker demo
 
 ## License
 

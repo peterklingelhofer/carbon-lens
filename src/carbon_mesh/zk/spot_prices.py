@@ -1,22 +1,15 @@
-"""Spot / preemptible GPU price feeds — live pricing for profit calculations.
+"""Spot / preemptible GPU price feeds for the ZK broker demo.
 
-Fetches real-time or near-real-time GPU pricing from cloud providers.
-For green datacenters with fixed contract rates, returns static pricing.
-
-Data sources (no accounts required for reading):
-- AWS: EC2 Spot Price History API (public, paginated)
-- GCP: Published pricing tables (scraped, updated hourly)
-- Green datacenters: Fixed contract rates (configured locally)
-- Alt-cloud: Public pricing pages (scraped)
+DEMO DATA: these are representative, hand-maintained price points, not a live
+feed. A production build would wire these methods to real sources (AWS EC2 Spot
+Price History API, GCP pricing tables, alt-cloud pricing pages); the interface
+and cache are real so that swap is a drop-in. Prices are illustrative only.
 """
 
 from __future__ import annotations
 
-import logging
 import time
 from datetime import datetime, timezone
-
-import httpx
 
 from carbon_mesh.models.zk import (
     ComputeProvider,
@@ -24,19 +17,16 @@ from carbon_mesh.models.zk import (
     SpotPriceQuote,
 )
 
-logger = logging.getLogger(__name__)
-
 # Cache TTL for spot prices (5 minutes)
 _CACHE_TTL_SECONDS = 300
 
 
 class SpotPriceFeed:
-    """Aggregates GPU spot prices from all providers."""
+    """Aggregates representative GPU spot prices from all providers (demo data)."""
 
     def __init__(self) -> None:
         self._cache: dict[str, SpotPriceQuote] = {}
         self._cache_time: float = 0.0
-        self._http = httpx.AsyncClient(timeout=10.0)
 
     async def get_prices(self, gpu_type: GPUType | None = None) -> list[SpotPriceQuote]:
         """Get current GPU spot prices from all sources.
@@ -53,7 +43,9 @@ class SpotPriceFeed:
             quotes = [q for q in quotes if q.gpu_type == gpu_type]
         return sorted(quotes, key=lambda q: q.price_per_hour_usd)
 
-    async def get_price(self, provider: ComputeProvider, region: str, gpu_type: GPUType) -> SpotPriceQuote | None:
+    async def get_price(
+        self, provider: ComputeProvider, region: str, gpu_type: GPUType
+    ) -> SpotPriceQuote | None:
         """Get a specific price quote."""
         quotes = await self.get_prices(gpu_type)
         for q in quotes:
@@ -62,26 +54,17 @@ class SpotPriceFeed:
         return None
 
     async def _refresh_all(self) -> None:
-        """Refresh prices from all sources."""
-        quotes: list[SpotPriceQuote] = []
+        """Rebuild the price table from the demo price sets.
 
-        # Green datacenter fixed rates (always available, no API needed)
-        quotes.extend(self._green_datacenter_prices())
-
-        # Try to fetch live spot prices (graceful fallback to estimates)
-        try:
-            quotes.extend(await self._fetch_aws_spot_estimates())
-        except Exception as e:
-            logger.debug("AWS spot price fetch skipped: %s", e)
-            quotes.extend(self._aws_fallback_prices())
-
-        try:
-            quotes.extend(await self._fetch_gcp_estimates())
-        except Exception as e:
-            logger.debug("GCP price fetch skipped: %s", e)
-            quotes.extend(self._gcp_fallback_prices())
-
-        quotes.extend(self._alt_cloud_prices())
+        In a production build each of these would fetch from a real source;
+        here they return representative static prices.
+        """
+        quotes: list[SpotPriceQuote] = [
+            *self._green_datacenter_prices(),
+            *self._aws_prices(),
+            *self._gcp_prices(),
+            *self._alt_cloud_prices(),
+        ]
 
         # Update cache
         self._cache = {f"{q.provider.value}:{q.region}:{q.gpu_type.value}": q for q in quotes}
@@ -142,26 +125,13 @@ class SpotPriceFeed:
             ),
         ]
 
-    async def _fetch_aws_spot_estimates(self) -> list[SpotPriceQuote]:
-        """Fetch AWS spot price estimates from public pricing data.
+    @staticmethod
+    def _aws_prices() -> list[SpotPriceQuote]:
+        """Representative AWS EC2 Spot GPU prices (demo data).
 
-        AWS publishes spot pricing advisors and historical data.
-        This uses the public-facing pricing JSON (no auth required).
+        Production would parse the EC2 Spot Price History API here.
         """
         now = datetime.now(timezone.utc)
-        # AWS publishes bulk pricing data at this endpoint
-        url = "https://b0.gone.aws/pricing/2.0/metaindex/ec2/sp.js"
-        try:
-            resp = await self._http.get(url)
-            if resp.status_code == 200:
-                # Parse the JSONP response for GPU instance types
-                # For now, use well-known price points updated from public data
-                pass
-        except Exception:
-            pass
-
-        # Well-known AWS spot prices (updated from spot price history)
-        # These are typical prices; real implementation would parse the feed
         return [
             SpotPriceQuote(
                 provider=ComputeProvider.AWS_SPOT,
@@ -192,11 +162,10 @@ class SpotPriceFeed:
             ),
         ]
 
-    async def _fetch_gcp_estimates(self) -> list[SpotPriceQuote]:
-        """Fetch GCP preemptible pricing from public pricing tables."""
+    @staticmethod
+    def _gcp_prices() -> list[SpotPriceQuote]:
+        """Representative GCP preemptible GPU prices (demo data)."""
         now = datetime.now(timezone.utc)
-        # GCP publishes pricing at cloud.google.com/compute/vm-pricing
-        # For now, use well-known price points
         return [
             SpotPriceQuote(
                 provider=ComputeProvider.GCP_PREEMPTIBLE,
@@ -213,52 +182,6 @@ class SpotPriceFeed:
                 gpu_type=GPUType.A100_80GB,
                 price_per_hour_usd=1.85,
                 available=True,
-                interruption_rate_pct=5.0,
-                fetched_at=now,
-            ),
-        ]
-
-    @staticmethod
-    def _aws_fallback_prices() -> list[SpotPriceQuote]:
-        """Fallback AWS prices when API is unavailable."""
-        now = datetime.now(timezone.utc)
-        return [
-            SpotPriceQuote(
-                provider=ComputeProvider.AWS_SPOT,
-                region="us-east-1",
-                gpu_type=GPUType.A100_40GB,
-                price_per_hour_usd=1.10,
-                interruption_rate_pct=5.0,
-                fetched_at=now,
-            ),
-            SpotPriceQuote(
-                provider=ComputeProvider.AWS_SPOT,
-                region="eu-west-1",
-                gpu_type=GPUType.A100_40GB,
-                price_per_hour_usd=1.25,
-                interruption_rate_pct=3.0,
-                fetched_at=now,
-            ),
-        ]
-
-    @staticmethod
-    def _gcp_fallback_prices() -> list[SpotPriceQuote]:
-        """Fallback GCP prices when API is unavailable."""
-        now = datetime.now(timezone.utc)
-        return [
-            SpotPriceQuote(
-                provider=ComputeProvider.GCP_PREEMPTIBLE,
-                region="us-central1",
-                gpu_type=GPUType.T4,
-                price_per_hour_usd=0.35,
-                interruption_rate_pct=10.0,
-                fetched_at=now,
-            ),
-            SpotPriceQuote(
-                provider=ComputeProvider.GCP_PREEMPTIBLE,
-                region="europe-west4",
-                gpu_type=GPUType.A100_80GB,
-                price_per_hour_usd=1.85,
                 interruption_rate_pct=5.0,
                 fetched_at=now,
             ),
@@ -299,4 +222,5 @@ class SpotPriceFeed:
         ]
 
     async def close(self) -> None:
-        await self._http.aclose()
+        """No-op — kept for interface compatibility (demo data needs no client)."""
+        return None

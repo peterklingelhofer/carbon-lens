@@ -11,14 +11,12 @@ from carbon_mesh.models.zk import (
     DispatchDecision,
     GPUInstance,
     GPUType,
-    GPU_TDP_WATTS,
     InstanceStatus,
     JobResult,
     JobStatus,
     ProofArtifact,
     ProofJob,
     ProofSystem,
-    ProverDockerImage,
     ProverNetwork,
     PROOF_SYSTEM_GPU_MINUTES,
     PROVER_IMAGES,
@@ -249,8 +247,12 @@ async def test_spot_prices_green_datacenters_always_available():
 
     feed = SpotPriceFeed()
     prices = await feed.get_prices()
-    green_providers = {ComputeProvider.IREN, ComputeProvider.TERAWULF,
-                       ComputeProvider.HIVE_DIGITAL, ComputeProvider.BITDEER}
+    green_providers = {
+        ComputeProvider.IREN,
+        ComputeProvider.TERAWULF,
+        ComputeProvider.HIVE_DIGITAL,
+        ComputeProvider.BITDEER,
+    }
     green_quotes = [p for p in prices if p.provider in green_providers]
     assert len(green_quotes) >= 4  # At least one per green provider
     assert all(p.interruption_rate_pct == 0.0 for p in green_quotes)
@@ -277,7 +279,9 @@ async def test_wallet_submit_proof():
 
     wallet = LocalWallet(private_key="test_key_123")
     receipt = await wallet.submit_proof(
-        ProverNetwork.BOUNDLESS, "job-123", b"\x01\x02\x03",
+        ProverNetwork.BOUNDLESS,
+        "job-123",
+        b"\x01\x02\x03",
     )
     assert isinstance(receipt, TransactionReceipt)
     assert receipt.tx_hash.startswith("0x")
@@ -290,7 +294,9 @@ async def test_wallet_claim_bounty():
 
     wallet = LocalWallet(private_key="test_key_123")
     receipt = await wallet.claim_bounty(
-        ProverNetwork.BOUNDLESS, "job-123", "0xabc123",
+        ProverNetwork.BOUNDLESS,
+        "job-123",
+        "0xabc123",
     )
     assert isinstance(receipt, TransactionReceipt)
     assert receipt.status == "built"
@@ -667,7 +673,9 @@ async def test_orchestrator_rejects_infeasible_deadline():
     orch = JobOrchestrator(
         carbon_source=MockCarbonSource(),
         grid_mapper=GridMapper(settings.region_map_path),
-        policy=CarbonPolicy(max_carbon_intensity_gco2_kwh=500, min_renewable_percentage=0, min_profit_margin_pct=0),
+        policy=CarbonPolicy(
+            max_carbon_intensity_gco2_kwh=500, min_renewable_percentage=0, min_profit_margin_pct=0
+        ),
     )
     now = datetime.now(timezone.utc)
     # Job with deadline 30 seconds from now, but needs 3 minutes of GPU time
@@ -703,7 +711,9 @@ async def test_orchestrator_accepts_feasible_deadline():
     orch = JobOrchestrator(
         carbon_source=MockCarbonSource(),
         grid_mapper=GridMapper(settings.region_map_path),
-        policy=CarbonPolicy(max_carbon_intensity_gco2_kwh=500, min_renewable_percentage=0, min_profit_margin_pct=0),
+        policy=CarbonPolicy(
+            max_carbon_intensity_gco2_kwh=500, min_renewable_percentage=0, min_profit_margin_pct=0
+        ),
     )
     now = datetime.now(timezone.utc)
     job = ProofJob(
@@ -850,7 +860,10 @@ async def test_orchestrator_btm_only_rejects_grid_connected():
             f"Policy requires BTM but chose {decision.chosen_provider.provider.value} "
             f"(BTM={decision.chosen_provider.is_behind_the_meter})"
         )
-        assert decision.chosen_provider.carbon_intensity_gco2_kwh <= policy.max_carbon_intensity_gco2_kwh
+        assert (
+            decision.chosen_provider.carbon_intensity_gco2_kwh
+            <= policy.max_carbon_intensity_gco2_kwh
+        )
         assert decision.chosen_provider.renewable_percentage >= policy.min_renewable_percentage
 
 
@@ -940,6 +953,7 @@ async def test_executor_blocks_non_compliant_provider():
 def test_executor_carbon_violation_not_retryable():
     """Carbon policy violations must never be retried."""
     from carbon_mesh.zk.executor import JobExecutor
+
     assert not JobExecutor._is_retryable("Carbon policy violation: aws_spot has 350 gCO2/kWh")
     # Infrastructure failures should still be retryable
     assert JobExecutor._is_retryable("Instance failed to start: timeout")
