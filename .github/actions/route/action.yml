@@ -1,4 +1,4 @@
-name: "Carbon Mesh Green Route"
+name: "CarbonLens Green Route"
 description: "Find the greenest cloud region for your deployment based on real-time grid carbon intensity"
 branding:
   icon: "globe"
@@ -16,11 +16,11 @@ inputs:
     required: false
     default: "1.0"
   api-url:
-    description: "Carbon Mesh API URL"
+    description: "CarbonLens API URL"
     required: false
     default: "http://localhost:8000"
   api-key:
-    description: "Carbon Mesh API key"
+    description: "CarbonLens API key"
     required: false
 
 outputs:
@@ -73,7 +73,7 @@ runs:
           -d "$BODY")
 
         if [ $? -ne 0 ] || [ -z "${RESPONSE}" ]; then
-          echo "::error::Failed to reach Carbon Mesh API at ${{ inputs.api-url }}"
+          echo "::error::Failed to reach CarbonLens API at ${{ inputs.api-url }}"
           exit 1
         fi
 
@@ -85,7 +85,7 @@ runs:
         echo "renewable_pct=$(echo "$RESPONSE" | jq -r '.recommended.renewable_percentage')" >> "$GITHUB_OUTPUT"
 
         # Summary
-        echo "### Carbon Mesh Routing Result" >> "$GITHUB_STEP_SUMMARY"
+        echo "### CarbonLens Routing Result" >> "$GITHUB_STEP_SUMMARY"
         echo "" >> "$GITHUB_STEP_SUMMARY"
         echo "| Field | Value |" >> "$GITHUB_STEP_SUMMARY"
         echo "|-------|-------|" >> "$GITHUB_STEP_SUMMARY"

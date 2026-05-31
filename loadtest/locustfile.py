@@ -1,4 +1,4 @@
-"""Locust load tests for Carbon Mesh Control Plane.
+"""Locust load tests for CarbonLens.
 
 Run:
     pip install locust
