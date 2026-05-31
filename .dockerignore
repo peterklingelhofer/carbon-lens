@@ -30,7 +30,9 @@ web/.cache
 # Docs and config not needed in runtime
 docs/
 tests/
+# keep README.md — required by pyproject `readme` during the project build
 *.md
+!README.md
 LICENSE
 .pre-commit-config.yaml
 .github/
@@ -39,4 +41,3 @@ openapi-generator.yaml
 Makefile
 render.yaml
 fly.toml
-railway.toml
