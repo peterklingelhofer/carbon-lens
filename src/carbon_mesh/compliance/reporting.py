@@ -59,8 +59,12 @@ class ReportingEngine:
 
         # Scope 2 (location-based) — direct compute/storage
         s2_calcs = [c for c in calculations if c.scope.value == "scope_2"]
-        s2_location_total = sum(c.emissions_kgco2e for c in s2_calcs if c.method == AccountingMethod.LOCATION_BASED)
-        s2_market_total = sum(c.emissions_kgco2e for c in s2_calcs if c.method == AccountingMethod.MARKET_BASED)
+        s2_location_total = sum(
+            c.emissions_kgco2e for c in s2_calcs if c.method == AccountingMethod.LOCATION_BASED
+        )
+        s2_market_total = sum(
+            c.emissions_kgco2e for c in s2_calcs if c.method == AccountingMethod.MARKET_BASED
+        )
 
         # If all calcs use one method, report both as same (conservative)
         if s2_location_total == 0 and s2_market_total > 0:

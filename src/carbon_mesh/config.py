@@ -30,8 +30,8 @@ class Settings(BaseSettings):
     use_database: bool = False
     database_url: str = "postgresql+asyncpg://carbon_mesh:carbon_mesh@localhost:5432/carbon_mesh"
 
-    # Auth
-    api_key_required: bool = False
+    # Auth — fail closed by default; set CARBON_MESH_API_KEY_REQUIRED=false for the open public demo
+    api_key_required: bool = True
     admin_secret: str = ""
 
     # Rate limiting

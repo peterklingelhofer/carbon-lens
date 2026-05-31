@@ -206,9 +206,7 @@ async def source_health(
                 "error": str(e),
             }
 
-    await asyncio.gather(*[
-        _check_source(name, zone) for name, zone in test_zones.items()
-    ])
+    await asyncio.gather(*[_check_source(name, zone) for name, zone in test_zones.items()])
 
     healthy = sum(1 for r in results.values() if r["status"] == "ok")
     return {

@@ -118,7 +118,6 @@ class MockGPUProvider:
                 available=True,
                 estimated_startup_seconds=120,
             ),
-
             # --- Green ASIC / Specialized Centers ---
             ComputeOption(
                 provider=ComputeProvider.IREN,
@@ -195,7 +194,6 @@ class MockGPUProvider:
                 available=True,
                 estimated_startup_seconds=25,
             ),
-
             # --- Alt-Cloud GPU ---
             ComputeOption(
                 provider=ComputeProvider.COREWEAVE,

@@ -72,8 +72,13 @@ class GridStatusCarbonSource:
 
         # Parse fuel mix from column names
         fuel_mix_mw: dict[str, float] = {}
-        skip_cols = {"interval_start_utc", "interval_end_utc", "interval_start_local",
-                     "interval_end_local", "publish_time_utc"}
+        skip_cols = {
+            "interval_start_utc",
+            "interval_end_utc",
+            "interval_start_local",
+            "interval_end_local",
+            "publish_time_utc",
+        }
         for col, val in row.items():
             col_lower = col.lower().replace(" ", "_")
             if col_lower in skip_cols or val is None:
@@ -105,9 +110,7 @@ class GridStatusCarbonSource:
             source="gridstatus",
         )
 
-    async def get_carbon_intensity_batch(
-        self, grid_zones: list[str]
-    ) -> dict[str, CarbonIntensity]:
+    async def get_carbon_intensity_batch(self, grid_zones: list[str]) -> dict[str, CarbonIntensity]:
         results: dict[str, CarbonIntensity] = {}
         for zone in grid_zones:
             if not self._can_handle(zone):

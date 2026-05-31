@@ -37,12 +37,11 @@ fly secrets set CARBON_MESH_EIA_API_KEY=xxx CARBON_MESH_AUTO_MIGRATE=true
 fly deploy
 ```
 
-### Railway
-1. Connect repo at [railway.app](https://railway.app)
-2. Add a Postgres plugin (one click)
-3. Railway reads `railway.toml` automatically
-4. Set env vars in dashboard
-5. Deploy
+### Railway / other Dockerfile PaaS
+Any platform that builds from a `Dockerfile` works without a platform-specific
+config: point it at this repo's root `Dockerfile`, add a Postgres plugin, set the
+env vars (including `CARBON_MESH_AUTO_MIGRATE=true`), and set the health check to
+`/ready`.
 
 ### Docker Compose (self-hosted)
 ```bash
@@ -120,7 +119,7 @@ open https://your-app.fly.dev/docs
                     └──────┬───────┘
                            │
                     ┌──────▼───────┐
-                    │   API Server │  Fly.io / Render / Railway
+                    │   API Server │  Fly.io / Render / Docker
                     │   (FastAPI)  │
                     └──┬───┬───┬───┘
                        │   │   │

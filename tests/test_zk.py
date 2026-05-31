@@ -6,7 +6,6 @@ from datetime import datetime, timedelta, timezone
 from carbon_mesh.models.zk import (
     CarbonPolicy,
     ComputeOption,
-    ComputeProvider,
     GPUType,
     GPU_TDP_WATTS,
     JobStatus,
@@ -15,7 +14,7 @@ from carbon_mesh.models.zk import (
     ProverNetwork,
     PROOF_SYSTEM_GPU_MINUTES,
 )
-from carbon_mesh.zk.compute_providers import MockGPUProvider, enrich_with_carbon
+from carbon_mesh.zk.compute_providers import MockGPUProvider
 from carbon_mesh.zk.prover_networks import MockProverNetwork
 from carbon_mesh.zk.orchestrator import JobOrchestrator
 from carbon_mesh.carbon_sources.mock import MockCarbonSource
@@ -218,7 +217,9 @@ def test_gpu_tdp_values():
 
 
 def test_proof_system_estimates():
-    assert PROOF_SYSTEM_GPU_MINUTES[ProofSystem.GROTH16] < PROOF_SYSTEM_GPU_MINUTES[ProofSystem.STARK]
+    assert (
+        PROOF_SYSTEM_GPU_MINUTES[ProofSystem.GROTH16] < PROOF_SYSTEM_GPU_MINUTES[ProofSystem.STARK]
+    )
     assert all(v > 0 for v in PROOF_SYSTEM_GPU_MINUTES.values())
 
 

@@ -5,10 +5,11 @@ from __future__ import annotations
 import logging
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, Query, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from pydantic import BaseModel
 
 from carbon_mesh.api.deps import get_carbon_source, get_grid_mapper
+from carbon_mesh.auth.dependencies import require_api_key
 from carbon_mesh.compliance.calculator import EmissionsCalculator
 from carbon_mesh.compliance.reporting import ReportingEngine
 from carbon_mesh.compliance.usage_ingestion import ManualCSVAdapter, MockUsageAdapter
@@ -21,7 +22,11 @@ from carbon_mesh.models.compliance import (
 )
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api/v1/compliance", tags=["Compliance"])
+router = APIRouter(
+    prefix="/api/v1/compliance",
+    tags=["Compliance"],
+    dependencies=[Depends(require_api_key)],
+)
 
 # In-memory store for MVP (DB persistence when use_database=True)
 _usage_store: dict[str, list[CloudUsageRecord]] = {}  # org_id -> records
@@ -30,6 +35,7 @@ _report_store: dict[str, list[ComplianceReport]] = {}  # org_id -> reports
 
 
 # --- Request/response models ---
+
 
 class UsageIngestionRequest(BaseModel):
     org_id: str
@@ -69,6 +75,7 @@ class CalculationResponse(BaseModel):
 
 # --- Endpoints ---
 
+
 @router.post("/usage/ingest", response_model=UsageIngestionResponse)
 async def ingest_usage(req: UsageIngestionRequest) -> UsageIngestionResponse:
     """Ingest cloud usage data from a provider or mock data for demo."""
@@ -89,12 +96,15 @@ async def ingest_usage(req: UsageIngestionRequest) -> UsageIngestionResponse:
         # Lazy-import real adapters
         if req.provider == "aws":
             from carbon_mesh.compliance.usage_ingestion import AWSCostExplorerAdapter
+
             adapter = AWSCostExplorerAdapter()
         elif req.provider == "gcp":
             from carbon_mesh.compliance.usage_ingestion import GCPBillingAdapter
+
             adapter = GCPBillingAdapter()
         elif req.provider == "azure":
             from carbon_mesh.compliance.usage_ingestion import AzureCostManagementAdapter
+
             adapter = AzureCostManagementAdapter()
         else:
             raise HTTPException(400, f"Unknown provider: {req.provider}")

@@ -8,11 +8,9 @@ across restarts and across the evaluate → prove → submit → claim pipeline.
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
 from typing import Protocol, runtime_checkable
 
 from carbon_mesh.models.zk import (
-    ComputeOption,
     DispatchDecision,
     JobResult,
     JobStatus,
@@ -33,7 +31,9 @@ class JobStore(Protocol):
     async def get_job(self, job_id: str) -> ProofJob | None: ...
     async def get_decision(self, job_id: str) -> DispatchDecision | None: ...
     async def get_result(self, job_id: str) -> JobResult | None: ...
-    async def list_jobs(self, status: JobStatus | None = None, limit: int = 100) -> list[ProofJob]: ...
+    async def list_jobs(
+        self, status: JobStatus | None = None, limit: int = 100
+    ) -> list[ProofJob]: ...
     async def count_by_status(self) -> dict[str, int]: ...
 
 
@@ -72,9 +72,7 @@ class InMemoryJobStore:
     async def list_jobs(self, status: JobStatus | None = None, limit: int = 100) -> list[ProofJob]:
         jobs = list(self._jobs.values())
         if status is not None:
-            job_ids_with_status = {
-                jid for jid, r in self._results.items() if r.status == status
-            }
+            job_ids_with_status = {jid for jid, r in self._results.items() if r.status == status}
             jobs = [j for j in jobs if j.id in job_ids_with_status]
         return jobs[:limit]
 
@@ -237,7 +235,7 @@ class PostgresJobStore:
             network=ProverNetwork(row.network),
             proof_system=ps,
             circuit_size=row.circuit_size,
-            input_size_bytes=2 ** row.circuit_size,
+            input_size_bytes=2**row.circuit_size,
             bounty_usd=row.bounty_usd,
             bounty_token=row.bounty_token,
             bounty_amount=row.bounty_usd,

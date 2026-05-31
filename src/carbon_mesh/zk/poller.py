@@ -12,10 +12,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import datetime, timezone
 
 from carbon_mesh.models.zk import ProverNetwork
-from carbon_mesh.zk.monitoring import broker_metrics
 from carbon_mesh.zk.prover_networks import MockProverNetwork
 
 logger = logging.getLogger(__name__)
@@ -55,7 +53,9 @@ class JobPoller:
         self._task = asyncio.create_task(self._poll_loop())
         logger.info(
             "Job poller started: %d networks, %ds interval, auto_execute=%s",
-            len(self._networks), self._interval, self._auto_execute,
+            len(self._networks),
+            self._interval,
+            self._auto_execute,
         )
 
     async def stop(self) -> None:
@@ -116,9 +116,7 @@ class JobPoller:
                 if self._auto_execute and self._executor:
                     # Auto-dispatch to green compute
                     self.jobs_auto_dispatched += 1
-                    asyncio.create_task(
-                        self._execute_with_logging(job, decision)
-                    )
+                    asyncio.create_task(self._execute_with_logging(job, decision))
                 else:
                     logger.info(
                         "Job %s profitable on %s (profit=$%.2f, margin=%.1f%%) — awaiting manual dispatch",
@@ -137,7 +135,9 @@ class JobPoller:
             if result.status.value == "completed":
                 logger.info(
                     "Auto-executed job %s: profit=$%.4f, carbon=%.2fg CO2",
-                    job.id, result.profit_usd, result.carbon_grams_co2,
+                    job.id,
+                    result.profit_usd,
+                    result.carbon_grams_co2,
                 )
             else:
                 logger.warning("Auto-executed job %s failed: %s", job.id, result.error)

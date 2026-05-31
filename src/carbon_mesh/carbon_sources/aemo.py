@@ -63,9 +63,7 @@ class AEMOCarbonSource:
             raise ValueError(f"No AEMO data for zone: {grid_zone}")
         return results[grid_zone]
 
-    async def get_carbon_intensity_batch(
-        self, grid_zones: list[str]
-    ) -> dict[str, CarbonIntensity]:
+    async def get_carbon_intensity_batch(self, grid_zones: list[str]) -> dict[str, CarbonIntensity]:
         resp = await self._client.get(API_URL)
         resp.raise_for_status()
         data = resp.json()

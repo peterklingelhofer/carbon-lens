@@ -75,11 +75,13 @@ async def _build_update(
         if intensity is None:
             continue
         for r in region_list:
-            data.append({
-                "provider": r["provider"],
-                "region": r["region"],
-                **intensity.model_dump(mode="json"),
-            })
+            data.append(
+                {
+                    "provider": r["provider"],
+                    "region": r["region"],
+                    **intensity.model_dump(mode="json"),
+                }
+            )
 
     return {
         "type": "carbon_update",

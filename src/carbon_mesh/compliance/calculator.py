@@ -117,10 +117,21 @@ def _scope_for_service(service: str) -> EmissionScope:
     Scope 3 Cat 1: Managed services where the provider operates the infra
     """
     managed_services = {
-        "lambda", "cloud-functions", "cloud-run", "fargate",
-        "dynamodb", "aurora-serverless", "bigquery", "cosmosdb",
-        "cloudfront", "cloud-cdn", "azure-cdn",
-        "sqs", "sns", "pubsub", "event-grid",
+        "lambda",
+        "cloud-functions",
+        "cloud-run",
+        "fargate",
+        "dynamodb",
+        "aurora-serverless",
+        "bigquery",
+        "cosmosdb",
+        "cloudfront",
+        "cloud-cdn",
+        "azure-cdn",
+        "sqs",
+        "sns",
+        "pubsub",
+        "event-grid",
     }
     if service.lower() in managed_services:
         return EmissionScope.SCOPE_3_CAT1
