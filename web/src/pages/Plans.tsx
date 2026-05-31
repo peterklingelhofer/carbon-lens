@@ -131,7 +131,9 @@ export function Plans() {
                     marginBottom: "0.25rem",
                   }}
                 >
-                  {formatPrice(plan.price_cents)}
+                  {tierKey === "enterprise"
+                    ? "Custom"
+                    : formatPrice(plan.price_cents)}
                 </div>
                 <div
                   style={{
@@ -140,7 +142,9 @@ export function Plans() {
                     marginBottom: "1.5rem",
                   }}
                 >
-                  {plan.daily_limit.toLocaleString()} requests/day
+                  {tierKey === "enterprise"
+                    ? "Unlimited requests · contact sales"
+                    : `${plan.daily_limit.toLocaleString()} requests/day`}
                 </div>
                 <ul
                   style={{

@@ -5,9 +5,11 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      "/api": "http://localhost:8000",
+      // trailing slash so the SPA route /api-explorer isn't swallowed by the proxy
+      // (matches the production nginx `location /api/` behavior)
+      "/api/": "http://localhost:8000",
       "/health": "http://localhost:8000",
-      "/ws": {
+      "/ws/": {
         target: "ws://localhost:8000",
         ws: true,
       },
