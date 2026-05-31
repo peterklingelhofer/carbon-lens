@@ -76,9 +76,7 @@ async def handle_webhook_event(
 ) -> str:
     """Process a Stripe webhook event. Returns the event type handled."""
     stripe = _get_stripe()
-    event = stripe.Webhook.construct_event(
-        payload, sig_header, settings.stripe_webhook_secret
-    )
+    event = stripe.Webhook.construct_event(payload, sig_header, settings.stripe_webhook_secret)
 
     if event.type == "checkout.session.completed":
         await _handle_checkout_completed(session, event.data.object)

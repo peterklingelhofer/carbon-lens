@@ -19,9 +19,7 @@ class ElectricityMapsCarbonSource:
         )
 
     async def get_carbon_intensity(self, grid_zone: str) -> CarbonIntensity:
-        resp = await self._client.get(
-            "/carbon-intensity/latest", params={"zone": grid_zone}
-        )
+        resp = await self._client.get("/carbon-intensity/latest", params={"zone": grid_zone})
         resp.raise_for_status()
         data = resp.json()
 
@@ -45,9 +43,7 @@ class ElectricityMapsCarbonSource:
             source="electricity_maps",
         )
 
-    async def get_carbon_intensity_batch(
-        self, grid_zones: list[str]
-    ) -> dict[str, CarbonIntensity]:
+    async def get_carbon_intensity_batch(self, grid_zones: list[str]) -> dict[str, CarbonIntensity]:
         results = {}
         for zone in grid_zones:
             try:

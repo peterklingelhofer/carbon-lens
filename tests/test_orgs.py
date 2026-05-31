@@ -58,4 +58,5 @@ class TestOrgEndpoints:
 def client():
     from fastapi.testclient import TestClient
     from carbon_mesh.main import app
+
     return TestClient(app)

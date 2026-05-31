@@ -25,9 +25,7 @@ async def create_org(
     slug = base_slug
 
     # Ensure unique slug
-    existing = await session.execute(
-        select(Organization.id).where(Organization.slug == slug)
-    )
+    existing = await session.execute(select(Organization.id).where(Organization.slug == slug))
     if existing.scalar_one_or_none():
         slug = f"{base_slug}-{uuid.uuid4().hex[:6]}"
 
@@ -39,16 +37,12 @@ async def create_org(
 
 
 async def get_org(session: AsyncSession, org_id: str) -> Organization | None:
-    result = await session.execute(
-        select(Organization).where(Organization.id == org_id)
-    )
+    result = await session.execute(select(Organization).where(Organization.id == org_id))
     return result.scalar_one_or_none()
 
 
 async def get_org_by_slug(session: AsyncSession, slug: str) -> Organization | None:
-    result = await session.execute(
-        select(Organization).where(Organization.slug == slug)
-    )
+    result = await session.execute(select(Organization).where(Organization.slug == slug))
     return result.scalar_one_or_none()
 
 

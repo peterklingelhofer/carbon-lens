@@ -151,9 +151,7 @@ class OpenMeteoCarbonSource:
             source="open_meteo",
         )
 
-    async def get_carbon_intensity_batch(
-        self, grid_zones: list[str]
-    ) -> dict[str, CarbonIntensity]:
+    async def get_carbon_intensity_batch(self, grid_zones: list[str]) -> dict[str, CarbonIntensity]:
         results: dict[str, CarbonIntensity] = {}
         for zone in grid_zones:
             if self.can_handle(zone):

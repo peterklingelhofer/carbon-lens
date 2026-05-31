@@ -1,7 +1,17 @@
 import uuid
 from datetime import date, datetime, timezone
 
-from sqlalchemy import Date, DateTime, Float, ForeignKey, Integer, String, Boolean, func, UniqueConstraint
+from sqlalchemy import (
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Boolean,
+    func,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -14,9 +24,7 @@ class Organization(Base):
 
     __tablename__ = "organizations"
 
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
-    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     slug: Mapped[str] = mapped_column(String(100), nullable=False, unique=True, index=True)
     tier: Mapped[str] = mapped_column(String(20), nullable=False, default="free")
@@ -32,9 +40,7 @@ class Organization(Base):
 class ApiKeyRecord(Base):
     __tablename__ = "api_keys"
 
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
-    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     org_id: Mapped[str | None] = mapped_column(
         String(36), ForeignKey("organizations.id"), nullable=True, index=True
     )
@@ -54,9 +60,7 @@ class ApiKeyRecord(Base):
 class EmissionsRecordDB(Base):
     __tablename__ = "emissions_records"
 
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
-    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     request_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     api_key_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
     timestamp: Mapped[datetime] = mapped_column(
@@ -73,13 +77,9 @@ class EmissionsRecordDB(Base):
 
 class DailyUsageRecord(Base):
     __tablename__ = "daily_usage"
-    __table_args__ = (
-        UniqueConstraint("api_key_id", "usage_date", name="uq_daily_usage_key_date"),
-    )
+    __table_args__ = (UniqueConstraint("api_key_id", "usage_date", name="uq_daily_usage_key_date"),)
 
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
-    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     api_key_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     usage_date: Mapped[date] = mapped_column(Date, nullable=False)
     request_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
@@ -93,9 +93,7 @@ class CloudUsageRecordDB(Base):
 
     __tablename__ = "cloud_usage_records"
 
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
-    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     org_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("organizations.id"), nullable=False, index=True
     )
@@ -119,9 +117,7 @@ class EmissionsCalculationDB(Base):
 
     __tablename__ = "emissions_calculations"
 
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
-    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     org_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("organizations.id"), nullable=False, index=True
     )
@@ -146,7 +142,9 @@ class EmissionsCalculationDB(Base):
     calculated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc)
     )
-    methodology_version: Mapped[str] = mapped_column(String(50), nullable=False, default="ghg_protocol_2024")
+    methodology_version: Mapped[str] = mapped_column(
+        String(50), nullable=False, default="ghg_protocol_2024"
+    )
 
 
 class ComplianceReportDB(Base):
@@ -154,9 +152,7 @@ class ComplianceReportDB(Base):
 
     __tablename__ = "compliance_reports"
 
-    id: Mapped[str] = mapped_column(
-        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
-    )
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     org_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("organizations.id"), nullable=False, index=True
     )
@@ -176,7 +172,9 @@ class ComplianceReportDB(Base):
     scope3_cat1_kgco2e: Mapped[float] = mapped_column(Float, nullable=False)
     calculation_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     methodology: Mapped[str] = mapped_column(String(255), nullable=False)
-    reporting_standard: Mapped[str] = mapped_column(String(100), nullable=False, default="CSRD / ESRS E1")
+    reporting_standard: Mapped[str] = mapped_column(
+        String(100), nullable=False, default="CSRD / ESRS E1"
+    )
     report_json: Mapped[str | None] = mapped_column(nullable=True)  # Full report as JSON for export
 
 

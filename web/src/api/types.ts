@@ -318,3 +318,147 @@ export interface ComplianceReport {
   eu_taxonomy_aligned: boolean;
   taxonomy_notes: string;
 }
+
+// --- Green SLA monitoring ---
+
+export type SLAStatusValue = "compliant" | "warning" | "breached" | "unknown";
+export type SLACheckFrequency = "hourly" | "daily" | "weekly";
+
+export interface GreenSLA {
+  id: string;
+  org_id: string;
+  name: string;
+  max_carbon_intensity_gco2_kwh: number;
+  min_renewable_percentage: number;
+  providers: string[];
+  regions: string[];
+  check_frequency: SLACheckFrequency;
+  alert_channels: string[];
+  webhook_url: string;
+  created_at: string;
+  updated_at: string;
+  active: boolean;
+}
+
+export interface SLASummary {
+  id: string;
+  name: string;
+  org_id: string;
+  status: SLAStatusValue;
+  max_carbon_intensity_gco2_kwh: number;
+  min_renewable_percentage: number;
+  check_frequency: SLACheckFrequency;
+  last_checked: string | null;
+  active: boolean;
+}
+
+export interface BreachedRegion {
+  provider: string;
+  region: string;
+  carbon_intensity_gco2_kwh: number;
+  renewable_percentage: number;
+}
+
+export interface SLACheck {
+  id: string;
+  sla_id: string;
+  checked_at: string;
+  status: SLAStatusValue;
+  avg_carbon_intensity_gco2_kwh: number;
+  max_carbon_intensity_gco2_kwh: number;
+  min_carbon_intensity_gco2_kwh: number;
+  avg_renewable_percentage: number;
+  regions_checked: number;
+  regions_compliant: number;
+  regions_breached: number;
+  breached_regions: BreachedRegion[];
+  target_max_carbon: number;
+  target_min_renewable: number;
+}
+
+export interface SLAReport {
+  id: string;
+  sla_id: string;
+  org_id: string;
+  org_name: string;
+  sla_name: string;
+  period_start: string;
+  period_end: string;
+  generated_at: string;
+  total_checks: number;
+  compliant_checks: number;
+  warning_checks: number;
+  breached_checks: number;
+  compliance_percentage: number;
+  avg_carbon_intensity_gco2_kwh: number;
+  max_carbon_intensity_gco2_kwh: number;
+  avg_renewable_percentage: number;
+  min_renewable_percentage: number;
+  target_max_carbon: number;
+  target_min_renewable: number;
+  checks_by_day: Record<string, Record<string, unknown>>;
+  worst_regions: Record<string, unknown>[];
+  best_regions: Record<string, unknown>[];
+  methodology: string;
+  data_sources: string[];
+  reporting_standard: string;
+}
+
+export interface SLAMonitorStatus {
+  running: boolean;
+  checks_completed: number;
+  breaches_detected: number;
+  slas_monitored: number;
+  recent_alerts: number;
+}
+
+export interface AlertEvent {
+  id: string;
+  sla_id: string;
+  sla_name: string;
+  channel: string;
+  sent_at: string;
+  status: SLAStatusValue;
+  details: Record<string, unknown>;
+  delivery_status: string;
+}
+
+// --- Carbon-aware scheduler ---
+
+export type ScheduleStrategy = "lowest_carbon" | "highest_renewable" | "balanced";
+
+export interface TimeSlot {
+  start: string;
+  end: string;
+  provider: string;
+  region: string;
+  grid_zone: string;
+  carbon_intensity_gco2_kwh: number;
+  renewable_percentage: number;
+  score: number;
+}
+
+export interface ScheduleRecommendation {
+  id: string;
+  recommended: TimeSlot;
+  alternatives: TimeSlot[];
+  job_duration_minutes: number;
+  window_start: string;
+  window_end: string;
+  strategy: ScheduleStrategy;
+  carbon_saved_vs_now_pct: number;
+  evaluated_slots: number;
+}
+
+export interface CronSchedule {
+  id: string;
+  name: string;
+  org_id: string;
+  job_duration_minutes: number;
+  providers: string[];
+  preferred_regions: string[];
+  strategy: ScheduleStrategy;
+  max_delay_hours: number;
+  created_at: string;
+  active: boolean;
+}

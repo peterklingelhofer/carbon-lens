@@ -173,10 +173,14 @@ def test_websocket_custom_subscription(client: TestClient):
     import json
 
     with client.websocket_connect("/ws/carbon") as ws:
-        ws.send_text(json.dumps({
-            "regions": [{"provider": "aws", "region": "us-east-1"}],
-            "interval_seconds": 1,
-        }))
+        ws.send_text(
+            json.dumps(
+                {
+                    "regions": [{"provider": "aws", "region": "us-east-1"}],
+                    "interval_seconds": 1,
+                }
+            )
+        )
         data = ws.receive_json()
         assert data["type"] == "carbon_update"
         assert len(data["data"]) == 1

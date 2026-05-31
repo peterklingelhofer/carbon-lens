@@ -5,10 +5,11 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timezone
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 
 from carbon_mesh.api.deps import get_carbon_source, get_grid_mapper
+from carbon_mesh.auth.dependencies import require_api_key
 from carbon_mesh.models.zk import (
     BrokerStats,
     CarbonPolicy,
@@ -16,7 +17,6 @@ from carbon_mesh.models.zk import (
     DispatchDecision,
     JobEvent,
     JobResult,
-    JobStatus,
     ProofJob,
     ProverNetwork,
     SpotPriceQuote,
@@ -27,7 +27,11 @@ from carbon_mesh.zk.orchestrator import JobOrchestrator
 from carbon_mesh.zk.prover_networks import MockProverNetwork
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api/v1/zk", tags=["ZK Broker"])
+router = APIRouter(
+    prefix="/api/v1/zk",
+    tags=["ZK Broker"],
+    dependencies=[Depends(require_api_key)],
+)
 
 # Singleton orchestrator (production would use DI)
 _orchestrator: JobOrchestrator | None = None
@@ -40,6 +44,7 @@ _poller = None
 def _policy_from_config() -> CarbonPolicy:
     """Build CarbonPolicy from environment variables."""
     from carbon_mesh.config import settings
+
     return CarbonPolicy(
         max_carbon_intensity_gco2_kwh=settings.zk_max_carbon_intensity,
         min_renewable_percentage=settings.zk_min_renewable_pct,
@@ -66,6 +71,7 @@ def _get_executor():
     global _executor
     if _executor is None:
         from carbon_mesh.zk.executor import JobExecutor
+
         orchestrator = _get_orchestrator()
         _executor = JobExecutor(
             store=orchestrator.store,
@@ -79,6 +85,7 @@ def _get_spot_feed():
     global _spot_feed
     if _spot_feed is None:
         from carbon_mesh.zk.spot_prices import SpotPriceFeed
+
         _spot_feed = SpotPriceFeed()
     return _spot_feed
 
@@ -87,6 +94,7 @@ def _get_wallet():
     global _wallet
     if _wallet is None:
         from carbon_mesh.zk.wallet import LocalWallet
+
         _wallet = LocalWallet()
     return _wallet
 
@@ -102,6 +110,7 @@ class EvaluateResponse(BaseModel):
 
 class ExecuteRequest(BaseModel):
     """Submit a job for full execution (evaluate + prove + submit)."""
+
     job: ProofJob
 
 
@@ -250,13 +259,14 @@ async def simulate_routing(req: SimulateRequest) -> SimulateResponse:
         network=req.network,
         proof_system=ProofSystem.RISC_ZERO,
         circuit_size=req.circuit_size,
-        input_size_bytes=2 ** req.circuit_size,
+        input_size_bytes=2**req.circuit_size,
         bounty_usd=req.bounty_usd,
         bounty_token="USDC",
         bounty_amount=req.bounty_usd,
         deadline=now,
         posted_at=now,
-        estimated_gpu_minutes=PROOF_SYSTEM_GPU_MINUTES[ProofSystem.RISC_ZERO] * (2 ** (req.circuit_size - 20)),
+        estimated_gpu_minutes=PROOF_SYSTEM_GPU_MINUTES[ProofSystem.RISC_ZERO]
+        * (2 ** (req.circuit_size - 20)),
         min_vram_gb=req.min_vram_gb,
     )
 
@@ -273,16 +283,12 @@ async def simulate_routing(req: SimulateRequest) -> SimulateResponse:
     from carbon_mesh.zk.compute_providers import MockGPUProvider, enrich_with_carbon
 
     all_options = await MockGPUProvider().list_available(min_vram_gb=req.min_vram_gb)
-    all_options = await enrich_with_carbon(
-        all_options, get_carbon_source(), get_grid_mapper()
-    )
+    all_options = await enrich_with_carbon(all_options, get_carbon_source(), get_grid_mapper())
 
     # Calculate costs
     for opt in all_options:
         gpu_hours = job.estimated_gpu_minutes / 60.0
-        opt.estimated_job_cost_usd = round(
-            opt.cost_per_gpu_hour_usd * gpu_hours * opt.gpu_count, 4
-        )
+        opt.estimated_job_cost_usd = round(opt.cost_per_gpu_hour_usd * gpu_hours * opt.gpu_count, 4)
 
     # Filter green
     green_options = orchestrator._filter_by_policy(all_options)
@@ -357,9 +363,7 @@ async def list_compute(min_vram_gb: int = 0) -> list[ComputeOption]:
     from carbon_mesh.zk.compute_providers import MockGPUProvider, enrich_with_carbon
 
     options = await MockGPUProvider().list_available(min_vram_gb=min_vram_gb)
-    return await enrich_with_carbon(
-        options, get_carbon_source(), get_grid_mapper()
-    )
+    return await enrich_with_carbon(options, get_carbon_source(), get_grid_mapper())
 
 
 @router.get("/compute/spot-prices", response_model=list[SpotPriceQuote])
@@ -373,6 +377,7 @@ async def list_spot_prices() -> list[SpotPriceQuote]:
 async def list_prover_networks() -> list[dict]:
     """List supported prover networks with their Docker images and configs."""
     from carbon_mesh.zk.prover_runtime import ProverRuntime
+
     runtime = ProverRuntime()
     return runtime.list_supported_networks()
 
@@ -381,6 +386,7 @@ async def list_prover_networks() -> list[dict]:
 async def check_verifiers() -> dict:
     """Check which proof verifiers are available on this system."""
     from carbon_mesh.zk.verification import ProofVerifier
+
     verifier = ProofVerifier()
     return await verifier.check_verifiers()
 
@@ -404,7 +410,10 @@ async def poller_status() -> dict:
     """Get the background job poller status."""
     global _poller
     if _poller is None:
-        return {"running": False, "message": "Poller not started. Set CARBON_MESH_ZK_EXECUTOR_ENABLED=true."}
+        return {
+            "running": False,
+            "message": "Poller not started. Set CARBON_MESH_ZK_EXECUTOR_ENABLED=true.",
+        }
     return _poller.get_status()
 
 
@@ -414,6 +423,7 @@ async def start_poller() -> dict:
     global _poller
     if _poller is None:
         from carbon_mesh.zk.poller import JobPoller
+
         _poller = JobPoller(
             orchestrator=_get_orchestrator(),
             executor=_get_executor(),

@@ -46,11 +46,10 @@ export function Scheduler() {
     );
   };
 
-  const recommendation = findWindow.data as Record<string, unknown> | undefined;
-  const recommended = recommendation?.recommended as Record<string, unknown> | undefined;
-  const alternatives = (recommendation?.alternatives as Array<Record<string, unknown>>) || [];
-  const nowData = bestNow.data as Record<string, unknown> | undefined;
-  const nowRecommended = nowData?.recommended as Record<string, unknown> | undefined;
+  const recommendation = findWindow.data;
+  const recommended = recommendation?.recommended;
+  const alternatives = recommendation?.alternatives ?? [];
+  const nowRecommended = bestNow.data?.recommended;
 
   return (
     <div style={section}>
