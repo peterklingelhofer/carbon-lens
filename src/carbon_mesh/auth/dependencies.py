@@ -1,3 +1,5 @@
+import secrets
+
 from fastapi import Depends, HTTPException, Security
 from fastapi.security import APIKeyHeader
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -50,5 +52,5 @@ async def require_admin(
 ) -> None:
     if not settings.admin_secret:
         raise HTTPException(status_code=503, detail="Admin endpoint not configured.")
-    if api_key != settings.admin_secret:
+    if not api_key or not secrets.compare_digest(api_key, settings.admin_secret):
         raise HTTPException(status_code=403, detail="Invalid admin secret.")

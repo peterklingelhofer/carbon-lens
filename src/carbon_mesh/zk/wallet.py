@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import hashlib
 import logging
-from datetime import datetime, timezone
 from typing import Protocol, runtime_checkable
 
 from carbon_mesh.models.zk import (
@@ -34,8 +33,12 @@ class WalletBackend(Protocol):
     """Protocol for blockchain wallet operations."""
 
     async def get_info(self) -> WalletInfo: ...
-    async def submit_proof(self, network: ProverNetwork, job_id: str, proof_data: bytes) -> TransactionReceipt: ...
-    async def claim_bounty(self, network: ProverNetwork, job_id: str, tx_hash: str) -> TransactionReceipt: ...
+    async def submit_proof(
+        self, network: ProverNetwork, job_id: str, proof_data: bytes
+    ) -> TransactionReceipt: ...
+    async def claim_bounty(
+        self, network: ProverNetwork, job_id: str, tx_hash: str
+    ) -> TransactionReceipt: ...
     async def estimate_gas(self, network: ProverNetwork, data_size_bytes: int) -> float: ...
 
 
@@ -66,7 +69,10 @@ class LocalWallet:
         )
 
     async def submit_proof(
-        self, network: ProverNetwork, job_id: str, proof_data: bytes,
+        self,
+        network: ProverNetwork,
+        job_id: str,
+        proof_data: bytes,
     ) -> TransactionReceipt:
         """Build a proof submission transaction.
 
@@ -100,12 +106,17 @@ class LocalWallet:
 
         logger.info(
             "Built proof submission tx for %s job %s: %s (not broadcast)",
-            network.value, job_id, tx_hash,
+            network.value,
+            job_id,
+            tx_hash,
         )
         return receipt
 
     async def claim_bounty(
-        self, network: ProverNetwork, job_id: str, tx_hash: str,
+        self,
+        network: ProverNetwork,
+        job_id: str,
+        tx_hash: str,
     ) -> TransactionReceipt:
         """Build a bounty claim transaction.
 
@@ -126,7 +137,9 @@ class LocalWallet:
         self._tx_log.append(receipt)
         logger.info(
             "Built bounty claim tx for %s job %s: %s (not broadcast)",
-            network.value, job_id, claim_hash,
+            network.value,
+            job_id,
+            claim_hash,
         )
         return receipt
 

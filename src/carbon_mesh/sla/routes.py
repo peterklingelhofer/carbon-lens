@@ -6,10 +6,11 @@ import logging
 import uuid
 from datetime import datetime, timezone, timedelta
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from carbon_mesh.api.deps import get_carbon_source, get_grid_mapper
+from carbon_mesh.auth.dependencies import require_api_key
 from carbon_mesh.models.sla import (
     AlertChannel,
     AlertEvent,
@@ -17,14 +18,17 @@ from carbon_mesh.models.sla import (
     SLACheck,
     SLACheckFrequency,
     SLAReport,
-    SLAStatus,
     SLASummary,
 )
 from carbon_mesh.sla.engine import SLAEngine
 from carbon_mesh.sla.monitor import SLAMonitor
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api/v1/sla", tags=["SLA Monitoring"])
+router = APIRouter(
+    prefix="/api/v1/sla",
+    tags=["SLA Monitoring"],
+    dependencies=[Depends(require_api_key)],
+)
 
 # In-memory store for MVP
 _sla_store: dict[str, GreenSLA] = {}  # sla_id -> SLA
@@ -50,6 +54,7 @@ def _get_monitor() -> SLAMonitor:
 
 
 # --- Request models ---
+
 
 class CreateSLARequest(BaseModel):
     org_id: str
@@ -81,6 +86,7 @@ class GenerateReportRequest(BaseModel):
 
 
 # --- Endpoints ---
+
 
 @router.post("/create", response_model=GreenSLA)
 async def create_sla(req: CreateSLARequest) -> GreenSLA:
@@ -217,10 +223,7 @@ async def generate_report(sla_id: str, req: GenerateReportRequest) -> SLAReport:
     period_end = now
 
     # Get checks within period
-    checks = [
-        c for c in _check_store.get(sla_id, [])
-        if c.checked_at >= period_start
-    ]
+    checks = [c for c in _check_store.get(sla_id, []) if c.checked_at >= period_start]
 
     # If no checks exist, run one now
     if not checks:
@@ -256,6 +259,7 @@ async def list_reports(sla_id: str) -> list[SLAReport]:
 
 
 # --- Monitor control ---
+
 
 @router.post("/monitor/start")
 async def start_monitor(org_id: str = Query(...)) -> dict:

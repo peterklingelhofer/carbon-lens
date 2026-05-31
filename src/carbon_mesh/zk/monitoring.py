@@ -13,7 +13,6 @@ Integrates with the existing Prometheus instrumentator in main.py.
 from __future__ import annotations
 
 import logging
-import time
 from collections import defaultdict
 from datetime import datetime, timezone
 
@@ -74,48 +73,68 @@ class BrokerMetrics:
     def record_job_received(self, job: ProofJob) -> None:
         self.jobs_received += 1
         self.jobs_by_network[job.network.value] += 1
-        self._emit_event(job.id, "job_received", {
-            "network": job.network.value,
-            "bounty_usd": job.bounty_usd,
-            "proof_system": job.proof_system.value,
-            "circuit_size": job.circuit_size,
-        })
+        self._emit_event(
+            job.id,
+            "job_received",
+            {
+                "network": job.network.value,
+                "bounty_usd": job.bounty_usd,
+                "proof_system": job.proof_system.value,
+                "circuit_size": job.circuit_size,
+            },
+        )
 
     def record_dispatch(self, job: ProofJob, decision: DispatchDecision) -> None:
         self.jobs_dispatched += 1
         self.jobs_by_provider[decision.chosen_provider.provider.value] += 1
-        self._emit_event(job.id, "dispatched", {
-            "provider": decision.chosen_provider.provider.value,
-            "region": decision.chosen_provider.region,
-            "estimated_profit": decision.estimated_profit_usd,
-            "carbon_grams": decision.carbon_grams_co2,
-        })
+        self._emit_event(
+            job.id,
+            "dispatched",
+            {
+                "provider": decision.chosen_provider.provider.value,
+                "region": decision.chosen_provider.region,
+                "estimated_profit": decision.estimated_profit_usd,
+                "carbon_grams": decision.carbon_grams_co2,
+            },
+        )
 
     def record_proof_generated(self, artifact: ProofArtifact) -> None:
         self._proving_times.append(artifact.generation_gpu_seconds)
         # Keep last 1000 timing samples
         if len(self._proving_times) > 1000:
             self._proving_times = self._proving_times[-1000:]
-        self._emit_event(artifact.job_id, "proof_generated", {
-            "gpu_seconds": artifact.generation_gpu_seconds,
-            "proof_size_bytes": artifact.proof_size_bytes,
-        })
+        self._emit_event(
+            artifact.job_id,
+            "proof_generated",
+            {
+                "gpu_seconds": artifact.generation_gpu_seconds,
+                "proof_size_bytes": artifact.proof_size_bytes,
+            },
+        )
 
     def record_verification(self, result: VerificationResult) -> None:
         self.proofs_verified += 1
-        self._emit_event(result.job_id, "proof_verified", {
-            "valid": result.valid,
-            "verifier": result.verifier,
-            "time_ms": result.verification_time_ms,
-        })
+        self._emit_event(
+            result.job_id,
+            "proof_verified",
+            {
+                "valid": result.valid,
+                "verifier": result.verifier,
+                "time_ms": result.verification_time_ms,
+            },
+        )
 
     def record_submission(self, job_id: str, tx_hash: str, gas_cost_usd: float) -> None:
         self.proofs_submitted += 1
         self.total_gas_cost_usd += gas_cost_usd
-        self._emit_event(job_id, "proof_submitted", {
-            "tx_hash": tx_hash,
-            "gas_cost_usd": gas_cost_usd,
-        })
+        self._emit_event(
+            job_id,
+            "proof_submitted",
+            {
+                "tx_hash": tx_hash,
+                "gas_cost_usd": gas_cost_usd,
+            },
+        )
 
     def record_bounty_claimed(self, job_id: str, bounty_usd: float) -> None:
         self.bounties_claimed += 1
@@ -133,11 +152,15 @@ class BrokerMetrics:
         elif result.status == JobStatus.REJECTED:
             self.jobs_rejected += 1
 
-        self._emit_event(result.job_id, "job_completed", {
-            "status": result.status.value,
-            "profit_usd": result.profit_usd,
-            "carbon_grams": result.carbon_grams_co2,
-        })
+        self._emit_event(
+            result.job_id,
+            "job_completed",
+            {
+                "status": result.status.value,
+                "profit_usd": result.profit_usd,
+                "carbon_grams": result.carbon_grams_co2,
+            },
+        )
 
     def record_carbon_saved(self, decision: DispatchDecision) -> None:
         self.total_carbon_saved_grams += decision.carbon_saved_vs_grid_avg_grams
@@ -145,12 +168,12 @@ class BrokerMetrics:
     def get_summary(self) -> dict:
         """Get a summary of all metrics for the /stats endpoint."""
         avg_proving = (
-            sum(self._proving_times) / len(self._proving_times)
-            if self._proving_times else 0.0
+            sum(self._proving_times) / len(self._proving_times) if self._proving_times else 0.0
         )
         p95_proving = (
             sorted(self._proving_times)[int(len(self._proving_times) * 0.95)]
-            if len(self._proving_times) > 10 else 0.0
+            if len(self._proving_times) > 10
+            else 0.0
         )
 
         return {
@@ -177,7 +200,9 @@ class BrokerMetrics:
                 "total_emissions_grams": round(self.total_carbon_grams, 2),
                 "total_saved_grams": round(self.total_carbon_saved_grams, 2),
                 "savings_ratio": round(
-                    self.total_carbon_saved_grams / max(0.01, self.total_carbon_grams + self.total_carbon_saved_grams), 2
+                    self.total_carbon_saved_grams
+                    / max(0.01, self.total_carbon_grams + self.total_carbon_saved_grams),
+                    2,
                 ),
             },
             "performance": {
@@ -204,12 +229,14 @@ class BrokerMetrics:
         )
         self._events.append(event)
         if len(self._events) > self._max_events:
-            self._events = self._events[-self._max_events:]
+            self._events = self._events[-self._max_events :]
 
         # Also log as structured event
         logger.info(
             "ZK event: %s job=%s %s",
-            event_type, job_id[:12], details,
+            event_type,
+            job_id[:12],
+            details,
         )
 
 

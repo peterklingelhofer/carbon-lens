@@ -2,20 +2,15 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import uuid
 from datetime import datetime, timezone
 
 from carbon_mesh.carbon_sources.base import CarbonDataSource
 from carbon_mesh.grid.mapper import GridMapper
-from carbon_mesh.models.carbon import CarbonIntensity
 from carbon_mesh.models.sla import (
-    AlertChannel,
-    AlertEvent,
     GreenSLA,
     SLACheck,
-    SLACheckFrequency,
     SLAReport,
     SLAStatus,
     SLASummary,
@@ -95,15 +90,17 @@ class SLAEngine:
             if is_carbon_ok and is_renewable_ok:
                 compliant_count += 1
             else:
-                breached.append({
-                    "provider": provider,
-                    "region": region,
-                    "grid_zone": zone,
-                    "carbon_intensity_gco2_kwh": intensity.carbon_intensity_gco2_kwh,
-                    "renewable_percentage": intensity.renewable_percentage,
-                    "carbon_breached": not is_carbon_ok,
-                    "renewable_breached": not is_renewable_ok,
-                })
+                breached.append(
+                    {
+                        "provider": provider,
+                        "region": region,
+                        "grid_zone": zone,
+                        "carbon_intensity_gco2_kwh": intensity.carbon_intensity_gco2_kwh,
+                        "renewable_percentage": intensity.renewable_percentage,
+                        "carbon_breached": not is_carbon_ok,
+                        "renewable_breached": not is_renewable_ok,
+                    }
+                )
 
         total = len(intensities)
         breached_count = len(breached)
@@ -126,7 +123,9 @@ class SLAEngine:
             avg_carbon_intensity_gco2_kwh=round(sum(carbon_values) / max(len(carbon_values), 1), 2),
             max_carbon_intensity_gco2_kwh=round(max(carbon_values, default=0), 2),
             min_carbon_intensity_gco2_kwh=round(min(carbon_values, default=0), 2),
-            avg_renewable_percentage=round(sum(renewable_values) / max(len(renewable_values), 1), 1),
+            avg_renewable_percentage=round(
+                sum(renewable_values) / max(len(renewable_values), 1), 1
+            ),
             regions_checked=total,
             regions_compliant=compliant_count,
             regions_breached=breached_count,
@@ -207,7 +206,9 @@ class SLAEngine:
         for check in checks:
             for region_info in check.breached_regions:
                 key = f"{region_info['provider']}/{region_info['region']}"
-                if key not in all_breached or region_info["carbon_intensity_gco2_kwh"] > all_breached[key].get("max_carbon", 0):
+                if key not in all_breached or region_info[
+                    "carbon_intensity_gco2_kwh"
+                ] > all_breached[key].get("max_carbon", 0):
                     all_breached[key] = {
                         **region_info,
                         "max_carbon": region_info["carbon_intensity_gco2_kwh"],
@@ -237,14 +238,23 @@ class SLAEngine:
             breached_checks=breached,
             compliance_percentage=round(compliant / len(checks) * 100, 1),
             avg_carbon_intensity_gco2_kwh=round(sum(carbon_avgs) / len(carbon_avgs), 2),
-            max_carbon_intensity_gco2_kwh=round(max(c.max_carbon_intensity_gco2_kwh for c in checks), 2),
+            max_carbon_intensity_gco2_kwh=round(
+                max(c.max_carbon_intensity_gco2_kwh for c in checks), 2
+            ),
             avg_renewable_percentage=round(sum(renewable_avgs) / len(renewable_avgs), 1),
             min_renewable_percentage=round(min(c.avg_renewable_percentage for c in checks), 1),
             target_max_carbon=sla.max_carbon_intensity_gco2_kwh,
             target_min_renewable=sla.min_renewable_percentage,
             checks_by_day=checks_by_day,
             worst_regions=worst_regions,
-            data_sources=list({c.breached_regions[0].get("source", "hybrid") for c in checks if c.breached_regions} or {"hybrid"}),
+            data_sources=list(
+                {
+                    c.breached_regions[0].get("source", "hybrid")
+                    for c in checks
+                    if c.breached_regions
+                }
+                or {"hybrid"}
+            ),
         )
 
     def summarize(self, sla: GreenSLA, last_check: SLACheck | None) -> SLASummary:
@@ -274,8 +284,4 @@ class SLAEngine:
 
         # All regions for the specified providers
         all_regions = self._grid_mapper.list_regions()
-        return [
-            (r.provider, r.region)
-            for r in all_regions
-            if r.provider in sla.providers
-        ]
+        return [(r.provider, r.region) for r in all_regions if r.provider in sla.providers]

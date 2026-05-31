@@ -112,6 +112,7 @@ async def test_batch_fresh_no_fetch(cache: IntensityCache):
 @pytest.mark.asyncio
 async def test_batch_missing_fetched(cache: IntensityCache):
     """Batch fetches missing zones and returns them."""
+
     async def batch_fetcher(zones: list[str]) -> dict[str, CarbonIntensity]:
         return {z: _make_intensity(z, 42.0) for z in zones}
 

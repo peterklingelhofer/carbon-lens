@@ -18,9 +18,7 @@ class CarbonTracker:
         chosen = response.recommended
         worst_intensity = chosen.carbon_intensity_gco2_kwh
         if response.alternatives:
-            worst_intensity = max(
-                a.carbon_intensity_gco2_kwh for a in response.alternatives
-            )
+            worst_intensity = max(a.carbon_intensity_gco2_kwh for a in response.alternatives)
             worst_intensity = max(worst_intensity, chosen.carbon_intensity_gco2_kwh)
 
         saved = worst_intensity - chosen.carbon_intensity_gco2_kwh
@@ -58,9 +56,7 @@ class DBCarbonTracker:
         chosen = response.recommended
         worst_intensity = chosen.carbon_intensity_gco2_kwh
         if response.alternatives:
-            worst_intensity = max(
-                a.carbon_intensity_gco2_kwh for a in response.alternatives
-            )
+            worst_intensity = max(a.carbon_intensity_gco2_kwh for a in response.alternatives)
             worst_intensity = max(worst_intensity, chosen.carbon_intensity_gco2_kwh)
 
         saved = worst_intensity - chosen.carbon_intensity_gco2_kwh

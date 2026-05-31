@@ -5,10 +5,11 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from carbon_mesh.api.deps import get_carbon_source, get_grid_mapper
+from carbon_mesh.auth.dependencies import require_api_key
 from carbon_mesh.scheduler.engine import (
     CronSchedule,
     ScheduleRecommendation,
@@ -16,7 +17,11 @@ from carbon_mesh.scheduler.engine import (
     SchedulingEngine,
 )
 
-router = APIRouter(prefix="/api/v1/scheduler", tags=["Scheduling"])
+router = APIRouter(
+    prefix="/api/v1/scheduler",
+    tags=["Scheduling"],
+    dependencies=[Depends(require_api_key)],
+)
 
 # In-memory store for scheduled jobs
 _schedule_store: dict[str, CronSchedule] = {}
@@ -30,6 +35,7 @@ def _get_engine() -> SchedulingEngine:
 
 
 # --- Request models ---
+
 
 class FindWindowRequest(BaseModel):
     job_duration_minutes: int = Field(ge=1, le=1440, default=30)
@@ -50,6 +56,7 @@ class CreateScheduleRequest(BaseModel):
 
 
 # --- Endpoints ---
+
 
 @router.post("/find-window", response_model=ScheduleRecommendation)
 async def find_optimal_window(req: FindWindowRequest) -> ScheduleRecommendation:

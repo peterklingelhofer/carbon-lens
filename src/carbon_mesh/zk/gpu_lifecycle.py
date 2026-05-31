@@ -23,7 +23,6 @@ from typing import Protocol, runtime_checkable
 
 from carbon_mesh.models.zk import (
     ComputeOption,
-    ComputeProvider,
     GPUInstance,
     InstanceStatus,
     ProofArtifact,
@@ -38,7 +37,9 @@ class ComputeBackend(Protocol):
     """Protocol for cloud/datacenter compute backends."""
 
     async def provision(self, option: ComputeOption, job_id: str) -> GPUInstance: ...
-    async def wait_ready(self, instance: GPUInstance, timeout_seconds: int = 300) -> GPUInstance: ...
+    async def wait_ready(
+        self, instance: GPUInstance, timeout_seconds: int = 300
+    ) -> GPUInstance: ...
     async def run_container(
         self,
         instance: GPUInstance,
@@ -114,9 +115,13 @@ class LocalDockerBackend:
 
             # Build docker run command
             cmd = [
-                "docker", "run", "--rm",
-                "-v", f"{input_dir}:{image.input_mount_path}:ro",
-                "-v", f"{output_dir}:/output",
+                "docker",
+                "run",
+                "--rm",
+                "-v",
+                f"{input_dir}:{image.input_mount_path}:ro",
+                "-v",
+                f"{output_dir}:/output",
             ]
 
             # Add GPU passthrough if available and required
@@ -134,7 +139,8 @@ class LocalDockerBackend:
 
             logger.info(
                 "Running prover container for job %s: %s",
-                job_id, " ".join(cmd),
+                job_id,
+                " ".join(cmd),
             )
 
             # Run the container
@@ -150,7 +156,9 @@ class LocalDockerBackend:
             if proc.returncode != 0:
                 logger.error(
                     "Prover container failed for job %s (exit %d): %s",
-                    job_id, proc.returncode, stderr.decode()[:500],
+                    job_id,
+                    proc.returncode,
+                    stderr.decode()[:500],
                 )
                 return ProofArtifact(
                     job_id=job_id,
@@ -184,7 +192,9 @@ class LocalDockerBackend:
         container_id = self._containers.pop(instance.job_id, None)
         if container_id:
             proc = await asyncio.create_subprocess_exec(
-                "docker", "stop", container_id,
+                "docker",
+                "stop",
+                container_id,
                 stdout=asyncio.subprocess.DEVNULL,
                 stderr=asyncio.subprocess.DEVNULL,
             )
@@ -245,9 +255,12 @@ class SSHComputeBackend:
             try:
                 proc = await asyncio.create_subprocess_exec(
                     "ssh",
-                    "-o", "ConnectTimeout=5",
-                    "-o", "StrictHostKeyChecking=no",
-                    "-p", str(instance.ssh_port),
+                    "-o",
+                    "ConnectTimeout=5",
+                    "-o",
+                    "StrictHostKeyChecking=no",
+                    "-p",
+                    str(instance.ssh_port),
                     f"root@{instance.ip_address}",
                     "echo ready",
                     stdout=asyncio.subprocess.PIPE,
@@ -280,8 +293,11 @@ class SSHComputeBackend:
         remote_dir = f"/tmp/zk-{job_id[:8]}"
 
         ssh_base = [
-            "ssh", "-o", "StrictHostKeyChecking=no",
-            "-p", str(instance.ssh_port),
+            "ssh",
+            "-o",
+            "StrictHostKeyChecking=no",
+            "-p",
+            str(instance.ssh_port),
             f"root@{instance.ip_address}",
         ]
 
@@ -295,8 +311,11 @@ class SSHComputeBackend:
 
         try:
             scp_cmd = [
-                "scp", "-o", "StrictHostKeyChecking=no",
-                "-P", str(instance.ssh_port),
+                "scp",
+                "-o",
+                "StrictHostKeyChecking=no",
+                "-P",
+                str(instance.ssh_port),
                 tmp_path,
                 f"root@{instance.ip_address}:{remote_dir}/input/witness.bin",
             ]
@@ -307,9 +326,13 @@ class SSHComputeBackend:
 
         # Build docker command
         docker_cmd_parts = [
-            "docker", "run", "--rm",
-            "-v", f"{remote_dir}/input:{image.input_mount_path}:ro",
-            "-v", f"{remote_dir}/output:/output",
+            "docker",
+            "run",
+            "--rm",
+            "-v",
+            f"{remote_dir}/input:{image.input_mount_path}:ro",
+            "-v",
+            f"{remote_dir}/output:/output",
         ]
         if image.gpu_required:
             docker_cmd_parts.extend(["--gpus", "all"])
@@ -344,8 +367,11 @@ class SSHComputeBackend:
 
         try:
             scp_cmd = [
-                "scp", "-o", "StrictHostKeyChecking=no",
-                "-P", str(instance.ssh_port),
+                "scp",
+                "-o",
+                "StrictHostKeyChecking=no",
+                "-P",
+                str(instance.ssh_port),
                 f"root@{instance.ip_address}:{remote_proof}",
                 local_proof,
             ]
@@ -387,7 +413,8 @@ class SSHComputeBackend:
         ssh_base: list[str], command: str, capture: bool = False
     ) -> tuple[int, str, str]:
         proc = await asyncio.create_subprocess_exec(
-            *ssh_base, command,
+            *ssh_base,
+            command,
             stdout=asyncio.subprocess.PIPE if capture else asyncio.subprocess.DEVNULL,
             stderr=asyncio.subprocess.PIPE if capture else asyncio.subprocess.DEVNULL,
         )

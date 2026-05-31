@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import logging
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from carbon_mesh.carbon_sources.base import CarbonDataSource
 from carbon_mesh.grid.mapper import GridMapper
@@ -93,7 +93,9 @@ class JobOrchestrator:
             if time_needed > time_remaining * 0.9:  # 90% safety margin
                 logger.info(
                     "Job %s rejected: deadline infeasible (need %.0fs, have %.0fs)",
-                    job.id, time_needed, time_remaining,
+                    job.id,
+                    time_needed,
+                    time_remaining,
                 )
                 result = JobResult(
                     job_id=job.id,
@@ -119,9 +121,7 @@ class JobOrchestrator:
             return None
 
         # 2. Enrich with live carbon data
-        options = await enrich_with_carbon(
-            options, self._carbon_source, self._grid_mapper
-        )
+        options = await enrich_with_carbon(options, self._carbon_source, self._grid_mapper)
 
         # 3. Calculate estimated job cost for each option
         for opt in options:
@@ -158,17 +158,20 @@ class JobOrchestrator:
             return None
 
         # 5. Filter by profitability
-        profitable = [
-            o for o in green_options
-            if self._is_profitable(job, o)
-        ]
+        profitable = [o for o in green_options if self._is_profitable(job, o)]
 
         if not profitable:
             cheapest = min(green_options, key=lambda o: o.estimated_job_cost_usd)
-            margin = (job.bounty_usd - cheapest.estimated_job_cost_usd) / job.bounty_usd * 100 if job.bounty_usd > 0 else 0
+            margin = (
+                (job.bounty_usd - cheapest.estimated_job_cost_usd) / job.bounty_usd * 100
+                if job.bounty_usd > 0
+                else 0
+            )
             logger.info(
                 "Job %s rejected: best margin %.1f%% < min %.1f%%",
-                job.id, margin, self._policy.min_profit_margin_pct,
+                job.id,
+                margin,
+                self._policy.min_profit_margin_pct,
             )
             result = JobResult(
                 job_id=job.id,
@@ -235,11 +238,15 @@ class JobOrchestrator:
             )
 
         now = datetime.now(timezone.utc)
-        actual_gpu_hours = gpu_seconds / 3600.0 if gpu_seconds > 0 else job.estimated_gpu_minutes / 60.0
+        actual_gpu_hours = (
+            gpu_seconds / 3600.0 if gpu_seconds > 0 else job.estimated_gpu_minutes / 60.0
+        )
         actual_cost = decision.chosen_provider.cost_per_gpu_hour_usd * actual_gpu_hours
 
         # Carbon
-        gpu_kwh = (GPU_TDP_WATTS.get(decision.chosen_provider.gpu_type, 300) / 1000.0) * actual_gpu_hours
+        gpu_kwh = (
+            GPU_TDP_WATTS.get(decision.chosen_provider.gpu_type, 300) / 1000.0
+        ) * actual_gpu_hours
         carbon_grams = gpu_kwh * decision.chosen_provider.carbon_intensity_gco2_kwh
 
         result = JobResult(
@@ -251,7 +258,9 @@ class JobOrchestrator:
             completed_at=now,
             compute_cost_usd=round(actual_cost, 4),
             bounty_earned_usd=job.bounty_usd if success else 0,
-            profit_usd=round(job.bounty_usd - actual_cost, 4) if success else round(-actual_cost, 4),
+            profit_usd=round(job.bounty_usd - actual_cost, 4)
+            if success
+            else round(-actual_cost, 4),
             carbon_grams_co2=round(carbon_grams, 2),
             renewable_percentage=decision.chosen_provider.renewable_percentage,
         )
@@ -295,9 +304,7 @@ class JobOrchestrator:
 
         avg_margin = (total_profit / total_bounties * 100) if total_bounties > 0 else 0
         avg_renewable = (
-            sum(r.renewable_percentage for r in completed) / len(completed)
-            if completed
-            else 0
+            sum(r.renewable_percentage for r in completed) / len(completed) if completed else 0
         )
         zero_carbon_count = sum(1 for r in completed if r.carbon_grams_co2 == 0)
         zero_carbon_pct = (zero_carbon_count / len(completed) * 100) if completed else 0
@@ -356,9 +363,7 @@ class JobOrchestrator:
         margin = profit / job.bounty_usd * 100
         return margin >= self._policy.min_profit_margin_pct
 
-    def _score_options(
-        self, job: ProofJob, options: list[ComputeOption]
-    ) -> list[ComputeOption]:
+    def _score_options(self, job: ProofJob, options: list[ComputeOption]) -> list[ComputeOption]:
         """Score and rank compute options by carbon + cost composite."""
         if not options:
             return []

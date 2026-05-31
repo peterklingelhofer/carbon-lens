@@ -18,9 +18,7 @@ API_BASE = "https://api.carbonintensity.org.uk"
 UK_ZONES = {"GB"} | {f"GB-{i}" for i in range(1, 18)}
 
 # Map our zone IDs to the API's regionid
-_ZONE_TO_REGION_ID: dict[str, int] = {
-    f"GB-{i}": i for i in range(1, 18)
-}
+_ZONE_TO_REGION_ID: dict[str, int] = {f"GB-{i}": i for i in range(1, 18)}
 
 
 class UKCarbonSource:
@@ -53,10 +51,7 @@ class UKCarbonSource:
         regions = resp.json()["data"][0]["regions"]
         for region in regions:
             if region["regionid"] == region_id:
-                intensity = (
-                    region["intensity"]["actual"]
-                    or region["intensity"]["forecast"]
-                )
+                intensity = region["intensity"]["actual"] or region["intensity"]["forecast"]
                 return CarbonIntensity(
                     grid_zone=grid_zone,
                     carbon_intensity_gco2_kwh=float(intensity),
@@ -67,9 +62,7 @@ class UKCarbonSource:
 
         raise ValueError(f"Region {region_id} not found in UK API response")
 
-    async def get_carbon_intensity_batch(
-        self, grid_zones: list[str]
-    ) -> dict[str, CarbonIntensity]:
+    async def get_carbon_intensity_batch(self, grid_zones: list[str]) -> dict[str, CarbonIntensity]:
         results: dict[str, CarbonIntensity] = {}
 
         # Check if we need national
@@ -90,10 +83,7 @@ class UKCarbonSource:
                 for region in regions:
                     zone = f"GB-{region['regionid']}"
                     if zone in grid_zones:
-                        intensity = (
-                            region["intensity"]["actual"]
-                            or region["intensity"]["forecast"]
-                        )
+                        intensity = region["intensity"]["actual"] or region["intensity"]["forecast"]
                         results[zone] = CarbonIntensity(
                             grid_zone=zone,
                             carbon_intensity_gco2_kwh=float(intensity),

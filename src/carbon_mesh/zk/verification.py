@@ -26,7 +26,6 @@ import time
 from carbon_mesh.models.zk import (
     ProofArtifact,
     ProofSystem,
-    ProverNetwork,
     VerificationResult,
 )
 
@@ -79,8 +78,6 @@ class ProofVerifier:
                 error="No proof data to verify",
                 verified_at=datetime.now(timezone.utc),
             )
-
-        start = time.monotonic()
 
         # Try native verifier
         if self._prefer_native:
@@ -140,7 +137,10 @@ class ProofVerifier:
 
         try:
             proc = await asyncio.create_subprocess_exec(
-                binary, "verify", "--proof", proof_path,
+                binary,
+                "verify",
+                "--proof",
+                proof_path,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
@@ -184,10 +184,15 @@ class ProofVerifier:
                 f.write(artifact.proof_data)
 
             cmd = [
-                "docker", "run", "--rm",
-                "-v", f"{tmpdir}:/data:ro",
+                "docker",
+                "run",
+                "--rm",
+                "-v",
+                f"{tmpdir}:/data:ro",
                 image,
-                "verify", "--proof", "/data/proof.bin",
+                "verify",
+                "--proof",
+                "/data/proof.bin",
             ]
 
             try:
@@ -236,13 +241,13 @@ class ProofVerifier:
 
         # Check minimum size by proof system
         min_sizes = {
-            ProofSystem.GROTH16: 128,   # ~128 bytes (2 G1 + 1 G2 point)
-            ProofSystem.PLONK: 256,     # Larger due to polynomial commitments
-            ProofSystem.STARK: 1024,    # STARKs are much larger
-            ProofSystem.HALO2: 512,     # IPA-based, moderate size
-            ProofSystem.SP1: 128,       # Compressed STARK
-            ProofSystem.RISC_ZERO: 128, # Compressed
-            ProofSystem.NOVA: 256,      # Folding proof
+            ProofSystem.GROTH16: 128,  # ~128 bytes (2 G1 + 1 G2 point)
+            ProofSystem.PLONK: 256,  # Larger due to polynomial commitments
+            ProofSystem.STARK: 1024,  # STARKs are much larger
+            ProofSystem.HALO2: 512,  # IPA-based, moderate size
+            ProofSystem.SP1: 128,  # Compressed STARK
+            ProofSystem.RISC_ZERO: 128,  # Compressed
+            ProofSystem.NOVA: 256,  # Folding proof
         }
         min_size = min_sizes.get(artifact.proof_system, 64)
         if len(data) < min_size:
@@ -255,7 +260,9 @@ class ProofVerifier:
         # Check proof hash matches
         computed_hash = hashlib.sha256(data).hexdigest()
         if artifact.proof_hash and artifact.proof_hash != computed_hash:
-            errors.append(f"Hash mismatch: expected {artifact.proof_hash[:16]}..., got {computed_hash[:16]}...")
+            errors.append(
+                f"Hash mismatch: expected {artifact.proof_hash[:16]}..., got {computed_hash[:16]}..."
+            )
 
         elapsed_ms = (time.monotonic() - start) * 1000
         valid = len(errors) == 0
@@ -274,7 +281,8 @@ class ProofVerifier:
         """Check if a binary is available on PATH."""
         try:
             proc = await asyncio.create_subprocess_exec(
-                "which", binary,
+                "which",
+                binary,
                 stdout=asyncio.subprocess.DEVNULL,
                 stderr=asyncio.subprocess.DEVNULL,
             )
@@ -288,7 +296,10 @@ class ProofVerifier:
         """Check if a Docker image is available locally."""
         try:
             proc = await asyncio.create_subprocess_exec(
-                "docker", "image", "inspect", image,
+                "docker",
+                "image",
+                "inspect",
+                image,
                 stdout=asyncio.subprocess.DEVNULL,
                 stderr=asyncio.subprocess.DEVNULL,
             )

@@ -18,6 +18,7 @@ import asyncio
 import logging
 import time
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 
 from carbon_mesh.models.zk import (
     CarbonPolicy,
@@ -26,9 +27,11 @@ from carbon_mesh.models.zk import (
     InstanceStatus,
     JobResult,
     JobStatus,
-    ProofArtifact,
     ProofJob,
 )
+
+if TYPE_CHECKING:
+    from carbon_mesh.models.zk import ComputeOption
 from carbon_mesh.zk.gpu_lifecycle import ComputeBackend, LocalDockerBackend
 from carbon_mesh.zk.monitoring import BrokerMetrics, broker_metrics
 from carbon_mesh.zk.persistence import InMemoryJobStore, JobStore
@@ -114,13 +117,16 @@ class JobExecutor:
                 retries += 1
                 logger.warning(
                     "Retrying job %s (attempt %d/%d): %s",
-                    job.id, retries + 1, self._max_retries + 1, result.error,
+                    job.id,
+                    retries + 1,
+                    self._max_retries + 1,
+                    result.error,
                 )
                 result = await self._execute_inner(job, decision)
 
             return result
 
-    def _check_carbon_compliance(self, provider: "ComputeOption") -> bool:
+    def _check_carbon_compliance(self, provider: ComputeOption) -> bool:
         """Verify a compute option still meets carbon policy.
 
         Called immediately before GPU provisioning to catch policy changes
@@ -129,7 +135,8 @@ class JobExecutor:
         if provider.carbon_intensity_gco2_kwh > self._policy.max_carbon_intensity_gco2_kwh:
             logger.warning(
                 "Carbon compliance BLOCKED: %s/%s has %.1f gCO2/kWh > max %.1f",
-                provider.provider.value, provider.region,
+                provider.provider.value,
+                provider.region,
                 provider.carbon_intensity_gco2_kwh,
                 self._policy.max_carbon_intensity_gco2_kwh,
             )
@@ -137,7 +144,8 @@ class JobExecutor:
         if provider.renewable_percentage < self._policy.min_renewable_percentage:
             logger.warning(
                 "Carbon compliance BLOCKED: %s/%s has %.1f%% renewable < min %.1f%%",
-                provider.provider.value, provider.region,
+                provider.provider.value,
+                provider.region,
                 provider.renewable_percentage,
                 self._policy.min_renewable_percentage,
             )
@@ -145,7 +153,8 @@ class JobExecutor:
         if self._policy.require_behind_the_meter and not provider.is_behind_the_meter:
             logger.warning(
                 "Carbon compliance BLOCKED: %s/%s is not behind-the-meter (required by policy)",
-                provider.provider.value, provider.region,
+                provider.provider.value,
+                provider.region,
             )
             return False
         return True
@@ -202,9 +211,12 @@ class JobExecutor:
             self._metrics.record_dispatch(job, decision)
 
             # 2. Provision GPU
-            logger.info("Provisioning GPU for job %s on %s/%s",
-                        job.id, decision.chosen_provider.provider.value,
-                        decision.chosen_provider.region)
+            logger.info(
+                "Provisioning GPU for job %s on %s/%s",
+                job.id,
+                decision.chosen_provider.provider.value,
+                decision.chosen_provider.region,
+            )
             instance = await self._compute.provision(decision.chosen_provider, job.id)
             self._active_jobs[job.id] = instance
 
@@ -243,15 +255,19 @@ class JobExecutor:
             await self._store.update_status(job.id, JobStatus.SUBMITTING)
             gas_cost_usd = await self._wallet.estimate_gas(job.network, artifact.proof_size_bytes)
             submit_receipt = await self._wallet.submit_proof(
-                job.network, job.id, artifact.proof_data,
+                job.network,
+                job.id,
+                artifact.proof_data,
             )
             self._metrics.record_submission(job.id, submit_receipt.tx_hash, gas_cost_usd)
 
             # 9. Claim bounty (if auto-claim enabled)
             bounty_earned = job.bounty_usd
             if self._auto_claim:
-                claim_receipt = await self._wallet.claim_bounty(
-                    job.network, job.id, submit_receipt.tx_hash,
+                await self._wallet.claim_bounty(
+                    job.network,
+                    job.id,
+                    submit_receipt.tx_hash,
                 )
                 self._metrics.record_bounty_claimed(job.id, bounty_earned)
 
@@ -281,7 +297,10 @@ class JobExecutor:
 
             logger.info(
                 "Job %s completed: profit=$%.4f, carbon=%.2fg CO2, gpu=%.1fs",
-                job.id, profit, decision.carbon_grams_co2, gpu_seconds,
+                job.id,
+                profit,
+                decision.carbon_grams_co2,
+                gpu_seconds,
             )
 
         except Exception as e:
