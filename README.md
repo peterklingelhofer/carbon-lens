@@ -304,7 +304,7 @@ tests/              258 tests
 | **Docker** | `make up` | `Dockerfile`, `docker-compose.yml` |
 | **Render** | New Blueprint Instance | `render.yaml` |
 | **Fly.io** | `fly launch --copy-config --yes` | `fly.toml` |
-| **GHCR images** | published by CI on merge to `main` | `.github/workflows/cd.yml` |
+| **GHCR images** | published by CI on merge to `main` | `.github/workflows/ci.yml` |
 | **Vercel** (frontend) | Connect repo, root = `web/` | `web/vercel.json` |
 | **Kubernetes** | illustrative Helm chart (see `k8s/README.md`) | `k8s/` |
 
