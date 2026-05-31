@@ -43,13 +43,28 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --surface: var(--gray-800);
-    --surface-alt: var(--gray-900);
-    --nav-bg: var(--gray-800);
-    --card-bg: var(--gray-800);
+    /* Surfaces — explicit so they don't depend on the remapped ramp below */
+    --surface: #1f2937;
+    --surface-alt: #111827;
+    --nav-bg: #1f2937;
+    --card-bg: #1f2937;
 
-    color: var(--gray-200);
-    background: var(--gray-900);
+    /* Remap the gray ramp for a dark background: low numbers stay dark
+       (borders / fills), 400–600 become light (text). This keeps every
+       existing var(--gray-N) usage contrast-correct without touching components. */
+    --gray-50: #0b1220;
+    --gray-100: #1f2937; /* subtle fills / dividers */
+    --gray-200: #374151; /* borders */
+    --gray-300: #4b5563; /* stronger borders / decorative */
+    --gray-400: #97a3b2; /* faint text (placeholders, "Loading…") */
+    --gray-500: #b3bdc9; /* muted / secondary text — the main contrast fix */
+    --gray-600: #ced6e0; /* stronger secondary text */
+    --gray-700: #e5e7eb;
+    --gray-800: #f1f5f9;
+    --gray-900: #f8fafc;
+
+    color: #e5e7eb; /* base text */
+    background: #111827; /* page background */
   }
 }
 
