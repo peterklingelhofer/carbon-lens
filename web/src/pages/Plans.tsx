@@ -231,7 +231,7 @@ export function Plans() {
         }}
       >
         Need a custom plan or have questions? Reach out at{" "}
-        <strong>hello@carbonmesh.dev</strong>
+        <strong>hello@carbonlens.dev</strong>
       </div>
     </div>
   );

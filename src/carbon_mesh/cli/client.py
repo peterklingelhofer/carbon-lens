@@ -1,4 +1,4 @@
-"""Thin HTTP client for the Carbon Mesh API."""
+"""Thin HTTP client for the CarbonLens API."""
 
 import json
 from pathlib import Path
