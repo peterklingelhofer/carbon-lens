@@ -54,7 +54,10 @@ async def create_organization(
     """Create a new organization."""
     org = await create_org(session, body.name)
     return OrgResponse(
-        id=org.id, name=org.name, slug=org.slug, tier=org.tier,
+        id=org.id,
+        name=org.name,
+        slug=org.slug,
+        tier=org.tier,
         stripe_customer_id=org.stripe_customer_id,
         stripe_subscription_id=org.stripe_subscription_id,
     )
@@ -68,7 +71,10 @@ async def list_organizations(
     orgs = await list_orgs(session)
     return [
         OrgResponse(
-            id=o.id, name=o.name, slug=o.slug, tier=o.tier,
+            id=o.id,
+            name=o.name,
+            slug=o.slug,
+            tier=o.tier,
             stripe_customer_id=o.stripe_customer_id,
             stripe_subscription_id=o.stripe_subscription_id,
         )
@@ -86,7 +92,10 @@ async def get_organization(
     if not org:
         raise HTTPException(status_code=404, detail=f"Organization not found: {slug}")
     return OrgResponse(
-        id=org.id, name=org.name, slug=org.slug, tier=org.tier,
+        id=org.id,
+        name=org.name,
+        slug=org.slug,
+        tier=org.tier,
         stripe_customer_id=org.stripe_customer_id,
         stripe_subscription_id=org.stripe_subscription_id,
     )
@@ -118,11 +127,11 @@ async def create_billing_checkout(
     }
     price_id = price_map.get(body.plan)
     if not price_id:
-        raise HTTPException(status_code=400, detail=f"Unknown plan: {body.plan}. Use 'pro' or 'enterprise'.")
+        raise HTTPException(
+            status_code=400, detail=f"Unknown plan: {body.plan}. Use 'pro' or 'enterprise'."
+        )
 
-    url = await create_checkout_session(
-        session, org, price_id, body.success_url, body.cancel_url
-    )
+    url = await create_checkout_session(session, org, price_id, body.success_url, body.cancel_url)
     return CheckoutResponse(checkout_url=url)
 
 

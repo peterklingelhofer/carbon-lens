@@ -178,4 +178,9 @@ class SLAMonitor:
         async with httpx.AsyncClient(timeout=10) as client:
             response = await client.post(sla.webhook_url, json=payload)
             response.raise_for_status()
-            logger.info("Webhook sent for SLA [%s] to %s: %d", sla.name, sla.webhook_url, response.status_code)
+            logger.info(
+                "Webhook sent for SLA [%s] to %s: %d",
+                sla.name,
+                sla.webhook_url,
+                response.status_code,
+            )

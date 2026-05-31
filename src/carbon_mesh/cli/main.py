@@ -20,9 +20,15 @@ app.add_typer(config_app, name="config")
 
 @app.command()
 def route(
-    providers: str = typer.Option("aws,gcp,azure", "--providers", "-p", help="Comma-separated providers"),
-    residency: Optional[str] = typer.Option(None, "--residency", "-r", help="Data residency, e.g. EU, US"),
-    carbon_weight: float = typer.Option(1.0, "--carbon-weight", "-c", help="Carbon optimization weight (0-1)"),
+    providers: str = typer.Option(
+        "aws,gcp,azure", "--providers", "-p", help="Comma-separated providers"
+    ),
+    residency: Optional[str] = typer.Option(
+        None, "--residency", "-r", help="Data residency, e.g. EU, US"
+    ),
+    carbon_weight: float = typer.Option(
+        1.0, "--carbon-weight", "-c", help="Carbon optimization weight (0-1)"
+    ),
     cost_weight: float = typer.Option(0.0, "--cost-weight", help="Cost optimization weight (0-1)"),
     json_output: bool = typer.Option(False, "--json", help="Output raw JSON"),
 ):
@@ -38,6 +44,7 @@ def route(
 
     if json_output:
         import json
+
         console.print_json(json.dumps(data))
         return
 
@@ -47,7 +54,9 @@ def route(
     console.print(f"  Grid Zone:        {rec['grid_zone']}")
     console.print(f"  Carbon Intensity: {rec['carbon_intensity_gco2_kwh']} gCO2/kWh")
     console.print(f"  Renewable:        {rec['renewable_percentage']}%")
-    console.print(f"  Carbon Savings:   {rec['carbon_savings_vs_worst_pct']:.1f}% greener than worst")
+    console.print(
+        f"  Carbon Savings:   {rec['carbon_savings_vs_worst_pct']:.1f}% greener than worst"
+    )
     console.print()
 
     if data.get("alternatives"):
@@ -60,8 +69,10 @@ def route(
         table.add_column("Score", justify="right")
 
         for i, alt in enumerate(data["alternatives"][:10], start=2):
-            color = "green" if alt["carbon_intensity_gco2_kwh"] <= 50 else (
-                "yellow" if alt["carbon_intensity_gco2_kwh"] <= 200 else "red"
+            color = (
+                "green"
+                if alt["carbon_intensity_gco2_kwh"] <= 50
+                else ("yellow" if alt["carbon_intensity_gco2_kwh"] <= 200 else "red")
             )
             table.add_row(
                 str(i),
@@ -82,7 +93,9 @@ def intensity(
     """Get live carbon intensity for a cloud region."""
     parts = region.split("/", 1)
     if len(parts) != 2:
-        console.print("[red]Error:[/red] Region must be in format provider/region (e.g. aws/us-east-1)")
+        console.print(
+            "[red]Error:[/red] Region must be in format provider/region (e.g. aws/us-east-1)"
+        )
         raise typer.Exit(1)
 
     try:
@@ -93,16 +106,21 @@ def intensity(
 
     if json_output:
         import json
+
         console.print_json(json.dumps(data))
         return
 
-    color = "green" if data["carbon_intensity_gco2_kwh"] <= 50 else (
-        "yellow" if data["carbon_intensity_gco2_kwh"] <= 200 else "red"
+    color = (
+        "green"
+        if data["carbon_intensity_gco2_kwh"] <= 50
+        else ("yellow" if data["carbon_intensity_gco2_kwh"] <= 200 else "red")
     )
     console.print()
     console.print(f"[bold]{region}[/bold]")
     console.print(f"  Grid Zone:        {data['grid_zone']}")
-    console.print(f"  Carbon Intensity: [{color}]{data['carbon_intensity_gco2_kwh']} gCO2/kWh[/{color}]")
+    console.print(
+        f"  Carbon Intensity: [{color}]{data['carbon_intensity_gco2_kwh']} gCO2/kWh[/{color}]"
+    )
     console.print(f"  Renewable:        {data['renewable_percentage']}%")
     console.print(f"  Source:           {data['source']}")
     console.print(f"  Timestamp:        {data['timestamp']}")
@@ -123,6 +141,7 @@ def regions(
 
     if json_output:
         import json
+
         console.print_json(json.dumps(data))
         return
 
@@ -150,6 +169,7 @@ def report(
 
     if json_output:
         import json
+
         console.print_json(json.dumps(data))
         return
 

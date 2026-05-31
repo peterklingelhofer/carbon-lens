@@ -64,7 +64,9 @@ class CronSchedule(BaseModel):
     providers: list[str] = Field(default_factory=lambda: ["aws", "gcp", "azure"])
     preferred_regions: list[str] = Field(default_factory=list)
     strategy: ScheduleStrategy = ScheduleStrategy.LOWEST_CARBON
-    max_delay_hours: int = Field(ge=1, le=168, default=24, description="Max hours to delay for green window")
+    max_delay_hours: int = Field(
+        ge=1, le=168, default=24, description="Max hours to delay for green window"
+    )
     created_at: datetime
     active: bool = True
 
@@ -118,7 +120,9 @@ class SchedulingEngine:
 
         # Build time slots: current + projected slots at intervals
         slots: list[TimeSlot] = []
-        slot_interval_hours = max(1, max_delay_hours // 24)  # 1-hour slots for 24h, larger for longer windows
+        slot_interval_hours = max(
+            1, max_delay_hours // 24
+        )  # 1-hour slots for 24h, larger for longer windows
 
         for hour_offset in range(0, max_delay_hours, slot_interval_hours):
             slot_start = now + timedelta(hours=hour_offset)
@@ -137,16 +141,18 @@ class SchedulingEngine:
 
                 score = self._score_slot(projected, strategy)
 
-                slots.append(TimeSlot(
-                    start=slot_start,
-                    end=slot_end,
-                    provider=provider,
-                    region=region,
-                    grid_zone=zone,
-                    carbon_intensity_gco2_kwh=projected.carbon_intensity_gco2_kwh,
-                    renewable_percentage=projected.renewable_percentage,
-                    score=score,
-                ))
+                slots.append(
+                    TimeSlot(
+                        start=slot_start,
+                        end=slot_end,
+                        provider=provider,
+                        region=region,
+                        grid_zone=zone,
+                        carbon_intensity_gco2_kwh=projected.carbon_intensity_gco2_kwh,
+                        renewable_percentage=projected.renewable_percentage,
+                        score=score,
+                    )
+                )
 
         if not slots:
             # Fallback: return "now" with first available region
@@ -159,7 +165,9 @@ class SchedulingEngine:
                 provider=first_prov,
                 region=first_reg,
                 grid_zone=first_zone,
-                carbon_intensity_gco2_kwh=first_intensity.carbon_intensity_gco2_kwh if first_intensity else 0,
+                carbon_intensity_gco2_kwh=first_intensity.carbon_intensity_gco2_kwh
+                if first_intensity
+                else 0,
                 renewable_percentage=first_intensity.renewable_percentage if first_intensity else 0,
                 score=0,
             )
@@ -207,9 +215,7 @@ class SchedulingEngine:
             evaluated_slots=len(slots),
         )
 
-    def _project_intensity(
-        self, current: CarbonIntensity, hours_ahead: int
-    ) -> CarbonIntensity:
+    def _project_intensity(self, current: CarbonIntensity, hours_ahead: int) -> CarbonIntensity:
         """Project carbon intensity forward using time-of-day heuristics.
 
         This is a simplified model. Real forecasting would use weather data,
@@ -231,7 +237,9 @@ class SchedulingEngine:
         adjustment = 1.0 + (demand_factor - solar_factor) * 0.15
 
         projected_carbon = max(0, current.carbon_intensity_gco2_kwh * adjustment)
-        projected_renewable = min(100, max(0, current.renewable_percentage * (1 + solar_factor * 0.1)))
+        projected_renewable = min(
+            100, max(0, current.renewable_percentage * (1 + solar_factor * 0.1))
+        )
 
         return CarbonIntensity(
             grid_zone=current.grid_zone,

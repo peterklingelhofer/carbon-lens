@@ -38,7 +38,7 @@ export function Plans() {
       // Uses the billing status org context; for now pass a placeholder
       // that the backend will resolve from the API key
       const { checkout_url } = await api.orgs.checkout("current", plan);
-      window.location.href = checkout_url;
+      window.location.assign(checkout_url);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Upgrade failed";
       setError(msg);

@@ -17,6 +17,7 @@ from carbon_mesh.scheduler.engine import (
 
 # --- Fixtures ---
 
+
 class MockCarbonSource:
     """Mock carbon source returning configurable per-zone data."""
 
@@ -174,7 +175,7 @@ async def test_find_optimal_window_lowest_carbon():
     """Lowest-carbon strategy should pick the zone with lowest intensity."""
     source = MockCarbonSource(
         zone_overrides={
-            "FI": (20.0, 90.0),       # Very green
+            "FI": (20.0, 90.0),  # Very green
             "US-MIDA-PJM": (400.0, 15.0),  # Very dirty
             "IE": (150.0, 55.0),
         }
@@ -199,7 +200,7 @@ async def test_find_optimal_window_highest_renewable():
     """Highest-renewable strategy should pick the zone with most renewables."""
     source = MockCarbonSource(
         zone_overrides={
-            "FI": (50.0, 95.0),        # Highest renewable
+            "FI": (50.0, 95.0),  # Highest renewable
             "US-MIDA-PJM": (200.0, 30.0),
             "IE": (100.0, 60.0),
         }
@@ -306,10 +307,14 @@ async def test_find_optimal_window_multi_hour():
     engine = SchedulingEngine(carbon_source=source, grid_mapper=mapper)
 
     rec_1h = await engine.find_optimal_window(
-        job_duration_minutes=30, providers=["aws", "gcp"], max_delay_hours=1,
+        job_duration_minutes=30,
+        providers=["aws", "gcp"],
+        max_delay_hours=1,
     )
     rec_24h = await engine.find_optimal_window(
-        job_duration_minutes=30, providers=["aws", "gcp"], max_delay_hours=24,
+        job_duration_minutes=30,
+        providers=["aws", "gcp"],
+        max_delay_hours=24,
     )
 
     assert rec_24h.evaluated_slots >= rec_1h.evaluated_slots
@@ -321,23 +326,25 @@ async def test_find_optimal_window_multi_hour():
 def test_solar_factor():
     """Solar factor should peak at midday, zero at night."""
     assert SchedulingEngine._solar_factor(12) > 0.9  # Noon peak
-    assert SchedulingEngine._solar_factor(0) == 0.0   # Midnight
-    assert SchedulingEngine._solar_factor(3) == 0.0   # Early morning
-    assert SchedulingEngine._solar_factor(9) > 0      # Morning
+    assert SchedulingEngine._solar_factor(0) == 0.0  # Midnight
+    assert SchedulingEngine._solar_factor(3) == 0.0  # Early morning
+    assert SchedulingEngine._solar_factor(9) > 0  # Morning
 
 
 def test_demand_factor():
     """Demand factor should peak in evening, low overnight."""
     assert SchedulingEngine._demand_factor(18) == 1.0  # Evening peak
-    assert SchedulingEngine._demand_factor(3) == 0.2   # Overnight low
-    assert SchedulingEngine._demand_factor(8) == 0.7   # Morning ramp
+    assert SchedulingEngine._demand_factor(3) == 0.2  # Overnight low
+    assert SchedulingEngine._demand_factor(8) == 0.7  # Morning ramp
 
 
 def test_score_slot_lowest_carbon():
     """Score for lowest-carbon should equal carbon intensity."""
     intensity = CarbonIntensity(
-        grid_zone="test", carbon_intensity_gco2_kwh=150.0,
-        renewable_percentage=50.0, timestamp=datetime.now(timezone.utc),
+        grid_zone="test",
+        carbon_intensity_gco2_kwh=150.0,
+        renewable_percentage=50.0,
+        timestamp=datetime.now(timezone.utc),
         source="test",
     )
     score = SchedulingEngine._score_slot(intensity, ScheduleStrategy.LOWEST_CARBON)
@@ -347,8 +354,10 @@ def test_score_slot_lowest_carbon():
 def test_score_slot_highest_renewable():
     """Score for highest-renewable should equal renewable percentage."""
     intensity = CarbonIntensity(
-        grid_zone="test", carbon_intensity_gco2_kwh=150.0,
-        renewable_percentage=80.0, timestamp=datetime.now(timezone.utc),
+        grid_zone="test",
+        carbon_intensity_gco2_kwh=150.0,
+        renewable_percentage=80.0,
+        timestamp=datetime.now(timezone.utc),
         source="test",
     )
     score = SchedulingEngine._score_slot(intensity, ScheduleStrategy.HIGHEST_RENEWABLE)
@@ -358,8 +367,10 @@ def test_score_slot_highest_renewable():
 def test_score_slot_balanced():
     """Balanced score should be a weighted combination."""
     intensity = CarbonIntensity(
-        grid_zone="test", carbon_intensity_gco2_kwh=250.0,
-        renewable_percentage=50.0, timestamp=datetime.now(timezone.utc),
+        grid_zone="test",
+        carbon_intensity_gco2_kwh=250.0,
+        renewable_percentage=50.0,
+        timestamp=datetime.now(timezone.utc),
         source="test",
     )
     score = SchedulingEngine._score_slot(intensity, ScheduleStrategy.BALANCED)

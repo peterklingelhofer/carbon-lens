@@ -22,6 +22,7 @@ def _generate_api_key() -> str:
     Mirrors carbon_mesh.auth.api_keys.generate_api_key exactly.
     """
     import secrets
+
     return "cmesh_" + secrets.token_hex(24)
 
 
@@ -45,7 +46,7 @@ class TestGenerateApiKey:
 
     def test_hex_suffix(self):
         key = _generate_api_key()
-        hex_part = key[len("cmesh_"):]
+        hex_part = key[len("cmesh_") :]
         # Should be valid hex
         int(hex_part, 16)
 
@@ -100,8 +101,10 @@ class TestConfigIO:
     def test_save_and_load_roundtrip(self, tmp_path: Path):
         fake_dir = tmp_path / ".carbon-mesh"
         fake_file = fake_dir / "config.json"
-        with patch.object(client, "CONFIG_DIR", fake_dir), \
-             patch.object(client, "CONFIG_FILE", fake_file):
+        with (
+            patch.object(client, "CONFIG_DIR", fake_dir),
+            patch.object(client, "CONFIG_FILE", fake_file),
+        ):
             client.save_config({"api_url": "https://example.com", "api_key": "cmesh_abc"})
             cfg = client.load_config()
         assert cfg["api_url"] == "https://example.com"
@@ -110,8 +113,10 @@ class TestConfigIO:
     def test_save_creates_directory(self, tmp_path: Path):
         fake_dir = tmp_path / "nested" / ".carbon-mesh"
         fake_file = fake_dir / "config.json"
-        with patch.object(client, "CONFIG_DIR", fake_dir), \
-             patch.object(client, "CONFIG_FILE", fake_file):
+        with (
+            patch.object(client, "CONFIG_DIR", fake_dir),
+            patch.object(client, "CONFIG_FILE", fake_file),
+        ):
             client.save_config({"api_url": "http://localhost:9000"})
         assert fake_file.exists()
         assert json.loads(fake_file.read_text())["api_url"] == "http://localhost:9000"
