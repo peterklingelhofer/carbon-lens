@@ -19,7 +19,7 @@ deployable demos, not a hardened production setup. Read this before relying on t
   CRD and create resources, but nothing will act on them or populate `status`.
 - **No migration Job.** The chart has no init-container or Job that runs
   `alembic upgrade head`, so a fresh deploy starts against an unmigrated database.
-  (The Docker/PaaS paths handle this via `CARBON_MESH_AUTO_MIGRATE=true`.)
+  (The Docker/PaaS paths handle this via `CARBON_LENS_AUTO_MIGRATE=true`.)
 - **No pod-level `securityContext`.** Add `runAsNonRoot`/`readOnlyRootFilesystem`
   before any real deployment. (The container image itself already runs as a
   non-root `appuser`.)

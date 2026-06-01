@@ -85,13 +85,13 @@ def _check_security_posture() -> None:
     """Warn loudly about insecure config and reject the unsafe wildcard-CORS combination."""
     if not settings.api_key_required:
         logger.warning(
-            "CARBON_MESH_API_KEY_REQUIRED=false — running in OPEN demo mode with no authentication. "
+            "CARBON_LENS_API_KEY_REQUIRED=false — running in OPEN demo mode with no authentication. "
             "Set it to true for any non-demo deployment."
         )
     if "*" in settings.cors_origins:
         raise RuntimeError(
             "CORS origins include '*'. Wildcard origins are not allowed — "
-            "set CARBON_MESH_CORS_ORIGINS to an explicit allowlist."
+            "set CARBON_LENS_CORS_ORIGINS to an explicit allowlist."
         )
 
 
@@ -180,7 +180,7 @@ app = FastAPI(
         "- **Three strategies** — lowest carbon, highest renewable, balanced\n"
         "- **Recurring schedules** with automatic green window recommendations\n\n"
         "## Authentication\n"
-        "When `CARBON_MESH_API_KEY_REQUIRED=true`, pass your key via the `X-API-Key` header."
+        "When `CARBON_LENS_API_KEY_REQUIRED=true`, pass your key via the `X-API-Key` header."
     ),
     version="0.1.0",
     docs_url="/docs",

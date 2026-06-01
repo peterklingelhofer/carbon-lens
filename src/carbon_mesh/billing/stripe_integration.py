@@ -1,6 +1,6 @@
 """Stripe billing integration — checkout sessions, webhooks, plan management.
 
-Works without a Stripe key (endpoints return 503). Once CARBON_MESH_STRIPE_SECRET_KEY
+Works without a Stripe key (endpoints return 503). Once CARBON_LENS_STRIPE_SECRET_KEY
 is set, all billing flows activate automatically.
 """
 

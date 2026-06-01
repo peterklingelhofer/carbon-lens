@@ -94,7 +94,7 @@ export function Organizations() {
           </p>
         )}
         <p style={{ color: "var(--gray-400)", fontSize: "0.8rem", marginTop: "0.5rem" }}>
-          Requires admin secret in X-API-Key header. Set CARBON_MESH_ADMIN_SECRET in .env.
+          Requires admin secret in X-API-Key header. Set CARBON_LENS_ADMIN_SECRET in .env.
         </p>
       </div>
 
@@ -106,7 +106,7 @@ export function Organizations() {
           <p style={{ marginBottom: "0.5rem" }}>Could not load organizations.</p>
           <p style={{ fontSize: "0.85rem" }}>
             Organizations require database mode and admin auth.
-            Set <code>CARBON_MESH_USE_DATABASE=true</code> and <code>CARBON_MESH_ADMIN_SECRET</code>.
+            Set <code>CARBON_LENS_USE_DATABASE=true</code> and <code>CARBON_LENS_ADMIN_SECRET</code>.
           </p>
         </div>
       ) : orgs && orgs.length > 0 ? (

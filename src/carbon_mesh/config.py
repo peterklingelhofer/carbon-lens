@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    model_config = {"env_prefix": "CARBON_MESH_"}
+    model_config = {"env_prefix": "CARBON_LENS_"}
 
     # API keys for carbon data providers
     eia_api_key: str = ""
@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     use_database: bool = False
     database_url: str = "postgresql+asyncpg://carbon_mesh:carbon_mesh@localhost:5432/carbon_mesh"
 
-    # Auth — fail closed by default; set CARBON_MESH_API_KEY_REQUIRED=false for the open public demo
+    # Auth — fail closed by default; set CARBON_LENS_API_KEY_REQUIRED=false for the open public demo
     api_key_required: bool = True
     admin_secret: str = ""
 

@@ -15,29 +15,29 @@ services:
     plan: free
     dockerfilePath: ./Dockerfile
     envVars:
-      - key: CARBON_MESH_USE_DATABASE
+      - key: CARBON_LENS_USE_DATABASE
         value: "true"
-      - key: CARBON_MESH_DATABASE_URL
+      - key: CARBON_LENS_DATABASE_URL
         fromDatabase:
           name: carbon-mesh-db
           property: connectionString
         # Render provides postgres:// — we need postgresql+asyncpg://
         # The app handles this transformation at startup
-      - key: CARBON_MESH_HOST
+      - key: CARBON_LENS_HOST
         value: "0.0.0.0"
-      - key: CARBON_MESH_PORT
+      - key: CARBON_LENS_PORT
         value: "8000"
-      - key: CARBON_MESH_LOG_FORMAT
+      - key: CARBON_LENS_LOG_FORMAT
         value: json
-      - key: CARBON_MESH_API_KEY_REQUIRED
+      - key: CARBON_LENS_API_KEY_REQUIRED
         value: "false"
-      - key: CARBON_MESH_ADMIN_SECRET
+      - key: CARBON_LENS_ADMIN_SECRET
         generateValue: true
-      - key: CARBON_MESH_EIA_API_KEY
+      - key: CARBON_LENS_EIA_API_KEY
         sync: false  # User fills in after deploy
-      - key: CARBON_MESH_GRID_STATUS_API_KEY
+      - key: CARBON_LENS_GRID_STATUS_API_KEY
         sync: false
-      - key: CARBON_MESH_ENTSOE_TOKEN
+      - key: CARBON_LENS_ENTSOE_TOKEN
         sync: false
     healthCheckPath: /ready
     autoDeploy: true
