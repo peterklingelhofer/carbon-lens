@@ -105,3 +105,9 @@ a:hover {
     color: var(--green-400);
   }
 }
+
+@keyframes cl-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

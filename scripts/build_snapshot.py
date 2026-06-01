@@ -106,6 +106,7 @@ async def build_snapshot() -> dict:
                 "timestamp": intensity.timestamp.isoformat(),
                 "source": intensity.source,
                 "quality": quality,
+                "grid_load_mw": intensity.grid_load_mw,
             }
             snapshot_regions.append(region_meta[key])
 

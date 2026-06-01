@@ -58,6 +58,9 @@ export function Nav() {
           <NavLink to="/dashboard" style={linkStyle}>
             Grid Data
           </NavLink>
+          <NavLink to="/globe" style={linkStyle}>
+            Globe
+          </NavLink>
           <NavLink to="/compliance" style={linkStyle}>
             Compliance
           </NavLink>
@@ -70,9 +73,11 @@ export function Nav() {
           <NavLink to="/route" style={linkStyle}>
             Route
           </NavLink>
+          {/* Plans tab hidden for now
           <NavLink to="/plans" style={linkStyle}>
             Plans
           </NavLink>
+          */}
           <NavLink to="/orgs" style={linkStyle}>
             Orgs
           </NavLink>
