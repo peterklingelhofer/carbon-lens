@@ -41,6 +41,7 @@ export interface CarbonIntensity {
   timestamp: string;
   source: string;
   quality?: "live" | "estimated" | "mock";
+  grid_load_mw?: number | null;
 }
 
 export interface EmissionsRecord {
