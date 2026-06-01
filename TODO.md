@@ -11,16 +11,14 @@ and provide turnkey CSRD/SEC/SB-253 compliance reporting for cloud workloads.
 
 ### Frontend
 - [x] Rewrite Landing page hero + features for Carbon Data API + Compliance
-- [x] Rename "Broker" nav → "API Explorer" (interactive carbon data playground)
+- [x] Rename nav → "API Explorer" (interactive carbon data playground)
 - [x] Create API Explorer page (test carbon queries, view response, code snippets)
 - [x] Update Plans page copy (API queries/day, compliance reports, SLA monitoring)
 - [x] Reorder nav: Home | API Explorer | Grid Data | Compliance | SLA | Route | Plans | Orgs | Settings
 - [x] Update Dashboard subtitle (emphasize "API powering your compliance")
-- [x] Clean up ZK-specific types and API client methods
 
 ### README
 - [x] Rewrite for Carbon Data API + Compliance Platform positioning
-- [x] Remove ZK Broker as primary product (keep as "Use Case" section)
 - [x] Add API-first documentation with code examples (curl, Python, JS)
 - [x] Update "The Vision" section
 - [x] Update architecture diagram
@@ -138,14 +136,6 @@ and provide turnkey CSRD/SEC/SB-253 compliance reporting for cloud workloads.
 - [ ] WattTime integration as additional source
 - [ ] Cloud provider partnerships (AWS/GCP/Azure carbon API access)
 - [ ] Accounting software integrations (export to sustainability reporting tools)
-
----
-
-## ZK Broker (Retained as Use Case / Demo)
-The ZK broker code is retained in `src/carbon_mesh/zk/` as a demonstration of
-carbon-aware compute routing. It showcases the platform's capabilities but is
-no longer the primary product. No further ZK-specific development unless
-there's customer demand.
 
 ---
 

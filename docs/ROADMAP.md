@@ -136,7 +136,6 @@ For batch/flexible workloads (CI/CD, ML training), prices can be *lower* than He
 ### Carbon Credits
 - [ ] Issue verifiable carbon reduction certificates
 - [ ] Based on actual measured savings (counterfactual vs. chosen region)
-- [ ] Blockchain-optional: on-chain proof for ESG auditors
 
 ---
 

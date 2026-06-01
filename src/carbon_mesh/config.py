@@ -54,28 +54,6 @@ class Settings(BaseSettings):
     stripe_price_id_pro: str = ""  # Stripe Price ID for Pro plan
     stripe_price_id_enterprise: str = ""  # Stripe Price ID for Enterprise plan
 
-    # ZK Broker — executor settings
-    zk_executor_enabled: bool = False  # Enable full job execution pipeline
-    zk_max_concurrent_jobs: int = 4
-    zk_auto_claim_bounty: bool = True
-    zk_compute_backend: str = "local_docker"  # "local_docker", "ssh", "mock"
-    zk_wallet_private_key: str = ""  # Ethereum private key (use env var, never commit)
-    zk_wallet_chain_id: int = 1  # 1=mainnet, 11155111=sepolia
-    zk_prefer_native_verifiers: bool = True  # Use native binaries over Docker for verification
-    zk_spot_price_cache_ttl: int = 300  # Spot price cache TTL in seconds
-
-    # SSH compute hosts (JSON string: {"iren": {"host": "...", "port": 22, "user": "root"}})
-    zk_ssh_hosts: str = ""
-
-    # ZK Broker — carbon policy (enforced at evaluation AND execution)
-    zk_max_carbon_intensity: float = 10.0  # gCO2/kWh — 10 = near-zero, 0 = absolute zero
-    zk_min_renewable_pct: float = 95.0  # Minimum renewable energy percentage
-    zk_require_behind_the_meter: bool = True  # Only dispatch to BTM renewable facilities
-    zk_prefer_behind_the_meter: bool = True  # Prefer BTM when not required
-    zk_carbon_weight: float = 0.7  # Carbon vs cost weight (0-1)
-    zk_cost_weight: float = 0.3  # Cost vs carbon weight (0-1)
-    zk_min_profit_margin_pct: float = 10.0  # Minimum profit margin to accept a job
-
     @property
     def configured_providers(self) -> dict[str, bool]:
         """Return which data providers have credentials configured."""

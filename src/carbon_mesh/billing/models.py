@@ -31,7 +31,7 @@ class BillingStatus(BaseModel):
     remaining: int
 
 
-# Tier definitions — Green ZK Broker pricing
+# Tier definitions
 TIERS: dict[str, PlanInfo] = {
     "free": PlanInfo(
         tier="free",
@@ -40,9 +40,9 @@ TIERS: dict[str, PlanInfo] = {
         price_cents=0,
         features=[
             "100 API requests/day",
-            "Simulated proof routing",
-            "Mock prover networks",
             "Live carbon intensity data",
+            "6 no-key grid data sources",
+            "Carbon-aware region routing",
             "Community support",
         ],
     ),
@@ -50,15 +50,14 @@ TIERS: dict[str, PlanInfo] = {
         tier="pro",
         name="Pro",
         daily_limit=50_000,
-        price_cents=9900,  # $99/mo + 5% of bounties
+        price_cents=9900,  # $99/mo
         features=[
             "50,000 API requests/day",
-            "Live prover network connections",
             "All 11 carbon data sources",
-            "Automated job dispatch",
-            "Carbon policy engine",
-            "Earnings dashboard + CSV export",
-            "5% broker fee on bounties",
+            "GHG-Protocol compliance reports (Scope 2 + 3)",
+            "Green SLA monitoring",
+            "Carbon-aware scheduling",
+            "CSV / JSON export",
             "Email support",
         ],
     ),
@@ -66,15 +65,12 @@ TIERS: dict[str, PlanInfo] = {
         tier="enterprise",
         name="Enterprise",
         daily_limit=1_000_000,
-        price_cents=0,  # Custom — negotiated broker fee
+        price_cents=0,  # Custom — contact sales
         features=[
             "Unlimited API requests",
-            "Custom prover network integrations",
-            "Private GPU fleet management",
-            "Behind-the-meter facility routing",
-            "Custom carbon policy + SLAs",
+            "Custom data source integrations",
+            "Custom carbon SLAs + attestation",
             "Multi-org tenant isolation",
-            "Negotiated broker fee",
             "White-label API",
             "Dedicated support + SLA",
         ],

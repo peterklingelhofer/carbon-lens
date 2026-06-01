@@ -1,35 +1,25 @@
 import type {
+  AlertEvent,
   BillingStatus,
-  BrokerStats,
   CalculationResponse,
   CarbonIntensity,
-  CarbonPolicy,
   CarbonSavingsReport,
   CloudRegion,
-  AlertEvent,
   ComplianceReport,
   ComplianceReportSummary,
-  ComputeOption,
   CronSchedule,
-  ExecuteResponse,
   GreenSLA,
   HealthResponse,
-  JobEvent,
-  JobResult,
   Organization,
   PlanInfo,
-  PollerStatus,
-  ProofJob,
   RegionLookup,
   RouteRequest,
   RouteResponse,
   ScheduleRecommendation,
-  SimulateResponse,
   SLACheck,
   SLAMonitorStatus,
   SLAReport,
   SLASummary,
-  SpotPriceQuote,
   UsageIngestionRequest,
   UsageIngestionResponse,
 } from "./types";
@@ -134,90 +124,6 @@ export const api = {
       }),
   },
 
-  // ZK Broker
-  zk: {
-    availableJobs: (network?: string) =>
-      request<ProofJob[]>(
-        `/api/v1/zk/jobs/available${network ? `?network=${network}` : ""}`
-      ),
-
-    simulate: (body: {
-      network?: string;
-      bounty_usd?: number;
-      circuit_size?: number;
-      min_vram_gb?: number;
-      max_carbon_intensity?: number | null;
-    }) =>
-      request<SimulateResponse>("/api/v1/zk/simulate", {
-        method: "POST",
-        body: JSON.stringify(body),
-      }),
-
-    stats: () => request<BrokerStats>("/api/v1/zk/stats"),
-
-    policy: () => request<CarbonPolicy>("/api/v1/zk/policy"),
-
-    updatePolicy: (policy: CarbonPolicy) =>
-      request<CarbonPolicy>("/api/v1/zk/policy", {
-        method: "PUT",
-        body: JSON.stringify(policy),
-      }),
-
-    computeOptions: (minVram?: number) =>
-      request<ComputeOption[]>(
-        `/api/v1/zk/compute/available${minVram ? `?min_vram_gb=${minVram}` : ""}`
-      ),
-
-    execute: (body: { job: ProofJob }) =>
-      request<ExecuteResponse>("/api/v1/zk/jobs/execute", {
-        method: "POST",
-        body: JSON.stringify(body),
-      }),
-
-    jobStatus: (jobId: string) =>
-      request<JobResult | null>(`/api/v1/zk/jobs/${jobId}/status`),
-
-    cancelJob: (jobId: string) =>
-      request<{ job_id: string; cancelled: boolean }>(
-        `/api/v1/zk/jobs/${jobId}/cancel`,
-        { method: "POST" }
-      ),
-
-    activeJobs: () =>
-      request<{ count: number; jobs: Record<string, unknown> }>(
-        "/api/v1/zk/jobs/active"
-      ),
-
-    spotPrices: () =>
-      request<SpotPriceQuote[]>("/api/v1/zk/compute/spot-prices"),
-
-    metrics: () => request<Record<string, unknown>>("/api/v1/zk/metrics"),
-
-    events: (limit?: number) =>
-      request<JobEvent[]>(
-        `/api/v1/zk/events${limit ? `?limit=${limit}` : ""}`
-      ),
-
-    proverNetworks: () =>
-      request<
-        Array<{
-          network: string;
-          proof_system: string;
-          image: string;
-          gpu_required: boolean;
-          min_vram_gb: number;
-        }>
-      >("/api/v1/zk/runtime/networks"),
-
-    pollerStatus: () =>
-      request<PollerStatus>("/api/v1/zk/poller/status"),
-
-    startPoller: () =>
-      request<PollerStatus>("/api/v1/zk/poller/start", { method: "POST" }),
-
-    stopPoller: () =>
-      request<PollerStatus>("/api/v1/zk/poller/stop", { method: "POST" }),
-  },
 
   // SLA Monitoring
   sla: {

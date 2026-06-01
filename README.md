@@ -1,12 +1,18 @@
 # CarbonLens
 
-**Real-time carbon intensity data API + compliance reporting platform.**
+**Real-time carbon-intensity data API + compliance reporting for sustainable, carbon-aware cloud computing.**
+
+*See the real carbon footprint behind your cloud — measure it, route around it, and report on it.*
 
 ![CarbonLens dashboard — live carbon intensity for cloud regions](docs/screenshots/hero-dashboard.png)
 
 <sub>Live carbon-intensity dashboard. More screens: [API Explorer](docs/screenshots/03-api-explorer.png) · [Landing](docs/screenshots/01-landing.png) · [Carbon-aware routing](docs/screenshots/04-route.png) · [Compliance](docs/screenshots/06-compliance.png)</sub>
 
 CarbonLens aggregates electricity-grid carbon data into a single developer-friendly API, behind one cascading interface. Six providers are live integrations against real grid-operator APIs (UK, EIA, AEMO, GridStatus, ENTSO-E, Electricity Maps); the rest are transparent heuristic estimators and a mock fallback, each labeled in the `source` field of every response so you always know what you're getting. On top of the data layer it adds carbon-aware routing, GHG-Protocol-structured compliance reporting, and Green SLA monitoring.
+
+It's built for engineering and sustainability teams who want to **decarbonize their cloud workloads** — cutting the carbon footprint of compute with greener, lower-emission region choices, and backing it up with auditable ESG / CSRD emissions reporting. Think of it as the data layer for [green software](https://greensoftware.foundation/) and sustainable cloud operations.
+
+**Keywords:** carbon-aware computing · cloud sustainability · carbon footprint · greenhouse-gas (GHG) emissions · decarbonization · green software · grid carbon intensity · Scope 2 & 3 reporting · CSRD / ESG · net-zero cloud.
 
 > **Status:** This is a portfolio / demo project, not a production service. See [What's real vs. estimated vs. mock](#whats-real-vs-estimated-vs-mock) for an honest breakdown of which parts are live integrations and which are stubs.
 
@@ -152,7 +158,6 @@ Every response includes a `source` field (e.g. `uk`, `eskom_heuristic`, `open_me
 - **Live grid-operator APIs (6):** UK, EIA, AEMO, GridStatus, ENTSO-E, Electricity Maps. These fetch and parse real upstream responses. Three (GridStatus, Electricity Maps, plus EIA's higher tiers) need keys; ENTSO-E needs a free token.
 - **Heuristic estimators (4):** Grid India and ONS Brazil attempt a live fetch but fall back to per-region constants with a time-of-day curve; Eskom always uses a time-of-day model; Open-Meteo derives a rough intensity from solar/wind weather data (it is **not** a carbon-measuring source). These are useful demo coverage, not authoritative data, and are tagged accordingly.
 - **Mock (1):** static fixtures, clearly labeled, used only as a last-resort fallback so the API always returns *something*.
-- **ZK broker (`src/carbon_mesh/zk/`):** a carbon-aware compute-orchestration **demo**. The orchestration, retry, and carbon-policy logic are real; the blockchain wallet, prover networks, spot-price feed, and proof verification are mocked (no `web3`/ZK libraries). Treat it as an adapter framework with mock backends, not a working ZK proof broker.
 
 ---
 
@@ -252,7 +257,6 @@ src/carbon_mesh/
   db/               SQLAlchemy async models + Alembic migrations
   orgs/             Multi-tenant organization management
   cli/              Typer CLI (carbonlens route, intensity, regions)
-  zk/               Carbon-aware compute orchestration demo (mock-backed ZK broker)
   config.py         Environment-based config with validation
   main.py           FastAPI app, middleware, lifespan
 
@@ -263,7 +267,7 @@ web/                Vite + React 19 + TypeScript frontend
 terraform/          Terraform data source for green routing
 data/               region_grid_map.yaml (75+ regions -> grid zones)
 alembic/            Database migrations
-tests/              258 tests
+tests/              194 tests
 ```
 
 ```
@@ -340,7 +344,7 @@ tests/              258 tests
 make help       # show all commands
 make setup      # install deps + copy .env + build frontend
 make dev        # API + frontend with hot reload
-make test       # 258 tests
+make test       # 194 tests
 make lint       # ruff + tsc
 make fix        # auto-fix lint
 make migrate    # run Alembic migrations
@@ -364,7 +368,7 @@ reporting, and monitoring tooling that sits on top of it.
 - Green SLA check engine with on-demand + background monitoring (in-memory)
 - Multi-tenant orgs with hashed API keys and Stripe billing integration
 - React 19 dashboard with a live WebSocket carbon feed
-- 258 tests, multi-stage Docker build, Alembic migrations
+- 194 tests, multi-stage Docker build, Alembic migrations
 
 **What's next (not yet real):**
 - Market-based Scope 2 accounting (RECs/PPAs/residual mix) and supplier-specific Scope 3 factors
@@ -372,7 +376,21 @@ reporting, and monitoring tooling that sits on top of it.
 - Signed PDF compliance reports and a recognized attestation standard
 - Durable (Postgres-backed) SLA monitoring that starts at boot and survives restarts
 - Cloud bill ingestion (AWS/GCP/Azure) and historical/forecast carbon endpoints
-- Real ZK proving/verification + on-chain settlement to back the ZK broker demo
+
+## Companion project: carbon-aware CI/CD
+
+Want to *act* on this data in your pipelines? **[carbon-aware-dispatcher](https://github.com/peterklingelhofer/carbon-aware-dispatcher)** is a sibling project — a single GitHub Action that runs your CI/CD only when the energy grid is clean:
+
+```yaml
+- uses: peterklingelhofer/carbon-aware-dispatcher@v1
+  id: carbon
+  with:
+    grid_zones: 'auto:green'   # auto-detect region, or pick the cleanest free zone
+- if: steps.carbon.outputs.grid_clean == 'true'
+  run: ./build.sh             # only runs when the grid is green
+```
+
+CarbonLens is the **data + reporting layer** (measure, route, report); the dispatcher is the **enforcement layer** for deferrable jobs (CI, ML training, batch). Same carbon-aware mission, different point in the workflow.
 
 ## License
 
