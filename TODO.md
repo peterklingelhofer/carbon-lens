@@ -150,7 +150,7 @@ and provide turnkey CSRD/SEC/SB-253 compliance reporting for cloud workloads.
 ### Stripe Billing (15 minutes)
 - [ ] Create Stripe account
 - [ ] Configure products/prices matching Free/Pro/Enterprise tiers
-- [ ] Set `CARBON_MESH_STRIPE_SECRET_KEY` and `CARBON_MESH_STRIPE_PRICE_ID_*`
+- [ ] Set `CARBON_LENS_STRIPE_SECRET_KEY` and `CARBON_LENS_STRIPE_PRICE_ID_*`
 
 ### Deployment
 - [ ] Choose platform (Fly.io / Render / Railway)

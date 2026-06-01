@@ -41,8 +41,8 @@ jobs:
 
       - name: Test
         env:
-          CARBON_MESH_CARBON_SOURCE: mock
-          CARBON_MESH_DATABASE_URL: postgresql+asyncpg://carbon_mesh:carbon_mesh@localhost:5432/carbon_mesh
+          CARBON_LENS_CARBON_SOURCE: mock
+          CARBON_LENS_DATABASE_URL: postgresql+asyncpg://carbon_mesh:carbon_mesh@localhost:5432/carbon_mesh
         run: uv run pytest tests/ -v
 
   frontend:

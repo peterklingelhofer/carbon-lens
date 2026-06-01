@@ -22,13 +22,13 @@ services:
     env_file:
       - .env
     environment:
-      CARBON_MESH_USE_DATABASE: "true"
-      CARBON_MESH_DATABASE_URL: postgresql+asyncpg://carbon_mesh:carbon_mesh@db:5432/carbon_mesh
-      CARBON_MESH_HOST: "0.0.0.0"
-      CARBON_MESH_PORT: "8000"
-      CARBON_MESH_LOG_FORMAT: "json"
-      CARBON_MESH_API_KEY_REQUIRED: "true"
-      CARBON_MESH_AUTO_MIGRATE: "true"
+      CARBON_LENS_USE_DATABASE: "true"
+      CARBON_LENS_DATABASE_URL: postgresql+asyncpg://carbon_mesh:carbon_mesh@db:5432/carbon_mesh
+      CARBON_LENS_HOST: "0.0.0.0"
+      CARBON_LENS_PORT: "8000"
+      CARBON_LENS_LOG_FORMAT: "json"
+      CARBON_LENS_API_KEY_REQUIRED: "true"
+      CARBON_LENS_AUTO_MIGRATE: "true"
     depends_on:
       db:
         condition: service_healthy
