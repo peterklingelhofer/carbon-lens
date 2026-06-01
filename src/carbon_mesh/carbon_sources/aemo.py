@@ -94,6 +94,7 @@ class AEMOCarbonSource:
                 renewable_percentage=round(calculate_renewable_percentage(fuel_mix), 1),
                 timestamp=now,
                 source="aemo",
+                grid_load_mw=round(sum(fuel_mix.values())),
             )
 
         return results

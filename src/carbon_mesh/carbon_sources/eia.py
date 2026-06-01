@@ -87,6 +87,7 @@ class EIACarbonSource:
             renewable_percentage=round(renewable_pct, 1),
             timestamp=ts,
             source="eia",
+            grid_load_mw=round(sum(fuel_mix_mw.values())),
         )
 
     async def get_carbon_intensity_batch(self, grid_zones: list[str]) -> dict[str, CarbonIntensity]:
@@ -155,6 +156,7 @@ class EIACarbonSource:
                 renewable_percentage=round(renewable_pct, 1),
                 timestamp=ts,
                 source="eia",
+                grid_load_mw=round(sum(fuel_mix.values())),
             )
 
         return results
