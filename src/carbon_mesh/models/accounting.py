@@ -12,6 +12,7 @@ class EmissionsRecord(BaseModel):
     chosen_carbon_intensity: float
     worst_carbon_intensity: float
     carbon_saved_gco2_kwh: float
+    chosen_renewable_pct: float = 0.0
 
 
 class CarbonSavingsReport(BaseModel):

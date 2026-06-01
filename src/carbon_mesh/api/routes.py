@@ -111,21 +111,24 @@ async def get_carbon_intensity_batch(
     Body: list of ``{"provider": "aws", "region": "us-east-1"}`` objects.
     Returns a map of ``"provider/region"`` to carbon intensity.
     """
-    zone_to_key: dict[str, str] = {}
+    # Multiple regions can share one grid zone (e.g. aws/us-east-1 and aws/us-east-2
+    # are both US-MIDA-PJM), so map each zone to ALL of its requested region keys.
+    zone_to_keys: dict[str, list[str]] = {}
     for r in regions:
         zone = mapper.get_grid_zone(r["provider"], r["region"])
         if zone is not None:
-            zone_to_key[zone] = f"{r['provider']}/{r['region']}"
+            zone_to_keys.setdefault(zone, []).append(f"{r['provider']}/{r['region']}")
 
-    if not zone_to_key:
+    if not zone_to_keys:
         raise HTTPException(status_code=400, detail="No valid regions provided")
 
-    intensities = await source.get_carbon_intensity_batch(list(zone_to_key.keys()))
+    intensities = await source.get_carbon_intensity_batch(list(zone_to_keys.keys()))
 
     return {
-        zone_to_key[zone]: intensity
+        key: intensity
         for zone, intensity in intensities.items()
-        if zone in zone_to_key
+        if zone in zone_to_keys
+        for key in zone_to_keys[zone]
     }
 
 
