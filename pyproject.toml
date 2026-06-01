@@ -27,6 +27,15 @@ dev = [
     "pytest-httpx>=0.35",
     "ruff>=0.9",
 ]
+# Live cloud-billing ingestion adapters (AWS Cost Explorer, GCP BigQuery billing
+# export, Azure Cost Management). Optional — the core API and demo run without them.
+# Install with: uv sync --extra cloud  (or pip install 'carbonlens[cloud]')
+cloud = [
+    "boto3>=1.34",
+    "google-cloud-bigquery>=3.25",
+    "azure-identity>=1.17",
+    "azure-mgmt-costmanagement>=4.0",
+]
 
 [project.scripts]
 serve = "carbon_mesh.main:run"

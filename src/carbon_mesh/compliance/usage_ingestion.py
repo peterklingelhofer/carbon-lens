@@ -23,6 +23,15 @@ from carbon_mesh.models.compliance import (
 logger = logging.getLogger(__name__)
 
 
+class CloudIngestionError(Exception):
+    """Raised when a live cloud-billing adapter cannot fetch usage.
+
+    Covers a missing optional SDK (install the ``cloud`` extra) and upstream
+    API/credential/permission failures, so the API layer can surface a clear
+    error instead of a 500.
+    """
+
+
 @runtime_checkable
 class CloudUsageAdapter(Protocol):
     """Protocol for pulling cloud usage data from a provider."""
@@ -146,9 +155,10 @@ class AWSCostExplorerAdapter:
     ) -> list[CloudUsageRecord]:
         try:
             import boto3
-        except ImportError:
-            logger.warning("boto3 not installed — cannot fetch AWS usage. pip install boto3")
-            return []
+        except ImportError as e:
+            raise CloudIngestionError(
+                "AWS ingestion requires boto3 — install the cloud extra: uv sync --extra cloud"
+            ) from e
 
         creds = credentials or {}
         client = boto3.client(
@@ -158,53 +168,72 @@ class AWSCostExplorerAdapter:
             region_name=creds.get("region", "us-east-1"),
         )
 
-        response = client.get_cost_and_usage(
-            TimePeriod={
+        request = {
+            "TimePeriod": {
                 "Start": period_start.strftime("%Y-%m-%d"),
                 "End": period_end.strftime("%Y-%m-%d"),
             },
-            Granularity="DAILY",
-            Metrics=["UsageQuantity"],
-            GroupBy=[
+            "Granularity": "DAILY",
+            "Metrics": ["UsageQuantity"],
+            "GroupBy": [
                 {"Type": "DIMENSION", "Key": "SERVICE"},
                 {"Type": "DIMENSION", "Key": "REGION"},
             ],
-        )
+        }
 
         records: list[CloudUsageRecord] = []
-        for result in response.get("ResultsByTime", []):
-            p_start = datetime.fromisoformat(result["TimePeriod"]["Start"]).replace(
-                tzinfo=timezone.utc
-            )
-            p_end = datetime.fromisoformat(result["TimePeriod"]["End"]).replace(tzinfo=timezone.utc)
+        next_token: str | None = None
+        try:
+            while True:
+                if next_token:
+                    request["NextPageToken"] = next_token
+                response = client.get_cost_and_usage(**request)
 
-            for group in result.get("Groups", []):
-                keys = group["Keys"]
-                service = keys[0] if len(keys) > 0 else "unknown"
-                region = keys[1] if len(keys) > 1 else "unknown"
-                qty = float(group["Metrics"]["UsageQuantity"]["Amount"])
-                if qty <= 0:
-                    continue
-
-                # Map AWS service to usage unit heuristic
-                unit = _aws_service_to_unit(service)
-                energy = estimate_energy_kwh(qty, unit, "default", "aws")
-
-                records.append(
-                    CloudUsageRecord(
-                        org_id=org_id,
-                        provider="aws",
-                        region=region,
-                        service=_normalize_aws_service(service),
-                        resource_type="default",
-                        usage_quantity=qty,
-                        usage_unit=unit,
-                        energy_kwh=energy,
-                        period_start=p_start,
-                        period_end=p_end,
-                        source="aws_cur",
+                for result in response.get("ResultsByTime", []):
+                    p_start = datetime.fromisoformat(result["TimePeriod"]["Start"]).replace(
+                        tzinfo=timezone.utc
                     )
-                )
+                    p_end = datetime.fromisoformat(result["TimePeriod"]["End"]).replace(
+                        tzinfo=timezone.utc
+                    )
+
+                    for group in result.get("Groups", []):
+                        keys = group.get("Keys", [])
+                        service = keys[0] if len(keys) > 0 else "unknown"
+                        region = keys[1] if len(keys) > 1 else "unknown"
+                        if not region or region in ("NoRegion", "global"):
+                            region = "global"
+                        qty = float(group["Metrics"]["UsageQuantity"]["Amount"])
+                        if qty <= 0:
+                            continue
+
+                        unit = _aws_service_to_unit(service)
+                        energy = estimate_energy_kwh(qty, unit, "default", "aws")
+
+                        records.append(
+                            CloudUsageRecord(
+                                org_id=org_id,
+                                provider="aws",
+                                region=region,
+                                service=_normalize_aws_service(service),
+                                resource_type="default",
+                                usage_quantity=qty,
+                                usage_unit=unit,
+                                energy_kwh=energy,
+                                period_start=p_start,
+                                period_end=p_end,
+                                source="aws_cur",
+                            )
+                        )
+
+                next_token = response.get("NextPageToken")
+                if not next_token:
+                    break
+        except CloudIngestionError:
+            raise
+        except Exception as e:
+            raise CloudIngestionError(f"AWS Cost Explorer request failed: {e}") from e
+
         return records
 
 
@@ -226,35 +255,40 @@ class GCPBillingAdapter:
     ) -> list[CloudUsageRecord]:
         try:
             from google.cloud import bigquery
-        except ImportError:
-            logger.warning("google-cloud-bigquery not installed — cannot fetch GCP usage")
-            return []
+        except ImportError as e:
+            raise CloudIngestionError(
+                "GCP ingestion requires google-cloud-bigquery — install the cloud extra: "
+                "uv sync --extra cloud"
+            ) from e
 
         creds = credentials or {}
         project = creds.get("project_id", "")
         dataset = creds.get("billing_dataset", "billing_export")
         table = creds.get("billing_table", "gcp_billing_export_v1")
 
-        client = bigquery.Client(project=project)
+        # Standard GCP path: billing data is exported to a BigQuery table; we sum
+        # usage per service+region+unit over the period.
         query = f"""
             SELECT
                 service.description AS service,
                 location.region AS region,
                 SUM(usage.amount) AS usage_quantity,
-                usage.unit AS usage_unit,
-                DATE(usage_start_time) AS period_start,
-                DATE(usage_end_time) AS period_end
+                ANY_VALUE(usage.unit) AS usage_unit
             FROM `{project}.{dataset}.{table}`
             WHERE usage_start_time >= @start AND usage_end_time <= @end
-            GROUP BY service, region, usage_unit, DATE(usage_start_time), DATE(usage_end_time)
+            GROUP BY service, region
         """
-        job_config = bigquery.QueryJobConfig(
-            query_parameters=[
-                bigquery.ScalarQueryParameter("start", "TIMESTAMP", period_start),
-                bigquery.ScalarQueryParameter("end", "TIMESTAMP", period_end),
-            ]
-        )
-        results = client.query(query, job_config=job_config)
+        try:
+            client = bigquery.Client(project=project)
+            job_config = bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ScalarQueryParameter("start", "TIMESTAMP", period_start),
+                    bigquery.ScalarQueryParameter("end", "TIMESTAMP", period_end),
+                ]
+            )
+            results = list(client.query(query, job_config=job_config))
+        except Exception as e:
+            raise CloudIngestionError(f"GCP BigQuery billing query failed: {e}") from e
 
         records: list[CloudUsageRecord] = []
         for row in results:
@@ -273,12 +307,8 @@ class GCPBillingAdapter:
                     usage_quantity=qty,
                     usage_unit=unit,
                     energy_kwh=energy,
-                    period_start=datetime.combine(
-                        row.period_start, datetime.min.time(), tzinfo=timezone.utc
-                    ),
-                    period_end=datetime.combine(
-                        row.period_end, datetime.min.time(), tzinfo=timezone.utc
-                    ),
+                    period_start=period_start,
+                    period_end=period_end,
                     source="gcp_billing",
                 )
             )
@@ -303,19 +333,14 @@ class AzureCostManagementAdapter:
         try:
             from azure.identity import ClientSecretCredential
             from azure.mgmt.costmanagement import CostManagementClient
-        except ImportError:
-            logger.warning("azure-mgmt-costmanagement not installed — cannot fetch Azure usage")
-            return []
+        except ImportError as e:
+            raise CloudIngestionError(
+                "Azure ingestion requires azure-mgmt-costmanagement — install the cloud extra: "
+                "uv sync --extra cloud"
+            ) from e
 
         creds = credentials or {}
-        credential = ClientSecretCredential(
-            tenant_id=creds.get("tenant_id", ""),
-            client_id=creds.get("client_id", ""),
-            client_secret=creds.get("client_secret", ""),
-        )
         subscription_id = creds.get("subscription_id", "")
-        client = CostManagementClient(credential)
-
         scope = f"/subscriptions/{subscription_id}"
         query = {
             "type": "Usage",
@@ -326,23 +351,46 @@ class AzureCostManagementAdapter:
             },
             "dataset": {
                 "granularity": "Daily",
-                "aggregation": {"totalCost": {"name": "UsageQuantity", "function": "Sum"}},
+                "aggregation": {"usageQuantity": {"name": "UsageQuantity", "function": "Sum"}},
                 "grouping": [
                     {"type": "Dimension", "name": "ServiceName"},
                     {"type": "Dimension", "name": "ResourceLocation"},
                 ],
             },
         }
-        result = client.query.usage(scope=scope, parameters=query)
+        try:
+            credential = ClientSecretCredential(
+                tenant_id=creds.get("tenant_id", ""),
+                client_id=creds.get("client_id", ""),
+                client_secret=creds.get("client_secret", ""),
+            )
+            client = CostManagementClient(credential)
+            result = client.query.usage(scope=scope, parameters=query)
+        except Exception as e:
+            raise CloudIngestionError(f"Azure Cost Management query failed: {e}") from e
+
+        # Map columns by name — the row order is defined by result.columns, not fixed.
+        columns = [getattr(c, "name", "") for c in (result.columns or [])]
+
+        def _idx(*names: str) -> int | None:
+            for n in names:
+                if n in columns:
+                    return columns.index(n)
+            return None
+
+        qty_i = _idx("UsageQuantity", "PreTaxCost", "Cost")
+        svc_i = _idx("ServiceName")
+        loc_i = _idx("ResourceLocation")
 
         records: list[CloudUsageRecord] = []
-        for row in result.rows:
-            # row format: [quantity, service, location, date, currency]
-            qty = float(row[0])
+        for row in result.rows or []:
+            if qty_i is None or qty_i >= len(row):
+                continue
+            qty = float(row[qty_i])
             if qty <= 0:
                 continue
-            service = row[1] if len(row) > 1 else "unknown"
-            region = row[2] if len(row) > 2 else "unknown"
+            service = str(row[svc_i]) if svc_i is not None and svc_i < len(row) else "unknown"
+            region = str(row[loc_i]) if loc_i is not None and loc_i < len(row) else "unknown"
             energy = estimate_energy_kwh(qty, "vcpu_hours", "default", "azure")
 
             records.append(
@@ -414,15 +462,34 @@ class MockUsageAdapter:
 
 
 def _aws_service_to_unit(service: str) -> str:
-    """Heuristic: map AWS service name to usage unit."""
+    """Heuristic: map an AWS service to a usage unit.
+
+    Cost Explorer's SERVICE dimension returns full names (e.g. "Amazon Simple
+    Storage Service"), so match on both the long names and the short codes.
+    """
     s = service.lower()
-    if any(k in s for k in ("ec2", "ecs", "eks", "lambda", "fargate", "sagemaker")):
+    if any(
+        k in s
+        for k in (
+            "ec2",
+            "elastic compute",
+            "ecs",
+            "eks",
+            "lambda",
+            "fargate",
+            "sagemaker",
+            "compute",
+        )
+    ):
         return "vcpu_hours"
-    if any(k in s for k in ("s3", "ebs", "glacier", "fsx")):
+    if any(
+        k in s
+        for k in ("s3", "simple storage", "ebs", "elastic block", "glacier", "fsx", "storage")
+    ):
         return "gb_hours"
     if any(k in s for k in ("cloudfront", "data transfer", "vpc")):
         return "gb_transferred"
-    if "rds" in s or "dynamodb" in s or "elasticache" in s:
+    if any(k in s for k in ("rds", "relational database", "dynamodb", "elasticache")):
         return "vcpu_hours"
     return "vcpu_hours"  # Conservative default
 

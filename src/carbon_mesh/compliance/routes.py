@@ -12,7 +12,11 @@ from carbon_mesh.api.deps import get_carbon_source, get_grid_mapper
 from carbon_mesh.auth.dependencies import require_api_key
 from carbon_mesh.compliance.calculator import EmissionsCalculator
 from carbon_mesh.compliance.reporting import ReportingEngine
-from carbon_mesh.compliance.usage_ingestion import ManualCSVAdapter, MockUsageAdapter
+from carbon_mesh.compliance.usage_ingestion import (
+    CloudIngestionError,
+    ManualCSVAdapter,
+    MockUsageAdapter,
+)
 from carbon_mesh.models.compliance import (
     AccountingMethod,
     CloudUsageRecord,
@@ -109,12 +113,16 @@ async def ingest_usage(req: UsageIngestionRequest) -> UsageIngestionResponse:
         else:
             raise HTTPException(400, f"Unknown provider: {req.provider}")
 
-    records = await adapter.fetch_usage(
-        org_id=req.org_id,
-        period_start=req.period_start,
-        period_end=req.period_end,
-        credentials=req.credentials,
-    )
+    try:
+        records = await adapter.fetch_usage(
+            org_id=req.org_id,
+            period_start=req.period_start,
+            period_end=req.period_end,
+            credentials=req.credentials,
+        )
+    except CloudIngestionError as e:
+        # Missing SDK (cloud extra) or upstream credential/permission/API failure.
+        raise HTTPException(status_code=502, detail=str(e)) from e
 
     # Store
     if req.org_id not in _usage_store:
