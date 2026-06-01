@@ -114,7 +114,7 @@ async def create_billing_checkout(
     if not stripe_enabled():
         raise HTTPException(
             status_code=503,
-            detail="Stripe not configured. Set CARBON_MESH_STRIPE_SECRET_KEY to enable billing.",
+            detail="Stripe not configured. Set CARBON_LENS_STRIPE_SECRET_KEY to enable billing.",
         )
 
     org = await get_org(session, org_id)

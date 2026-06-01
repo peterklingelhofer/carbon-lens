@@ -66,7 +66,7 @@ export function Settings() {
         <p style={{ color: "var(--gray-500)", fontSize: "0.85rem", marginBottom: "1rem" }}>
           Sent as the <code>X-API-Key</code> header on every request. Stored only in this browser.
           The public demo runs without one; a deployment with{" "}
-          <code>CARBON_MESH_API_KEY_REQUIRED=true</code> needs a valid key.
+          <code>CARBON_LENS_API_KEY_REQUIRED=true</code> needs a valid key.
         </p>
         <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
           <input
@@ -221,10 +221,10 @@ export function Settings() {
           </thead>
           <tbody>
             {[
-              { name: "EIA", coverage: "US grid (real-time)", env: "CARBON_MESH_EIA_API_KEY", url: "https://www.eia.gov/opendata/" },
-              { name: "GridStatus", coverage: "US ISOs", env: "CARBON_MESH_GRID_STATUS_API_KEY", url: "https://www.gridstatus.io/" },
-              { name: "ENTSO-E", coverage: "Europe (35 countries)", env: "CARBON_MESH_ENTSOE_TOKEN", url: "https://transparency.entsoe.eu/" },
-              { name: "Electricity Maps", coverage: "Global (paid)", env: "CARBON_MESH_ELECTRICITY_MAPS_API_KEY", url: "https://api-portal.electricitymaps.com/" },
+              { name: "EIA", coverage: "US grid (real-time)", env: "CARBON_LENS_EIA_API_KEY", url: "https://www.eia.gov/opendata/" },
+              { name: "GridStatus", coverage: "US ISOs", env: "CARBON_LENS_GRID_STATUS_API_KEY", url: "https://www.gridstatus.io/" },
+              { name: "ENTSO-E", coverage: "Europe (35 countries)", env: "CARBON_LENS_ENTSOE_TOKEN", url: "https://transparency.entsoe.eu/" },
+              { name: "Electricity Maps", coverage: "Global (paid)", env: "CARBON_LENS_ELECTRICITY_MAPS_API_KEY", url: "https://api-portal.electricitymaps.com/" },
             ].map((p) => (
               <tr key={p.name} style={{ borderBottom: "1px solid var(--gray-100)" }}>
                 <td style={{ padding: "0.5rem", fontWeight: 600 }}>{p.name}</td>
