@@ -29,7 +29,7 @@ Every major cloud provider claims "100% renewable energy." Most rely on **annual
 **1. First-time setup** (installs deps, copies `.env`, builds the frontend):
 
 ```bash
-git clone https://github.com/your-org/carbonlens.git
+git clone https://github.com/peterklingelhofer/carbonlens.git
 cd carbonlens
 make setup
 ```
