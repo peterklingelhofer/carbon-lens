@@ -1,0 +1,13 @@
+{
+  // Cloudflare Workers "Static Assets" config for the Vite SPA.
+  // Used when deploying via the Workers flow: `npx wrangler deploy` uploads the
+  // built `dist/` as static assets. `single-page-application` makes client-side
+  // routes (e.g. /globe, /dashboard) fall back to index.html.
+  // (Not needed if you use the classic Cloudflare Pages flow instead.)
+  "name": "carbonlens",
+  "compatibility_date": "2025-01-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}
