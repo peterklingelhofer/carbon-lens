@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
 import type { ComplianceReport } from "../api/types";
-import { section as sectionFn, card } from "../styles";
+import { section as sectionFn, card, providerChip } from "../styles";
 
 const section = sectionFn(1100);
 
@@ -465,20 +465,16 @@ function ReportView({ report }: { report: ComplianceReport }) {
                     textAlign: "center",
                   }}
                 >
-                  <div
-                    style={{
-                      fontSize: "0.75rem",
-                      textTransform: "uppercase",
-                      fontWeight: 600,
-                      color:
-                        provider === "aws"
-                          ? "var(--orange-400)"
-                          : provider === "gcp"
-                            ? "var(--blue-500)"
-                            : "var(--blue-400)",
-                    }}
-                  >
-                    {provider}
+                  <div>
+                    <span
+                      style={{
+                        fontSize: "0.75rem",
+                        textTransform: "uppercase",
+                        ...providerChip(provider),
+                      }}
+                    >
+                      {provider}
+                    </span>
                   </div>
                   <div style={{ fontSize: "1.25rem", fontWeight: 700 }}>
                     {kgco2e.toFixed(4)}
