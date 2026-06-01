@@ -26,7 +26,6 @@ from carbon_mesh.compliance.routes import router as compliance_router
 from carbon_mesh.orgs.routes import org_router, webhook_router
 from carbon_mesh.scheduler.routes import router as scheduler_router
 from carbon_mesh.sla.routes import router as sla_router
-from carbon_mesh.zk.routes import router as zk_router
 
 from carbon_mesh.logging_config import setup_logging
 
@@ -206,10 +205,6 @@ app = FastAPI(
             "description": "Green SLA definitions, compliance checks, attestation reports, and alerts",
         },
         {
-            "name": "ZK Broker",
-            "description": "Carbon-aware compute orchestration demo (mock-backed)",
-        },
-        {
             "name": "Compliance",
             "description": "CSRD/SEC/SB-253 emissions measurement, calculation, and reporting",
         },
@@ -342,7 +337,6 @@ app.include_router(webhook_router, prefix="/api/v1")
 app.include_router(compliance_router)
 app.include_router(scheduler_router)
 app.include_router(sla_router)
-app.include_router(zk_router)
 app.include_router(ws_router)
 
 # Prometheus metrics at /metrics
