@@ -243,10 +243,10 @@ CarbonLens works out of the box with 6 no-key providers. Add API keys for more r
 
 ```bash
 # .env
-CARBON_MESH_EIA_API_KEY=your_eia_key           # US grid (free: eia.gov/opendata)
-CARBON_MESH_GRID_STATUS_API_KEY=your_key        # US ISOs (free: gridstatus.io)
-CARBON_MESH_ENTSOE_TOKEN=your_token             # Europe (free: transparency.entsoe.eu)
-CARBON_MESH_ELECTRICITY_MAPS_API_KEY=your_key   # Global (paid: electricitymaps.com)
+CARBON_LENS_EIA_API_KEY=your_eia_key           # US grid (free: eia.gov/opendata)
+CARBON_LENS_GRID_STATUS_API_KEY=your_key        # US ISOs (free: gridstatus.io)
+CARBON_LENS_ENTSOE_TOKEN=your_token             # Europe (free: transparency.entsoe.eu)
+CARBON_LENS_ELECTRICITY_MAPS_API_KEY=your_key   # Global (paid: electricitymaps.com)
 ```
 
 Verify: `curl http://localhost:8000/health/providers`
@@ -323,29 +323,29 @@ tests/              205 tests
 | Variable | Default | Description |
 |----------|---------|-------------|
 | **Data Sources** | | |
-| `CARBON_MESH_CARBON_SOURCE` | `hybrid` | Mode: `hybrid`, `mock`, `eia`, etc. |
-| `CARBON_MESH_EIA_API_KEY` | | EIA API key |
-| `CARBON_MESH_GRID_STATUS_API_KEY` | | GridStatus API key |
-| `CARBON_MESH_ENTSOE_TOKEN` | | ENTSO-E token |
-| `CARBON_MESH_ELECTRICITY_MAPS_API_KEY` | | Electricity Maps key |
-| `CARBON_MESH_CACHE_TTL_SECONDS` | `300` | Cache TTL for grid data |
+| `CARBON_LENS_CARBON_SOURCE` | `hybrid` | Mode: `hybrid`, `mock`, `eia`, etc. |
+| `CARBON_LENS_EIA_API_KEY` | | EIA API key |
+| `CARBON_LENS_GRID_STATUS_API_KEY` | | GridStatus API key |
+| `CARBON_LENS_ENTSOE_TOKEN` | | ENTSO-E token |
+| `CARBON_LENS_ELECTRICITY_MAPS_API_KEY` | | Electricity Maps key |
+| `CARBON_LENS_CACHE_TTL_SECONDS` | `300` | Cache TTL for grid data |
 | **Server** | | |
-| `CARBON_MESH_HOST` | `0.0.0.0` | Bind address |
-| `CARBON_MESH_PORT` | `8000` | Bind port |
-| `CARBON_MESH_CORS_ORIGINS` | `["http://localhost:5173"]` | CORS origins |
+| `CARBON_LENS_HOST` | `0.0.0.0` | Bind address |
+| `CARBON_LENS_PORT` | `8000` | Bind port |
+| `CARBON_LENS_CORS_ORIGINS` | `["http://localhost:5173"]` | CORS origins |
 | **Database** | | |
-| `CARBON_MESH_USE_DATABASE` | `false` | Enable Postgres |
-| `CARBON_MESH_DATABASE_URL` | `postgresql+asyncpg://...` | Postgres URL |
-| `CARBON_MESH_AUTO_MIGRATE` | `false` | Auto-run migrations |
+| `CARBON_LENS_USE_DATABASE` | `false` | Enable Postgres |
+| `CARBON_LENS_DATABASE_URL` | `postgresql+asyncpg://...` | Postgres URL |
+| `CARBON_LENS_AUTO_MIGRATE` | `false` | Auto-run migrations |
 | **Auth** | | |
-| `CARBON_MESH_API_KEY_REQUIRED` | `false` | Require API key |
-| `CARBON_MESH_ADMIN_SECRET` | | Admin endpoint secret |
+| `CARBON_LENS_API_KEY_REQUIRED` | `false` | Require API key |
+| `CARBON_LENS_ADMIN_SECRET` | | Admin endpoint secret |
 | **Limits** | | |
-| `CARBON_MESH_RATE_LIMIT_DEFAULT` | `100/minute` | Default rate limit |
-| `CARBON_MESH_RATE_LIMIT_ROUTE` | `30/minute` | Route endpoint limit |
+| `CARBON_LENS_RATE_LIMIT_DEFAULT` | `100/minute` | Default rate limit |
+| `CARBON_LENS_RATE_LIMIT_ROUTE` | `30/minute` | Route endpoint limit |
 | **Observability** | | |
-| `CARBON_MESH_LOG_FORMAT` | `text` | `text` or `json` |
-| `CARBON_MESH_LOG_LEVEL` | `INFO` | Log level |
+| `CARBON_LENS_LOG_FORMAT` | `text` | `text` or `json` |
+| `CARBON_LENS_LOG_LEVEL` | `INFO` | Log level |
 
 ---
 

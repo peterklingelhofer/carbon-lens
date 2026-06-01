@@ -43,7 +43,7 @@ steps:
       providers: aws,gcp,azure
       data-residency: DE
       api-url: https://api.carbonlens.io
-      api-key: ${{ secrets.CARBON_MESH_API_KEY }}
+      api-key: ${{ secrets.CARBON_LENS_API_KEY }}
 
   - name: Deploy to greenest region
     run: |
@@ -67,7 +67,7 @@ jobs:
         with:
           providers: aws,gcp
           api-url: https://api.carbonlens.io
-          api-key: ${{ secrets.CARBON_MESH_API_KEY }}
+          api-key: ${{ secrets.CARBON_LENS_API_KEY }}
 
   deploy:
     needs: route

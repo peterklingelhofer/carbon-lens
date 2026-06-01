@@ -29,7 +29,7 @@ class JSONFormatter(logging.Formatter):
 
 
 def setup_logging() -> None:
-    """Configure root logger based on CARBON_MESH_LOG_FORMAT and CARBON_MESH_LOG_LEVEL."""
+    """Configure root logger based on CARBON_LENS_LOG_FORMAT and CARBON_LENS_LOG_LEVEL."""
     root = logging.getLogger()
     root.setLevel(getattr(logging, settings.log_level.upper(), logging.INFO))
 

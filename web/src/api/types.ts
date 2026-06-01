@@ -40,6 +40,7 @@ export interface CarbonIntensity {
   renewable_percentage: number;
   timestamp: string;
   source: string;
+  quality?: "live" | "estimated" | "mock";
 }
 
 export interface EmissionsRecord {

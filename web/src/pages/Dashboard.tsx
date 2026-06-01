@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
+import { useSnapshot, type CarbonSnapshot } from "../api/snapshot";
 import type { CloudRegion, CarbonIntensity, CarbonUpdate } from "../api/types";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { section as sectionFn, card, providerChip } from "../styles";
@@ -12,6 +13,53 @@ function intensityColor(val: number): string {
   if (val <= 300) return "var(--amber)";
   if (val <= 500) return "var(--orange-400)";
   return "var(--red-400)";
+}
+
+function timeAgo(iso: string): string {
+  const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.round(mins / 60);
+  return `${hrs} hr${hrs > 1 ? "s" : ""} ago`;
+}
+
+function QualityTag({ quality }: { quality?: CarbonIntensity["quality"] }) {
+  if (quality !== "estimated") return null;
+  return (
+    <span
+      title="Estimated from a heuristic / weather model — the upstream grid API for this zone is intermittent"
+      style={{
+        marginLeft: 6,
+        padding: "0 6px",
+        borderRadius: 4,
+        fontSize: "0.65rem",
+        fontWeight: 600,
+        color: "var(--amber)",
+        border: "1px solid var(--amber)",
+        verticalAlign: "middle",
+      }}
+    >
+      est.
+    </span>
+  );
+}
+
+function SnapshotBanner({ snapshot }: { snapshot: CarbonSnapshot }) {
+  const { live_zones, estimated_zones } = snapshot.summary;
+  return (
+    <p style={{ color: "var(--gray-500)", marginBottom: "2rem", fontSize: "0.9rem" }}>
+      <strong style={{ color: "var(--green-700)" }}>{live_zones} grid zones live</strong> from
+      real grid-operator APIs
+      {estimated_zones > 0 && (
+        <>
+          {" "}
+          · {estimated_zones} estimated (intermittent upstream, tagged{" "}
+          <span style={{ color: "var(--amber)", fontWeight: 600 }}>est.</span>)
+        </>
+      )}{" "}
+      · updated {timeAgo(snapshot.generated_at)}. No mock data.
+    </p>
+  );
 }
 
 function IntensityBar({ value, max = 800 }: { value: number; max?: number }) {
@@ -70,6 +118,7 @@ function RegionRow({
             <IntensityBar value={intensity.carbon_intensity_gco2_kwh} />
             <span style={{ fontSize: "0.75rem", color: "var(--gray-500)" }}>
               {intensity.carbon_intensity_gco2_kwh} gCO2/kWh
+              <QualityTag quality={intensity.quality} />
             </span>
           </div>
         ) : (
@@ -97,10 +146,21 @@ function RegionRow({
 export function Dashboard() {
   const [provider, setProvider] = useState<string>("");
 
-  const { data: regions, isLoading: regionsLoading } = useQuery({
+  const { data: snapshot } = useSnapshot();
+  const usingSnapshot = !!snapshot;
+
+  const { data: apiRegions, isLoading: apiRegionsLoading } = useQuery({
     queryKey: ["regions", provider],
     queryFn: () => api.regions(provider || undefined),
+    enabled: !usingSnapshot,
   });
+
+  const regions = usingSnapshot
+    ? provider
+      ? snapshot.regions.filter((r) => r.provider === provider)
+      : snapshot.regions
+    : apiRegions;
+  const regionsLoading = usingSnapshot ? false : apiRegionsLoading;
 
   const { data: savings } = useQuery({
     queryKey: ["savings"],
@@ -117,7 +177,8 @@ export function Dashboard() {
   });
 
   const displayRegions = regions?.slice(0, 20) ?? [];
-  const intensities = useRegionIntensities(displayRegions);
+  const apiIntensities = useRegionIntensities(usingSnapshot ? [] : displayRegions);
+  const intensities = usingSnapshot ? snapshot.intensities : apiIntensities;
 
   return (
     <div style={section}>
@@ -150,14 +211,18 @@ export function Dashboard() {
           {routeSample.isPending ? "Routing…" : "Route a sample workload"}
         </button>
       </div>
-      <p
-        style={{
-          color: "var(--gray-500)",
-          marginBottom: routeSample.data ? "0.75rem" : "2rem",
-        }}
-      >
-        Live carbon intensity data powering the API. 11 cascading sources (6 live integrations), 75+ cloud regions.
-      </p>
+      {usingSnapshot ? (
+        <SnapshotBanner snapshot={snapshot} />
+      ) : (
+        <p
+          style={{
+            color: "var(--gray-500)",
+            marginBottom: routeSample.data ? "0.75rem" : "2rem",
+          }}
+        >
+          Live carbon intensity data powering the API. 11 cascading sources (6 live integrations), 75+ cloud regions.
+        </p>
+      )}
       {routeSample.data && (
         <p style={{ color: "var(--gray-600)", fontSize: "0.85rem", marginBottom: "2rem" }}>
           Routed to{" "}
@@ -208,8 +273,8 @@ export function Dashboard() {
         </div>
       )}
 
-      {/* Live WebSocket feed */}
-      <LivePanel />
+      {/* Live WebSocket feed — only when a live API backs it (not in static snapshot mode) */}
+      {!usingSnapshot && <LivePanel />}
 
       {/* Filter */}
       <div style={{ marginBottom: "1rem", display: "flex", gap: "0.5rem" }}>
