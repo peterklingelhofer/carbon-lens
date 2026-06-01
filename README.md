@@ -119,9 +119,33 @@ GHG-Protocol-structured Scope 2 + Scope 3 (Cat 1) emissions reporting for cloud 
 - **Scope 3** Category 1 (purchased cloud services), estimated from grid intensity
 - **GHG Protocol** report structure with documented methodology and data-quality summary
 - **EU Taxonomy** eligibility flag (simplified screening, not a full DNSH assessment)
+- **Usage input:** manual CSV upload, or live cloud-billing adapters — AWS Cost Explorer, GCP BigQuery billing export, Azure Cost Management (install the [`cloud` extra](#bringing-your-own-usage-data) + provide credentials)
 - Export as JSON or CSV
 
 > Scope: this generates a structured, defensible *first draft* of an emissions report. Market-based accounting (RECs/PPAs/residual mix), supplier-specific Scope 3 factors, utilization-aware energy modeling, and signed PDF output are **not** implemented — see the [roadmap](#whats-next). It is not a substitute for an assured CSRD report.
+
+#### Bringing your own usage data
+
+CarbonLens doesn't auto-detect where you run — you give it usage data, it maps service+region to energy (Cloud Carbon Footprint coefficients) and then to emissions via live grid intensity. Three ways in:
+
+1. **Demo** — `POST /api/v1/compliance/usage/ingest` with `{"provider": "mock"}` (what the dashboard uses).
+2. **Manual CSV** — `POST /api/v1/compliance/usage/upload-csv` (columns: `provider,region,service,resource_type,usage_quantity,usage_unit,period_start,period_end`).
+3. **Live cloud billing** — pull real usage-by-region from your account:
+
+```bash
+uv sync --extra cloud   # installs boto3, google-cloud-bigquery, azure SDKs
+```
+```bash
+# AWS Cost Explorer (needs ce:GetCostAndUsage permission)
+curl -X POST localhost:8000/api/v1/compliance/usage/ingest -H 'Content-Type: application/json' -d '{
+  "org_id": "acme", "provider": "aws",
+  "period_start": "2026-05-01T00:00:00Z", "period_end": "2026-05-31T00:00:00Z",
+  "credentials": {"aws_access_key_id": "...", "aws_secret_access_key": "..."}
+}'
+```
+GCP needs a BigQuery billing export (`project_id`/`billing_dataset`/`billing_table`); Azure needs a service principal (`tenant_id`/`client_id`/`client_secret`/`subscription_id`).
+
+> **Honesty note:** the three live adapters are implemented against the documented billing APIs and **unit-tested with mocked SDK responses** (parsing, pagination, unit-mapping, error handling), but they are **not yet verified against live cloud accounts**. Treat them as coded-to-spec, not battle-tested. Energy-from-usage is heuristic.
 
 ### 3. Carbon-Aware Routing
 Route workloads to the greenest cloud region in real-time. Works with AWS, GCP, and Azure region sets.
@@ -267,7 +291,7 @@ web/                Vite + React 19 + TypeScript frontend
 terraform/          Terraform data source for green routing
 data/               region_grid_map.yaml (75+ regions -> grid zones)
 alembic/            Database migrations
-tests/              194 tests
+tests/              205 tests
 ```
 
 ```
@@ -344,7 +368,7 @@ tests/              194 tests
 make help       # show all commands
 make setup      # install deps + copy .env + build frontend
 make dev        # API + frontend with hot reload
-make test       # 194 tests
+make test       # 205 tests
 make lint       # ruff + tsc
 make fix        # auto-fix lint
 make migrate    # run Alembic migrations
@@ -366,16 +390,17 @@ reporting, and monitoring tooling that sits on top of it.
 - Carbon-aware routing engine (find the greenest region) with stale-while-revalidate caching
 - GHG-Protocol-structured Scope 2 + Scope 3 (Cat 1) compliance reporting (location-based)
 - Green SLA check engine with on-demand + background monitoring (in-memory)
+- Live cloud-billing ingestion adapters (AWS/GCP/Azure) — coded-to-spec + mock-tested (not live-verified)
 - Multi-tenant orgs with hashed API keys and Stripe billing integration
 - React 19 dashboard with a live WebSocket carbon feed
-- 194 tests, multi-stage Docker build, Alembic migrations
+- 205 tests, multi-stage Docker build, Alembic migrations
 
 **What's next (not yet real):**
 - Market-based Scope 2 accounting (RECs/PPAs/residual mix) and supplier-specific Scope 3 factors
 - Utilization-aware energy modeling (current model assumes flat draw per vCPU-hour)
 - Signed PDF compliance reports and a recognized attestation standard
 - Durable (Postgres-backed) SLA monitoring that starts at boot and survives restarts
-- Cloud bill ingestion (AWS/GCP/Azure) and historical/forecast carbon endpoints
+- Validating the cloud-billing adapters against live accounts; historical/forecast carbon endpoints
 
 ## Companion project: carbon-aware CI/CD
 
