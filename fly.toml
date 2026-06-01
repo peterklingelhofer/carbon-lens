@@ -1,6 +1,6 @@
 # Fly.io deployment config
 # Deploy: fly launch --copy-config --yes
-# Set secrets: fly secrets set CARBON_MESH_EIA_API_KEY=xxx ...
+# Set secrets: fly secrets set CARBON_LENS_EIA_API_KEY=xxx ...
 # Attach Postgres: fly postgres create && fly postgres attach
 
 app = "carbon-mesh"
@@ -10,12 +10,15 @@ primary_region = "iad"
   dockerfile = "Dockerfile"
 
 [env]
-  CARBON_MESH_HOST = "0.0.0.0"
-  CARBON_MESH_PORT = "8000"
-  CARBON_MESH_USE_DATABASE = "true"
-  CARBON_MESH_LOG_FORMAT = "json"
-  CARBON_MESH_API_KEY_REQUIRED = "false"
-  CARBON_MESH_CARBON_SOURCE = "hybrid"
+  CARBON_LENS_HOST = "0.0.0.0"
+  CARBON_LENS_PORT = "8000"
+  CARBON_LENS_USE_DATABASE = "false"
+  CARBON_LENS_LOG_FORMAT = "json"
+  CARBON_LENS_API_KEY_REQUIRED = "false"
+  CARBON_LENS_CARBON_SOURCE = "hybrid"
+  # Allow the Cloudflare Pages frontend to call this API from the browser.
+  # Update if your Pages project name differs from "carbon-mesh".
+  CARBON_LENS_CORS_ORIGINS = '["https://carbon-mesh.pages.dev","http://localhost:5173"]'
 
 [http_service]
   internal_port = 8000

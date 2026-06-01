@@ -1,0 +1,59 @@
+name: Carbon snapshot
+
+# Pulls real carbon data from grid-operator APIs on a schedule and publishes a
+# static JSON to the `data` branch. The frontend reads that JSON from a CDN, so
+# viewer traffic never hits upstream providers: quota cost is fixed at
+# (zones x runs/day) regardless of how many people view the site.
+
+on:
+  schedule:
+    # Every 30 min. Grid carbon only updates every ~30-60 min, and this keeps
+    # private-repo Actions minutes well under the free 2000/month.
+    - cron: "*/30 * * * *"
+  workflow_dispatch: {}
+
+# GitHub scheduled crons are best-effort and may be delayed under load. The
+# frontend shows a "last updated" badge so staleness is always visible.
+
+permissions:
+  contents: write
+
+concurrency:
+  group: carbon-snapshot
+  cancel-in-progress: true
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Build snapshot
+        env:
+          CARBON_LENS_CARBON_SOURCE: hybrid
+          CARBON_LENS_EIA_API_KEY: ${{ secrets.CARBON_LENS_EIA_API_KEY }}
+          CARBON_LENS_ENTSOE_TOKEN: ${{ secrets.CARBON_LENS_ENTSOE_TOKEN }}
+          CARBON_LENS_GRID_STATUS_API_KEY: ${{ secrets.CARBON_LENS_GRID_STATUS_API_KEY }}
+        run: uv run python scripts/build_snapshot.py --out snapshot.json --min-live 5
+
+      - name: Publish to data branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p /tmp/pub
+          cp snapshot.json /tmp/pub/snapshot.json
+          cd /tmp/pub
+          git init -q
+          git checkout -q -b data
+          git add snapshot.json
+          git -c user.name="carbonlens-bot" \
+              -c user.email="github-actions[bot]@users.noreply.github.com" \
+              commit -qm "snapshot ${{ github.run_id }}"
+          git push -f "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" data
