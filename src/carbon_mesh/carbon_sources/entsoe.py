@@ -129,6 +129,7 @@ class ENTSOECarbonSource:
             renewable_percentage=round(calculate_renewable_percentage(fuel_mix), 1),
             timestamp=now,
             source="entsoe",
+            grid_load_mw=round(sum(fuel_mix.values())),
         )
 
     def _parse_generation_xml(self, xml_text: str) -> dict[str, float]:

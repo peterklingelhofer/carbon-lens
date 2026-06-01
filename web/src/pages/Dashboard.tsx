@@ -7,6 +7,11 @@ import { section as sectionFn, card, providerChip } from "../styles";
 
 const section = sectionFn(1100);
 
+function formatLoad(mw?: number | null): string | null {
+  if (mw == null) return null;
+  return mw >= 1000 ? `${(mw / 1000).toFixed(1)} GW` : `${Math.round(mw)} MW`;
+}
+
 function intensityColor(val: number): string {
   if (val <= 50) return "var(--green-500)";
   if (val <= 150) return "var(--green-400)";
@@ -120,6 +125,14 @@ function RegionRow({
               {intensity.carbon_intensity_gco2_kwh} gCO2/kWh
               <QualityTag quality={intensity.quality} />
             </span>
+            {formatLoad(intensity.grid_load_mw) && (
+              <span
+                style={{ display: "block", fontSize: "0.7rem", color: "var(--gray-400)" }}
+                title="Total load for the whole balancing authority (all consumers, not datacenter-specific)"
+              >
+                grid load {formatLoad(intensity.grid_load_mw)}
+              </span>
+            )}
           </div>
         ) : (
           <span style={{ color: "var(--gray-400)", fontSize: "0.8rem" }}>loading...</span>

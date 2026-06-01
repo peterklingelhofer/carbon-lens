@@ -9,6 +9,13 @@ class CarbonIntensity(BaseModel):
     renewable_percentage: float = Field(ge=0, le=100)
     timestamp: datetime
     source: str
+    grid_load_mw: float | None = Field(
+        default=None,
+        ge=0,
+        description="Total grid generation/load for the balancing authority in MW "
+        "(whole grid, all consumers — not datacenter-specific). None when the "
+        "source does not report it.",
+    )
 
 
 class EnergyMix(BaseModel):
