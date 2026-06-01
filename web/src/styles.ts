@@ -11,8 +11,28 @@ export const card: React.CSSProperties = {
   borderRadius: 12,
   padding: "1.5rem",
   border: "1px solid var(--gray-200)",
+  boxShadow: "var(--card-shadow)",
   marginBottom: "1.5rem",
 };
+
+const PROV_BG: Record<string, string> = {
+  aws: "var(--prov-aws-bg)",
+  gcp: "var(--prov-gcp-bg)",
+  azure: "var(--prov-azure-bg)",
+};
+
+/** A cloud-provider label rendered as a solid brand-colored pill with white text.
+ *  Identical in light and dark mode — the chip supplies its own contrast. */
+export function providerChip(provider: string): React.CSSProperties {
+  return {
+    display: "inline-block",
+    padding: "1px 7px",
+    borderRadius: 5,
+    fontWeight: 700,
+    color: "#fff",
+    background: PROV_BG[provider] ?? "var(--prov-gcp-bg)",
+  };
+}
 
 export const grid3: React.CSSProperties = {
   display: "grid",

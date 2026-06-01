@@ -186,3 +186,22 @@ def test_websocket_custom_subscription(client: TestClient):
         assert len(data["data"]) == 1
         assert data["data"][0]["provider"] == "aws"
         assert data["data"][0]["region"] == "us-east-1"
+
+
+def test_batch_returns_all_regions_sharing_a_grid_zone(client: TestClient):
+    """Regions that map to the same grid zone must each appear in the batch result.
+
+    Regression: aws/us-east-1 and aws/us-east-2 both map to US-MIDA-PJM; a
+    zone-keyed dict used to drop one of them.
+    """
+    resp = client.post(
+        "/api/v1/carbon/batch",
+        json=[
+            {"provider": "aws", "region": "us-east-1"},
+            {"provider": "aws", "region": "us-east-2"},
+        ],
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "aws/us-east-1" in data
+    assert "aws/us-east-2" in data

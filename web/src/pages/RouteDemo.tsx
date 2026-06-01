@@ -8,7 +8,7 @@ const section = sectionFn();
 function intensityLabel(val: number): { label: string; color: string } {
   if (val <= 50) return { label: "Very Clean", color: "var(--green-600)" };
   if (val <= 150) return { label: "Clean", color: "var(--green-500)" };
-  if (val <= 300) return { label: "Moderate", color: "var(--yellow-400)" };
+  if (val <= 300) return { label: "Moderate", color: "var(--amber)" };
   if (val <= 500) return { label: "Dirty", color: "var(--orange-400)" };
   return { label: "Very Dirty", color: "var(--red-500)" };
 }

@@ -2,6 +2,10 @@
 
 **Real-time carbon intensity data API + compliance reporting platform.**
 
+![CarbonLens dashboard — live carbon intensity for cloud regions](docs/screenshots/hero-dashboard.png)
+
+<sub>Live carbon-intensity dashboard. More screens: [API Explorer](docs/screenshots/03-api-explorer.png) · [Landing](docs/screenshots/01-landing.png) · [Carbon-aware routing](docs/screenshots/04-route.png) · [Compliance](docs/screenshots/06-compliance.png)</sub>
+
 CarbonLens aggregates electricity-grid carbon data into a single developer-friendly API, behind one cascading interface. Six providers are live integrations against real grid-operator APIs (UK, EIA, AEMO, GridStatus, ENTSO-E, Electricity Maps); the rest are transparent heuristic estimators and a mock fallback, each labeled in the `source` field of every response so you always know what you're getting. On top of the data layer it adds carbon-aware routing, GHG-Protocol-structured compliance reporting, and Green SLA monitoring.
 
 > **Status:** This is a portfolio / demo project, not a production service. See [What's real vs. estimated vs. mock](#whats-real-vs-estimated-vs-mock) for an honest breakdown of which parts are live integrations and which are stubs.
@@ -16,12 +20,32 @@ Every major cloud provider claims "100% renewable energy." Most rely on **annual
 
 ## Quick Start
 
+**1. First-time setup** (installs deps, copies `.env`, builds the frontend):
+
 ```bash
 git clone https://github.com/your-org/carbonlens.git
 cd carbonlens
-make setup    # install deps, copy .env, build frontend
-make dev      # API on :8000 + frontend on :5173
+make setup
 ```
+
+**2. Run it** — one command, starts the API and the frontend with hot reload:
+
+```bash
+make dev
+```
+
+**3. Open it in your browser:**
+
+| What to show | URL |
+|--------------|-----|
+| 🌍 **Live dashboard** — start here | **http://localhost:5173/dashboard** |
+| Landing page | http://localhost:5173 |
+| Interactive API Explorer | http://localhost:5173/api-explorer |
+| Swagger API docs | http://localhost:8000/docs |
+
+Runs out of the box with **no API keys** — 6 live government grid sources work key-free, and any region without a live source returns labeled fallback data. (Add keys to `.env` for US/EU live coverage; see [Adding Credentials](#adding-credentials).) Press `Ctrl+C` to stop.
+
+> Already set up? Just `make dev` and open **http://localhost:5173/dashboard**.
 
 ### Try the API
 
