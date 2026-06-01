@@ -1,15 +1,15 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
 import type { CloudRegion, CarbonIntensity, CarbonUpdate } from "../api/types";
 import { useState, useEffect, useRef, useCallback } from "react";
-import { section as sectionFn, card } from "../styles";
+import { section as sectionFn, card, providerChip } from "../styles";
 
 const section = sectionFn(1100);
 
 function intensityColor(val: number): string {
   if (val <= 50) return "var(--green-500)";
   if (val <= 150) return "var(--green-400)";
-  if (val <= 300) return "var(--yellow-400)";
+  if (val <= 300) return "var(--amber)";
   if (val <= 500) return "var(--orange-400)";
   return "var(--red-400)";
 }
@@ -51,15 +51,9 @@ function RegionRow({
       <td style={{ padding: "0.5rem" }}>
         <span
           style={{
-            fontWeight: 600,
             textTransform: "uppercase",
             fontSize: "0.8rem",
-            color:
-              region.provider === "aws"
-                ? "var(--orange-400)"
-                : region.provider === "gcp"
-                  ? "var(--blue-500)"
-                  : "var(--blue-400)",
+            ...providerChip(region.provider),
           }}
         >
           {region.provider}
@@ -113,15 +107,68 @@ export function Dashboard() {
     queryFn: () => api.savings(),
   });
 
+  const queryClient = useQueryClient();
+  const routeSample = useMutation({
+    mutationFn: () =>
+      api.route({
+        constraints: { providers: ["aws", "gcp", "azure"], carbon_weight: 1.0 },
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["savings"] }),
+  });
+
   const displayRegions = regions?.slice(0, 20) ?? [];
   const intensities = useRegionIntensities(displayRegions);
 
   return (
     <div style={section}>
-      <h1 style={{ marginBottom: "0.5rem" }}>Carbon Dashboard</h1>
-      <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
+      <div
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "1rem",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          marginBottom: "0.5rem",
+        }}
+      >
+        <h1 style={{ margin: 0 }}>Carbon Dashboard</h1>
+        <button
+          onClick={() => routeSample.mutate()}
+          disabled={routeSample.isPending}
+          style={{
+            padding: "0.55rem 1.25rem",
+            borderRadius: 8,
+            border: "none",
+            background: "var(--green-600)",
+            color: "white",
+            fontWeight: 600,
+            fontSize: "0.85rem",
+            cursor: routeSample.isPending ? "wait" : "pointer",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {routeSample.isPending ? "Routing…" : "Route a sample workload"}
+        </button>
+      </div>
+      <p
+        style={{
+          color: "var(--gray-500)",
+          marginBottom: routeSample.data ? "0.75rem" : "2rem",
+        }}
+      >
         Live carbon intensity data powering the API. 11 cascading sources (6 live integrations), 75+ cloud regions.
       </p>
+      {routeSample.data && (
+        <p style={{ color: "var(--gray-600)", fontSize: "0.85rem", marginBottom: "2rem" }}>
+          Routed to{" "}
+          <strong style={{ textTransform: "uppercase" }}>
+            {routeSample.data.recommended.provider}
+          </strong>{" "}
+          <code>{routeSample.data.recommended.region}</code> —{" "}
+          {routeSample.data.recommended.carbon_intensity_gco2_kwh} gCO2/kWh,{" "}
+          {routeSample.data.recommended.renewable_percentage}% renewable.
+        </p>
+      )}
 
       {/* Stats cards */}
       {savings && (
@@ -347,20 +394,16 @@ function LivePanel() {
                 background: "var(--surface-alt)",
               }}
             >
-              <div
-                style={{
-                  fontSize: "0.7rem",
-                  textTransform: "uppercase",
-                  fontWeight: 600,
-                  color:
-                    d.provider === "aws"
-                      ? "var(--orange-400)"
-                      : d.provider === "gcp"
-                        ? "var(--blue-500)"
-                        : "var(--blue-400)",
-                }}
-              >
-                {d.provider}
+              <div style={{ marginBottom: 4 }}>
+                <span
+                  style={{
+                    fontSize: "0.7rem",
+                    textTransform: "uppercase",
+                    ...providerChip(d.provider),
+                  }}
+                >
+                  {d.provider}
+                </span>
               </div>
               <div
                 style={{

@@ -27,6 +27,10 @@
   --blue-400: #60a5fa;
   --blue-500: #3b82f6;
 
+  /* Mid-range carbon-intensity indicator — dark gold for contrast on light,
+     remapped to a bright amber in dark mode below. */
+  --amber: #b45309;
+
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, "Cascadia Code", Consolas, monospace;
 
@@ -34,6 +38,14 @@
   --surface-alt: var(--gray-50);
   --nav-bg: #ffffff;
   --card-bg: #ffffff;
+  --card-shadow: 0 1px 3px rgba(16, 24, 40, 0.08), 0 1px 2px rgba(16, 24, 40, 0.04);
+
+  /* Provider label chips — solid brand-colored pill with white text, identical in
+     light and dark mode. Self-contained contrast (white on a dark-enough brand
+     color, all ≥4.5:1), so it's theme-independent and needs no per-mode tuning. */
+  --prov-aws-bg: #c2410c; /* orange — 5.2:1 on white */
+  --prov-gcp-bg: #4f46e5; /* indigo — 6.3:1 on white */
+  --prov-azure-bg: #0067b8; /* blue   — 5.8:1 on white */
 
   font-family: var(--sans);
   line-height: 1.6;
@@ -48,6 +60,8 @@
     --surface-alt: #111827;
     --nav-bg: #1f2937;
     --card-bg: #1f2937;
+    --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+    --amber: #fbbf24; /* bright amber — legible on dark surfaces */
 
     /* Remap the gray ramp for a dark background: low numbers stay dark
        (borders / fills), 400–600 become light (text). This keeps every

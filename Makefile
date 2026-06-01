@@ -6,12 +6,14 @@ help: ## Show this help
 # ── Local Development ──────────────────────────────────────────
 
 dev: ## Start API + frontend in dev mode (hot reload)
-	@echo "Starting API on :8000 and frontend on :5173..."
-	@uv run serve &
-	@cd web && npm run dev
+	@echo "API → http://localhost:8000   |   App → http://localhost:5173/dashboard"
+	@set -a; [ -f .env ] && . ./.env; set +a; \
+		uv run serve & API_PID=$$!; \
+		trap "kill $$API_PID 2>/dev/null" EXIT INT TERM; \
+		cd web && npm run dev
 
 api: ## Start API server only
-	uv run serve
+	@set -a; [ -f .env ] && . ./.env; set +a; uv run serve
 
 web: ## Start frontend dev server only
 	cd web && npm run dev

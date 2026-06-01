@@ -32,6 +32,7 @@ class CarbonTracker:
             chosen_carbon_intensity=chosen.carbon_intensity_gco2_kwh,
             worst_carbon_intensity=worst_intensity,
             carbon_saved_gco2_kwh=saved,
+            chosen_renewable_pct=chosen.renewable_percentage,
         )
         self._records.append(rec)
         return rec
@@ -39,6 +40,10 @@ class CarbonTracker:
     def report(self) -> CarbonSavingsReport:
         total_saved = sum(r.carbon_saved_gco2_kwh for r in self._records)
         avg_renewable = 0.0
+        if self._records:
+            avg_renewable = round(
+                sum(r.chosen_renewable_pct for r in self._records) / len(self._records), 1
+            )
         return CarbonSavingsReport(
             total_requests=len(self._records),
             total_carbon_saved_gco2_kwh=round(total_saved, 2),
@@ -97,6 +102,7 @@ class DBCarbonTracker:
                 chosen_carbon_intensity=r.chosen_carbon_intensity,
                 worst_carbon_intensity=r.worst_carbon_intensity,
                 carbon_saved_gco2_kwh=r.carbon_saved_gco2_kwh,
+                chosen_renewable_pct=r.chosen_renewable_pct,
             )
             for r in db_records
         ]
