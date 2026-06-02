@@ -90,7 +90,7 @@ export function Settings() {
               padding: "0.5rem 1.25rem",
               borderRadius: 6,
               border: "none",
-              background: "var(--green-600)",
+              background: "var(--btn-green)",
               color: "white",
               fontWeight: 600,
               cursor: "pointer",
@@ -109,7 +109,7 @@ export function Settings() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1rem" }}>
             <div>
               <div style={{ fontSize: "0.75rem", color: "var(--gray-500)", textTransform: "uppercase" }}>Status</div>
-              <div style={{ fontWeight: 600, color: health.status === "ok" ? "var(--green-600)" : "var(--orange-400)" }}>
+              <div style={{ fontWeight: 600, color: health.status === "ok" ? "var(--green-text)" : "var(--orange-400)" }}>
                 {health.status}
               </div>
             </div>
@@ -133,7 +133,7 @@ export function Settings() {
           <h2 style={{ margin: "0 0 1rem", fontSize: "1.1rem" }}>Today's Usage</h2>
           <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", flexWrap: "wrap" }}>
             <div>
-              <span style={{ fontSize: "2rem", fontWeight: 700, color: "var(--green-700)" }}>
+              <span style={{ fontSize: "2rem", fontWeight: 700, color: "var(--green-text)" }}>
                 {billing.today_usage}
               </span>
               <span style={{ color: "var(--gray-500)", marginLeft: 4 }}>
@@ -239,7 +239,7 @@ export function Settings() {
                     href={p.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ color: "var(--green-600)", textDecoration: "none" }}
+                    style={{ color: "var(--green-text)", textDecoration: "none" }}
                   >
                     Get free key
                   </a>

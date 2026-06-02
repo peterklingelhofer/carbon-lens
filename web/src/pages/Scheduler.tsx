@@ -67,7 +67,7 @@ export function Scheduler() {
           ) : nowRecommended ? (
             <>
               <div style={{ display: "flex", gap: "0.5rem", alignItems: "baseline", marginBottom: "0.5rem" }}>
-                <span style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--green-700)", textTransform: "uppercase" }}>
+                <span style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--green-text)", textTransform: "uppercase" }}>
                   {nowRecommended.provider as string}
                 </span>
                 <span style={{ fontSize: "1rem", fontFamily: "var(--mono)", color: "var(--gray-600)" }}>
@@ -110,7 +110,7 @@ export function Scheduler() {
           <div>
             <label style={labelStyle}>Job Duration (minutes)</label>
             <input
-              type="range" min={5} max={480} step={5}
+              type="range" aria-label="Job duration in minutes" min={5} max={480} step={5}
               value={duration} onChange={(e) => setDuration(Number(e.target.value))}
               style={{ width: "100%" }}
             />
@@ -121,7 +121,7 @@ export function Scheduler() {
           <div>
             <label style={labelStyle}>Max Delay (hours)</label>
             <input
-              type="range" min={1} max={168} step={1}
+              type="range" aria-label="Max delay in hours" min={1} max={168} step={1}
               value={maxDelay} onChange={(e) => setMaxDelay(Number(e.target.value))}
               style={{ width: "100%" }}
             />
@@ -139,7 +139,8 @@ export function Scheduler() {
                   display: "flex", alignItems: "center", gap: "0.5rem",
                   fontSize: "0.85rem", cursor: "pointer",
                   padding: "0.25rem 0.5rem", borderRadius: 6,
-                  background: strategy === s.value ? "var(--green-100)" : "transparent",
+                  fontWeight: strategy === s.value ? 600 : 400,
+                  background: strategy === s.value ? "var(--surface-alt)" : "transparent",
                 }}>
                   <input
                     type="radio" name="strategy"
@@ -168,7 +169,7 @@ export function Scheduler() {
                   style={{
                     padding: "0.4rem 0.8rem", borderRadius: 6, fontSize: "0.85rem",
                     fontWeight: 600, cursor: "pointer", textTransform: "uppercase",
-                    border: selectedProviders.includes(p) ? "2px solid var(--green-600)" : "2px solid var(--gray-200)",
+                    border: selectedProviders.includes(p) ? "2px solid var(--green-text)" : "2px solid var(--gray-200)",
                     background: selectedProviders.includes(p) ? "var(--green-100)" : "var(--surface)",
                     color: selectedProviders.includes(p) ? "var(--green-700)" : "var(--gray-500)",
                   }}
@@ -185,7 +186,7 @@ export function Scheduler() {
           disabled={findWindow.isPending || selectedProviders.length === 0}
           style={{
             padding: "0.75rem 2rem", borderRadius: 8, border: "none",
-            background: "var(--green-600)", color: "white",
+            background: "var(--btn-green)", color: "white",
             fontWeight: 600, cursor: findWindow.isPending ? "wait" : "pointer",
             fontSize: "0.9rem",
           }}
@@ -202,7 +203,7 @@ export function Scheduler() {
             {(recommendation.carbon_saved_vs_now_pct as number) > 0 && (
               <span style={{
                 marginLeft: 8, fontSize: "0.8rem", fontWeight: 600,
-                color: "var(--green-600)", background: "var(--green-100)",
+                color: "var(--green-text)", background: "var(--green-100)",
                 padding: "2px 8px", borderRadius: 4,
               }}>
                 {recommendation.carbon_saved_vs_now_pct as number}% carbon saved
@@ -249,7 +250,7 @@ export function Scheduler() {
                         <td style={{ ...td, textAlign: "right" }}>
                           {alt.carbon_intensity_gco2_kwh as number}
                         </td>
-                        <td style={{ ...td, textAlign: "right", color: "var(--green-600)", fontWeight: 600 }}>
+                        <td style={{ ...td, textAlign: "right", color: "var(--green-text)", fontWeight: 600 }}>
                           {alt.renewable_percentage as number}%
                         </td>
                         <td style={{ ...td, fontSize: "0.8rem", color: "var(--gray-500)" }}>
@@ -334,7 +335,7 @@ const labelStyle: React.CSSProperties = {
 };
 
 const sliderValue: React.CSSProperties = {
-  fontSize: "0.8rem", textAlign: "center", color: "var(--green-600)", fontWeight: 600,
+  fontSize: "0.8rem", textAlign: "center", color: "var(--green-text)", fontWeight: 600,
 };
 
 const th: React.CSSProperties = {

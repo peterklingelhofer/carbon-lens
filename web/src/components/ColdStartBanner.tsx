@@ -53,7 +53,7 @@ export function ColdStartBanner() {
         justifyContent: "center",
         gap: "0.6rem",
         padding: "0.6rem 1rem",
-        background: "var(--green-600)",
+        background: "var(--btn-green)",
         color: "white",
         fontSize: "0.85rem",
         boxShadow: "0 2px 8px rgba(0,0,0,0.15)",

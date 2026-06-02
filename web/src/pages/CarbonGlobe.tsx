@@ -360,7 +360,7 @@ export default function CarbonGlobe() {
                   padding: "4px 12px",
                   fontSize: "0.72rem",
                   fontWeight: heightMetric === m ? 700 : 400,
-                  background: heightMetric === m ? "var(--green-600)" : "transparent",
+                  background: heightMetric === m ? "var(--btn-green)" : "transparent",
                   color: heightMetric === m ? "#fff" : "#cbd5e1",
                 }}
               >
