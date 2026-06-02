@@ -4,6 +4,7 @@ import Globe, { type GlobeInstance } from "globe.gl";
 import * as THREE from "three";
 import { api } from "../api/client";
 import { useSnapshot, snapshotEnabled, qualityFromSource } from "../api/snapshot";
+import { InfoTip } from "../components/InfoTip";
 
 // A spinnable 3D globe plotting every cloud region at its real datacenter
 // coordinates, glowing by carbon intensity (green = clean, red = dirty), with
@@ -193,6 +194,9 @@ function useGlobePoints() {
   }, [snapshot, apiRegions, apiIntensities]);
 }
 
+// Shared width so the metric toggles and the legend gradient always line up.
+const PANEL_W = 234;
+
 function MetricToggle({
   label,
   value,
@@ -203,21 +207,26 @@ function MetricToggle({
   onChange: (m: Metric) => void;
 }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-      <span style={{ fontSize: "0.68rem", color: "#94a3b8", width: 60, textAlign: "right" }}>
+    <div style={{ marginBottom: 8 }}>
+      <div style={{ fontSize: "0.64rem", color: "#94a3b8", marginBottom: 3, textTransform: "uppercase", letterSpacing: "0.04em" }}>
         {label}
-      </span>
-      <div style={{ display: "inline-flex", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 999, overflow: "hidden", background: "rgba(10,15,20,0.6)" }}>
+      </div>
+      <div style={{ display: "flex", width: PANEL_W, border: "1px solid rgba(255,255,255,0.2)", borderRadius: 999, overflow: "hidden", background: "rgba(10,15,20,0.6)" }}>
         {(["renewable", "intensity"] as Metric[]).map((m) => (
           <button
             key={m}
             onClick={() => onChange(m)}
             style={{
+              flex: 1,
+              textAlign: "center",
+              whiteSpace: "nowrap",
               border: "none",
               cursor: "pointer",
-              padding: "3px 11px",
+              padding: "3px 6px",
               fontSize: "0.68rem",
-              fontWeight: value === m ? 700 : 400,
+              // Constant weight — the green fill signals "active", so we don't
+              // bold (which would widen the text and wrap it to two lines).
+              fontWeight: 500,
               background: value === m ? "var(--btn-green)" : "transparent",
               color: value === m ? "#fff" : "#cbd5e1",
             }}
@@ -402,10 +411,25 @@ export default function CarbonGlobe() {
 
       {/* Title overlay */}
       <div style={{ position: "absolute", top: 20, left: 24, color: "#fff", pointerEvents: "none", textShadow: "0 1px 8px rgba(0,0,0,0.8)", display: bare ? "none" : undefined }}>
-        <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700 }}>Carbon Globe</h1>
-        <p style={{ margin: "4px 0 0", fontSize: "0.85rem", color: "#cbd5e1", maxWidth: 360 }}>
-          {points.length} cloud regions by live grid carbon intensity. Drag to spin,
-          scroll to zoom, hover a node for detail.
+        {/* Visually hidden — kept for the document outline / screen readers. */}
+        <h1
+          style={{
+            position: "absolute",
+            width: 1,
+            height: 1,
+            padding: 0,
+            margin: -1,
+            overflow: "hidden",
+            clip: "rect(0,0,0,0)",
+            whiteSpace: "nowrap",
+            border: 0,
+          }}
+        >
+          Carbon Globe
+        </h1>
+        <p style={{ margin: 0, fontSize: "0.85rem", color: "#cbd5e1", maxWidth: 380 }}>
+          {points.length} cloud regions by live grid carbon emissions and renewable
+          share. Drag to spin, scroll to zoom, hover a node for detail.
         </p>
         {points.length > 0 && (
           <p style={{ margin: "6px 0 0", fontSize: "0.75rem", color: "#94a3b8" }}>
@@ -423,18 +447,32 @@ export default function CarbonGlobe() {
         </div>
         {colorMetric === "intensity" ? (
           <>
-            <div style={{ marginBottom: 4, color: "#cbd5e1" }}>Carbon intensity (gCO2/kWh)</div>
-            <div style={{ width: 200, height: 10, borderRadius: 5, background: "linear-gradient(90deg,#22c55e,#84cc16,#eab308,#f97316,#ef4444)" }} />
-            <div style={{ display: "flex", justifyContent: "space-between", width: 200, marginTop: 2, color: "#94a3b8" }}>
+            <div style={{ marginBottom: 4, color: "#cbd5e1", display: "inline-flex", alignItems: "center" }}>
+              Carbon intensity (gCO2/kWh)
+              <InfoTip
+                label="carbon intensity"
+                placement="top"
+                text="gCO₂/kWh = grams of CO₂ per kilowatt-hour — the carbon emitted for each unit of electricity the grid produces. Lower is greener."
+              />
+            </div>
+            <div style={{ width: PANEL_W, height: 10, borderRadius: 5, background: "linear-gradient(90deg,#22c55e,#84cc16,#eab308,#f97316,#ef4444)" }} />
+            <div style={{ display: "flex", justifyContent: "space-between", width: PANEL_W, marginTop: 2, color: "#94a3b8" }}>
               <span>0 (greener)</span>
               <span>500+ (dirtier)</span>
             </div>
           </>
         ) : (
           <>
-            <div style={{ marginBottom: 4, color: "#cbd5e1" }}>Renewable share</div>
-            <div style={{ width: 200, height: 10, borderRadius: 5, background: "linear-gradient(90deg,#ef4444,#f97316,#eab308,#84cc16,#22c55e)" }} />
-            <div style={{ display: "flex", justifyContent: "space-between", width: 200, marginTop: 2, color: "#94a3b8" }}>
+            <div style={{ marginBottom: 4, color: "#cbd5e1", display: "inline-flex", alignItems: "center" }}>
+              Renewable share
+              <InfoTip
+                label="renewable share"
+                placement="top"
+                text="The share of the grid's electricity coming from renewable sources (wind, solar, hydro) right now. Higher is greener."
+              />
+            </div>
+            <div style={{ width: PANEL_W, height: 10, borderRadius: 5, background: "linear-gradient(90deg,#ef4444,#f97316,#eab308,#84cc16,#22c55e)" }} />
+            <div style={{ display: "flex", justifyContent: "space-between", width: PANEL_W, marginTop: 2, color: "#94a3b8" }}>
               <span>0% (dirtier)</span>
               <span>100% (greener)</span>
             </div>

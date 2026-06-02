@@ -4,6 +4,7 @@ import { useSnapshot, type CarbonSnapshot } from "../api/snapshot";
 import type { CloudRegion, CarbonIntensity, CarbonUpdate } from "../api/types";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { section as sectionFn, card, providerChip } from "../styles";
+import { InfoTip } from "../components/InfoTip";
 
 const section = sectionFn(1100);
 
@@ -158,13 +159,28 @@ function RegionRow({
 
 type SortKey = "provider" | "region" | "grid_zone" | "location" | "intensity" | "renewable";
 
-const COLUMNS: { key: SortKey; label: string; align: "left" | "center" }[] = [
+const COLUMNS: { key: SortKey; label: string; align: "left" | "center"; info?: string }[] = [
   { key: "provider", label: "Provider", align: "left" },
   { key: "region", label: "Region", align: "left" },
-  { key: "grid_zone", label: "Grid Zone", align: "left" },
+  {
+    key: "grid_zone",
+    label: "Grid Zone",
+    align: "left",
+    info: "The electricity grid (balancing authority) that powers this cloud region — e.g. PJM for US-East, CAISO for California.",
+  },
   { key: "location", label: "Location", align: "left" },
-  { key: "intensity", label: "Carbon Intensity", align: "left" },
-  { key: "renewable", label: "Renewable %", align: "center" },
+  {
+    key: "intensity",
+    label: "Carbon Intensity",
+    align: "left",
+    info: "Carbon emitted per unit of electricity, in gCO₂/kWh (grams of CO₂ per kilowatt-hour). Lower is greener.",
+  },
+  {
+    key: "renewable",
+    label: "Renewable %",
+    align: "center",
+    info: "Share of the grid's electricity from renewable sources (wind, solar, hydro) right now. Higher is greener.",
+  },
 ];
 
 // Text columns sort alphabetically; numeric columns (intensity, renewable) sort
@@ -376,33 +392,41 @@ export function Dashboard() {
                     <th
                       key={col.key}
                       aria-sort={active ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
-                      style={{ textAlign: col.align, padding: 0 }}
+                      style={{ textAlign: col.align, padding: "0.5rem 0.25rem" }}
                     >
-                      <button
-                        type="button"
-                        onClick={() => toggleSort(col.key)}
-                        title={`Sort by ${col.label}`}
+                      <span
                         style={{
-                          background: "none",
-                          border: "none",
-                          font: "inherit",
-                          fontSize: "0.8rem",
-                          fontWeight: 600,
-                          cursor: "pointer",
-                          padding: "0.5rem",
-                          width: "100%",
                           display: "inline-flex",
                           alignItems: "center",
-                          gap: 4,
                           justifyContent: col.align === "center" ? "center" : "flex-start",
-                          color: active ? "var(--green-text)" : "inherit",
+                          width: "100%",
                         }}
                       >
-                        {col.label}
-                        <span aria-hidden style={{ fontSize: "0.7rem", opacity: active ? 1 : 0.35 }}>
-                          {active ? (sortDir === "asc" ? "▲" : "▼") : "↕"}
-                        </span>
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => toggleSort(col.key)}
+                          title={`Sort by ${col.label}`}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            font: "inherit",
+                            fontSize: "0.8rem",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            padding: "0.25rem",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 4,
+                            color: active ? "var(--green-text)" : "inherit",
+                          }}
+                        >
+                          {col.label}
+                          <span aria-hidden style={{ fontSize: "0.7rem", opacity: active ? 1 : 0.35 }}>
+                            {active ? (sortDir === "asc" ? "▲" : "▼") : "↕"}
+                          </span>
+                        </button>
+                        {col.info && <InfoTip label={col.label} text={col.info} />}
+                      </span>
                     </th>
                   );
                 })}
