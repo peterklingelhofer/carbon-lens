@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
 import { section as sectionFn, card } from "../styles";
+import { InfoTip } from "../components/InfoTip";
 
 const section = sectionFn(1100);
 
@@ -59,9 +60,16 @@ export function SLAMonitor() {
 
   return (
     <div style={section}>
-      <h1 style={{ marginBottom: "0.5rem" }}>Green SLA Monitoring</h1>
+      <h1 style={{ marginBottom: "0.5rem", display: "flex", alignItems: "center" }}>
+        Green SLA monitoring
+        <InfoTip
+          label="SLA"
+          text="An SLA (service-level agreement) is a measurable promise about a service. Here it's a carbon ceiling for your workloads — e.g. 'stay under 100 gCO₂/kWh' — checked against live grid data."
+        />
+      </h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
-        Define carbon targets, monitor compliance in real-time, and generate attestation reports.
+        Set carbon targets for your workloads, check them against live grid data, and
+        get summary reports.
       </p>
 
       {/* Monitor Status + Controls */}

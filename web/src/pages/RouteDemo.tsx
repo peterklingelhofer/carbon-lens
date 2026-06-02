@@ -2,6 +2,7 @@ import { useState } from "react";
 import { api } from "../api/client";
 import type { RouteResponse } from "../api/types";
 import { section as sectionFn, card } from "../styles";
+import { InfoTip } from "../components/InfoTip";
 
 const section = sectionFn();
 
@@ -54,9 +55,16 @@ export function RouteDemo() {
 
   return (
     <div style={section}>
-      <h1 style={{ marginBottom: "0.5rem" }}>Green Route Demo</h1>
+      <h1 style={{ marginBottom: "0.5rem", display: "flex", alignItems: "center" }}>
+        Green route demo
+        <InfoTip
+          label="green route"
+          text="Routing means choosing where to run a workload. This ranks every eligible region by your priorities and returns the greenest match. It's a recommendation you'd act on yourself (e.g. in a deploy script) — nothing is deployed or run here."
+        />
+      </h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
-        Find the greenest cloud region for your workload right now.
+        Choose providers and how much to favour clean energy over cost, and see which
+        region comes out greenest right now.
       </p>
 
       {/* Form */}
@@ -120,8 +128,12 @@ export function RouteDemo() {
 
         {/* Carbon Weight */}
         <div style={{ marginBottom: "1.5rem" }}>
-          <label style={{ fontWeight: 600, display: "block", marginBottom: "0.5rem" }}>
-            Optimization Priority
+          <label style={{ fontWeight: 600, display: "flex", alignItems: "center", marginBottom: "0.5rem" }}>
+            Optimization priority
+            <InfoTip
+              label="optimization priority"
+              text="Slide toward Carbon to pick the cleanest region even if it costs more, or toward Cost to favour the cheapest. In between, both are weighed together when ranking regions."
+            />
           </label>
           <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
             <span style={{ fontSize: "0.85rem", color: "var(--gray-500)" }}>Cost</span>
