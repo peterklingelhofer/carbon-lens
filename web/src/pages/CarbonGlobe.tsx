@@ -194,22 +194,36 @@ function useGlobePoints() {
   }, [snapshot, apiRegions, apiIntensities]);
 }
 
-// Shared width so the metric toggles and the legend gradient always line up.
-const PANEL_W = 234;
+// Shared width so the metric toggles and the colour legend always line up.
+const PANEL_W = 250;
+const EARTH_KM = 6371; // mean Earth radius — globe radius (world units) maps to this
+// Radial height of a full (max-value) beam, in globe-radius units (= beamAltitude max).
+const MAX_BEAM_ALT = 0.04 + 0.5;
+
+// Round to a "nice" 1 / 2 / 5 × 10^n value for the map scale bar.
+function niceKm(x: number): number {
+  const exp = Math.floor(Math.log10(x));
+  const f = x / 10 ** exp;
+  const nice = f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10;
+  return nice * 10 ** exp;
+}
 
 function MetricToggle({
   label,
   value,
   onChange,
+  tip,
 }: {
   label: string;
   value: Metric;
   onChange: (m: Metric) => void;
+  tip?: string;
 }) {
   return (
-    <div style={{ marginBottom: 8 }}>
-      <div style={{ fontSize: "0.64rem", color: "#94a3b8", marginBottom: 3, textTransform: "uppercase", letterSpacing: "0.04em" }}>
+    <div style={{ marginBottom: 4 }}>
+      <div style={{ fontSize: "0.64rem", color: "#94a3b8", marginBottom: 3, textTransform: "uppercase", letterSpacing: "0.04em", display: "inline-flex", alignItems: "center" }}>
         {label}
+        {tip && <InfoTip label={label} text={tip} placement="top" />}
       </div>
       <div style={{ display: "flex", width: PANEL_W, border: "1px solid rgba(255,255,255,0.2)", borderRadius: 999, overflow: "hidden", background: "rgba(10,15,20,0.6)" }}>
         {(["renewable", "intensity"] as Metric[]).map((m) => (
@@ -249,6 +263,10 @@ export default function CarbonGlobe() {
   // "least damage" metric) is one toggle away.
   const [heightMetric, setHeightMetric] = useState<Metric>("renewable");
   const [colorMetric, setColorMetric] = useState<Metric>("renewable");
+  // Map scale + beam reference, recomputed as the camera zooms (shared px↔km basis):
+  //   km / px  = the distance scale bar
+  //   beamPx   = on-screen length of a full (100%) beam at this zoom
+  const [scale, setScale] = useState<{ km: number; px: number; beamPx: number } | null>(null);
 
   // Read inside globe.gl accessors so a toggle takes effect without re-init.
   const heightMetricRef = useRef<Metric>(heightMetric);
@@ -363,7 +381,29 @@ export default function CarbonGlobe() {
 
     globeRef.current = globe;
 
-    const onResize = () => globe.width(el.clientWidth).height(el.clientHeight);
+    // Map scale bar: measure how many km a screen pixel covers near the view
+    // centre (1° of latitude ≈ 111.32 km), then pick a nice round distance.
+    const computeScale = () => {
+      const pov = globe.pointOfView();
+      const a = globe.getScreenCoords(pov.lat, pov.lng, 0);
+      const b = globe.getScreenCoords(pov.lat + 1, pov.lng, 0);
+      if (!a || !b) return;
+      const px = Math.hypot(b.x - a.x, b.y - a.y);
+      if (!px || !isFinite(px)) return;
+      const kmPerPx = 111.32 / px;
+      const km = niceKm(70 * kmPerPx); // aim for a ~70px bar
+      // A full beam's radial height (MAX_BEAM_ALT × Earth radius) measured in the
+      // same km↔px basis, so the height ruler and the distance bar track zoom together.
+      const beamPx = (MAX_BEAM_ALT * EARTH_KM) / kmPerPx;
+      setScale({ km, px: km / kmPerPx, beamPx });
+    };
+    globe.onZoom(() => computeScale());
+    const scaleTimer = setTimeout(computeScale, 250);
+
+    const onResize = () => {
+      globe.width(el.clientWidth).height(el.clientHeight);
+      computeScale();
+    };
     window.addEventListener("resize", onResize);
 
     // Pause auto-rotation while the user is interacting; resume after.
@@ -381,6 +421,7 @@ export default function CarbonGlobe() {
       window.removeEventListener("resize", onResize);
       el.removeEventListener("pointerdown", pause);
       clearTimeout(resumeTimer);
+      clearTimeout(scaleTimer);
       globe._destructor?.();
       el.replaceChildren();
     };
@@ -404,6 +445,26 @@ export default function CarbonGlobe() {
   // `?bare` hides the overlays — used only for capturing clean globe screenshots.
   const bare =
     typeof window !== "undefined" && window.location.search.includes("bare");
+
+  // Height ruler geometry — a 100% beam's true on-screen length at this zoom.
+  // The bar is drawn at that length but capped to the panel; ticks beyond the
+  // panel are dropped and a "+" marks that the full 100% sits off-panel.
+  const beamPx = scale?.beamPx ?? PANEL_W;
+  const heightBarW = Math.min(beamPx, PANEL_W);
+  const heightCapped = beamPx > PANEL_W + 1;
+  // Pick a nice tick step for the *visible* value range so 4–6 labels always
+  // span the bar — even when it's capped and only a slice of the beam shows.
+  const heightMax = heightMetric === "renewable" ? 100 : 800; // value at full beam
+  const heightSteps = heightMetric === "renewable" ? [2, 5, 10, 25, 50] : [25, 50, 100, 200, 400];
+  const heightVisibleMax = heightMax * Math.min(1, PANEL_W / beamPx);
+  const heightStep =
+    heightSteps.find((s) => heightVisibleMax / s <= 6) ?? heightSteps[heightSteps.length - 1];
+  const heightTicks: { label: string; pos: number }[] = [];
+  for (let v = 0; v <= heightVisibleMax + 0.5; v += heightStep) {
+    const pos = (beamPx * v) / heightMax;
+    if (pos > PANEL_W + 0.5) break;
+    heightTicks.push({ label: heightMetric === "intensity" && v >= heightMax ? `${v}+` : `${v}`, pos });
+  }
 
   return (
     <div style={{ position: "relative", width: "100%", height: "calc(100vh - 56px)", background: "#000", overflow: "hidden" }}>
@@ -441,42 +502,109 @@ export default function CarbonGlobe() {
 
       {/* Controls + legend (bottom-left) */}
       <div style={{ position: "absolute", bottom: 24, left: 24, color: "#fff", fontSize: "0.7rem", textShadow: "0 1px 6px rgba(0,0,0,0.8)", display: bare ? "none" : undefined }}>
-        <div style={{ marginBottom: 10 }}>
-          <MetricToggle label="Height" value={heightMetric} onChange={setHeightMetric} />
-          <MetricToggle label="Color" value={colorMetric} onChange={setColorMetric} />
-        </div>
+        {/* Color: control + its legend (a gradient) */}
+        <MetricToggle
+          label="Color"
+          value={colorMetric}
+          onChange={setColorMetric}
+          tip={
+            colorMetric === "intensity"
+              ? "Beam colour shows carbon intensity — gCO₂/kWh, grams of CO₂ per kilowatt-hour of electricity. Green = lower (cleaner), red = higher (dirtier)."
+              : "Beam colour shows renewable share — the % of electricity from renewable sources (wind, solar, hydro) right now. Green = higher (greener), red = lower."
+          }
+        />
         {colorMetric === "intensity" ? (
           <>
-            <div style={{ marginBottom: 4, color: "#cbd5e1", display: "inline-flex", alignItems: "center" }}>
-              Carbon intensity (gCO2/kWh)
-              <InfoTip
-                label="carbon intensity"
-                placement="top"
-                text="gCO₂/kWh = grams of CO₂ per kilowatt-hour — the carbon emitted for each unit of electricity the grid produces. Lower is greener."
-              />
-            </div>
-            <div style={{ width: PANEL_W, height: 10, borderRadius: 5, background: "linear-gradient(90deg,#22c55e,#84cc16,#eab308,#f97316,#ef4444)" }} />
-            <div style={{ display: "flex", justifyContent: "space-between", width: PANEL_W, marginTop: 2, color: "#94a3b8" }}>
+            <div style={{ width: PANEL_W, height: 12, borderRadius: 3, background: "linear-gradient(90deg,#22c55e,#84cc16,#eab308,#f97316,#ef4444)" }} />
+            <div style={{ display: "flex", justifyContent: "space-between", width: PANEL_W, marginTop: 2, marginBottom: 12, color: "#94a3b8" }}>
               <span>0 (greener)</span>
-              <span>500+ (dirtier)</span>
+              <span>500+ gCO₂ (dirtier)</span>
             </div>
           </>
         ) : (
           <>
-            <div style={{ marginBottom: 4, color: "#cbd5e1", display: "inline-flex", alignItems: "center" }}>
-              Renewable share
-              <InfoTip
-                label="renewable share"
-                placement="top"
-                text="The share of the grid's electricity coming from renewable sources (wind, solar, hydro) right now. Higher is greener."
-              />
-            </div>
-            <div style={{ width: PANEL_W, height: 10, borderRadius: 5, background: "linear-gradient(90deg,#ef4444,#f97316,#eab308,#84cc16,#22c55e)" }} />
-            <div style={{ display: "flex", justifyContent: "space-between", width: PANEL_W, marginTop: 2, color: "#94a3b8" }}>
+            <div style={{ width: PANEL_W, height: 12, borderRadius: 3, background: "linear-gradient(90deg,#ef4444,#f97316,#eab308,#84cc16,#22c55e)" }} />
+            <div style={{ display: "flex", justifyContent: "space-between", width: PANEL_W, marginTop: 2, marginBottom: 12, color: "#94a3b8" }}>
               <span>0% (dirtier)</span>
               <span>100% (greener)</span>
             </div>
           </>
+        )}
+
+        {/* Height: control + its legend (a beam laid flat, with a measurable scale) */}
+        <MetricToggle
+          label="Height"
+          value={heightMetric}
+          onChange={setHeightMetric}
+          tip={
+            heightMetric === "renewable"
+              ? "Beam height shows renewable share. Compare a beam to the scale below to read its value — a full-height beam ≈ 100%, flat ≈ 0%. On a globe on-screen height also depends on where a beam sits, so it's approximate."
+              : "Beam height shows carbon emissions. Compare a beam to the scale below to read its value — a full-height beam ≈ 800+ gCO₂/kWh, flat ≈ 0. On a globe on-screen height also depends on where a beam sits, so it's approximate."
+          }
+        />
+        {/* A full beam laid flat at its true on-screen length — lay a beam against it. */}
+        <div aria-hidden style={{ position: "relative", width: PANEL_W, height: 12 }}>
+          <div
+            style={{
+              position: "absolute",
+              left: 0,
+              top: 0,
+              width: heightBarW,
+              height: 12,
+              borderRadius: 3,
+              background: heightCapped
+                ? "#e2e8f0"
+                : "linear-gradient(to right, #e2e8f0, #e2e8f0 70%, rgba(226,232,240,0.12))",
+            }}
+          />
+          {heightTicks.map((t) => (
+            <div
+              key={t.label}
+              style={{ position: "absolute", left: t.pos, top: -2, width: 1, height: 16, background: "rgba(148,163,184,0.75)" }}
+            />
+          ))}
+          {heightCapped && (
+            <span style={{ position: "absolute", left: PANEL_W + 3, top: -1, fontSize: "0.7rem", color: "#94a3b8" }}>+</span>
+          )}
+        </div>
+        <div style={{ position: "relative", width: PANEL_W, height: 12, marginTop: 3 }}>
+          {heightTicks.map((t) => (
+            <span
+              key={t.label}
+              style={{
+                position: "absolute",
+                left: t.pos,
+                transform: t.pos === 0 ? "none" : "translateX(-50%)",
+                fontSize: "0.58rem",
+                color: "#94a3b8",
+              }}
+            >
+              {t.label}
+            </span>
+          ))}
+        </div>
+        <div style={{ width: PANEL_W, marginTop: 1, fontSize: "0.58rem", color: "#94a3b8" }}>
+          {heightMetric === "renewable" ? "% renewable — beam height" : "gCO₂/kWh — beam height"}
+          {heightCapped && " · zoom out for full 100%"}
+        </div>
+
+        {/* Map scale bar — real surface distance at the current zoom */}
+        {scale && (
+          <div style={{ marginTop: 14 }} title="Approximate surface distance at this zoom (near the centre of view)">
+            <div
+              style={{
+                width: Math.min(scale.px, PANEL_W),
+                height: 6,
+                borderBottom: "2px solid #94a3b8",
+                borderLeft: "2px solid #94a3b8",
+                borderRight: "2px solid #94a3b8",
+                boxSizing: "border-box",
+              }}
+            />
+            <span style={{ fontSize: "0.62rem", color: "#94a3b8" }}>
+              ≈ {scale.km.toLocaleString("en-US")} km
+            </span>
+          </div>
         )}
       </div>
 
