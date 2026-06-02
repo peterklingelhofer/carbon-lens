@@ -102,7 +102,7 @@ export function Compliance() {
               padding: "0.75rem 2rem",
               borderRadius: 8,
               border: "none",
-              background: "var(--green-600)",
+              background: "var(--btn-green)",
               color: "white",
               fontWeight: 600,
               cursor: step === "idle" ? "pointer" : "wait",
@@ -219,7 +219,7 @@ export function Compliance() {
                     style={{
                       padding: "0.5rem",
                       fontSize: "0.85rem",
-                      color: "var(--green-700)",
+                      color: "var(--green-text)",
                       fontWeight: 500,
                     }}
                   >
@@ -241,7 +241,7 @@ export function Compliance() {
                     style={{
                       padding: "0.5rem",
                       textAlign: "right",
-                      color: "var(--green-600)",
+                      color: "var(--green-text)",
                       fontWeight: 600,
                     }}
                   >

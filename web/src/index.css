@@ -13,7 +13,7 @@
   --gray-100: #f3f4f6;
   --gray-200: #e5e7eb;
   --gray-300: #d1d5db;
-  --gray-400: #9ca3af;
+  --gray-400: #6f7682; /* darkened from #9ca3af so faint text still hits 4.5:1 on white */
   --gray-500: #6b7280;
   --gray-600: #4b5563;
   --gray-700: #374151;
@@ -33,6 +33,15 @@
 
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, "Cascadia Code", Consolas, monospace;
+
+  /* Semantic green tokens (WCAG AA). green-600 alone can't serve as both a
+     button background (white text needs it dark) and on-surface text (needs it
+     light on dark mode), so split the roles:
+       --btn-green   solid button bg — white text is 5.0:1 in both modes
+       --green-text  green text/links — dark green on light, bright on dark   */
+  --btn-green: #15803d;
+  --btn-green-hover: #166534;
+  --green-text: #15803d; /* on white: 5.0:1 */
 
   --surface: #ffffff;
   --surface-alt: var(--gray-50);
@@ -77,6 +86,8 @@
     --gray-800: #f1f5f9;
     --gray-900: #f8fafc;
 
+    --green-text: #4ade80; /* bright green for dark surfaces (8:1+) */
+
     color: #e5e7eb; /* base text */
     background: #111827; /* page background */
   }
@@ -93,17 +104,11 @@ body {
 }
 
 a {
-  color: var(--green-600);
+  color: var(--green-text);
   text-decoration: none;
 }
 a:hover {
   text-decoration: underline;
-}
-
-@media (prefers-color-scheme: dark) {
-  a {
-    color: var(--green-400);
-  }
 }
 
 @keyframes cl-spin {

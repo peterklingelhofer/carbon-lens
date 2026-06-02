@@ -53,7 +53,7 @@ function SnapshotBanner({ snapshot }: { snapshot: CarbonSnapshot }) {
   const { live_zones, estimated_zones } = snapshot.summary;
   return (
     <p style={{ color: "var(--gray-500)", marginBottom: "2rem", fontSize: "0.9rem" }}>
-      <strong style={{ color: "var(--green-700)" }}>{live_zones} grid zones live</strong> from
+      <strong style={{ color: "var(--green-text)" }}>{live_zones} grid zones live</strong> from
       real grid-operator APIs
       {estimated_zones > 0 && (
         <>
@@ -143,7 +143,7 @@ function RegionRow({
           <span
             style={{
               fontWeight: 600,
-              color: intensity.renewable_percentage >= 70 ? "var(--green-600)" : "var(--gray-600)",
+              color: intensity.renewable_percentage >= 70 ? "var(--green-text)" : "var(--gray-600)",
             }}
           >
             {intensity.renewable_percentage}%
@@ -156,8 +156,56 @@ function RegionRow({
   );
 }
 
+type SortKey = "provider" | "region" | "grid_zone" | "location" | "intensity" | "renewable";
+
+const COLUMNS: { key: SortKey; label: string; align: "left" | "center" }[] = [
+  { key: "provider", label: "Provider", align: "left" },
+  { key: "region", label: "Region", align: "left" },
+  { key: "grid_zone", label: "Grid Zone", align: "left" },
+  { key: "location", label: "Location", align: "left" },
+  { key: "intensity", label: "Carbon Intensity", align: "left" },
+  { key: "renewable", label: "Renewable %", align: "center" },
+];
+
+// Text columns sort alphabetically; numeric columns (intensity, renewable) sort
+// by value. Rows missing intensity data sort last in both directions.
+function sortRegions(
+  rows: CloudRegion[],
+  intensities: Record<string, CarbonIntensity>,
+  key: SortKey,
+  dir: "asc" | "desc",
+): CloudRegion[] {
+  const numeric = key === "intensity" || key === "renewable";
+  const value = (r: CloudRegion): string | number | undefined => {
+    const i = intensities[`${r.provider}/${r.region}`];
+    if (key === "intensity") return i?.carbon_intensity_gco2_kwh;
+    if (key === "renewable") return i?.renewable_percentage;
+    return r[key as "provider" | "region" | "grid_zone" | "location"];
+  };
+  return [...rows].sort((a, b) => {
+    const va = value(a);
+    const vb = value(b);
+    if (va == null && vb == null) return 0;
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    const cmp = numeric
+      ? (va as number) - (vb as number)
+      : String(va).localeCompare(String(vb));
+    return dir === "asc" ? cmp : -cmp;
+  });
+}
+
 export function Dashboard() {
   const [provider, setProvider] = useState<string>("");
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  };
 
   const { data: snapshot } = useSnapshot();
   const usingSnapshot = !!snapshot;
@@ -189,9 +237,12 @@ export function Dashboard() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["savings"] }),
   });
 
-  const displayRegions = regions?.slice(0, 20) ?? [];
-  const apiIntensities = useRegionIntensities(usingSnapshot ? [] : displayRegions);
+  const visibleRegions = regions?.slice(0, 20) ?? [];
+  const apiIntensities = useRegionIntensities(usingSnapshot ? [] : visibleRegions);
   const intensities = usingSnapshot ? snapshot.intensities : apiIntensities;
+  const displayRegions = sortKey
+    ? sortRegions(visibleRegions, intensities, sortKey, sortDir)
+    : visibleRegions;
 
   return (
     <div style={section}>
@@ -213,7 +264,7 @@ export function Dashboard() {
             padding: "0.55rem 1.25rem",
             borderRadius: 8,
             border: "none",
-            background: "var(--green-600)",
+            background: "var(--btn-green)",
             color: "white",
             fontWeight: 600,
             fontSize: "0.85rem",
@@ -262,7 +313,7 @@ export function Dashboard() {
             <div style={{ fontSize: "0.8rem", color: "var(--gray-500)" }}>
               Total Requests Routed
             </div>
-            <div style={{ fontSize: "2rem", fontWeight: 700, color: "var(--green-700)" }}>
+            <div style={{ fontSize: "2rem", fontWeight: 700, color: "var(--green-text)" }}>
               {savings.total_requests}
             </div>
           </div>
@@ -270,7 +321,7 @@ export function Dashboard() {
             <div style={{ fontSize: "0.8rem", color: "var(--gray-500)" }}>
               Carbon Saved
             </div>
-            <div style={{ fontSize: "2rem", fontWeight: 700, color: "var(--green-700)" }}>
+            <div style={{ fontSize: "2rem", fontWeight: 700, color: "var(--green-text)" }}>
               {savings.total_carbon_saved_gco2_kwh.toFixed(1)}{" "}
               <span style={{ fontSize: "0.9rem", fontWeight: 400 }}>gCO2/kWh</span>
             </div>
@@ -279,7 +330,7 @@ export function Dashboard() {
             <div style={{ fontSize: "0.8rem", color: "var(--gray-500)" }}>
               Avg Renewable %
             </div>
-            <div style={{ fontSize: "2rem", fontWeight: 700, color: "var(--green-700)" }}>
+            <div style={{ fontSize: "2rem", fontWeight: 700, color: "var(--green-text)" }}>
               {savings.avg_renewable_percentage}%
             </div>
           </div>
@@ -299,7 +350,7 @@ export function Dashboard() {
               padding: "0.4rem 1rem",
               borderRadius: 6,
               border: "1px solid var(--gray-200)",
-              background: provider === p ? "var(--green-600)" : "var(--surface)",
+              background: provider === p ? "var(--btn-green)" : "var(--surface)",
               color: provider === p ? "white" : "var(--gray-700)",
               cursor: "pointer",
               fontWeight: provider === p ? 600 : 400,
@@ -319,30 +370,42 @@ export function Dashboard() {
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: "2px solid var(--gray-200)" }}>
-                <th style={{ textAlign: "left", padding: "0.5rem", fontSize: "0.8rem" }}>
-                  Provider
-                </th>
-                <th style={{ textAlign: "left", padding: "0.5rem", fontSize: "0.8rem" }}>
-                  Region
-                </th>
-                <th style={{ textAlign: "left", padding: "0.5rem", fontSize: "0.8rem" }}>
-                  Grid Zone
-                </th>
-                <th style={{ textAlign: "left", padding: "0.5rem", fontSize: "0.8rem" }}>
-                  Location
-                </th>
-                <th style={{ textAlign: "left", padding: "0.5rem", fontSize: "0.8rem" }}>
-                  Carbon Intensity
-                </th>
-                <th
-                  style={{
-                    textAlign: "center",
-                    padding: "0.5rem",
-                    fontSize: "0.8rem",
-                  }}
-                >
-                  Renewable %
-                </th>
+                {COLUMNS.map((col) => {
+                  const active = sortKey === col.key;
+                  return (
+                    <th
+                      key={col.key}
+                      aria-sort={active ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
+                      style={{ textAlign: col.align, padding: 0 }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => toggleSort(col.key)}
+                        title={`Sort by ${col.label}`}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          font: "inherit",
+                          fontSize: "0.8rem",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          padding: "0.5rem",
+                          width: "100%",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 4,
+                          justifyContent: col.align === "center" ? "center" : "flex-start",
+                          color: active ? "var(--green-text)" : "inherit",
+                        }}
+                      >
+                        {col.label}
+                        <span aria-hidden style={{ fontSize: "0.7rem", opacity: active ? 1 : 0.35 }}>
+                          {active ? (sortDir === "asc" ? "▲" : "▼") : "↕"}
+                        </span>
+                      </button>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
@@ -507,7 +570,7 @@ function LivePanel() {
                   style={{
                     color:
                       d.renewable_percentage >= 70
-                        ? "var(--green-600)"
+                        ? "var(--green-text)"
                         : "var(--gray-500)",
                   }}
                 >

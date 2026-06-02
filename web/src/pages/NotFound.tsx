@@ -22,7 +22,7 @@ export function NotFound() {
         style={{
           display: "inline-block",
           padding: "0.75rem 2rem",
-          background: "var(--green-600)",
+          background: "var(--btn-green)",
           color: "white",
           borderRadius: 8,
           textDecoration: "none",

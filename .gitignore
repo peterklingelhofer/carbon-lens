@@ -16,3 +16,4 @@ venv/
 htmlcov/
 .claude/
 k8s/secrets.yaml
+.DS_Store
