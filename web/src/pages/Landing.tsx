@@ -66,7 +66,7 @@ export function Landing() {
           style={{ display: "flex", gap: "1rem", justifyContent: "center" }}
         >
           <Link
-            to="/api-explorer"
+            to="/globe"
             style={{
               padding: "0.75rem 2rem",
               borderRadius: 8,
@@ -76,10 +76,10 @@ export function Landing() {
               textDecoration: "none",
             }}
           >
-            Try the API
+            🌍 Explore the live globe
           </Link>
           <Link
-            to="/compliance"
+            to="/dashboard"
             style={{
               padding: "0.75rem 2rem",
               borderRadius: 8,
@@ -89,7 +89,7 @@ export function Landing() {
               textDecoration: "none",
             }}
           >
-            Compliance Reports
+            See live grid data
           </Link>
         </div>
       </div>
@@ -322,7 +322,7 @@ export function Landing() {
         {/* CTA */}
         <div style={{ textAlign: "center", margin: "3rem 0 1rem" }}>
           <Link
-            to="/api-explorer"
+            to="/globe"
             style={{
               display: "inline-block",
               padding: "0.85rem 2.5rem",
@@ -334,7 +334,7 @@ export function Landing() {
               textDecoration: "none",
             }}
           >
-            Try the Carbon API
+            🌍 See it live on the globe
           </Link>
           <p
             style={{
@@ -343,7 +343,10 @@ export function Landing() {
               fontSize: "0.85rem",
             }}
           >
-            Free tier — 100 queries/day, no credit card required
+            Real grid-operator data, updated continuously — or{" "}
+            <Link to="/api-explorer" style={{ color: "var(--green-600)" }}>
+              explore the API
+            </Link>
           </p>
         </div>
       </section>
