@@ -376,11 +376,8 @@ export default function CarbonGlobe() {
         <div style={{ marginBottom: 4, color: "#cbd5e1" }}>Carbon intensity (gCO2/kWh)</div>
         <div style={{ width: 200, height: 10, borderRadius: 5, background: "linear-gradient(90deg,#22c55e,#84cc16,#eab308,#f97316,#ef4444)" }} />
         <div style={{ display: "flex", justifyContent: "space-between", width: 200, marginTop: 2, color: "#94a3b8" }}>
-          <span>0 (clean)</span>
-          <span>500+ (dirty)</span>
-        </div>
-        <div style={{ marginTop: 6, color: "#94a3b8" }}>
-          Bar height = {heightMetric === "renewable" ? "renewable share" : "carbon intensity"}
+          <span>0 (greener)</span>
+          <span>500+ (dirtier)</span>
         </div>
       </div>
 

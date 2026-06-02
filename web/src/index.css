@@ -31,7 +31,7 @@
      remapped to a bright amber in dark mode below. */
   --amber: #b45309;
 
-  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --sans: "Ubuntu", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, "Cascadia Code", Consolas, monospace;
 
   /* Semantic green tokens (WCAG AA). green-600 alone can't serve as both a
