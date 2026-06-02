@@ -1,8 +1,8 @@
 # CarbonLens
 
-**Real-time carbon-intensity data API + compliance reporting for sustainable, carbon-aware cloud computing.**
+**Measure and cut the carbon footprint of your cloud compute.**
 
-*See the real carbon footprint behind your cloud — measure it, route around it, and report on it.*
+*Live carbon-intensity data for 75+ cloud regions — see which grid is greenest right now, route workloads to it, and report on it.*
 
 **🌍 [Live demo →](https://carbonlens.peterklingelhofer.workers.dev/globe)**
 
