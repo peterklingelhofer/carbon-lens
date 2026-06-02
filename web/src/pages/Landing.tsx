@@ -33,33 +33,34 @@ export function Landing() {
           className="hero-title"
           style={{ fontSize: "3rem", margin: "0 0 1rem", fontWeight: 700 }}
         >
-          Real-time carbon data
+          How green is your cloud
           <br />
-          for every cloud region.
+          region, right now?
         </h1>
         <p
           className="hero-subtitle"
           style={{
             fontSize: "1.25rem",
-            maxWidth: 700,
+            maxWidth: 720,
             margin: "0 auto 0.75rem",
-            opacity: 0.9,
+            opacity: 0.92,
           }}
         >
-          6 live grid-operator integrations + transparent fallbacks. 75+ cloud regions. One API.
-          Every response is tagged with its data source, so you always know what you're getting.
+          Every cloud region runs on a local power grid. CarbonLens measures how much
+          CO₂ that grid emits per kilowatt-hour right now — its <strong>carbon
+          intensity</strong> — from live grid-operator data. Lower means greener.
         </p>
         <p
           className="hero-subtitle"
           style={{
             fontSize: "1rem",
-            maxWidth: 600,
+            maxWidth: 620,
             margin: "0 auto 2rem",
-            opacity: 0.7,
+            opacity: 0.75,
           }}
         >
-          CSRD, SEC, and SB 253 compliance reporting built in.
-          Stop buying offsets. Start measuring reality.
+          75+ regions across AWS, GCP, and Azure. Route workloads to the cleanest one,
+          and draft Scope 2/3 emissions reports (CSRD, SEC, SB 253) from the same data.
         </p>
         <div
           className="hero-cta"
@@ -104,16 +105,21 @@ export function Landing() {
             marginBottom: "0.5rem",
           }}
         >
-          The "100% Renewable" Lie
+          "100% renewable" is a yearly average
         </h2>
         <p
           style={{
             textAlign: "center",
             color: "var(--gray-500)",
             marginBottom: "2rem",
+            maxWidth: 680,
+            marginLeft: "auto",
+            marginRight: "auto",
           }}
         >
-          Cloud providers buy annual offsets. CarbonLens shows you the real-time truth.
+          Providers match their annual electricity use with renewable certificates.
+          That doesn't tell you whether your 2 a.m. job actually ran on wind or on gas.
+          CarbonLens reports the grid's real carbon intensity, hour by hour.
         </p>
 
         <div style={card}>
@@ -173,6 +179,34 @@ export function Landing() {
             </div>
           ))}
         </div>
+
+        {/* What makes a grid greener */}
+        <h2
+          style={{
+            textAlign: "center",
+            fontSize: "2rem",
+            marginTop: "3rem",
+            marginBottom: "0.75rem",
+          }}
+        >
+          What makes a grid greener?
+        </h2>
+        <p
+          style={{
+            textAlign: "center",
+            color: "var(--gray-500)",
+            maxWidth: 700,
+            margin: "0 auto 1.5rem",
+          }}
+        >
+          Electricity comes from a mix of sources — wind, solar, hydro, nuclear, gas,
+          coal. When more of a region's power is coming from clean sources, each
+          kilowatt-hour emits less CO₂, so it's greener. That mix shifts hour to hour
+          with the weather and demand: a sunny, windy afternoon is far cleaner than a
+          still night running on gas. CarbonLens reads that live mix from each grid
+          operator and turns it into one number — <strong>carbon intensity</strong>,
+          in grams of CO₂ per kWh.
+        </p>
 
         {/* How It Works */}
         <h2
