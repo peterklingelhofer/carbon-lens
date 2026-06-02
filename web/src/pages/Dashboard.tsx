@@ -213,8 +213,8 @@ function sortRegions(
 
 export function Dashboard() {
   const [provider, setProvider] = useState<string>("");
-  const [sortKey, setSortKey] = useState<SortKey | null>(null);
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [sortKey, setSortKey] = useState<SortKey | null>("renewable");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else {
@@ -273,23 +273,29 @@ export function Dashboard() {
         }}
       >
         <h1 style={{ margin: 0 }}>Carbon Dashboard</h1>
-        <button
-          onClick={() => routeSample.mutate()}
-          disabled={routeSample.isPending}
-          style={{
-            padding: "0.55rem 1.25rem",
-            borderRadius: 8,
-            border: "none",
-            background: "var(--btn-green)",
-            color: "white",
-            fontWeight: 600,
-            fontSize: "0.85rem",
-            cursor: routeSample.isPending ? "wait" : "pointer",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {routeSample.isPending ? "Routing…" : "Route a sample workload"}
-        </button>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <button
+            onClick={() => routeSample.mutate()}
+            disabled={routeSample.isPending}
+            style={{
+              padding: "0.55rem 1.25rem",
+              borderRadius: 8,
+              border: "none",
+              background: "var(--btn-green)",
+              color: "white",
+              fontWeight: 600,
+              fontSize: "0.85rem",
+              cursor: routeSample.isPending ? "wait" : "pointer",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {routeSample.isPending ? "Finding greenest region…" : "Route a sample workload"}
+          </button>
+          <InfoTip
+            label="Route a sample workload"
+            text="Asks the API for the greenest region right now, using a sample carbon-first setting, and shows what it recommends. Nothing is deployed or run — it's the recommendation you'd act on yourself (e.g. from a deploy script or a scheduler that re-checks before each run)."
+          />
+        </span>
       </div>
       {usingSnapshot ? (
         <SnapshotBanner snapshot={snapshot} />
@@ -305,7 +311,7 @@ export function Dashboard() {
       )}
       {routeSample.data && (
         <p style={{ color: "var(--gray-600)", fontSize: "0.85rem", marginBottom: "2rem" }}>
-          Routed to{" "}
+          Recommended:{" "}
           <strong style={{ textTransform: "uppercase" }}>
             {routeSample.data.recommended.provider}
           </strong>{" "}
@@ -326,16 +332,24 @@ export function Dashboard() {
           }}
         >
           <div style={card}>
-            <div style={{ fontSize: "0.8rem", color: "var(--gray-500)" }}>
-              Total Requests Routed
+            <div style={{ fontSize: "0.8rem", color: "var(--gray-500)", display: "flex", alignItems: "center" }}>
+              Recommendations made
+              <InfoTip
+                label="Recommendations made"
+                text="How many routing recommendations this demo server has produced — each click of 'Route a sample workload' counts. Tracked in memory, so it resets whenever the server restarts; it's this instance's activity, not an all-time total."
+              />
             </div>
             <div style={{ fontSize: "2rem", fontWeight: 700, color: "var(--green-text)" }}>
               {savings.total_requests}
             </div>
           </div>
           <div style={card}>
-            <div style={{ fontSize: "0.8rem", color: "var(--gray-500)" }}>
-              Carbon Saved
+            <div style={{ fontSize: "0.8rem", color: "var(--gray-500)", display: "flex", alignItems: "center" }}>
+              Carbon emissions avoided
+              <InfoTip
+                label="Carbon emissions avoided"
+                text="For each recommendation, the gap in carbon intensity (gCO₂/kWh) between the dirtiest candidate region and the greener one chosen, summed across recommendations. It's illustrative: a per-kWh intensity gap, not absolute tonnes — real savings also depend on how much energy a workload uses."
+              />
             </div>
             <div style={{ fontSize: "2rem", fontWeight: 700, color: "var(--green-text)" }}>
               {savings.total_carbon_saved_gco2_kwh.toFixed(1)}{" "}
@@ -343,8 +357,12 @@ export function Dashboard() {
             </div>
           </div>
           <div style={card}>
-            <div style={{ fontSize: "0.8rem", color: "var(--gray-500)" }}>
-              Avg Renewable %
+            <div style={{ fontSize: "0.8rem", color: "var(--gray-500)", display: "flex", alignItems: "center" }}>
+              Avg renewable % chosen
+              <InfoTip
+                label="Average renewable % chosen"
+                text="Average renewable share of the regions this server has recommended so far."
+              />
             </div>
             <div style={{ fontSize: "2rem", fontWeight: 700, color: "var(--green-text)" }}>
               {savings.avg_renewable_percentage}%

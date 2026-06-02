@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { api } from "../api/client";
 import { section as sectionFn, card } from "../styles";
+import { InfoTip } from "../components/InfoTip";
 
 const section = sectionFn(1100);
 
@@ -53,9 +54,16 @@ export function Scheduler() {
 
   return (
     <div style={section}>
-      <h1 style={{ marginBottom: "0.5rem" }}>Carbon-Aware Scheduler</h1>
+      <h1 style={{ marginBottom: "0.5rem", display: "flex", alignItems: "center" }}>
+        Carbon-aware scheduler
+        <InfoTip
+          label="carbon-aware scheduling"
+          text="Many jobs don't have to run at a fixed moment — CI/CD pipelines, ML training, nightly batch processing. Carbon-aware scheduling shifts them to the time and region where the grid is cleanest, cutting emissions for the same work."
+        />
+      </h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
-        Find the greenest time window and region for your batch jobs, CI/CD pipelines, and ML training.
+        Find the greenest time window and region for flexible jobs like batch
+        processing, CI/CD pipelines, and ML training.
       </p>
 
       {/* Greenest Right Now */}

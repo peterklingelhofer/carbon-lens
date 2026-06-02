@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { section as sectionFn, card as baseCard, grid3, badge } from "../styles";
+import { InfoTip } from "../components/InfoTip";
 
 const section: React.CSSProperties = { ...sectionFn(), padding: "3rem 2rem" };
 const card: React.CSSProperties = { ...baseCard, padding: "2rem" };
@@ -196,32 +197,41 @@ export function Landing() {
         <div style={grid3}>
           {[
             {
-              title: "Carbon Intensity API",
-              desc: "gCO2/kWh for 75+ cloud regions in one REST call. A cascading chain of 11 providers with automatic fallback — and every response is tagged with the source that produced it.",
+              title: "Carbon intensity API",
+              desc: "Real-time grams of CO₂ per kWh for 75+ cloud regions in one request, with the data source tagged on every response.",
+              tip: "An API is how one program asks another for data — here, your code asks ours for a region's live carbon number. gCO₂/kWh = grams of CO₂ emitted per kilowatt-hour of electricity.",
             },
             {
-              title: "Compliance Reporting",
-              desc: "Draft CSRD / SEC Climate / California SB 253 emissions reports. Scope 2 (location-based) + Scope 3 Cat 1, GHG-Protocol-structured, with a documented methodology and data-quality summary.",
+              title: "Emissions reporting",
+              desc: "Draft the emissions reports regulators are starting to require, built from the same live data, with a documented method and a data-quality summary.",
+              tip: "Greenhouse-gas reporting follows the GHG Protocol standard. 'Scope 2' = emissions from the electricity you use; 'Scope 3' = emissions from services you buy (cloud included). Rules like the EU's CSRD, the US SEC climate rule, and California's SB 253 increasingly require it.",
             },
             {
-              title: "Carbon-Aware Routing",
-              desc: "Find the greenest cloud region across AWS, GCP, and Azure. Multi-objective scoring balances carbon intensity and cost.",
+              title: "Carbon-aware routing",
+              desc: "Find the greenest cloud region across AWS, GCP, and Azure, weighing carbon against cost.",
+              tip: "'Routing' means choosing where to run a job. You set priorities (e.g. favour low carbon, cap cost), it ranks every region and returns the best match. It recommends — it doesn't move anything itself.",
             },
             {
-              title: "6 Live Grid Integrations",
-              desc: "EIA (US), ENTSO-E (Europe), AEMO (Australia), UK Carbon Intensity, GridStatus, and Electricity Maps fetch real grid-operator data. Heuristic and mock sources cover the rest — each clearly labeled.",
+              title: "6 live grid integrations",
+              desc: "EIA (US), ENTSO-E (Europe), AEMO (Australia), UK Carbon Intensity, GridStatus, and Electricity Maps pull data straight from grid operators. Other regions use clearly-labelled estimates.",
+              tip: "A grid operator runs a region's electricity grid and publishes what it's generating right now. 'Live integration' means we read that official feed directly, rather than estimating.",
             },
             {
-              title: "Live WebSocket Feed",
-              desc: "Stream carbon intensity updates over a WebSocket. Build dashboards, trigger alerts, or shift workloads when the grid gets dirty.",
+              title: "Live updates feed",
+              desc: "A continuous stream of carbon-intensity updates to build on — dashboards, alerts, or shifting flexible jobs to cleaner hours.",
+              tip: "Delivered over a WebSocket — a connection that stays open so the server can push new readings to your app the instant they change, instead of you repeatedly asking.",
             },
             {
-              title: "Green SLA Monitoring (Beta)",
-              desc: "Define carbon targets, run on-demand and background compliance checks against live grid data, and generate attestation-style summary reports. (In-memory; not yet a third-party-assured standard.)",
+              title: "Carbon targets (beta)",
+              desc: "Set a carbon target for your workloads and get checked against live data, with summary reports.",
+              tip: "Modelled on an SLA (service-level agreement) — a measurable promise about a service, here a carbon ceiling (e.g. 'stay under 100 gCO₂/kWh'). Beta: checks run in memory and reset on restart; not a third-party-assured standard.",
             },
           ].map((item) => (
             <div key={item.title} style={card}>
-              <span style={badge}>{item.title}</span>
+              <span style={{ display: "inline-flex", alignItems: "center" }}>
+                <span style={badge}>{item.title}</span>
+                <InfoTip label={item.title} text={item.tip} />
+              </span>
               <p style={{ marginTop: "0.75rem", fontSize: "0.95rem" }}>
                 {item.desc}
               </p>
@@ -280,23 +290,23 @@ export function Landing() {
             {[
               {
                 step: "1",
-                title: "Query",
-                desc: "Call our API with a cloud provider and region. Get real-time carbon intensity, renewable percentage, and data source.",
+                title: "Look up",
+                desc: "Ask for any cloud provider and region and get its live carbon intensity, renewable share, and the source behind the number.",
               },
               {
                 step: "2",
-                title: "Route",
-                desc: "Or let us find the greenest region. Post your constraints, we score every option and return the best match.",
+                title: "Compare",
+                desc: "Set your priorities (e.g. greenest within a cost limit) and get the best region to run in — a recommendation, not an action.",
               },
               {
                 step: "3",
                 title: "Report",
-                desc: "Ingest your cloud usage data. We calculate Scope 2+3 emissions using real grid data and generate compliance reports.",
+                desc: "Provide your cloud usage and get a draft emissions report from real grid data, with the method and data quality shown.",
               },
               {
                 step: "4",
                 title: "Monitor",
-                desc: "Beta: set carbon SLAs, run on-demand and background compliance checks, and generate attestation-style summary reports.",
+                desc: "Set a carbon target and have workloads checked against live data, with summary reports. (Beta.)",
               },
             ].map((s) => (
               <div key={s.step}>
@@ -362,10 +372,22 @@ export function Landing() {
                   Coverage
                 </th>
                 <th style={{ textAlign: "left", padding: "0.5rem" }}>
-                  Type
+                  <span style={{ display: "inline-flex", alignItems: "center" }}>
+                    Type
+                    <InfoTip
+                      label="data type"
+                      text="Live API = read directly from the grid operator's official real-time feed. Heuristic = an estimate from typical regional values and time of day. Weather estimate = inferred from local solar/wind weather, not a direct carbon measurement."
+                    />
+                  </span>
                 </th>
                 <th style={{ textAlign: "left", padding: "0.5rem" }}>
-                  Auth
+                  <span style={{ display: "inline-flex", alignItems: "center" }}>
+                    Access
+                    <InfoTip
+                      label="access"
+                      text="Whether a key is needed: 'no key' works out of the box; 'free key/token' needs a free sign-up; 'paid key' needs a paid plan with that provider."
+                    />
+                  </span>
                 </th>
               </tr>
             </thead>

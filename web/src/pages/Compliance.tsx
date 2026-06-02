@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
 import type { ComplianceReport } from "../api/types";
 import { section as sectionFn, card, providerChip } from "../styles";
+import { InfoTip } from "../components/InfoTip";
 
 const section = sectionFn(1100);
 
@@ -71,9 +72,16 @@ export function Compliance() {
 
   return (
     <div style={section}>
-      <h1 style={{ marginBottom: "0.5rem" }}>Compliance Reporting</h1>
+      <h1 style={{ marginBottom: "0.5rem", display: "flex", alignItems: "center" }}>
+        Emissions reporting
+        <InfoTip
+          label="emissions reporting"
+          text="Turns your cloud usage into a draft greenhouse-gas emissions report, built from real grid data. Aligned with the GHG Protocol (the standard accounting framework) and the EU's CSRD / ESRS E1 disclosure rules. It's a defensible first draft, not an assured/audited report."
+        />
+      </h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
-        CSRD / ESRS E1 aligned cloud emissions measurement and reporting.
+        Turn your cloud usage into a draft emissions report, calculated from real
+        grid data — with the method and data quality shown.
       </p>
 
       {/* Pipeline action */}
@@ -362,9 +370,13 @@ function ReportView({ report }: { report: ComplianceReport }) {
 
       {/* Scope breakdown */}
       <h3
-        style={{ fontSize: "0.95rem", marginBottom: "0.75rem", marginTop: 0 }}
+        style={{ fontSize: "0.95rem", marginBottom: "0.75rem", marginTop: 0, display: "flex", alignItems: "center" }}
       >
-        GHG Protocol Scope Breakdown
+        GHG Protocol scope breakdown
+        <InfoTip
+          label="GHG Protocol scopes"
+          text="The GHG Protocol sorts emissions into scopes. Scope 2 = emissions from the electricity you use. Scope 3 = emissions across your supply chain, including the cloud services you buy. This splits your cloud footprint across them."
+        />
       </h3>
       <div style={{ overflow: "auto" }}>
         <table
