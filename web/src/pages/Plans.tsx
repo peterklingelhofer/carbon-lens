@@ -26,7 +26,7 @@ export function Plans() {
 
   const tierColors: Record<string, string> = {
     Free: "var(--gray-600)",
-    Pro: "var(--green-600)",
+    Pro: "var(--green-text)",
     Enterprise: "var(--blue-500)",
   };
 

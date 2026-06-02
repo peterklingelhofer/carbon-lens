@@ -6,7 +6,7 @@ import { section as sectionFn, card } from "../styles";
 const section = sectionFn();
 
 function intensityLabel(val: number): { label: string; color: string } {
-  if (val <= 50) return { label: "Very Clean", color: "var(--green-600)" };
+  if (val <= 50) return { label: "Very Clean", color: "var(--green-text)" };
   if (val <= 150) return { label: "Clean", color: "var(--green-500)" };
   if (val <= 300) return { label: "Moderate", color: "var(--amber)" };
   if (val <= 500) return { label: "Dirty", color: "var(--orange-400)" };
@@ -99,6 +99,7 @@ export function RouteDemo() {
             Data Residency (optional)
           </label>
           <select
+            aria-label="Data residency"
             value={residency}
             onChange={(e) => setResidency(e.target.value)}
             style={{
@@ -126,6 +127,7 @@ export function RouteDemo() {
             <span style={{ fontSize: "0.85rem", color: "var(--gray-500)" }}>Cost</span>
             <input
               type="range"
+              aria-label="Optimization priority: cost to carbon"
               min={0}
               max={1}
               step={0.1}
@@ -133,7 +135,7 @@ export function RouteDemo() {
               onChange={(e) => setCarbonWeight(parseFloat(e.target.value))}
               style={{ flex: 1 }}
             />
-            <span style={{ fontSize: "0.85rem", color: "var(--green-600)", fontWeight: 600 }}>
+            <span style={{ fontSize: "0.85rem", color: "var(--green-text)", fontWeight: 600 }}>
               Carbon
             </span>
           </div>
@@ -150,7 +152,7 @@ export function RouteDemo() {
             padding: "0.75rem 2rem",
             borderRadius: 8,
             border: "none",
-            background: loading ? "var(--gray-300)" : "var(--green-600)",
+            background: loading ? "var(--gray-300)" : "var(--btn-green)",
             color: "white",
             fontWeight: 600,
             fontSize: "1rem",
@@ -227,7 +229,7 @@ export function RouteDemo() {
                     fontWeight: 600,
                     color:
                       result.recommended.renewable_percentage >= 70
-                        ? "var(--green-600)"
+                        ? "var(--green-text)"
                         : "inherit",
                   }}
                 >
@@ -238,7 +240,7 @@ export function RouteDemo() {
                 <div style={{ fontSize: "0.75rem", color: "var(--gray-500)" }}>
                   Carbon Savings
                 </div>
-                <div style={{ fontWeight: 600, color: "var(--green-600)" }}>
+                <div style={{ fontWeight: 600, color: "var(--green-text)" }}>
                   {result.recommended.carbon_savings_vs_worst_pct.toFixed(1)}% greener
                 </div>
               </div>
