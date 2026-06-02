@@ -2,6 +2,56 @@
 
 CarbonLens is designed for one-click deployment. Pick your platform:
 
+## Greenest free deployment
+
+A carbon tool should run on clean power. You can't get a literal 100%
+carbon-free grid on a free tier (those grids — Iceland geothermal, Nordic and
+Québec hydro — are paid-region only; see the upgrade path below), but this stack
+gets genuinely low-carbon for $0 and, more importantly, **uses almost no
+electricity in the first place.**
+
+**The architecture is the biggest lever.** Absolute footprint ≈ energy used ×
+grid intensity. This design drives the first term to near-zero:
+
+- **Frontend is a static CDN** — viewer traffic hits cached edge files, not a
+  server. A traffic spike costs you no extra compute.
+- **API scales to zero** — it draws power only while actively serving a request,
+  then sleeps (`min_machines_running = 0` on Fly; free Render services spin down
+  when idle).
+- **The only scheduled work is a ~1-minute snapshot job every 30 minutes.**
+
+Using almost no power beats buying renewable certificates for power you didn't
+need to burn. That's the honest sustainability story — no overclaiming a "100%
+green" that every host fudges via annual certificate matching.
+
+**Then pick the cleanest free placement on top of that:**
+
+| Piece | Greenest free choice | Why |
+|-------|----------------------|-----|
+| **API** | **Render free → Oregon region** | Pacific-NW grid (BPAT) is hydro-heavy — one of the cleanest grids in North America, well below the US average. CarbonLens's own snapshot measures it (`us-west2`). |
+| **Frontend** | **Cloudflare Pages** | Free, global CDN, and the most explicit renewable-matching commitment of the static hosts. (Netlify also works and is renewable-matched; you just can't pin a region on either — edge nodes are everywhere.) |
+| **Snapshot cron** | **GitHub Actions** | Runs on Azure-hosted runners (renewable-matched). Region isn't user-selectable on the free tier — but the job is ~1 min/run, so its energy is negligible. |
+
+### Pinning the API to Oregon on Render
+When creating the Render Web Service (see the Render steps below), set
+**Region → Oregon** in the dashboard before deploying. Everything else (free
+plan, Docker, `/ready` health check, env vars) is unchanged. That single
+dropdown is what puts the only always-on-ish piece on the cleanest free grid.
+
+### Upgrade path to literal 24/7 carbon-free (paid)
+If a budget ever opens up, move just the API to a near-100%-carbon-free grid —
+no code changes, only a region/host swap:
+
+- **Fly.io → Stockholm (`arn`)** — Swedish grid (hydro + nuclear) is ~carbon-free
+  almost every hour. `fly.toml` already targets a scale-to-zero machine; set
+  `primary_region = "arn"`.
+- **Azure/GCP Nordic or Québec regions** (Norway, Sweden, `canadaeast`) for the
+  same physical-grid benefit.
+
+True 24/7 carbon-free (every hour, not annual averages) is an industry frontier;
+a Nordic/Québec hydro region is the closest you can practically get, and it's a
+one-line region change here.
+
 ## Free public demo (stateless — no DB, no API keys)
 
 The carbon-by-zone demo needs no database and no provider keys: the `hybrid`
@@ -125,12 +175,41 @@ make dev      # Dev mode with hot reload
 
 ## One-Click Deploy
 
-### Render (recommended for getting started)
+### Render free Web Service — stateless API (used by the green stack)
+This is the API half of the recommended green deployment: one free, stateless,
+scale-to-zero service on the cleanest free region. Use **New → Web Service**,
+**not** "Blueprint" (the Blueprint provisions a Postgres + second service this
+demo doesn't need).
+
+1. [dashboard.render.com](https://dashboard.render.com) → **New + → Web Service**
+   → connect this repo.
+2. **Runtime:** Docker (auto-detects the root `Dockerfile`).
+   **Branch:** `main`. **Instance type:** Free. **Health check path:** `/ready`.
+3. **Region → Oregon** — the one green choice that matters: PNW hydro grid.
+4. Environment variables:
+   ```
+   CARBON_LENS_USE_DATABASE        false
+   CARBON_LENS_API_KEY_REQUIRED    false
+   CARBON_LENS_CARBON_SOURCE       hybrid
+   CARBON_LENS_LOG_FORMAT          json
+   CARBON_LENS_EIA_API_KEY         <your EIA key>
+   CARBON_LENS_GRID_STATUS_API_KEY <your GridStatus key>
+   CARBON_LENS_ENTSOE_TOKEN        <when it arrives>
+   CARBON_LENS_CORS_ORIGINS        ["https://<your-frontend>.pages.dev"]
+   ```
+5. **Create Web Service.** You get `https://<name>.onrender.com`. Verify
+   `…/ready` returns `{"status":"ready"}`. First request after idle cold-starts
+   in ~50s (the [ColdStartBanner](../web/src/components/ColdStartBanner.tsx)
+   covers that in the UI).
+
+### Render Blueprint (full stack with Postgres — not the green/free path)
 1. Fork this repo
 2. Go to [render.com/deploy](https://render.com) → New Blueprint Instance
 3. Point to your repo — Render reads `render.yaml` automatically
 4. Add API keys in the Render dashboard (Environment tab)
 5. Done! Render provisions Postgres + API + Frontend automatically
+   (note: the free Postgres expires after 90 days, and this runs always-on —
+   prefer the stateless Web Service above for the low-carbon demo)
 
 ### Fly.io
 ```bash
