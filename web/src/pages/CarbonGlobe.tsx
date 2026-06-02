@@ -265,10 +265,25 @@ export default function CarbonGlobe() {
       autoRotateSpeed: number;
       enableZoom: boolean;
     };
-    controls.autoRotate = true;
     controls.autoRotateSpeed = 0.55;
     controls.enableZoom = true;
-    globe.pointOfView({ lat: 25, lng: 0, altitude: 2.4 });
+
+    // Capture mode: `?lng=120` (optionally &lat=&alt=) freezes the camera at an
+    // exact longitude, so screenshot frames have perfectly uniform rotation for
+    // building a smooth GIF. With no params, the live app auto-rotates.
+    const params = new URLSearchParams(window.location.search);
+    const capLng = params.get("lng");
+    if (capLng !== null) {
+      controls.autoRotate = false;
+      globe.pointOfView({
+        lat: parseFloat(params.get("lat") ?? "12"),
+        lng: parseFloat(capLng),
+        altitude: parseFloat(params.get("alt") ?? "2.9"),
+      });
+    } else {
+      controls.autoRotate = true;
+      globe.pointOfView({ lat: 25, lng: 0, altitude: 2.4 });
+    }
 
     globeRef.current = globe;
 
@@ -309,13 +324,16 @@ export default function CarbonGlobe() {
 
   const liveCount = points.filter((p) => p.quality === "live").length;
   const estCount = points.filter((p) => p.quality === "estimated").length;
+  // `?bare` hides the overlays — used only for capturing clean globe screenshots.
+  const bare =
+    typeof window !== "undefined" && window.location.search.includes("bare");
 
   return (
     <div style={{ position: "relative", width: "100%", height: "calc(100vh - 56px)", background: "#000", overflow: "hidden" }}>
       <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
 
       {/* Title overlay */}
-      <div style={{ position: "absolute", top: 20, left: 24, color: "#fff", pointerEvents: "none", textShadow: "0 1px 8px rgba(0,0,0,0.8)" }}>
+      <div style={{ position: "absolute", top: 20, left: 24, color: "#fff", pointerEvents: "none", textShadow: "0 1px 8px rgba(0,0,0,0.8)", display: bare ? "none" : undefined }}>
         <h1 style={{ margin: 0, fontSize: "1.5rem", fontWeight: 700 }}>Carbon Globe</h1>
         <p style={{ margin: "4px 0 0", fontSize: "0.85rem", color: "#cbd5e1", maxWidth: 360 }}>
           {points.length} cloud regions by live grid carbon intensity. Drag to spin,
@@ -354,7 +372,7 @@ export default function CarbonGlobe() {
       </div>
 
       {/* Legend */}
-      <div style={{ position: "absolute", bottom: 24, left: 24, color: "#fff", fontSize: "0.7rem", textShadow: "0 1px 6px rgba(0,0,0,0.8)" }}>
+      <div style={{ position: "absolute", bottom: 24, left: 24, color: "#fff", fontSize: "0.7rem", textShadow: "0 1px 6px rgba(0,0,0,0.8)", display: bare ? "none" : undefined }}>
         <div style={{ marginBottom: 4, color: "#cbd5e1" }}>Carbon intensity (gCO2/kWh)</div>
         <div style={{ width: 200, height: 10, borderRadius: 5, background: "linear-gradient(90deg,#22c55e,#84cc16,#eab308,#f97316,#ef4444)" }} />
         <div style={{ display: "flex", justifyContent: "space-between", width: 200, marginTop: 2, color: "#94a3b8" }}>
