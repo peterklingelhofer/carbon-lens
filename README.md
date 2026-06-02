@@ -4,9 +4,15 @@
 
 *See the real carbon footprint behind your cloud — measure it, route around it, and report on it.*
 
+**🌍 [Live demo →](https://carbonlens.peterklingelhofer.workers.dev/globe)**
+
+![CarbonLens — live 3D carbon globe](docs/screenshots/globe.gif)
+
+<sub>Each glowing beam is a cloud region at its datacenter location, colored by **live** grid carbon intensity (green = clean → red = dirty) and sized by renewable share. Real grid-operator data, estimated ones are labeled.</sub>
+
 ![CarbonLens dashboard — live carbon intensity for cloud regions](docs/screenshots/hero-dashboard.png)
 
-<sub>Live carbon-intensity dashboard. More screens: [API Explorer](docs/screenshots/03-api-explorer.png) · [Landing](docs/screenshots/01-landing.png) · [Carbon-aware routing](docs/screenshots/04-route.png) · [Compliance](docs/screenshots/06-compliance.png)</sub>
+<sub>The data behind it — a live carbon-intensity dashboard pulling real EIA / ENTSO-E / UK / AEMO feeds, every reading tagged with its source. More screens: [API Explorer](docs/screenshots/03-api-explorer.png) · [Carbon-aware routing](docs/screenshots/04-route.png) · [Compliance](docs/screenshots/06-compliance.png)</sub>
 
 CarbonLens aggregates electricity-grid carbon data into a single developer-friendly API, behind one cascading interface. Six providers are live integrations against real grid-operator APIs (UK, EIA, AEMO, GridStatus, ENTSO-E, Electricity Maps); the rest are transparent heuristic estimators and a mock fallback, each labeled in the `source` field of every response so you always know what you're getting. On top of the data layer it adds carbon-aware routing, GHG-Protocol-structured compliance reporting, and Green SLA monitoring.
 
@@ -44,7 +50,8 @@ make dev
 
 | What to show | URL |
 |--------------|-----|
-| 🌍 **Live dashboard** — start here | **http://localhost:5173/dashboard** |
+| 🌍 **Carbon globe** — start here | **http://localhost:5173/globe** |
+| Live dashboard | http://localhost:5173/dashboard |
 | Landing page | http://localhost:5173 |
 | Interactive API Explorer | http://localhost:5173/api-explorer |
 | Swagger API docs | http://localhost:8000/docs |
