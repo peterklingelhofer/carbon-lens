@@ -3,6 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
 import type { CarbonIntensity, RouteResponse } from "../api/types";
 import { section as sectionFn, card } from "../styles";
+import { InfoTip } from "../components/InfoTip";
 
 const section = sectionFn(1100);
 
@@ -63,9 +64,15 @@ export function ApiExplorer() {
 
   return (
     <div style={section}>
-      <h1 style={{ marginBottom: "0.5rem" }}>API Explorer</h1>
+      <h1 style={{ marginBottom: "0.5rem", display: "flex", alignItems: "center" }}>
+        API explorer
+        <InfoTip
+          label="API"
+          text="An API (application programming interface) lets other software request data from this service. This page lets you try those requests by hand and see the live response your code would get."
+        />
+      </h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
-        Test the Carbon Intensity API interactively. Every query hits live data sources.
+        Try the carbon-intensity API by hand. Every query hits live data sources.
       </p>
 
       {/* Tabs */}
