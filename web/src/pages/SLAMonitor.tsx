@@ -88,7 +88,7 @@ export function SLAMonitor() {
             disabled={monitorMutation.isPending}
             style={{
               padding: "0.5rem 1.5rem", borderRadius: 6, border: "none",
-              background: monitorStatus?.running ? "var(--gray-200)" : "var(--green-600)",
+              background: monitorStatus?.running ? "var(--gray-200)" : "var(--btn-green)",
               color: monitorStatus?.running ? "var(--gray-700)" : "white",
               fontWeight: 600, cursor: "pointer", fontSize: "0.85rem",
             }}
@@ -99,7 +99,7 @@ export function SLAMonitor() {
 
         <div style={card}>
           <h2 style={{ margin: "0 0 0.75rem", fontSize: "1.1rem" }}>Quick Stats</h2>
-          <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--green-700)" }}>
+          <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--green-text)" }}>
             {slas?.length || 0}
           </div>
           <div style={{ fontSize: "0.8rem", color: "var(--gray-500)" }}>
@@ -107,7 +107,7 @@ export function SLAMonitor() {
           </div>
           {slas && slas.length > 0 && (
             <div style={{ marginTop: "0.5rem", fontSize: "0.8rem" }}>
-              <span style={{ color: "var(--green-600)", fontWeight: 600 }}>
+              <span style={{ color: "var(--green-text)", fontWeight: 600 }}>
                 {slas.filter((s: { status: string }) => s.status === "compliant").length} compliant
               </span>
               {" | "}
@@ -129,7 +129,7 @@ export function SLAMonitor() {
           onClick={() => setShowCreate(!showCreate)}
           style={{
             padding: "0.5rem 1.5rem", borderRadius: 6, border: "none",
-            background: "var(--green-600)", color: "white",
+            background: "var(--btn-green)", color: "white",
             fontWeight: 600, cursor: "pointer", fontSize: "0.85rem",
           }}
         >
@@ -159,7 +159,7 @@ export function SLAMonitor() {
                 style={{ width: "100%" }}
               />
               <div style={{ fontSize: "0.8rem", textAlign: "center",
-                color: maxCarbon <= 50 ? "var(--green-600)" : maxCarbon <= 200 ? "var(--green-500)" : "var(--orange-400)",
+                color: maxCarbon <= 50 ? "var(--green-text)" : maxCarbon <= 200 ? "var(--green-500)" : "var(--orange-400)",
                 fontWeight: 600,
               }}>
                 {maxCarbon === 0 ? "ZERO CARBON ONLY" : `${maxCarbon} gCO2/kWh`}
@@ -173,7 +173,7 @@ export function SLAMonitor() {
                 style={{ width: "100%" }}
               />
               <div style={{ fontSize: "0.8rem", textAlign: "center", fontWeight: 600,
-                color: minRenewable >= 80 ? "var(--green-600)" : "inherit",
+                color: minRenewable >= 80 ? "var(--green-text)" : "inherit",
               }}>
                 {minRenewable}% minimum renewable
               </div>
@@ -184,7 +184,7 @@ export function SLAMonitor() {
             disabled={createMutation.isPending}
             style={{
               padding: "0.75rem 2rem", borderRadius: 8, border: "none",
-              background: "var(--green-600)", color: "white",
+              background: "var(--btn-green)", color: "white",
               fontWeight: 600, cursor: createMutation.isPending ? "wait" : "pointer",
             }}
           >
@@ -347,7 +347,7 @@ export function SLAMonitor() {
 
 function StatusBadge({ status, style }: { status: string; style?: React.CSSProperties }) {
   const colors: Record<string, { bg: string; color: string }> = {
-    compliant: { bg: "var(--green-100)", color: "var(--green-700)" },
+    compliant: { bg: "var(--green-100)", color: "var(--green-text)" },
     warning: { bg: "rgba(234, 179, 8, 0.1)", color: "var(--orange-400, #fb923c)" },
     breached: { bg: "rgba(239, 68, 68, 0.1)", color: "var(--red-400, #f87171)" },
     unknown: { bg: "var(--gray-100)", color: "var(--gray-500)" },

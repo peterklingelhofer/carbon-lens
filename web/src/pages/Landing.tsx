@@ -70,7 +70,9 @@ export function Landing() {
             style={{
               padding: "0.75rem 2rem",
               borderRadius: 8,
-              background: "var(--surface)",
+              // Fixed white (not --surface) — the hero gradient is always dark
+              // green, so dark-green text on white is high-contrast in both modes.
+              background: "#ffffff",
               color: "var(--green-800)",
               fontWeight: 600,
               textDecoration: "none",
@@ -125,11 +127,11 @@ export function Landing() {
               lineHeight: 1.8,
             }}
           >
-            <div style={{ color: "var(--gray-400)" }}>
+            <div style={{ color: "var(--gray-500)" }}>
               Cloud providers: Run 24/7 &rarr; Buy RECs at year-end &rarr;
               Claim "100% renewable" on annual report
             </div>
-            <div style={{ color: "var(--green-700)", fontWeight: 600 }}>
+            <div style={{ color: "var(--green-text)", fontWeight: 600 }}>
               CarbonLens: &nbsp;Query real-time grid data &rarr; Know actual
               gCO2/kWh right now &rarr; Make informed decisions
             </div>
@@ -220,7 +222,7 @@ export function Landing() {
                     width: 40,
                     height: 40,
                     borderRadius: "50%",
-                    background: "var(--green-600)",
+                    background: "var(--btn-green)",
                     color: "white",
                     display: "inline-flex",
                     alignItems: "center",
@@ -306,7 +308,7 @@ export function Landing() {
                   <td style={{ padding: "0.5rem" }}>{res}</td>
                   <td style={{ padding: "0.5rem" }}>
                     {auth?.includes("no key") ? (
-                      <span style={{ color: "var(--green-600)", fontWeight: 600 }}>
+                      <span style={{ color: "var(--green-text)", fontWeight: 600 }}>
                         {auth}
                       </span>
                     ) : (
@@ -327,7 +329,7 @@ export function Landing() {
               display: "inline-block",
               padding: "0.85rem 2.5rem",
               borderRadius: 8,
-              background: "var(--green-600)",
+              background: "var(--btn-green)",
               color: "white",
               fontWeight: 600,
               fontSize: "1.1rem",
@@ -339,12 +341,15 @@ export function Landing() {
           <p
             style={{
               marginTop: "0.75rem",
-              color: "var(--gray-400)",
+              color: "var(--gray-500)",
               fontSize: "0.85rem",
             }}
           >
             Real grid-operator data, updated continuously — or{" "}
-            <Link to="/api-explorer" style={{ color: "var(--green-600)" }}>
+            <Link
+              to="/api-explorer"
+              style={{ color: "var(--green-text)", textDecoration: "underline" }}
+            >
               explore the API
             </Link>
           </p>
