@@ -82,7 +82,7 @@ export function ApiExplorer() {
               padding: "0.5rem 1.25rem",
               borderRadius: 6,
               border: "1px solid var(--gray-200)",
-              background: activeTab === tab.key ? "var(--green-600)" : "var(--surface)",
+              background: activeTab === tab.key ? "var(--btn-green)" : "var(--surface)",
               color: activeTab === tab.key ? "white" : "var(--gray-700)",
               cursor: "pointer",
               fontWeight: activeTab === tab.key ? 600 : 400,
@@ -114,6 +114,7 @@ export function ApiExplorer() {
             <div>
               <label style={labelStyle}>Cloud Provider</label>
               <select
+                aria-label="Cloud provider"
                 value={provider}
                 onChange={(e) => {
                   setProvider(e.target.value);
@@ -128,7 +129,7 @@ export function ApiExplorer() {
             </div>
             <div>
               <label style={labelStyle}>Region</label>
-              <select value={region} onChange={(e) => setRegion(e.target.value)} style={inputStyle}>
+              <select aria-label="Region" value={region} onChange={(e) => setRegion(e.target.value)} style={inputStyle}>
                 {(allRegions || [])
                   .filter((r) => r.provider === provider)
                   .map((r) => (
@@ -237,14 +238,14 @@ export function ApiExplorer() {
                           <td style={{ ...td, fontFamily: "var(--mono)", fontSize: "0.8rem" }}>{key}</td>
                           <td style={{
                             ...td, textAlign: "right", fontWeight: 600,
-                            color: val.carbon_intensity_gco2_kwh <= 50 ? "var(--green-600)" :
+                            color: val.carbon_intensity_gco2_kwh <= 50 ? "var(--green-text)" :
                                    val.carbon_intensity_gco2_kwh <= 200 ? "var(--green-500)" : "var(--orange-400)",
                           }}>
                             {val.carbon_intensity_gco2_kwh}
                           </td>
                           <td style={{
                             ...td, textAlign: "right",
-                            color: val.renewable_percentage >= 70 ? "var(--green-600)" : "inherit",
+                            color: val.renewable_percentage >= 70 ? "var(--green-text)" : "inherit",
                           }}>
                             {val.renewable_percentage}%
                           </td>
@@ -338,19 +339,19 @@ export function ApiExplorer() {
               </div>
               <div>
                 <div style={{ fontSize: "0.7rem", color: "var(--gray-500)" }}>Carbon</div>
-                <div style={{ fontWeight: 700, color: "var(--green-600)" }}>
+                <div style={{ fontWeight: 700, color: "var(--green-text)" }}>
                   {routeResult.recommended.carbon_intensity_gco2_kwh} gCO2/kWh
                 </div>
               </div>
               <div>
                 <div style={{ fontSize: "0.7rem", color: "var(--gray-500)" }}>Renewable</div>
-                <div style={{ fontWeight: 700, color: "var(--green-600)" }}>
+                <div style={{ fontWeight: 700, color: "var(--green-text)" }}>
                   {routeResult.recommended.renewable_percentage}%
                 </div>
               </div>
               <div>
                 <div style={{ fontSize: "0.7rem", color: "var(--gray-500)" }}>Savings</div>
-                <div style={{ fontWeight: 700, color: "var(--green-600)" }}>
+                <div style={{ fontWeight: 700, color: "var(--green-text)" }}>
                   {routeResult.recommended.carbon_savings_vs_worst_pct.toFixed(1)}%
                 </div>
                 <div style={{ fontSize: "0.75rem", color: "var(--gray-500)" }}>vs worst option</div>
@@ -385,14 +386,14 @@ export function ApiExplorer() {
                         </td>
                         <td style={{
                           ...td, textAlign: "right", fontWeight: 600,
-                          color: alt.carbon_intensity_gco2_kwh <= 50 ? "var(--green-600)" :
+                          color: alt.carbon_intensity_gco2_kwh <= 50 ? "var(--green-text)" :
                                  alt.carbon_intensity_gco2_kwh <= 200 ? "var(--green-500)" : "var(--orange-400)",
                         }}>
                           {alt.carbon_intensity_gco2_kwh}
                         </td>
                         <td style={{
                           ...td, textAlign: "right",
-                          color: alt.renewable_percentage >= 70 ? "var(--green-600)" : "inherit",
+                          color: alt.renewable_percentage >= 70 ? "var(--green-text)" : "inherit",
                         }}>
                           {alt.renewable_percentage}%
                         </td>
@@ -479,7 +480,7 @@ function buttonStyle(pending: boolean): React.CSSProperties {
     padding: "0.75rem 2rem",
     borderRadius: 8,
     border: "none",
-    background: "var(--green-600)",
+    background: "var(--btn-green)",
     color: "white",
     fontWeight: 600,
     cursor: pending ? "wait" : "pointer",

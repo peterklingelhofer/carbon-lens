@@ -4,8 +4,10 @@ const linkStyle = ({ isActive }: { isActive: boolean }) =>
   ({
     borderRadius: "6px",
     fontWeight: isActive ? 600 : 400,
-    background: isActive ? "var(--green-100)" : "transparent",
-    color: isActive ? "var(--green-800)" : "inherit",
+    // Translucent green tint reads as a highlight on both the light and dark
+    // nav; --green-text keeps the label legible in both modes.
+    background: isActive ? "rgba(34,197,94,0.10)" : "transparent",
+    color: isActive ? "var(--green-text)" : "inherit",
     textDecoration: "none",
     whiteSpace: "nowrap",
   }) as const;
@@ -42,6 +44,9 @@ export function Nav() {
         .nav-links a {
           padding: clamp(0.3rem, 0.8vw, 0.5rem) clamp(0.35rem, 1.2vw, 1rem);
           font-size: clamp(0.7rem, 1.8vw, 0.95rem);
+        }
+        @media (prefers-color-scheme: dark) {
+          .nav-brand { color: var(--green-400); }
         }
       `}</style>
       <nav className="nav-bar">
