@@ -1,6 +1,9 @@
+import json
 from pathlib import Path
+from typing import Annotated
 
-from pydantic_settings import BaseSettings
+from pydantic import field_validator
+from pydantic_settings import BaseSettings, NoDecode
 
 
 class Settings(BaseSettings):
@@ -23,8 +26,26 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8000
 
-    # CORS
-    cors_origins: list[str] = ["http://localhost:5173", "http://localhost:3000"]
+    # CORS — accepts a JSON array (`["https://a","https://b"]`), a comma-separated
+    # list (`https://a,https://b`), or a single bare origin (`https://a`).
+    # NoDecode skips pydantic-settings' built-in JSON parsing so the validator
+    # below can handle all three forms (a bare URL is not valid JSON).
+    cors_origins: Annotated[list[str], NoDecode] = [
+        "http://localhost:5173",
+        "http://localhost:3000",
+    ]
+
+    @field_validator("cors_origins", mode="before")
+    @classmethod
+    def _parse_cors_origins(cls, v: object) -> object:
+        if isinstance(v, str):
+            s = v.strip()
+            if not s:
+                return []
+            if s.startswith("["):
+                return json.loads(s)
+            return [o.strip() for o in s.split(",") if o.strip()]
+        return v
 
     # Database
     use_database: bool = False
