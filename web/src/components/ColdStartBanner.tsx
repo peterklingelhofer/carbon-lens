@@ -1,26 +1,42 @@
 import { useEffect, useState } from "react";
 import { useIsFetching, useIsMutating } from "@tanstack/react-query";
+import { getLastApiResponseAt } from "../api/client";
 
 // The free-tier API (Render) sleeps after ~15 min idle and takes ~50s to wake.
-// When any request stays in flight past this threshold, show a banner so the
-// wait reads as "waking up", not "broken". CDN/snapshot fetches are sub-second,
-// so only a genuine cold start trips it.
-const WAKE_THRESHOLD_MS = 4000;
+// When an API request stays in flight past this threshold, show a banner so the
+// wait reads as a deliberate state, not "broken".
+const DELAY_MS = 4000;
+
+// If the API answered within this window it's almost certainly still awake
+// (Render's idle timeout is ~15 min), so a slow request is just slow — show a
+// neutral spinner instead of the "waking up" copy. Only show the cold-start
+// message when we have NOT heard from the API recently (first request / long idle).
+const LIKELY_AWAKE_MS = 10 * 60 * 1000;
+
+type Mode = "hidden" | "loading" | "waking";
 
 export function ColdStartBanner() {
-  const busy = useIsFetching() + useIsMutating() > 0;
-  const [show, setShow] = useState(false);
+  // Count only real API traffic — exclude the CDN snapshot query, which is fast
+  // and unrelated to the API server waking up.
+  const apiFetching = useIsFetching({ predicate: (q) => q.queryKey[0] !== "snapshot" });
+  const mutating = useIsMutating();
+  const busy = apiFetching + mutating > 0;
+  const [mode, setMode] = useState<Mode>("hidden");
 
   useEffect(() => {
     if (!busy) return;
-    const t = setTimeout(() => setShow(true), WAKE_THRESHOLD_MS);
+    const t = setTimeout(() => {
+      const last = getLastApiResponseAt();
+      const likelyAwake = last > 0 && Date.now() - last < LIKELY_AWAKE_MS;
+      setMode(likelyAwake ? "loading" : "waking");
+    }, DELAY_MS);
     return () => {
       clearTimeout(t);
-      setShow(false);
+      setMode("hidden");
     };
   }, [busy]);
 
-  if (!show) return null;
+  if (mode === "hidden") return null;
 
   return (
     <div
@@ -55,8 +71,9 @@ export function ColdStartBanner() {
           flexShrink: 0,
         }}
       />
-      Waking up the API — the free-tier server sleeps after 15 min of inactivity and
-      takes ~50s to start. This only happens on the first request.
+      {mode === "waking"
+        ? "Waking up the API — the free-tier server sleeps after 15 min of inactivity and takes ~50s to start. This only happens on the first request."
+        : "Loading…"}
     </div>
   );
 }

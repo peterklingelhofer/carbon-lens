@@ -28,6 +28,15 @@ const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const API_KEY_STORAGE_KEY = "carbon_mesh_api_key";
 
+// Timestamp (ms) of the last time the API server returned ANY HTTP response.
+// A response — even a 4xx/5xx — means the server is awake, so the cold-start
+// banner can tell "first/idle request" apart from "awake but slow".
+let lastApiResponseAt = 0;
+
+export function getLastApiResponseAt(): number {
+  return lastApiResponseAt;
+}
+
 export function getApiKey(): string {
   try {
     return localStorage.getItem(API_KEY_STORAGE_KEY) ?? "";
@@ -55,6 +64,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
       ...options?.headers,
     },
   });
+  lastApiResponseAt = Date.now(); // server answered → it's awake
   if (!res.ok) {
     const body = await res.json().catch(() => ({ detail: res.statusText }));
     throw new Error(body.detail || `API error ${res.status}`);
