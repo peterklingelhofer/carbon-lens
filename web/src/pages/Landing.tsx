@@ -59,8 +59,9 @@ export function Landing() {
             opacity: 0.75,
           }}
         >
-          75+ regions across AWS, GCP, and Azure. Route workloads to the cleanest one,
-          and draft Scope 2/3 emissions reports (CSRD, SEC, SB 253) from the same data.
+          75+ regions across AWS, GCP, and Azure. Route your workloads to the cleanest
+          one — and turn the same data into the emissions reports regulators are
+          starting to require.
         </p>
         <div
           className="hero-cta"
@@ -142,6 +143,54 @@ export function Landing() {
               gCO2/kWh right now &rarr; Make informed decisions
             </div>
           </div>
+        </div>
+
+        {/* Plain-language explainer: the "credits" argument + the acronyms decoded */}
+        <div style={{ ...card, marginTop: "1.5rem" }}>
+          <h3 style={{ marginTop: 0, fontSize: "1.15rem" }}>
+            How the "100% renewable" claim actually works
+          </h3>
+          <p style={{ color: "var(--gray-600)", fontSize: "0.95rem" }}>
+            Over a year, a provider buys enough <strong>renewable-energy certificates</strong>{" "}
+            (RECs), or signs enough power-purchase agreements, to match its total electricity
+            use. The certificates and the electricity are counted separately — so a data
+            center can draw from a gas-heavy grid at midnight and still "count" as 100%
+            renewable on its annual report. It's real money funding real renewables, but it's
+            an accounting match, not proof that clean electrons ran your job.
+          </p>
+
+          <h3 style={{ fontSize: "1.15rem", marginBottom: "0.5rem" }}>
+            Why measuring is starting to matter
+          </h3>
+          <p style={{ color: "var(--gray-600)", fontSize: "0.95rem", marginTop: 0 }}>
+            Regulators increasingly want the real numbers, not just the annual offset:
+          </p>
+          <ul
+            style={{
+              color: "var(--gray-600)",
+              fontSize: "0.95rem",
+              lineHeight: 1.7,
+              paddingLeft: "1.2rem",
+              margin: "0 0 1rem",
+            }}
+          >
+            <li>
+              <strong>CSRD</strong> — the EU's Corporate Sustainability Reporting Directive:
+              large companies must report audited, real-world emissions.
+            </li>
+            <li>
+              <strong>SEC climate rule</strong> — US rules pushing public companies to disclose
+              climate-related emissions.
+            </li>
+            <li>
+              <strong>California SB 253</strong> — large companies operating in California must
+              report their greenhouse-gas emissions.
+            </li>
+          </ul>
+          <p style={{ color: "var(--gray-600)", fontSize: "0.95rem", margin: 0 }}>
+            CarbonLens turns live grid data into a defensible first draft of those reports —
+            emissions measured, not matched.
+          </p>
         </div>
 
         <div style={grid3}>

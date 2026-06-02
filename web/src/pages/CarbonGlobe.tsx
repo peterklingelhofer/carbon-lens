@@ -50,10 +50,24 @@ function intensityColor(v: number): string {
   return `rgb(${r},${g},${b})`;
 }
 
-type HeightMetric = "renewable" | "intensity";
+// Renewable share: high % is greener, so the scale runs the opposite way from
+// carbon intensity (high = green, low = red).
+function renewableRGB(pct: number): [number, number, number] {
+  if (pct >= 80) return [34, 197, 94]; // green
+  if (pct >= 60) return [132, 204, 22]; // lime
+  if (pct >= 40) return [234, 179, 8]; // amber
+  if (pct >= 20) return [249, 115, 22]; // orange
+  return [239, 68, 68]; // red
+}
+
+type Metric = "renewable" | "intensity";
+
+function metricRGB(p: GlobePoint, metric: Metric): [number, number, number] {
+  return metric === "renewable" ? renewableRGB(p.renewable) : intensityRGB(p.intensity);
+}
 
 // Altitude (in globe-radius units) of each beam for the selected metric.
-function beamAltitude(p: GlobePoint, metric: HeightMetric): number {
+function beamAltitude(p: GlobePoint, metric: Metric): number {
   const frac =
     metric === "intensity" ? Math.min(1, p.intensity / 800) : p.renewable / 100;
   return 0.04 + frac * 0.5;
@@ -63,7 +77,7 @@ function beamAltitude(p: GlobePoint, metric: HeightMetric): number {
 // the tip — it reads as a glowing light shaft, not a solid blocky cylinder. The
 // height is applied per-frame via mesh.scale.y so the metric toggle just
 // rescales existing meshes (no geometry rebuild).
-function buildBeam(p: GlobePoint, globeRadius: number): THREE.Mesh {
+function buildBeam(p: GlobePoint, globeRadius: number, colorMetric: Metric): THREE.Mesh {
   const radius = globeRadius * 0.0075;
   // Straight cylinder (no taper), unit height (scaled per-frame). Capped ends
   // (not open) so it reads as a filled volume: looking down from above, the
@@ -90,7 +104,7 @@ function buildBeam(p: GlobePoint, globeRadius: number): THREE.Mesh {
     pos.setY(i, y - wave * amp * k);
   }
 
-  const [r, g, b] = intensityRGB(p.intensity).map((c) => c / 255) as [number, number, number];
+  const [r, g, b] = metricRGB(p, colorMetric).map((c) => c / 255) as [number, number, number];
   const colors = new Float32Array(pos.count * 4);
   for (let i = 0; i < pos.count; i++) {
     const t = Math.min(1, Math.max(0, pos.getY(i))); // 0 base → 1 tip (unit height)
@@ -179,20 +193,63 @@ function useGlobePoints() {
   }, [snapshot, apiRegions, apiIntensities]);
 }
 
+function MetricToggle({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: Metric;
+  onChange: (m: Metric) => void;
+}) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+      <span style={{ fontSize: "0.68rem", color: "#94a3b8", width: 60, textAlign: "right" }}>
+        {label}
+      </span>
+      <div style={{ display: "inline-flex", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 999, overflow: "hidden", background: "rgba(10,15,20,0.6)" }}>
+        {(["renewable", "intensity"] as Metric[]).map((m) => (
+          <button
+            key={m}
+            onClick={() => onChange(m)}
+            style={{
+              border: "none",
+              cursor: "pointer",
+              padding: "3px 11px",
+              fontSize: "0.68rem",
+              fontWeight: value === m ? 700 : 400,
+              background: value === m ? "var(--btn-green)" : "transparent",
+              color: value === m ? "#fff" : "#cbd5e1",
+            }}
+          >
+            {m === "renewable" ? "Renewable %" : "Carbon emissions"}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function CarbonGlobe() {
   const containerRef = useRef<HTMLDivElement>(null);
   const globeRef = useRef<GlobeInstance | null>(null);
   const points = useGlobePoints();
   const [selected, setSelected] = useState<GlobePoint | null>(null);
-  const [heightMetric, setHeightMetric] = useState<HeightMetric>("renewable");
+  // Default to renewable % — the most intuitive read for a general audience
+  // (higher = greener). Carbon emissions intensity (the more rigorous
+  // "least damage" metric) is one toggle away.
+  const [heightMetric, setHeightMetric] = useState<Metric>("renewable");
+  const [colorMetric, setColorMetric] = useState<Metric>("renewable");
 
   // Read inside globe.gl accessors so a toggle takes effect without re-init.
-  const metricRef = useRef<HeightMetric>(heightMetric);
+  const heightMetricRef = useRef<Metric>(heightMetric);
+  const colorMetricRef = useRef<Metric>(colorMetric);
 
-  // Keep the ref current before the data effect below re-digests the globe.
+  // Keep the refs current before the data effect below re-digests the globe.
   useEffect(() => {
-    metricRef.current = heightMetric;
-  }, [heightMetric]);
+    heightMetricRef.current = heightMetric;
+    colorMetricRef.current = colorMetric;
+  }, [heightMetric, colorMetric]);
 
   // Instantiate the globe once.
   useEffect(() => {
@@ -211,7 +268,7 @@ export default function CarbonGlobe() {
       // span each beam. The visible beams are the custom layer below.
       .pointLat("lat")
       .pointLng("lng")
-      .pointAltitude((d) => beamAltitude(d as GlobePoint, metricRef.current))
+      .pointAltitude((d) => beamAltitude(d as GlobePoint, heightMetricRef.current))
       .pointRadius(0.5)
       .pointColor(() => "rgba(255,255,255,0)")
       .pointsMerge(false)
@@ -237,7 +294,7 @@ export default function CarbonGlobe() {
       .ringPropagationSpeed(1.4)
       .ringRepeatPeriod((d: object) => 2400 - ((d as GlobePoint).renewable / 100) * 1400)
       .ringColor((d: object) => {
-        const [r, g, b] = intensityRGB((d as GlobePoint).intensity);
+        const [r, g, b] = metricRGB(d as GlobePoint, colorMetricRef.current);
         return (t: number) => `rgba(${r},${g},${b},${Math.sqrt(1 - t)})`;
       })
       .onPointClick((d: object) => {
@@ -246,7 +303,9 @@ export default function CarbonGlobe() {
         globe.pointOfView({ lat: p.lat, lng: p.lng, altitude: 1.6 }, 900);
       })
       // Glowing light-shaft beams (replaces the blocky default cylinders).
-      .customThreeObject((d: object) => buildBeam(d as GlobePoint, globe.getGlobeRadius()))
+      .customThreeObject((d: object) =>
+        buildBeam(d as GlobePoint, globe.getGlobeRadius(), colorMetricRef.current),
+      )
       .customThreeObjectUpdate((obj: object, d: object) => {
         const p = d as GlobePoint;
         const mesh = obj as THREE.Mesh;
@@ -256,7 +315,15 @@ export default function CarbonGlobe() {
         const radial = new THREE.Vector3(c.x, c.y, c.z).normalize();
         mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), radial);
         // Scale unit-height beam to the selected metric's altitude.
-        mesh.scale.y = beamAltitude(p, metricRef.current) * globe.getGlobeRadius();
+        mesh.scale.y = beamAltitude(p, heightMetricRef.current) * globe.getGlobeRadius();
+        // Recolor in place (keeps the per-vertex alpha gradient) so the color
+        // metric toggle updates without rebuilding geometry.
+        const colorAttr = (mesh.geometry as THREE.BufferGeometry).getAttribute(
+          "color",
+        ) as THREE.BufferAttribute;
+        const [cr, cg, cb] = metricRGB(p, colorMetricRef.current).map((c) => c / 255);
+        for (let i = 0; i < colorAttr.count; i++) colorAttr.setXYZ(i, cr, cg, cb);
+        colorAttr.needsUpdate = true;
       });
 
     globe.width(el.clientWidth).height(el.clientHeight);
@@ -315,12 +382,13 @@ export default function CarbonGlobe() {
     const globe = globeRef.current;
     if (!globe) return;
     // Fresh array copies force globe.gl to re-digest, so the accessors re-read
-    // metricRef and beams/hit-targets resize when the height metric toggles.
+    // the metric refs: beams rescale (height) and recolor (color), rings and
+    // hit-targets update too.
     globe
       .pointsData([...(points as object[])])
       .ringsData([...(points as object[])])
       .customLayerData([...(points as object[])]);
-  }, [points, heightMetric]);
+  }, [points, heightMetric, colorMetric]);
 
   const liveCount = points.filter((p) => p.quality === "live").length;
   const estCount = points.filter((p) => p.quality === "estimated").length;
@@ -345,40 +413,33 @@ export default function CarbonGlobe() {
             {estCount > 0 && <span style={{ color: "#fbbf24", marginLeft: 10 }}>● {estCount} estimated</span>}
           </p>
         )}
-
-        {/* Beam-height metric toggle */}
-        <div style={{ marginTop: 12, pointerEvents: "auto", display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: "0.7rem", color: "#94a3b8" }}>Bar height:</span>
-          <div style={{ display: "inline-flex", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 999, overflow: "hidden", background: "rgba(10,15,20,0.6)" }}>
-            {(["renewable", "intensity"] as HeightMetric[]).map((m) => (
-              <button
-                key={m}
-                onClick={() => setHeightMetric(m)}
-                style={{
-                  border: "none",
-                  cursor: "pointer",
-                  padding: "4px 12px",
-                  fontSize: "0.72rem",
-                  fontWeight: heightMetric === m ? 700 : 400,
-                  background: heightMetric === m ? "var(--btn-green)" : "transparent",
-                  color: heightMetric === m ? "#fff" : "#cbd5e1",
-                }}
-              >
-                {m === "renewable" ? "Renewable %" : "Carbon intensity"}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
 
-      {/* Legend */}
+      {/* Controls + legend (bottom-left) */}
       <div style={{ position: "absolute", bottom: 24, left: 24, color: "#fff", fontSize: "0.7rem", textShadow: "0 1px 6px rgba(0,0,0,0.8)", display: bare ? "none" : undefined }}>
-        <div style={{ marginBottom: 4, color: "#cbd5e1" }}>Carbon intensity (gCO2/kWh)</div>
-        <div style={{ width: 200, height: 10, borderRadius: 5, background: "linear-gradient(90deg,#22c55e,#84cc16,#eab308,#f97316,#ef4444)" }} />
-        <div style={{ display: "flex", justifyContent: "space-between", width: 200, marginTop: 2, color: "#94a3b8" }}>
-          <span>0 (greener)</span>
-          <span>500+ (dirtier)</span>
+        <div style={{ marginBottom: 10 }}>
+          <MetricToggle label="Height" value={heightMetric} onChange={setHeightMetric} />
+          <MetricToggle label="Color" value={colorMetric} onChange={setColorMetric} />
         </div>
+        {colorMetric === "intensity" ? (
+          <>
+            <div style={{ marginBottom: 4, color: "#cbd5e1" }}>Carbon intensity (gCO2/kWh)</div>
+            <div style={{ width: 200, height: 10, borderRadius: 5, background: "linear-gradient(90deg,#22c55e,#84cc16,#eab308,#f97316,#ef4444)" }} />
+            <div style={{ display: "flex", justifyContent: "space-between", width: 200, marginTop: 2, color: "#94a3b8" }}>
+              <span>0 (greener)</span>
+              <span>500+ (dirtier)</span>
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ marginBottom: 4, color: "#cbd5e1" }}>Renewable share</div>
+            <div style={{ width: 200, height: 10, borderRadius: 5, background: "linear-gradient(90deg,#ef4444,#f97316,#eab308,#84cc16,#22c55e)" }} />
+            <div style={{ display: "flex", justifyContent: "space-between", width: 200, marginTop: 2, color: "#94a3b8" }}>
+              <span>0% (dirtier)</span>
+              <span>100% (greener)</span>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Empty / loading state */}
