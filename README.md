@@ -304,7 +304,7 @@ The carbon data layer for carbon-aware infrastructure: one cascading API over mu
 
 ## Companion project
 
-**[carbon-aware-dispatcher](https://github.com/peterklingelhofer/carbon-aware-dispatcher)** — a GitHub Action that runs CI/CD only when the grid is clean. CarbonLens is the data + reporting layer (measure, route, report); the dispatcher is the enforcement layer for deferrable jobs (CI, ML training, batch).
+**[carbon-aware-dispatcher](https://github.com/peterklingelhofer/carbon-aware-dispatcher)** — a GitHub Action that runs CI/CD only when the grid is clean. CarbonLens is the data + reporting layer (measure, route, report); the dispatcher is the enforcement layer for deferrable jobs.
 
 ```yaml
 - uses: peterklingelhofer/carbon-aware-dispatcher@v1
