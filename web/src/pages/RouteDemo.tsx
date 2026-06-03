@@ -5,7 +5,7 @@ import { section as sectionFn, card } from "../styles";
 import { InfoTip } from "../components/InfoTip";
 
 const section = sectionFn();
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API_BASE = import.meta.env.VITE_API_URL || (typeof window !== "undefined" ? window.location.origin : "");
 
 // Shared tooltip copy for the alternatives table headers.
 const TIP = {
