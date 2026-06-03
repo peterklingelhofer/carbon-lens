@@ -48,7 +48,7 @@ export function Organizations() {
       `}</style>
       <h1 style={{ marginBottom: "0.5rem" }}>Organizations</h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
-        Manage your organizations, API keys, and billing.
+        Manage your organizations and API keys.
       </p>
 
       {/* Create org form */}
@@ -137,11 +137,6 @@ export function Organizations() {
                   >
                     {org.tier}
                   </span>
-                  {org.stripe_subscription_id && (
-                    <span style={{ fontSize: "0.75rem", color: "var(--gray-400)" }}>
-                      Stripe active
-                    </span>
-                  )}
                 </div>
               </div>
             );
