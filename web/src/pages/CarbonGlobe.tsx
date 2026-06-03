@@ -1,10 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import Globe, { type GlobeInstance } from "globe.gl";
 import * as THREE from "three";
 import { api } from "../api/client";
 import { useSnapshot, snapshotEnabled, qualityFromSource } from "../api/snapshot";
 import { InfoTip } from "../components/InfoTip";
+
+// Some browsers/machines can't create a WebGL context (hardware acceleration
+// off, GPU blocklisted, headless). Detect it up front so we can show a graceful
+// fallback instead of letting three.js throw and crash into the ErrorBoundary.
+function webglAvailable(): boolean {
+  try {
+    const canvas = document.createElement("canvas");
+    return (
+      !!window.WebGLRenderingContext &&
+      !!(canvas.getContext("webgl2") || canvas.getContext("webgl") || canvas.getContext("experimental-webgl"))
+    );
+  } catch {
+    return false;
+  }
+}
 
 // A spinnable 3D globe plotting every cloud region at its real datacenter
 // coordinates, glowing by carbon intensity (green = clean, red = dirty), with
@@ -267,6 +283,10 @@ export default function CarbonGlobe() {
   //   km / px  = the distance scale bar
   //   beamPx   = on-screen length of a full (100%) beam at this zoom
   const [scale, setScale] = useState<{ km: number; px: number; beamPx: number } | null>(null);
+  // Set when WebGL can't be created — we render a fallback instead of the globe.
+  // Probed lazily on mount so the fallback shows on the first render, with the
+  // try/catch below as a backup for context-lost-after-probe.
+  const [webglError, setWebglError] = useState(() => !webglAvailable());
 
   // Read inside globe.gl accessors so a toggle takes effect without re-init.
   const heightMetricRef = useRef<Metric>(heightMetric);
@@ -283,7 +303,20 @@ export default function CarbonGlobe() {
     const el = containerRef.current;
     if (!el) return;
 
-    const globe = new Globe(el);
+    // Initial state already reflects the probe; just skip globe init if no WebGL.
+    if (!webglAvailable()) return;
+
+    let globe: GlobeInstance;
+    try {
+      globe = new Globe(el);
+    } catch {
+      // WebGL context creation failed even though the probe passed (e.g. context
+      // lost / driver exhausted) — fall back gracefully rather than crash. This
+      // is a one-shot error path, not a cascading-render risk.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setWebglError(true);
+      return;
+    }
     globe
       .globeImageUrl(EARTH_NIGHT)
       .bumpImageUrl(EARTH_TOPOLOGY)
@@ -470,8 +503,56 @@ export default function CarbonGlobe() {
     <div style={{ position: "relative", width: "100%", height: "calc(100vh - 56px)", background: "#000", overflow: "hidden" }}>
       <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
 
+      {/* WebGL unavailable — graceful fallback instead of a crashed page */}
+      {webglError && (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "2rem",
+            textAlign: "center",
+          }}
+        >
+          <div style={{ maxWidth: 540, color: "#cbd5e1" }}>
+            <div style={{ fontSize: "2.5rem", marginBottom: "0.5rem" }} aria-hidden>
+              🌐
+            </div>
+            <h1 style={{ color: "#fff", margin: "0 0 0.5rem", fontSize: "1.4rem" }}>
+              The 3D globe needs WebGL
+            </h1>
+            <p style={{ fontSize: "0.95rem", lineHeight: 1.6, margin: "0 0 0.75rem" }}>
+              Your browser couldn't start WebGL, so the interactive globe can't render
+              here. This usually means hardware acceleration is turned off, or your
+              browser or GPU has it blocked.
+            </p>
+            <p style={{ fontSize: "0.9rem", lineHeight: 1.6, color: "#94a3b8", margin: "0 0 1.25rem" }}>
+              Try enabling hardware acceleration in your browser settings, updating your
+              browser, or opening this in Chrome. The same live data is available as a
+              table:
+            </p>
+            <Link
+              to="/dashboard"
+              style={{
+                display: "inline-block",
+                padding: "0.7rem 1.75rem",
+                borderRadius: 8,
+                background: "var(--btn-green)",
+                color: "#fff",
+                fontWeight: 600,
+                textDecoration: "none",
+              }}
+            >
+              View the Grid Data dashboard →
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* Title overlay */}
-      <div style={{ position: "absolute", top: 20, left: 24, color: "#fff", pointerEvents: "none", textShadow: "0 1px 8px rgba(0,0,0,0.8)", display: bare ? "none" : undefined }}>
+      <div style={{ position: "absolute", top: 20, left: 24, color: "#fff", pointerEvents: "none", textShadow: "0 1px 8px rgba(0,0,0,0.8)", display: bare || webglError ? "none" : undefined }}>
         {/* Visually hidden — kept for the document outline / screen readers. */}
         <h1
           style={{
@@ -501,7 +582,7 @@ export default function CarbonGlobe() {
       </div>
 
       {/* Controls + legend (bottom-left) */}
-      <div style={{ position: "absolute", bottom: 24, left: 24, color: "#fff", fontSize: "0.7rem", textShadow: "0 1px 6px rgba(0,0,0,0.8)", display: bare ? "none" : undefined }}>
+      <div style={{ position: "absolute", bottom: 24, left: 24, color: "#fff", fontSize: "0.7rem", textShadow: "0 1px 6px rgba(0,0,0,0.8)", display: bare || webglError ? "none" : undefined }}>
         {/* Color: control + its legend (a gradient) */}
         <MetricToggle
           label="Color"
@@ -609,7 +690,7 @@ export default function CarbonGlobe() {
       </div>
 
       {/* Empty / loading state */}
-      {points.length === 0 && (
+      {!webglError && points.length === 0 && (
         <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", pointerEvents: "none" }}>
           Loading live grid data…
         </div>
