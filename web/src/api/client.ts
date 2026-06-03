@@ -53,14 +53,14 @@ export function setApiKey(key: string): void {
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const apiKey = getApiKey();
-  const res = await fetch(`${BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(apiKey ? { "X-API-Key": apiKey } : {}),
-      ...options?.headers,
-    },
-  });
+  // Only attach headers that are actually needed. Sending Content-Type on a
+  // bodyless GET makes it a non-"simple" request, which forces a CORS preflight
+  // (OPTIONS) on every read — doubling round-trips and adding a failure point
+  // during cold starts. GETs with no key stay simple (no preflight).
+  const headers: Record<string, string> = { ...(options?.headers as Record<string, string> | undefined) };
+  if (options?.body) headers["Content-Type"] = "application/json";
+  if (apiKey) headers["X-API-Key"] = apiKey;
+  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
   lastApiResponseAt = Date.now(); // server answered → it's awake
   if (!res.ok) {
     const body = await res.json().catch(() => ({ detail: res.statusText }));
