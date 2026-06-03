@@ -6,6 +6,7 @@ import * as THREE from "three";
 import { api } from "../api/client";
 import { useSnapshot, snapshotEnabled, qualityFromSource } from "../api/snapshot";
 import { InfoTip } from "../components/InfoTip";
+import { DATA_QUALITY_TIP } from "../copy";
 
 // Some browsers/machines can't create a WebGL context (hardware acceleration
 // off, GPU blocklisted, headless). Detect it up front so we can show a graceful
@@ -574,9 +575,10 @@ export default function CarbonGlobe() {
           share. Drag to spin, scroll to zoom, hover a node for detail.
         </p>
         {points.length > 0 && (
-          <p style={{ margin: "6px 0 0", fontSize: "0.75rem", color: "#94a3b8" }}>
+          <p style={{ margin: "6px 0 0", fontSize: "0.75rem", color: "#94a3b8", pointerEvents: "auto", display: "inline-flex", alignItems: "center" }}>
             <span style={{ color: "#4ade80" }}>● {liveCount} live</span>
             {estCount > 0 && <span style={{ color: "#fbbf24", marginLeft: 10 }}>● {estCount} estimated</span>}
+            <InfoTip label="live vs estimated" text={DATA_QUALITY_TIP} placement="bottom" />
           </p>
         )}
       </div>
@@ -719,9 +721,10 @@ export default function CarbonGlobe() {
               <span style={{ color: "#6b7280" }}> · whole grid, all consumers</span>
             </div>
           )}
-          <div style={{ marginTop: 12, fontSize: "0.72rem", color: selected.quality === "estimated" ? "#fbbf24" : "#4ade80" }}>
-            {selected.quality === "estimated" ? "Estimated — upstream API intermittent" : "Live grid data"}
+          <div style={{ marginTop: 12, fontSize: "0.72rem", display: "inline-flex", alignItems: "center", color: selected.quality === "estimated" ? "#fbbf24" : "#4ade80" }}>
+            {selected.quality === "estimated" ? "Estimated" : "Live grid data"}
             <span style={{ color: "#6b7280" }}> · {selected.source}</span>
+            <InfoTip label="live vs estimated" text={DATA_QUALITY_TIP} placement="top" />
           </div>
         </div>
       )}
