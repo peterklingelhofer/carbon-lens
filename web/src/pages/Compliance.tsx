@@ -346,7 +346,8 @@ export function Compliance() {
 }
 
 function ReportView({ report }: { report: ComplianceReport }) {
-  const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+  // Same-origin (proxied) base for the export download links.
+  const BASE_URL = import.meta.env.VITE_API_URL || (typeof window !== "undefined" ? window.location.origin : "");
   // Demo reports are built from a synthetic usage fixture (not a real CSV upload).
   const isDemo = !report.report_name.toLowerCase().includes("csv");
 
