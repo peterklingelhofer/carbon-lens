@@ -4,6 +4,7 @@ import { api } from "../api/client";
 import type { ComplianceReport } from "../api/types";
 import { section as sectionFn, card, providerChip } from "../styles";
 import { InfoTip } from "../components/InfoTip";
+import { DATA_QUALITY_TIP } from "../copy";
 
 const section = sectionFn(1100);
 
@@ -614,7 +615,10 @@ function ReportView({ report }: { report: ComplianceReport }) {
               flexWrap: "wrap",
             }}
           >
-            <span style={{ fontWeight: 600 }}>Data quality:</span>
+            <span style={{ fontWeight: 600, display: "inline-flex", alignItems: "center" }}>
+              Data quality:
+              <InfoTip label="data quality" text={DATA_QUALITY_TIP} />
+            </span>
             {Object.entries(report.data_quality_summary).map(
               ([quality, count]) => (
                 <span key={quality}>
