@@ -29,7 +29,7 @@ green" that every host fudges via annual certificate matching.
 | Piece | Greenest free choice | Why |
 |-------|----------------------|-----|
 | **API** | **Render free → Oregon region** | Pacific-NW grid (BPAT) is hydro-heavy — one of the cleanest grids in North America, well below the US average. CarbonLens's own snapshot measures it (`us-west2`). |
-| **Frontend** | **Cloudflare Pages** | Free, global CDN, and the most explicit renewable-matching commitment of the static hosts. (Netlify also works and is renewable-matched; you just can't pin a region on either — edge nodes are everywhere.) |
+| **Frontend** | **Cloudflare Workers** (static assets) | Free, global CDN, and the most explicit renewable-matching commitment of the static hosts. (Cloudflare Pages works too; you just can't pin a region on either — edge nodes are everywhere.) |
 | **Snapshot cron** | **GitHub Actions** | Runs on Azure-hosted runners (renewable-matched). Region isn't user-selectable on the free tier — but the job is ~1 min/run, so its energy is negligible. |
 
 ### Pinning the API to Oregon on Render
@@ -58,51 +58,63 @@ The carbon-by-zone demo needs no database and no provider keys: the `hybrid`
 source cascades down to heuristic estimators and a mock fallback when no keys
 are present. This makes a genuinely free, scale-to-zero public demo possible.
 
-**Architecture:** static frontend on Cloudflare Pages + scale-to-zero API on Fly.io.
+**Live architecture:** static frontend on **Cloudflare Workers** (static assets)
++ scale-to-zero API on **Render** (Oregon). This is what
+[carbonlens.peterklingelhofer.workers.dev](https://carbonlens.peterklingelhofer.workers.dev)
+runs on, talking to the API at `https://carbonlens-gssa.onrender.com`.
 
-### 1. Deploy the API to Fly.io
+### 1. Deploy the API to Render (Oregon)
 
-`fly.toml` is preconfigured for this: `min_machines_running = 0`,
-`CARBON_LENS_USE_DATABASE = "false"`, `CARBON_LENS_API_KEY_REQUIRED = "false"`,
-and a `/ready` healthcheck that passes without a database.
+Follow the **Render free Web Service** steps under
+[One-Click Deploy](#one-click-deploy) below — stateless, scale-to-zero, and
+**Region → Oregon** (the PNW hydro grid). You get a `https://<name>.onrender.com`
+URL.
+
+### 2. Deploy the frontend to Cloudflare Workers
+
+The build reads `web/.env.production` (committed), which points at the Render API:
+
+```
+VITE_API_URL=https://carbonlens-gssa.onrender.com
+VITE_WS_URL=wss://carbonlens-gssa.onrender.com
+```
+
+`web/wrangler.jsonc` serves the built `dist/` as Worker static assets with SPA
+fallback (so `/globe`, `/dashboard`, etc. resolve). Build and deploy:
 
 ```bash
-fly launch --copy-config --yes   # uses fly.toml as-is; no Postgres needed
-fly deploy
+cd web
+npm run build
+npx wrangler deploy        # uploads dist/ → https://<name>.workers.dev
 ```
 
-If the app name `carbon-mesh` is taken, Fly will assign another — note the real
-`*.fly.dev` URL it prints, then update `web/.env.production` (step 2) and the
-`CARBON_LENS_CORS_ORIGINS` value in `fly.toml` to match, and `fly deploy` again.
+(Cloudflare Pages also works if you prefer the dashboard flow: connect the repo,
+root directory `web`, build `npm run build`, output `dist`.)
 
-### 2. Deploy the frontend to Cloudflare Pages
+### 3. Allow the frontend origin (CORS)
 
-The build reads `web/.env.production` (committed), which points at the Fly URL:
+In the **Render dashboard → Environment**, set the API's allowlist to your
+frontend origin and redeploy:
 
 ```
-VITE_API_URL=https://carbon-mesh.fly.dev
-VITE_WS_URL=wss://carbon-mesh.fly.dev
+CARBON_LENS_CORS_ORIGINS=["https://carbonlens.peterklingelhofer.workers.dev","http://localhost:5173"]
 ```
 
-In the Cloudflare Pages dashboard → Create project → connect this repo:
-- **Root directory:** `web`
-- **Build command:** `npm run build`
-- **Output directory:** `dist`
+(The snapshot-backed pages — Dashboard, Globe — read GitHub's CDN directly and
+work regardless; CORS only gates the interactive API pages like the API Explorer.)
 
-Cloudflare gives you `https://<project>.pages.dev`. The default `fly.toml`
-already allow-lists `https://carbon-mesh.pages.dev` in CORS — if your project
-name differs, update `CARBON_LENS_CORS_ORIGINS` in `fly.toml` and `fly deploy`.
-
-### 3. Verify
+### 4. Verify
 
 ```bash
-curl https://carbon-mesh.fly.dev/ready          # {"status":"ready"}
-open https://<project>.pages.dev/dashboard       # the live UI
+curl https://carbonlens-gssa.onrender.com/ready              # {"status":"ready"}
+open https://carbonlens.peterklingelhofer.workers.dev/        # the live UI
 ```
 
-Cold start is ~1-2s after idle (Fly stops the machine at 0 connections).
+First request after idle cold-starts in ~50s (Render spins the free service down
+when idle; the [ColdStartBanner](../web/src/components/ColdStartBanner.tsx) covers
+that in the UI).
 
-### 4. Real, live data without burning API quotas (the snapshot)
+### 5. Real, live data without burning API quotas (the snapshot)
 
 To serve **real** data — not the mock fallback — while surviving a traffic
 spike on free API keys, the dashboard reads a pre-built snapshot instead of
@@ -195,7 +207,7 @@ demo doesn't need).
    CARBON_LENS_EIA_API_KEY         <your EIA key>
    CARBON_LENS_GRID_STATUS_API_KEY <your GridStatus key>
    CARBON_LENS_ENTSOE_TOKEN        <when it arrives>
-   CARBON_LENS_CORS_ORIGINS        ["https://<your-frontend>.pages.dev"]
+   CARBON_LENS_CORS_ORIGINS        ["https://<your-frontend>.workers.dev"]
    ```
 5. **Create Web Service.** You get `https://<name>.onrender.com`. Verify
    `…/ready` returns `{"status":"ready"}`. First request after idle cold-starts
@@ -233,16 +245,6 @@ cp .env.example .env
 docker compose up -d
 ```
 
-### Vercel + Fly.io (split deploy)
-- **Frontend** → Vercel: connect repo, set root to `web/`, set `VITE_API_URL`
-- **Backend** → Fly.io: follow Fly.io steps above
-- Update `web/vercel.json` rewrites to point to your Fly.io URL
-
-### Netlify + Fly.io (split deploy)
-- **Frontend** → Netlify: connect repo, set base directory to `web/`
-- **Backend** → Fly.io: follow Fly.io steps above
-- Update `web/netlify.toml` redirects to point to your Fly.io URL
-
 ## Getting API Keys (all free)
 
 | Provider | Coverage | Sign Up | Env Var |
@@ -279,30 +281,30 @@ After adding keys, verify at: `GET /health/providers`
 
 ```bash
 # Health check
-curl https://your-app.fly.dev/health
+curl https://carbonlens-gssa.onrender.com/health
 
 # Provider status — see which data sources have credentials
-curl https://your-app.fly.dev/health/providers
+curl https://carbonlens-gssa.onrender.com/health/providers
 
 # Route a workload
-curl -X POST https://your-app.fly.dev/api/v1/route \
+curl -X POST https://carbonlens-gssa.onrender.com/api/v1/route \
   -H "Content-Type: application/json" \
   -d '{"constraints": {"providers": ["aws", "gcp"], "carbon_weight": 1.0, "cost_weight": 0.0}}'
 
-# Interactive API docs
-open https://your-app.fly.dev/docs
+# Interactive API docs (Swagger UI)
+open https://carbonlens-gssa.onrender.com/docs
 ```
 
 ## Architecture
 
 ```
                     ┌──────────────┐
-                    │   Frontend   │  Vercel / Netlify / nginx
+                    │   Frontend   │  Cloudflare Workers / Pages
                     │  (React/Vite)│
                     └──────┬───────┘
                            │
                     ┌──────▼───────┐
-                    │   API Server │  Fly.io / Render / Docker
+                    │   API Server │  Render / Fly.io / Docker
                     │   (FastAPI)  │
                     └──┬───┬───┬───┘
                        │   │   │
