@@ -87,6 +87,9 @@ export function Nav() {
           <NavLink to="/about" style={linkStyle}>
             About
           </NavLink>
+          <NavLink to="/methodology" style={linkStyle}>
+            Methodology
+          </NavLink>
           <NavLink to="/settings" style={linkStyle}>
             Status
           </NavLink>
