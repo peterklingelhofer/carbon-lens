@@ -8,7 +8,6 @@ import { Dashboard } from "./pages/Dashboard";
 import { RouteDemo } from "./pages/RouteDemo";
 import { Settings } from "./pages/Settings";
 import { About } from "./pages/About";
-import { Organizations } from "./pages/Organizations";
 import { Compliance } from "./pages/Compliance";
 import { ApiExplorer } from "./pages/ApiExplorer";
 import { Scheduler } from "./pages/Scheduler";
@@ -46,7 +45,6 @@ export default function App() {
         <Route path="/sla" element={<SLAMonitor />} />
         <Route path="/scheduler" element={<Scheduler />} />
         <Route path="/about" element={<About />} />
-        <Route path="/orgs" element={<Organizations />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

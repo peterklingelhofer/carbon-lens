@@ -1,6 +1,5 @@
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { api, getApiKey, setApiKey } from "../api/client";
+import { api } from "../api/client";
 import { section as sectionFn, card } from "../styles";
 
 const section = sectionFn();
@@ -22,15 +21,6 @@ function StatusDot({ ok }: { ok: boolean }) {
 }
 
 export function Settings() {
-  const [apiKey, setApiKeyState] = useState(getApiKey());
-  const [saved, setSaved] = useState(false);
-
-  function saveApiKey() {
-    setApiKey(apiKey.trim());
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  }
-
   const { data: providers, isLoading } = useQuery({
     queryKey: ["providers"],
     queryFn: () => api.providers(),
@@ -39,11 +29,6 @@ export function Settings() {
   const { data: health } = useQuery({
     queryKey: ["health"],
     queryFn: () => api.health(),
-  });
-
-  const { data: billing } = useQuery({
-    queryKey: ["billing-status"],
-    queryFn: () => api.billingStatus(),
   });
 
   return (
@@ -55,52 +40,12 @@ export function Settings() {
           .settings-table code { font-size: 0.65rem !important; word-break: break-all; }
         }
       `}</style>
-      <h1 style={{ marginBottom: "0.5rem" }}>Settings</h1>
+      <h1 style={{ marginBottom: "0.5rem" }}>Status</h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
-        System status, provider credentials, and usage overview.
+        Live system health and the data sources behind every reading. The public API
+        is free and open — no key required — and rate-limited to keep it responsive
+        for everyone.
       </p>
-
-      {/* API Key */}
-      <div style={card}>
-        <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.1rem" }}>Your API Key</h2>
-        <p style={{ color: "var(--gray-500)", fontSize: "0.85rem", marginBottom: "1rem" }}>
-          Sent as the <code>X-API-Key</code> header on every request. Stored only in this browser.
-          The public demo runs without one; a deployment with{" "}
-          <code>CARBON_LENS_API_KEY_REQUIRED=true</code> needs a valid key.
-        </p>
-        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
-          <input
-            type="password"
-            value={apiKey}
-            onChange={(e) => setApiKeyState(e.target.value)}
-            placeholder="cmesh_..."
-            style={{
-              flex: 1,
-              minWidth: 240,
-              padding: "0.5rem 0.75rem",
-              borderRadius: 6,
-              border: "1px solid var(--gray-200)",
-              fontFamily: "var(--mono)",
-              fontSize: "0.85rem",
-            }}
-          />
-          <button
-            onClick={saveApiKey}
-            style={{
-              padding: "0.5rem 1.25rem",
-              borderRadius: 6,
-              border: "none",
-              background: "var(--btn-green)",
-              color: "white",
-              fontWeight: 600,
-              cursor: "pointer",
-              fontSize: "0.85rem",
-            }}
-          >
-            {saved ? "Saved" : "Save"}
-          </button>
-        </div>
-      </div>
 
       {/* System Status */}
       <div style={card}>
@@ -126,52 +71,6 @@ export function Settings() {
           <p style={{ color: "var(--gray-400)" }}>Loading...</p>
         )}
       </div>
-
-      {/* Usage */}
-      {billing && (
-        <div style={card}>
-          <h2 style={{ margin: "0 0 1rem", fontSize: "1.1rem" }}>Today's Usage</h2>
-          <p style={{ color: "var(--gray-500)", fontSize: "0.8rem", marginTop: "-0.5rem", marginBottom: "1rem" }}>
-            A fair-use limit keeps this free service responsive for everyone.
-          </p>
-          <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", flexWrap: "wrap" }}>
-            <div>
-              <span style={{ fontSize: "2rem", fontWeight: 700, color: "var(--green-text)" }}>
-                {billing.today_usage}
-              </span>
-              <span style={{ color: "var(--gray-500)", marginLeft: 4 }}>
-                / {billing.daily_limit.toLocaleString()}
-              </span>
-            </div>
-            <div style={{ flex: 1, minWidth: 200 }}>
-              <div
-                style={{
-                  height: 8,
-                  borderRadius: 4,
-                  background: "var(--gray-100)",
-                  overflow: "hidden",
-                }}
-              >
-                <div
-                  style={{
-                    height: "100%",
-                    width: `${Math.min((billing.today_usage / billing.daily_limit) * 100, 100)}%`,
-                    borderRadius: 4,
-                    background:
-                      billing.today_usage / billing.daily_limit > 0.9
-                        ? "var(--red-400)"
-                        : "var(--green-500)",
-                    transition: "width 0.3s",
-                  }}
-                />
-              </div>
-              <div style={{ fontSize: "0.75rem", color: "var(--gray-500)", marginTop: 4 }}>
-                {billing.remaining.toLocaleString()} requests left today
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Provider Status */}
       <div style={card}>
@@ -209,9 +108,9 @@ export function Settings() {
 
       {/* Setup Guide */}
       <div style={{ ...card, overflow: "auto" }}>
-        <h2 style={{ margin: "0 0 1rem", fontSize: "1.1rem" }}>Add Provider Credentials</h2>
+        <h2 style={{ margin: "0 0 1rem", fontSize: "1.1rem" }}>Data Sources & Setup</h2>
         <p style={{ color: "var(--gray-500)", fontSize: "0.85rem", marginBottom: "1rem" }}>
-          All data providers are free. Add API keys to your <code>.env</code> file or platform dashboard:
+          All data providers are free. A self-hosted deployment adds keys to its <code>.env</code> file or platform dashboard:
         </p>
         <table className="settings-table" style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
           <thead>

@@ -17,6 +17,7 @@ export function Compliance() {
   const [step, setStep] = useState<
     "idle" | "ingesting" | "calculating" | "generating"
   >("idle");
+  const [csvFile, setCsvFile] = useState<File | null>(null);
 
   const { data: reports } = useQuery({
     queryKey: ["compliance-reports", orgId],
@@ -70,6 +71,25 @@ export function Compliance() {
     }
   }
 
+  // Real-data path: upload a usage CSV, then run the SAME calculate → report
+  // pipeline (live grid intensity) the demo uses.
+  const csvPipeline = useMutation({
+    mutationFn: async () => {
+      if (!csvFile) throw new Error("Choose a CSV file first.");
+      await api.compliance.uploadCsv(orgId, csvFile);
+      await api.compliance.calculate(orgId);
+      return api.compliance.generateReport({
+        org_id: orgId,
+        org_name: orgName,
+        report_name: `Usage CSV Report — ${new Date().toISOString().slice(0, 10)}`,
+      });
+    },
+    onSuccess: (report) => {
+      setActiveReport(report);
+      queryClient.invalidateQueries({ queryKey: ["compliance-reports"] });
+    },
+  });
+
   return (
     <div style={section}>
       <h1 style={{ marginBottom: "0.5rem", display: "flex", alignItems: "center" }}>
@@ -95,17 +115,18 @@ export function Compliance() {
         }}
       >
         <h2 style={{ margin: 0, fontSize: "1.1rem" }}>
-          Generate Compliance Report
+          Option 1 — Try it with demo data
         </h2>
         <p style={{ color: "var(--gray-500)", fontSize: "0.85rem", margin: 0 }}>
-          This demo ingests mock cloud usage data, calculates emissions using
-          real-time grid carbon intensity from 11 government sources, and
-          generates a CSRD-aligned report.
+          Ingests a sample mid-size SaaS workload, calculates emissions using
+          real-time grid carbon intensity from the live data sources, and
+          generates a CSRD-aligned report — so you can see the output without
+          uploading anything.
         </p>
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
           <button
             onClick={runFullPipeline}
-            disabled={step !== "idle"}
+            disabled={step !== "idle" || csvPipeline.isPending}
             style={{
               padding: "0.75rem 2rem",
               borderRadius: 8,
@@ -156,6 +177,64 @@ export function Compliance() {
             Calculated {calculateMutation.data.calculations_count} emissions (
             {calculateMutation.data.total_emissions_kgco2e.toFixed(4)} kgCO2e)
             — Sources: {calculateMutation.data.data_sources_used.join(", ")}
+          </div>
+        )}
+      </div>
+
+      {/* Real-data path: upload your own usage CSV */}
+      <div
+        style={{
+          ...card,
+          marginBottom: "2rem",
+          display: "flex",
+          flexDirection: "column",
+          gap: "1rem",
+        }}
+      >
+        <h2 style={{ margin: 0, fontSize: "1.1rem", display: "flex", alignItems: "center" }}>
+          Option 2 — Use your own usage CSV
+          <InfoTip
+            label="usage CSV"
+            text="Upload a CSV of your real cloud usage and get the same report, calculated against live grid intensity per region. It's processed in memory for this report, not stored long-term."
+          />
+        </h2>
+        <p style={{ color: "var(--gray-500)", fontSize: "0.85rem", margin: 0 }}>
+          Columns:{" "}
+          <code style={{ fontSize: "0.8rem", background: "var(--surface-alt)", padding: "1px 5px", borderRadius: 4 }}>
+            provider, region, service, usage_quantity, usage_unit, period_start, period_end
+          </code>{" "}
+          (<code>resource_type</code> optional). Units: <code>vcpu_hours</code>,{" "}
+          <code>gb_hours</code>, <code>requests</code>, <code>gb_transferred</code>, or <code>kwh</code>.
+          Dates are ISO 8601 (e.g. 2026-05-01).
+        </p>
+        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
+          <input
+            type="file"
+            accept=".csv,text/csv"
+            aria-label="Usage CSV file"
+            onChange={(e) => setCsvFile(e.target.files?.[0] ?? null)}
+            style={{ fontSize: "0.85rem" }}
+          />
+          <button
+            onClick={() => csvPipeline.mutate()}
+            disabled={!csvFile || csvPipeline.isPending || step !== "idle"}
+            style={{
+              padding: "0.6rem 1.5rem",
+              borderRadius: 8,
+              border: "none",
+              background: "var(--btn-green)",
+              color: "white",
+              fontWeight: 600,
+              cursor: !csvFile || csvPipeline.isPending ? "not-allowed" : "pointer",
+              opacity: !csvFile || csvPipeline.isPending || step !== "idle" ? 0.6 : 1,
+            }}
+          >
+            {csvPipeline.isPending ? "Calculating…" : "Generate from my CSV"}
+          </button>
+        </div>
+        {csvPipeline.isError && (
+          <div style={{ color: "var(--red-400, #f87171)", fontSize: "0.8rem" }}>
+            {(csvPipeline.error as Error).message}
           </div>
         )}
       </div>

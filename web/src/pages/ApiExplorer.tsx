@@ -15,6 +15,18 @@ const POPULAR_REGIONS: Record<string, string[]> = {
   azure: ["eastus", "westeurope", "norwayeast", "uksouth", "australiaeast", "canadacentral"],
 };
 
+// Shared tooltip copy, reused across the result cards and table headers.
+const TIP = {
+  emissions:
+    "Carbon emitted per kilowatt-hour of electricity, in gCO₂/kWh — an intensity (emissions per unit of power), not a total. Lower is cleaner.",
+  renewable:
+    "Share of the grid's electricity from renewables (wind, solar, hydro) right now. Note: low-carbon grids that lean on nuclear (e.g. France, Sweden) can show a low renewable % while still emitting very little CO₂.",
+  gridZone:
+    "The electricity grid (balancing authority) powering this region — e.g. US-NW-BPAT for Oregon, SE-SE3 for southern Sweden. Carbon is measured at the grid, not the datacenter.",
+  source:
+    "Where the reading came from: a live grid-operator feed (eia, entsoe, uk, aemo, …) or a clearly-labelled estimate (e.g. the open_meteo weather model) when no live feed is configured for that zone.",
+};
+
 export function ApiExplorer() {
   const [provider, setProvider] = useState("aws");
   const [region, setRegion] = useState("us-east-1");
@@ -231,10 +243,10 @@ export function ApiExplorer() {
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
                     <tr style={{ borderBottom: "2px solid var(--gray-200)" }}>
-                      <th style={th}>Region</th>
-                      <th style={{ ...th, textAlign: "right" }}>gCO2/kWh</th>
-                      <th style={{ ...th, textAlign: "right" }}>Renewable %</th>
-                      <th style={th}>Source</th>
+                      <HeadCell label="Region" />
+                      <HeadCell label="gCO2/kWh" tip={TIP.emissions} align="right" />
+                      <HeadCell label="Renewable %" tip={TIP.renewable} align="right" />
+                      <HeadCell label="Source" tip={TIP.source} />
                     </tr>
                   </thead>
                   <tbody>
@@ -282,24 +294,28 @@ export function ApiExplorer() {
             }}
           >
             <ResultCard
-              label="Carbon Intensity"
+              label="Carbon emissions"
               value={`${intensityResult.carbon_intensity_gco2_kwh}`}
               unit="gCO2/kWh"
               positive={intensityResult.carbon_intensity_gco2_kwh <= 100}
+              tip={TIP.emissions}
             />
             <ResultCard
               label="Renewable"
               value={`${intensityResult.renewable_percentage}`}
               unit="%"
               positive={intensityResult.renewable_percentage >= 50}
+              tip={TIP.renewable}
             />
             <ResultCard
               label="Grid Zone"
               value={intensityResult.grid_zone}
+              tip={TIP.gridZone}
             />
             <ResultCard
               label="Data Source"
               value={intensityResult.source}
+              tip={TIP.source}
             />
           </div>
           <div style={codeBlockStyle}>
@@ -376,10 +392,10 @@ export function ApiExplorer() {
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
                     <tr style={{ borderBottom: "2px solid var(--gray-200)" }}>
-                      <th style={th}>Provider</th>
-                      <th style={th}>Region</th>
-                      <th style={{ ...th, textAlign: "right" }}>gCO2/kWh</th>
-                      <th style={{ ...th, textAlign: "right" }}>Renewable %</th>
+                      <HeadCell label="Provider" />
+                      <HeadCell label="Region" />
+                      <HeadCell label="gCO2/kWh" tip={TIP.emissions} align="right" />
+                      <HeadCell label="Renewable %" tip={TIP.renewable} align="right" />
                     </tr>
                   </thead>
                   <tbody>
@@ -422,11 +438,13 @@ function ResultCard({
   value,
   unit,
   positive,
+  tip,
 }: {
   label: string;
   value: string | number;
   unit?: string;
   positive?: boolean;
+  tip?: string;
 }) {
   return (
     <div
@@ -437,7 +455,10 @@ function ResultCard({
         background: "var(--surface-alt)",
       }}
     >
-      <div style={{ fontSize: "0.7rem", color: "var(--gray-500)" }}>{label}</div>
+      <div style={{ fontSize: "0.7rem", color: "var(--gray-500)", display: "flex", alignItems: "center" }}>
+        {label}
+        {tip && <InfoTip label={label} text={tip} />}
+      </div>
       <div
         style={{
           fontSize: "1.3rem",
@@ -501,5 +522,23 @@ const th: React.CSSProperties = {
   fontWeight: 600,
   color: "var(--gray-500)",
 };
+
+// A table header cell with an optional info tooltip.
+function HeadCell({ label, tip, align = "left" }: { label: string; tip?: string; align?: "left" | "right" }) {
+  return (
+    <th style={{ ...th, textAlign: align }}>
+      <span
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: align === "right" ? "flex-end" : "flex-start",
+        }}
+      >
+        {label}
+        {tip && <InfoTip label={label} text={tip} />}
+      </span>
+    </th>
+  );
+}
 
 const td: React.CSSProperties = { padding: "0.5rem", fontSize: "0.85rem" };

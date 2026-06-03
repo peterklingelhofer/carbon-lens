@@ -6,6 +6,33 @@ import { InfoTip } from "../components/InfoTip";
 
 const section = sectionFn();
 
+// Shared tooltip copy for the alternatives table headers.
+const TIP = {
+  emissions:
+    "Carbon emitted per kilowatt-hour of electricity, in gCO₂/kWh — an intensity, not a total. Lower is cleaner.",
+  renewable:
+    "Share of the grid's power from renewables (wind, solar, hydro) right now. Low-carbon grids that lean on nuclear (e.g. France, Sweden) can show a low renewable % while still emitting very little CO₂ — and where no live fuel-mix feed is configured, this falls back to a weather estimate that only sees solar and wind.",
+  gridZone:
+    "The electricity grid (balancing authority) powering this region — e.g. SE-SE3 for southern Sweden. Carbon is measured at the grid, not the datacenter.",
+};
+
+function Th({ label, tip, align = "left" }: { label: string; tip?: string; align?: "left" | "right" }) {
+  return (
+    <th style={{ textAlign: align, padding: "0.5rem" }}>
+      <span
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: align === "right" ? "flex-end" : "flex-start",
+        }}
+      >
+        {label}
+        {tip && <InfoTip label={label} text={tip} />}
+      </span>
+    </th>
+  );
+}
+
 function intensityLabel(val: number): { label: string; color: string } {
   if (val <= 50) return { label: "Very Clean", color: "var(--green-text)" };
   if (val <= 150) return { label: "Clean", color: "var(--green-500)" };
@@ -227,8 +254,9 @@ export function RouteDemo() {
                 <div style={{ fontWeight: 600 }}>{result.recommended.grid_zone}</div>
               </div>
               <div>
-                <div style={{ fontSize: "0.75rem", color: "var(--gray-500)" }}>
-                  Carbon Intensity
+                <div style={{ fontSize: "0.75rem", color: "var(--gray-500)", display: "inline-flex", alignItems: "center" }}>
+                  Carbon emissions
+                  <InfoTip label="Carbon emissions" text={TIP.emissions} />
                 </div>
                 <div style={{ fontWeight: 600 }}>
                   {result.recommended.carbon_intensity_gco2_kwh} gCO2/kWh
@@ -269,12 +297,12 @@ export function RouteDemo() {
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
                   <thead>
                     <tr style={{ borderBottom: "2px solid var(--gray-200)" }}>
-                      <th style={{ textAlign: "left", padding: "0.5rem" }}>#</th>
-                      <th style={{ textAlign: "left", padding: "0.5rem" }}>Region</th>
-                      <th style={{ textAlign: "left", padding: "0.5rem" }}>Grid Zone</th>
-                      <th style={{ textAlign: "right", padding: "0.5rem" }}>gCO2/kWh</th>
-                      <th style={{ textAlign: "right", padding: "0.5rem" }}>Renewable</th>
-                      <th style={{ textAlign: "right", padding: "0.5rem" }}>Score</th>
+                      <Th label="#" tip="Rank by your carbon/cost priority. #1 is the recommended region above; these are the next-best." />
+                      <Th label="Region" tip="The cloud provider and region — e.g. aws / eu-north-1." />
+                      <Th label="Grid Zone" tip={TIP.gridZone} />
+                      <Th label="gCO2/kWh" tip={TIP.emissions} align="right" />
+                      <Th label="Renewable" tip={TIP.renewable} align="right" />
+                      <Th label="Score" tip="Internal ranking score from your carbon-vs-cost weighting — lower is a better match for your chosen priorities. It's a relative ordering, not a physical unit." align="right" />
                     </tr>
                   </thead>
                   <tbody>

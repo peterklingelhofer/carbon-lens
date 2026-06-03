@@ -265,6 +265,28 @@ export const api = {
         body: JSON.stringify(body),
       }),
 
+    // Multipart upload — can't use `request` (which forces JSON); let the browser
+    // set the multipart boundary itself.
+    uploadCsv: async (orgId: string, file: File): Promise<UsageIngestionResponse> => {
+      const form = new FormData();
+      form.append("file", file);
+      const apiKey = getApiKey();
+      const res = await fetch(
+        `${BASE_URL}/api/v1/compliance/usage/upload-csv?org_id=${encodeURIComponent(orgId)}`,
+        {
+          method: "POST",
+          headers: { ...(apiKey ? { "X-API-Key": apiKey } : {}) },
+          body: form,
+        },
+      );
+      lastApiResponseAt = Date.now();
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({ detail: res.statusText }));
+        throw new Error(body.detail || `API error ${res.status}`);
+      }
+      return res.json();
+    },
+
     calculate: (orgId: string, method: string = "location_based") =>
       request<CalculationResponse>("/api/v1/compliance/calculate", {
         method: "POST",
