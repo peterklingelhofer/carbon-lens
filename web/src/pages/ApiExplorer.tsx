@@ -15,6 +15,9 @@ const POPULAR_REGIONS: Record<string, string[]> = {
   azure: ["eastus", "westeurope", "norwayeast", "uksouth", "australiaeast", "canadacentral"],
 };
 
+// The deployed API base — used for the Swagger link and the copy-pasteable curls.
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
 // Shared tooltip copy, reused across the result cards and table headers.
 const TIP = {
   emissions:
@@ -83,8 +86,25 @@ export function ApiExplorer() {
           text="An API (application programming interface) lets other software request data from this service. This page lets you try those requests by hand and see the live response your code would get."
         />
       </h1>
-      <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
-        Try the carbon-intensity API by hand. Every query hits live data sources.
+      <p style={{ color: "var(--gray-500)", marginBottom: "1rem" }}>
+        Try the carbon API by hand. Every query hits live data sources. No key
+        required, rate-limited to 100 requests/min.
+      </p>
+      <p style={{ marginBottom: "2rem", fontSize: "0.9rem" }}>
+        Prefer the full reference?{" "}
+        <a
+          href={`${API_BASE}/docs`}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: "var(--green-text)", fontWeight: 600, textDecoration: "underline" }}
+        >
+          Open the interactive Swagger docs ↗
+        </a>{" "}
+        <span style={{ color: "var(--gray-500)" }}>
+          (every endpoint, with request/response schemas — also at{" "}
+          <code style={{ fontSize: "0.8rem" }}>/redoc</code> and{" "}
+          <code style={{ fontSize: "0.8rem" }}>/openapi.json</code>)
+        </span>
       </p>
 
       {/* Tabs */}
@@ -165,7 +185,7 @@ export function ApiExplorer() {
 
           {/* curl example */}
           <div style={codeBlockStyle}>
-            <code>curl http://localhost:8000/api/v1/carbon/{provider}/{region}</code>
+            <code>curl {API_BASE}/api/v1/carbon/{provider}/{region}</code>
           </div>
 
           <button
@@ -189,7 +209,7 @@ export function ApiExplorer() {
           </p>
 
           <div style={codeBlockStyle}>
-            <code style={{ whiteSpace: "pre" }}>{`curl -X POST http://localhost:8000/api/v1/route \\
+            <code style={{ whiteSpace: "pre" }}>{`curl -X POST ${API_BASE}/api/v1/route \\
   -H "Content-Type: application/json" \\
   -d '{"constraints": {"providers": ["aws","gcp","azure"], "carbon_weight": 1.0}}'`}</code>
           </div>
@@ -215,7 +235,7 @@ export function ApiExplorer() {
           </p>
 
           <div style={codeBlockStyle}>
-            <code style={{ whiteSpace: "pre" }}>{`curl -X POST http://localhost:8000/api/v1/carbon/batch \\
+            <code style={{ whiteSpace: "pre" }}>{`curl -X POST ${API_BASE}/api/v1/carbon/batch \\
   -H "Content-Type: application/json" \\
   -d '[
     {"provider": "aws", "region": "us-east-1"},

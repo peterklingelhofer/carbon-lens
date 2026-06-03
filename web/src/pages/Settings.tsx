@@ -3,6 +3,7 @@ import { api } from "../api/client";
 import { section as sectionFn, card } from "../styles";
 
 const section = sectionFn();
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 function StatusDot({ ok }: { ok: boolean }) {
   return (
@@ -44,7 +45,16 @@ export function Settings() {
       <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
         Live system health and the data sources behind every reading. The public API
         is free and open — no key required — and rate-limited to keep it responsive
-        for everyone.
+        for everyone. Browse every endpoint in the{" "}
+        <a
+          href={`${API_BASE}/docs`}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ color: "var(--green-text)", fontWeight: 600, textDecoration: "underline" }}
+        >
+          interactive Swagger docs ↗
+        </a>
+        .
       </p>
 
       {/* System Status */}
