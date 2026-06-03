@@ -21,15 +21,60 @@ function StatusDot({ ok }: { ok: boolean }) {
   );
 }
 
+function ApiUnreachable({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div style={{ color: "var(--gray-500)", fontSize: "0.85rem" }}>
+      <p style={{ margin: "0 0 0.6rem" }}>
+        Couldn't reach the API. It's a free service that sleeps when idle and can take
+        ~50s to wake on the first request — give it a moment, then retry.
+      </p>
+      <button
+        onClick={onRetry}
+        style={{
+          padding: "0.4rem 1.1rem",
+          borderRadius: 6,
+          border: "1px solid var(--gray-200)",
+          background: "var(--surface)",
+          color: "inherit",
+          cursor: "pointer",
+          fontSize: "0.85rem",
+        }}
+      >
+        Retry
+      </button>
+    </div>
+  );
+}
+
 export function Settings() {
-  const { data: providers, isLoading } = useQuery({
+  // The free API sleeps when idle and needs ~50s to wake, so retry a few times
+  // with backoff before giving up — and surface a real error (not endless
+  // "Loading…") if it can't be reached at all.
+  const retryOpts = {
+    retry: 4,
+    retryDelay: (attempt: number) => Math.min(1000 * 2 ** attempt, 12000),
+  } as const;
+
+  const {
+    data: providers,
+    isLoading: providersLoading,
+    isError: providersError,
+    refetch: refetchProviders,
+  } = useQuery({
     queryKey: ["providers"],
     queryFn: () => api.providers(),
+    ...retryOpts,
   });
 
-  const { data: health } = useQuery({
+  const {
+    data: health,
+    isError: healthError,
+    isFetching: healthFetching,
+    refetch: refetchHealth,
+  } = useQuery({
     queryKey: ["health"],
     queryFn: () => api.health(),
+    ...retryOpts,
   });
 
   return (
@@ -77,8 +122,12 @@ export function Settings() {
               <div style={{ fontWeight: 600 }}>{health.carbon_source}</div>
             </div>
           </div>
+        ) : healthError ? (
+          <ApiUnreachable onRetry={() => refetchHealth()} />
         ) : (
-          <p style={{ color: "var(--gray-400)" }}>Loading...</p>
+          <p style={{ color: "var(--gray-400)" }}>
+            {healthFetching ? "Checking… (the API may be waking up — up to ~50s)" : "Loading…"}
+          </p>
         )}
       </div>
 
@@ -96,9 +145,7 @@ export function Settings() {
           Providers with credentials deliver real-time grid data. No-key providers work out of the box.
         </p>
 
-        {isLoading ? (
-          <p style={{ color: "var(--gray-400)" }}>Loading provider status...</p>
-        ) : providers ? (
+        {providers ? (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: "0.5rem" }}>
             {Object.entries(providers.configured).map(([name]) => (
               <div key={name} style={{ padding: "0.5rem", display: "flex", alignItems: "center" }}>
@@ -113,6 +160,10 @@ export function Settings() {
               </div>
             ))}
           </div>
+        ) : providersError ? (
+          <ApiUnreachable onRetry={() => refetchProviders()} />
+        ) : providersLoading ? (
+          <p style={{ color: "var(--gray-400)" }}>Loading provider status…</p>
         ) : null}
       </div>
 
