@@ -29,6 +29,8 @@ services:
         value: "8000"
       - key: CARBON_LENS_LOG_FORMAT
         value: json
+      - key: CARBON_LENS_CORS_ORIGINS
+        value: '["https://carbonlens.peterklingelhofer.workers.dev","http://localhost:5173"]'
       - key: CARBON_LENS_API_KEY_REQUIRED
         value: "false"
       - key: CARBON_LENS_ADMIN_SECRET

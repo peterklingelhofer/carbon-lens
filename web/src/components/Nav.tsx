@@ -78,14 +78,11 @@ export function Nav() {
           <NavLink to="/route" style={linkStyle}>
             Route
           </NavLink>
-          <NavLink to="/orgs" style={linkStyle}>
-            Orgs
-          </NavLink>
           <NavLink to="/about" style={linkStyle}>
             About
           </NavLink>
           <NavLink to="/settings" style={linkStyle}>
-            Settings
+            Status
           </NavLink>
         </div>
       </nav>
