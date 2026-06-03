@@ -21,8 +21,8 @@ const CarbonGlobe = lazy(() => import("./pages/CarbonGlobe"));
 export default function App() {
   return (
     <ErrorBoundary>
-      <ColdStartBanner />
       <Nav />
+      <ColdStartBanner />
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/api-explorer" element={<ApiExplorer />} />
