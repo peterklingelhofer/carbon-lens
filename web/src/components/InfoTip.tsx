@@ -1,7 +1,7 @@
 import { useId, useState } from "react";
 
 // A small "i" icon that reveals a plain-language definition on hover, focus, or
-// click — for domain jargon (gCO2/kWh, carbon intensity, balancing authority…).
+// click — for domain jargon (gCO₂/kWh, carbon intensity, balancing authority…).
 // Keyboard-accessible: it's a real button with an aria-label and role=tooltip.
 export function InfoTip({
   label,

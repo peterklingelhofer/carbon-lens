@@ -5,6 +5,7 @@ import { section as sectionFn, card } from "../styles";
 import { InfoTip } from "../components/InfoTip";
 
 const section = sectionFn();
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 // Shared tooltip copy for the alternatives table headers.
 const TIP = {
@@ -44,7 +45,6 @@ function intensityLabel(val: number): { label: string; color: string } {
 export function RouteDemo() {
   const [providers, setProviders] = useState<string[]>(["aws", "gcp", "azure"]);
   const [residency, setResidency] = useState("");
-  const [carbonWeight, setCarbonWeight] = useState(1.0);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<RouteResponse | null>(null);
   const [error, setError] = useState("");
@@ -68,8 +68,7 @@ export function RouteDemo() {
         constraints: {
           providers,
           data_residency: residency ? [residency] : undefined,
-          carbon_weight: carbonWeight,
-          cost_weight: Math.round((1 - carbonWeight) * 100) / 100,
+          carbon_weight: 1.0,
         },
       });
       setResult(res);
@@ -130,8 +129,12 @@ export function RouteDemo() {
 
         {/* Data Residency */}
         <div style={{ marginBottom: "1.25rem" }}>
-          <label style={{ fontWeight: 600, display: "block", marginBottom: "0.5rem" }}>
+          <label style={{ fontWeight: 600, display: "inline-flex", alignItems: "center", marginBottom: "0.5rem" }}>
             Data Residency (optional)
+            <InfoTip
+              label="data residency"
+              text="A rule about where your data is legally allowed to live — e.g. 'EU only' for GDPR. Restricting residency limits routing to regions in that area, so the greenest pick may differ."
+            />
           </label>
           <select
             aria-label="Data residency"
@@ -153,35 +156,11 @@ export function RouteDemo() {
           </select>
         </div>
 
-        {/* Carbon Weight */}
-        <div style={{ marginBottom: "1.5rem" }}>
-          <label style={{ fontWeight: 600, display: "flex", alignItems: "center", marginBottom: "0.5rem" }}>
-            Optimization priority
-            <InfoTip
-              label="optimization priority"
-              text="Slide toward Carbon to pick the cleanest region even if it costs more, or toward Cost to favour the cheapest. In between, both are weighed together when ranking regions."
-            />
-          </label>
-          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
-            <span style={{ fontSize: "0.85rem", color: "var(--gray-500)" }}>Cost</span>
-            <input
-              type="range"
-              aria-label="Optimization priority: cost to carbon"
-              min={0}
-              max={1}
-              step={0.1}
-              value={carbonWeight}
-              onChange={(e) => setCarbonWeight(parseFloat(e.target.value))}
-              style={{ flex: 1 }}
-            />
-            <span style={{ fontSize: "0.85rem", color: "var(--green-text)", fontWeight: 600 }}>
-              Carbon
-            </span>
-          </div>
-          <div style={{ fontSize: "0.8rem", color: "var(--gray-400)", marginTop: "0.25rem" }}>
-            Carbon: {(carbonWeight * 100).toFixed(0)}% / Cost:{" "}
-            {((1 - carbonWeight) * 100).toFixed(0)}%
-          </div>
+        {/* Ranking basis — honest about what the engine actually optimizes */}
+        <div style={{ marginBottom: "1.5rem", fontSize: "0.85rem", color: "var(--gray-500)" }}>
+          Regions are ranked by <strong style={{ color: "var(--green-text)" }}>lowest carbon intensity</strong> right
+          now, within your provider and residency filters. Cost-aware ranking (trading carbon against price) is on the
+          roadmap — it isn't factored in yet.
         </div>
 
         <button
@@ -259,7 +238,7 @@ export function RouteDemo() {
                   <InfoTip label="Carbon emissions" text={TIP.emissions} />
                 </div>
                 <div style={{ fontWeight: 600 }}>
-                  {result.recommended.carbon_intensity_gco2_kwh} gCO2/kWh
+                  {result.recommended.carbon_intensity_gco2_kwh} gCO₂/kWh
                 </div>
               </div>
               <div>
@@ -300,9 +279,9 @@ export function RouteDemo() {
                       <Th label="#" tip="Rank by your carbon/cost priority. #1 is the recommended region above; these are the next-best." />
                       <Th label="Region" tip="The cloud provider and region — e.g. aws / eu-north-1." />
                       <Th label="Grid Zone" tip={TIP.gridZone} />
-                      <Th label="gCO2/kWh" tip={TIP.emissions} align="right" />
+                      <Th label="gCO₂/kWh" tip={TIP.emissions} align="right" />
                       <Th label="Renewable" tip={TIP.renewable} align="right" />
-                      <Th label="Score" tip="Internal ranking score from your carbon-vs-cost weighting — lower is a better match for your chosen priorities. It's a relative ordering, not a physical unit." align="right" />
+                      <Th label="Score" tip="Ranking score derived from carbon intensity (lower = greener). It's a relative ordering within this result set, not a physical unit, and isn't comparable across different queries. Cost is not yet a factor." align="right" />
                     </tr>
                   </thead>
                   <tbody>
@@ -355,15 +334,14 @@ export function RouteDemo() {
                 lineHeight: 1.6,
               }}
             >
-              {`curl -X POST http://localhost:8000/api/v1/route \\
+              {`curl -X POST ${API_BASE}/api/v1/route \\
   -H "Content-Type: application/json" \\
   -d '${JSON.stringify(
     {
       constraints: {
         providers,
         ...(residency ? { data_residency: [residency] } : {}),
-        carbon_weight: carbonWeight,
-        cost_weight: Math.round((1 - carbonWeight) * 100) / 100,
+        carbon_weight: 1.0,
       },
     },
     null,

@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
 import { useSnapshot, snapshotEnabled } from "../api/snapshot";
+import { InfoTip } from "../components/InfoTip";
 import { section as sectionFn, card } from "../styles";
+import { timeAgo } from "../lib/format";
 
 const section = sectionFn();
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -14,13 +16,6 @@ const COLD_START_RETRY = {
   retryDelay: (attempt: number) => Math.min(1500 * 2 ** attempt, 10000),
 } as const;
 
-function timeAgo(iso: string): string {
-  const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins} min ago`;
-  const hrs = Math.round(mins / 60);
-  return `${hrs} hr${hrs > 1 ? "s" : ""} ago`;
-}
 
 function StatusDot({ ok }: { ok: boolean }) {
   return (
@@ -140,7 +135,10 @@ export function Settings() {
               <div style={{ fontWeight: 600 }}>{health.version}</div>
             </div>
             <div>
-              <div style={{ fontSize: "0.75rem", color: "var(--gray-500)", textTransform: "uppercase" }}>Carbon Source</div>
+              <div style={{ fontSize: "0.75rem", color: "var(--gray-500)", textTransform: "uppercase", display: "inline-flex", alignItems: "center" }}>
+                Carbon Source
+                <InfoTip label="carbon source" text="Which data-source mode the API is running. 'hybrid' cascades through all providers (live feeds first, then estimates) — the normal setting. Other values force a single source." />
+              </div>
               <div style={{ fontWeight: 600 }}>{health.carbon_source}</div>
             </div>
           </div>

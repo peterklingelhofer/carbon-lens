@@ -9,7 +9,7 @@ const section = sectionFn(1100);
 type Strategy = "lowest_carbon" | "highest_renewable" | "balanced";
 
 const STRATEGIES: { value: Strategy; label: string; desc: string }[] = [
-  { value: "lowest_carbon", label: "Lowest Carbon", desc: "Minimize gCO2/kWh" },
+  { value: "lowest_carbon", label: "Lowest Carbon", desc: "Minimize gCO₂/kWh" },
   { value: "highest_renewable", label: "Highest Renewable", desc: "Maximize renewable %" },
   { value: "balanced", label: "Balanced", desc: "60% carbon + 40% renewable" },
 ];
@@ -76,18 +76,18 @@ export function Scheduler() {
             <>
               <div style={{ display: "flex", gap: "0.5rem", alignItems: "baseline", marginBottom: "0.5rem" }}>
                 <span style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--green-text)", textTransform: "uppercase" }}>
-                  {nowRecommended.provider as string}
+                  {nowRecommended.provider}
                 </span>
                 <span style={{ fontSize: "1rem", fontFamily: "var(--mono)", color: "var(--gray-600)" }}>
-                  {nowRecommended.region as string}
+                  {nowRecommended.region}
                 </span>
               </div>
               <div style={{ display: "flex", gap: "1.5rem", fontSize: "0.85rem" }}>
                 <span>
-                  <strong>{nowRecommended.carbon_intensity_gco2_kwh as number}</strong> gCO2/kWh
+                  <strong>{nowRecommended.carbon_intensity_gco2_kwh}</strong> gCO₂/kWh
                 </span>
                 <span>
-                  <strong>{nowRecommended.renewable_percentage as number}%</strong> renewable
+                  <strong>{nowRecommended.renewable_percentage}%</strong> renewable
                 </span>
               </div>
             </>
@@ -108,7 +108,13 @@ export function Scheduler() {
 
       {/* Find Optimal Window */}
       <div style={{ ...card, marginBottom: "2rem" }}>
-        <h2 style={{ margin: "0 0 1rem", fontSize: "1.1rem" }}>Find Optimal Window</h2>
+        <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.1rem", display: "flex", alignItems: "center" }}>
+          Find Optimal Window
+          <InfoTip
+            label="how the window is estimated"
+            text="Honest caveat: future hours use a simplified time-of-day model (a solar/demand curve applied to the current reading), NOT a real grid forecast — and the curve is keyed to UTC, so per-region local timing is approximate. The 'carbon saved' figure compares the best future slot against the dirtiest candidate region right now. Treat it as directional guidance, not a precise prediction."
+          />
+        </h2>
 
         <div style={{
           display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
@@ -208,26 +214,30 @@ export function Scheduler() {
         <div style={{ ...card, border: "1px solid var(--green-300)", marginBottom: "2rem" }}>
           <h2 style={{ margin: "0 0 1rem", fontSize: "1.1rem" }}>
             Recommended Window
-            {(recommendation.carbon_saved_vs_now_pct as number) > 0 && (
+            {(recommendation.carbon_saved_vs_now_pct) > 0 && (
               <span style={{
                 marginLeft: 8, fontSize: "0.8rem", fontWeight: 600,
                 color: "var(--green-text)", background: "var(--green-100)",
                 padding: "2px 8px", borderRadius: 4,
               }}>
-                {recommendation.carbon_saved_vs_now_pct as number}% carbon saved
+                {recommendation.carbon_saved_vs_now_pct}% carbon saved
               </span>
             )}
           </h2>
+          <p style={{ margin: "-0.5rem 0 1rem", fontSize: "0.78rem", color: "var(--gray-400)" }}>
+            Estimated from a simplified time-of-day model (not a real grid forecast); "% carbon saved" is vs the
+            dirtiest candidate region right now. Directional guidance, not a precise prediction.
+          </p>
 
           <div style={{
             display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
             gap: "0.75rem", marginBottom: "1rem",
           }}>
-            <StatCard label="Provider" value={(recommended.provider as string).toUpperCase()} />
-            <StatCard label="Region" value={recommended.region as string} mono />
-            <StatCard label="Carbon" value={`${recommended.carbon_intensity_gco2_kwh}`} unit="gCO2/kWh" />
+            <StatCard label="Provider" value={(recommended.provider).toUpperCase()} />
+            <StatCard label="Region" value={recommended.region} mono />
+            <StatCard label="Carbon" value={`${recommended.carbon_intensity_gco2_kwh}`} unit="gCO₂/kWh" />
             <StatCard label="Renewable" value={`${recommended.renewable_percentage}`} unit="%" positive />
-            <StatCard label="Start" value={new Date(recommended.start as string).toLocaleString()} />
+            <StatCard label="Start" value={new Date(recommended.start).toLocaleString()} />
             <StatCard label="Slots Evaluated" value={`${recommendation.evaluated_slots}`} />
           </div>
 
@@ -241,7 +251,7 @@ export function Scheduler() {
                     <tr style={{ borderBottom: "2px solid var(--gray-200)" }}>
                       <th style={th}>Provider</th>
                       <th style={th}>Region</th>
-                      <th style={{ ...th, textAlign: "right" }}>gCO2/kWh</th>
+                      <th style={{ ...th, textAlign: "right" }}>gCO₂/kWh</th>
                       <th style={{ ...th, textAlign: "right" }}>Renewable %</th>
                       <th style={th}>Start Time</th>
                     </tr>
@@ -250,19 +260,19 @@ export function Scheduler() {
                     {alternatives.slice(0, 8).map((alt, i) => (
                       <tr key={i} style={{ borderBottom: "1px solid var(--gray-100)" }}>
                         <td style={{ ...td, fontWeight: 600, textTransform: "uppercase", fontSize: "0.8rem" }}>
-                          {alt.provider as string}
+                          {alt.provider}
                         </td>
                         <td style={{ ...td, fontFamily: "var(--mono)", fontSize: "0.8rem" }}>
-                          {alt.region as string}
+                          {alt.region}
                         </td>
                         <td style={{ ...td, textAlign: "right" }}>
-                          {alt.carbon_intensity_gco2_kwh as number}
+                          {alt.carbon_intensity_gco2_kwh}
                         </td>
                         <td style={{ ...td, textAlign: "right", color: "var(--green-text)", fontWeight: 600 }}>
-                          {alt.renewable_percentage as number}%
+                          {alt.renewable_percentage}%
                         </td>
                         <td style={{ ...td, fontSize: "0.8rem", color: "var(--gray-500)" }}>
-                          {new Date(alt.start as string).toLocaleString()}
+                          {new Date(alt.start).toLocaleString()}
                         </td>
                       </tr>
                     ))}

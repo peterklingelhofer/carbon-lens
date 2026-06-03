@@ -97,7 +97,7 @@ export function Compliance() {
         Emissions reporting
         <InfoTip
           label="emissions reporting"
-          text="Turns your cloud usage into a draft greenhouse-gas emissions report, built from real grid data. Aligned with the GHG Protocol (the standard accounting framework) and the EU's CSRD / ESRS E1 disclosure rules. It's a defensible first draft, not an assured/audited report."
+          text="Turns your cloud usage into a draft greenhouse-gas emissions report, built from real grid data. Aligned with the GHG Protocol (the standard accounting framework) and the EU's CSRD / ESRS E1 disclosure rules. It's a useful first draft, not an assured/audited report."
         />
       </h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
@@ -120,7 +120,7 @@ export function Compliance() {
         </h2>
         <p style={{ color: "var(--gray-500)", fontSize: "0.85rem", margin: 0 }}>
           Ingests a sample mid-size SaaS workload, calculates emissions using
-          real-time grid carbon intensity from the live data sources, and
+          the latest grid carbon intensity from the live data sources, and
           generates a CSRD-aligned report — so you can see the output without
           uploading anything.
         </p>
@@ -176,7 +176,7 @@ export function Compliance() {
             }}
           >
             Calculated {calculateMutation.data.calculations_count} emissions (
-            {calculateMutation.data.total_emissions_kgco2e.toFixed(4)} kgCO2e)
+            {calculateMutation.data.total_emissions_kgco2e.toFixed(4)} kgCO₂e)
             — Sources: {calculateMutation.data.data_sources_used.join(", ")}
           </div>
         )}
@@ -277,7 +277,7 @@ export function Compliance() {
                     fontSize: "0.8rem",
                   }}
                 >
-                  Total kgCO2e
+                  Total kgCO₂e
                 </th>
                 <th
                   style={{
@@ -347,9 +347,29 @@ export function Compliance() {
 
 function ReportView({ report }: { report: ComplianceReport }) {
   const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+  // Demo reports are built from a synthetic usage fixture (not a real CSV upload).
+  const isDemo = !report.report_name.toLowerCase().includes("csv");
 
   return (
     <div style={{ ...card, marginBottom: "2rem" }}>
+      {isDemo && (
+        <div
+          style={{
+            display: "inline-block",
+            fontSize: "0.7rem",
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.04em",
+            color: "var(--amber)",
+            border: "1px solid var(--amber)",
+            borderRadius: 4,
+            padding: "2px 8px",
+            marginBottom: "1rem",
+          }}
+        >
+          Demo data — synthetic usage, not a real workload
+        </div>
+      )}
       <div
         style={{
           display: "flex",
@@ -427,7 +447,7 @@ function ReportView({ report }: { report: ComplianceReport }) {
         <StatCard
           label="Total Emissions"
           value={`${report.total_kgco2e.toFixed(4)}`}
-          unit="kgCO2e"
+          unit="kgCO₂e"
         />
         <StatCard
           label="Energy Consumed"
@@ -455,7 +475,7 @@ function ReportView({ report }: { report: ComplianceReport }) {
         GHG Protocol scope breakdown
         <InfoTip
           label="GHG Protocol scopes"
-          text="The GHG Protocol sorts emissions into scopes. Scope 2 = emissions from the electricity you use. Scope 3 = emissions across your supply chain, including the cloud services you buy. This splits your cloud footprint across them."
+          text="The GHG Protocol sorts emissions into scopes. Scope 2 = emissions from the electricity you use; Scope 3 Cat 1 = emissions embedded in services you purchase (cloud included). Location-based uses the local grid's average intensity; market-based reflects contracts you've bought (RECs/PPAs). kgCO₂e = kilograms of CO₂-equivalent (all greenhouse gases expressed as CO₂)."
         />
       </h3>
       <div style={{ overflow: "auto" }}>
@@ -471,7 +491,7 @@ function ReportView({ report }: { report: ComplianceReport }) {
             <tr style={{ borderBottom: "2px solid var(--gray-200)" }}>
               <th style={{ textAlign: "left", padding: "0.5rem" }}>Scope</th>
               <th style={{ textAlign: "left", padding: "0.5rem" }}>Method</th>
-              <th style={{ textAlign: "right", padding: "0.5rem" }}>kgCO2e</th>
+              <th style={{ textAlign: "right", padding: "0.5rem" }}>kgCO₂e</th>
             </tr>
           </thead>
           <tbody>
@@ -524,6 +544,10 @@ function ReportView({ report }: { report: ComplianceReport }) {
           </tbody>
         </table>
       </div>
+      <p style={{ fontSize: "0.75rem", color: "var(--gray-400)", margin: "-0.75rem 0 1.25rem" }}>
+        Note: with no supplier-specific contracts (RECs/PPAs) supplied, market-based mirrors location-based here — a
+        real market-based figure would apply your contractual instruments.
+      </p>
 
       {/* By provider */}
       {Object.keys(report.scope2_location_by_provider).length > 0 && (
@@ -574,7 +598,7 @@ function ReportView({ report }: { report: ComplianceReport }) {
                   <div
                     style={{ fontSize: "0.7rem", color: "var(--gray-500)" }}
                   >
-                    kgCO2e
+                    kgCO₂e
                   </div>
                 </div>
               )
@@ -594,9 +618,13 @@ function ReportView({ report }: { report: ComplianceReport }) {
           border: `1px solid ${report.eu_taxonomy_aligned ? "var(--green-200)" : "var(--yellow-200, #fef08a)"}`,
         }}
       >
-        <div style={{ fontWeight: 600, fontSize: "0.9rem", marginBottom: 4 }}>
+        <div style={{ fontWeight: 600, fontSize: "0.9rem", marginBottom: 4, display: "inline-flex", alignItems: "center" }}>
           EU Taxonomy Status:{" "}
           {report.eu_taxonomy_aligned ? "Aligned" : "Eligible (not yet aligned)"}
+          <InfoTip
+            label="EU Taxonomy status"
+            text="Simplified screening only: this flags 'aligned' purely from a high renewable share. Real EU Taxonomy alignment also requires technical screening criteria, Do-No-Significant-Harm, and minimum safeguards — none of which are assessed here. Treat as indicative, not a determination."
+          />
         </div>
         <div style={{ fontSize: "0.8rem", color: "var(--gray-600)" }}>
           {report.taxonomy_notes}

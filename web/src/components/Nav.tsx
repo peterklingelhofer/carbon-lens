@@ -38,12 +38,18 @@ export function Nav() {
         .nav-links {
           display: flex;
           align-items: center;
+          flex-wrap: wrap;
+          row-gap: 0.15rem;
           gap: clamp(0rem, 0.5vw, 0.25rem);
           min-width: 0;
         }
         .nav-links a {
           padding: clamp(0.3rem, 0.8vw, 0.5rem) clamp(0.35rem, 1.2vw, 1rem);
-          font-size: clamp(0.7rem, 1.8vw, 0.95rem);
+          font-size: clamp(0.72rem, 1.8vw, 0.95rem);
+          white-space: nowrap;
+        }
+        @media (max-width: 640px) {
+          .nav-bar { flex-wrap: wrap; }
         }
         @media (prefers-color-scheme: dark) {
           .nav-brand { color: var(--green-400); }
