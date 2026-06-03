@@ -437,6 +437,7 @@ export function Dashboard() {
                             display: "inline-flex",
                             alignItems: "center",
                             gap: 4,
+                            whiteSpace: "nowrap",
                             color: active ? "var(--green-text)" : "inherit",
                           }}
                         >
