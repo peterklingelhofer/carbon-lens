@@ -57,14 +57,14 @@ export function Nav() {
           <NavLink to="/" style={linkStyle} end>
             Home
           </NavLink>
+          <NavLink to="/globe" style={linkStyle}>
+            Globe
+          </NavLink>
           <NavLink to="/api-explorer" style={linkStyle}>
             API Explorer
           </NavLink>
           <NavLink to="/dashboard" style={linkStyle}>
             Grid Data
-          </NavLink>
-          <NavLink to="/globe" style={linkStyle}>
-            Globe
           </NavLink>
           <NavLink to="/compliance" style={linkStyle}>
             Compliance
