@@ -43,11 +43,7 @@ export function ColdStartBanner() {
       role="status"
       aria-live="polite"
       style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 1000,
+        // Normal flow, directly under the sticky nav — never covers navigation.
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -56,7 +52,7 @@ export function ColdStartBanner() {
         background: "var(--btn-green)",
         color: "white",
         fontSize: "0.85rem",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+        textAlign: "center",
       }}
     >
       <span
