@@ -97,6 +97,19 @@ export function Landing() {
             See live grid data
           </Link>
         </div>
+        <p
+          style={{
+            fontSize: "0.9rem",
+            margin: "1.5rem auto 0",
+            opacity: 0.8,
+          }}
+        >
+          Free to use, no account required — a public service for anyone working
+          to measure and cut cloud emissions.{" "}
+          <Link to="/about" style={{ color: "white", textDecoration: "underline" }}>
+            Why it's free
+          </Link>
+        </p>
       </div>
 
       <section style={section}>

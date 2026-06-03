@@ -7,7 +7,7 @@ import { Landing } from "./pages/Landing";
 import { Dashboard } from "./pages/Dashboard";
 import { RouteDemo } from "./pages/RouteDemo";
 import { Settings } from "./pages/Settings";
-import { Plans } from "./pages/Plans";
+import { About } from "./pages/About";
 import { Organizations } from "./pages/Organizations";
 import { Compliance } from "./pages/Compliance";
 import { ApiExplorer } from "./pages/ApiExplorer";
@@ -45,7 +45,7 @@ export default function App() {
         <Route path="/compliance" element={<Compliance />} />
         <Route path="/sla" element={<SLAMonitor />} />
         <Route path="/scheduler" element={<Scheduler />} />
-        <Route path="/plans" element={<Plans />} />
+        <Route path="/about" element={<About />} />
         <Route path="/orgs" element={<Organizations />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<NotFound />} />

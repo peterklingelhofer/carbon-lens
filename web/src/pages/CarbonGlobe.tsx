@@ -225,7 +225,7 @@ function MetricToggle({
         {label}
         {tip && <InfoTip label={label} text={tip} placement="top" />}
       </div>
-      <div style={{ display: "flex", width: PANEL_W, border: "1px solid rgba(255,255,255,0.2)", borderRadius: 999, overflow: "hidden", background: "rgba(10,15,20,0.6)" }}>
+      <div style={{ display: "flex", width: PANEL_W, border: "1px solid rgba(255,255,255,0.2)", borderRadius: 6, overflow: "hidden", background: "rgba(10,15,20,0.6)" }}>
         {(["renewable", "intensity"] as Metric[]).map((m) => (
           <button
             key={m}
@@ -515,7 +515,7 @@ export default function CarbonGlobe() {
         />
         {colorMetric === "intensity" ? (
           <>
-            <div style={{ width: PANEL_W, height: 12, borderRadius: 3, background: "linear-gradient(90deg,#22c55e,#84cc16,#eab308,#f97316,#ef4444)" }} />
+            <div style={{ width: PANEL_W, height: 12, borderRadius: 6, background: "linear-gradient(90deg,#22c55e,#84cc16,#eab308,#f97316,#ef4444)" }} />
             <div style={{ display: "flex", justifyContent: "space-between", width: PANEL_W, marginTop: 2, marginBottom: 12, color: "#94a3b8" }}>
               <span>0 (greener)</span>
               <span>500+ gCO₂ (dirtier)</span>
@@ -523,7 +523,7 @@ export default function CarbonGlobe() {
           </>
         ) : (
           <>
-            <div style={{ width: PANEL_W, height: 12, borderRadius: 3, background: "linear-gradient(90deg,#ef4444,#f97316,#eab308,#84cc16,#22c55e)" }} />
+            <div style={{ width: PANEL_W, height: 12, borderRadius: 6, background: "linear-gradient(90deg,#ef4444,#f97316,#eab308,#84cc16,#22c55e)" }} />
             <div style={{ display: "flex", justifyContent: "space-between", width: PANEL_W, marginTop: 2, marginBottom: 12, color: "#94a3b8" }}>
               <span>0% (dirtier)</span>
               <span>100% (greener)</span>
@@ -551,7 +551,7 @@ export default function CarbonGlobe() {
               top: 0,
               width: heightBarW,
               height: 12,
-              borderRadius: 3,
+              borderRadius: 6,
               background: heightCapped
                 ? "#e2e8f0"
                 : "linear-gradient(to right, #e2e8f0, #e2e8f0 70%, rgba(226,232,240,0.12))",

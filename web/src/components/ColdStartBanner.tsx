@@ -72,7 +72,7 @@ export function ColdStartBanner() {
         }}
       />
       {mode === "waking"
-        ? "Waking up the API — the free-tier server sleeps after 15 min of inactivity and takes ~50s to start. This only happens on the first request."
+        ? "Waking up the API — this free public server sleeps after 15 min of inactivity and takes ~50s to start. This only happens on the first request."
         : "Loading…"}
     </div>
   );

@@ -131,6 +131,9 @@ export function Settings() {
       {billing && (
         <div style={card}>
           <h2 style={{ margin: "0 0 1rem", fontSize: "1.1rem" }}>Today's Usage</h2>
+          <p style={{ color: "var(--gray-500)", fontSize: "0.8rem", marginTop: "-0.5rem", marginBottom: "1rem" }}>
+            A fair-use limit keeps this free service responsive for everyone.
+          </p>
           <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", flexWrap: "wrap" }}>
             <div>
               <span style={{ fontSize: "2rem", fontWeight: 700, color: "var(--green-text)" }}>
@@ -163,7 +166,7 @@ export function Settings() {
                 />
               </div>
               <div style={{ fontSize: "0.75rem", color: "var(--gray-500)", marginTop: 4 }}>
-                {billing.remaining.toLocaleString()} requests remaining ({billing.tier} tier)
+                {billing.remaining.toLocaleString()} requests left today
               </div>
             </div>
           </div>
