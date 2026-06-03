@@ -1,38 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
-import { api } from "../api/client";
 import { useSnapshot, snapshotEnabled } from "../api/snapshot";
 import { InfoTip } from "../components/InfoTip";
 import { section as sectionFn, card } from "../styles";
 import { timeAgo } from "../lib/format";
+import { DATA_QUALITY_TIP } from "../copy";
 
 const section = sectionFn();
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
-
-// The free Render server sleeps when idle and can take 1–2 min to wake, often
-// returning 502s while the container boots. Retry at a STEADY cadence well past
-// that window so a cold start always resolves — a fixed exponential-backoff
-// budget (~60s) gives up mid-wake and parks the query in error forever.
-const COLD_START_RETRY = {
-  retry: 24,
-  retryDelay: () => 6000, // ~24 × 6s ≈ 2.4 min of patient retrying
-  staleTime: 60_000,
-} as const;
-
-function StatusDot({ ok }: { ok: boolean }) {
-  return (
-    <span
-      style={{
-        display: "inline-block",
-        width: 10,
-        height: 10,
-        borderRadius: "50%",
-        background: ok ? "var(--green-500)" : "var(--gray-300)",
-        marginRight: 8,
-        verticalAlign: "middle",
-      }}
-    />
-  );
-}
 
 function Stat({ label, value, positive }: { label: string; value: string | number; positive?: boolean }) {
   return (
@@ -45,56 +18,8 @@ function Stat({ label, value, positive }: { label: string; value: string | numbe
   );
 }
 
-function Waking({ fetching }: { fetching: boolean }) {
-  return (
-    <p style={{ color: "var(--gray-400)", fontSize: "0.9rem", margin: 0 }}>
-      {fetching
-        ? "Waking the API… a free server that sleeps when idle can take up to ~2 min on the first request. This keeps trying."
-        : "Loading…"}
-    </p>
-  );
-}
-
-function ApiUnreachable({ onRetry }: { onRetry: () => void }) {
-  return (
-    <div style={{ color: "var(--gray-500)", fontSize: "0.85rem" }}>
-      <p style={{ margin: "0 0 0.6rem" }}>
-        Still couldn't reach the API after waiting. Give it a moment, then retry.
-      </p>
-      <button
-        onClick={onRetry}
-        style={{
-          padding: "0.4rem 1.1rem",
-          borderRadius: 6,
-          border: "1px solid var(--gray-200)",
-          background: "var(--surface)",
-          color: "inherit",
-          cursor: "pointer",
-          fontSize: "0.85rem",
-        }}
-      >
-        Retry
-      </button>
-    </div>
-  );
-}
-
 export function Settings() {
   const { data: snapshot } = useSnapshot();
-
-  const {
-    data: health,
-    isError: healthError,
-    isFetching: healthFetching,
-    refetch: refetchHealth,
-  } = useQuery({ queryKey: ["health"], queryFn: () => api.health(), ...COLD_START_RETRY });
-
-  const {
-    data: providers,
-    isError: providersError,
-    isFetching: providersFetching,
-    refetch: refetchProviders,
-  } = useQuery({ queryKey: ["providers"], queryFn: () => api.providers(), ...COLD_START_RETRY });
 
   return (
     <div style={section}>
@@ -107,9 +32,9 @@ export function Settings() {
       `}</style>
       <h1 style={{ marginBottom: "0.5rem" }}>Status</h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
-        Live system health, data freshness, and the sources behind every reading. The
-        public API is free and open — no key required — and rate-limited to keep it
-        responsive for everyone. Browse every endpoint in the{" "}
+        How fresh the data is and where it comes from. The public API is free and open —
+        no key required — and rate-limited to keep it responsive for everyone. Browse
+        every endpoint in the{" "}
         <a
           href={`${API_BASE}/docs`}
           target="_blank"
@@ -121,40 +46,14 @@ export function Settings() {
         .
       </p>
 
-      {/* System Status — live from the API (cold-start tolerant; keeps retrying) */}
+      {/* Live data — read from the published snapshot (GitHub CDN), so it has no API
+          cold-start or CORS dependency and always loads. Mirrors the globe's
+          live-vs-estimated + freshness readout. */}
       <div style={card}>
-        <h2 style={{ margin: "0 0 1rem", fontSize: "1.1rem" }}>System Status</h2>
-        {health ? (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1rem" }}>
-            <div>
-              <div style={{ fontSize: "0.75rem", color: "var(--gray-500)", textTransform: "uppercase" }}>API</div>
-              <div style={{ fontWeight: 600, color: health.status === "ok" ? "var(--green-text)" : "var(--orange-400)" }}>
-                <StatusDot ok={health.status === "ok"} />
-                {health.status === "ok" ? "operational" : health.status}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: "0.75rem", color: "var(--gray-500)", textTransform: "uppercase" }}>Version</div>
-              <div style={{ fontWeight: 600 }}>{health.version}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: "0.75rem", color: "var(--gray-500)", textTransform: "uppercase", display: "inline-flex", alignItems: "center" }}>
-                Carbon Source
-                <InfoTip label="carbon source" text="Which data-source mode the API is running. 'hybrid' cascades through all providers (live feeds first, then estimates) — the normal setting. Other values force a single source." />
-              </div>
-              <div style={{ fontWeight: 600 }}>{health.carbon_source}</div>
-            </div>
-          </div>
-        ) : healthError ? (
-          <ApiUnreachable onRetry={() => refetchHealth()} />
-        ) : (
-          <Waking fetching={healthFetching} />
-        )}
-      </div>
-
-      {/* Live data — from the published snapshot (GitHub CDN), always available */}
-      <div style={card}>
-        <h2 style={{ margin: "0 0 1rem", fontSize: "1.1rem" }}>Live data</h2>
+        <h2 style={{ margin: "0 0 1rem", fontSize: "1.1rem", display: "flex", alignItems: "center" }}>
+          Live data
+          <InfoTip label="live vs estimated" text={DATA_QUALITY_TIP} />
+        </h2>
         {snapshot ? (
           <>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "1rem" }}>
@@ -175,41 +74,6 @@ export function Settings() {
           </p>
         ) : (
           <p style={{ color: "var(--gray-400)" }}>Loading…</p>
-        )}
-      </div>
-
-      {/* Provider status — live from the API */}
-      <div style={card}>
-        <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.1rem" }}>
-          Carbon Data Providers
-          {providers && (
-            <span style={{ fontWeight: 400, fontSize: "0.85rem", color: "var(--gray-500)", marginLeft: 8 }}>
-              {providers.total_configured}/{providers.total_available} active
-            </span>
-          )}
-        </h2>
-        <p style={{ color: "var(--gray-500)", fontSize: "0.85rem", marginBottom: "1rem" }}>
-          Providers with credentials deliver real-time grid data. No-key providers work out of the box.
-        </p>
-        {providers ? (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: "0.5rem" }}>
-            {Object.entries(providers.configured).map(([name]) => (
-              <div key={name} style={{ padding: "0.5rem", display: "flex", alignItems: "center" }}>
-                <StatusDot ok={true} />
-                <span style={{ fontSize: "0.9rem" }}>{name}</span>
-              </div>
-            ))}
-            {Object.entries(providers.missing).map(([name]) => (
-              <div key={name} style={{ padding: "0.5rem", display: "flex", alignItems: "center" }}>
-                <StatusDot ok={false} />
-                <span style={{ fontSize: "0.9rem", color: "var(--gray-500)" }}>{name}</span>
-              </div>
-            ))}
-          </div>
-        ) : providersError ? (
-          <ApiUnreachable onRetry={() => refetchProviders()} />
-        ) : (
-          <Waking fetching={providersFetching} />
         )}
       </div>
 
