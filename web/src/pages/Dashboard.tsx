@@ -169,13 +169,13 @@ const COLUMNS: { key: SortKey; label: string; align: "left" | "center"; info?: s
     key: "intensity",
     label: "Carbon Intensity",
     align: "left",
-    info: "Carbon emitted per unit of electricity, in gCO₂/kWh (grams of CO₂ per kilowatt-hour). Lower is greener.",
+    info: "Carbon emitted per unit of electricity, in gCO₂/kWh (grams of CO₂ per kilowatt-hour). Lower is greener. This captures ALL low-carbon sources — including nuclear — so it's the most accurate 'how clean' measure, which is why it's the default sort.",
   },
   {
     key: "renewable",
     label: "Renewable %",
     align: "center",
-    info: "Share of the grid's electricity from renewables (wind, solar, hydro) right now. Higher is greener — but this excludes nuclear, so a clean nuclear/hydro grid (France, Sweden) can read low here yet still emit little CO₂. Sort by Carbon Intensity for the true 'cleanest' ranking.",
+    info: "Share of the grid's electricity from renewables — wind, solar, hydro — right now. Important: this EXCLUDES nuclear, so renewable % won't always track carbon intensity. A nuclear-heavy grid like France can be very low-carbon yet show a low renewable %, and a high-renewable grid can still be dirty if the rest is coal. For the true 'cleanest' ranking, sort by Carbon Intensity (lower = greener).",
   },
 ];
 

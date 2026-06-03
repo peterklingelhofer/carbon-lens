@@ -116,7 +116,7 @@ export function Methodology() {
             textDecoration: "none",
           }}
         >
-          🌍 Back to the live globe
+          🌍 Explore the live globe
         </Link>
       </div>
     </div>
