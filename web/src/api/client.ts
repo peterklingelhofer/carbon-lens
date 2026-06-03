@@ -1,6 +1,5 @@
 import type {
   AlertEvent,
-  BillingStatus,
   CalculationResponse,
   CarbonIntensity,
   CarbonSavingsReport,
@@ -10,8 +9,6 @@ import type {
   CronSchedule,
   GreenSLA,
   HealthResponse,
-  Organization,
-  PlanInfo,
   RegionLookup,
   RouteRequest,
   RouteResponse,
@@ -109,31 +106,6 @@ export const api = {
 
   // Accounting
   savings: () => request<CarbonSavingsReport>("/api/v1/accounting/savings"),
-
-  // Billing
-  plans: () => request<PlanInfo[]>("/api/v1/billing/plans"),
-
-  billingStatus: () => request<BillingStatus>("/api/v1/billing/status"),
-
-  // Organizations
-  orgs: {
-    list: () => request<Organization[]>("/api/v1/orgs"),
-
-    get: (slug: string) => request<Organization>(`/api/v1/orgs/${slug}`),
-
-    create: (name: string) =>
-      request<Organization>("/api/v1/orgs", {
-        method: "POST",
-        body: JSON.stringify({ name }),
-      }),
-
-    checkout: (orgId: string, plan: "pro" | "enterprise") =>
-      request<{ checkout_url: string }>(`/api/v1/orgs/${orgId}/checkout`, {
-        method: "POST",
-        body: JSON.stringify({ plan }),
-      }),
-  },
-
 
   // SLA Monitoring
   sla: {

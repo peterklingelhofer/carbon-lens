@@ -19,19 +19,13 @@ What's missing to become a real SaaS:
 
 ### Auth & Multi-tenancy
 - [ ] API key authentication (issue keys per org)
-- [ ] Rate limiting per API key (free tier: 100 req/day, paid: unlimited)
+- [ ] Optional per-key rate limits for self-hosters (per-IP limiting is already enabled)
 - [ ] Tenant isolation for carbon accounting (each org sees only their data)
 
 ### Persistence
 - [ ] PostgreSQL for accounting records, API keys, org data
 - [ ] Replace in-memory tracker with DB-backed tracker
 - [ ] Historical carbon intensity data (store every query for trend analysis)
-
-### Billing
-- [ ] Stripe integration for usage-based billing
-- [ ] Free tier: 100 route requests/day, mock data only
-- [ ] Pro tier ($29/mo): Unlimited requests, live grid data, carbon dashboard
-- [ ] Enterprise: Custom pricing, SLA, dedicated support
 
 ### CLI Tool
 - [ ] `carbon-mesh route --providers aws,gcp --residency EU`
@@ -152,12 +146,7 @@ For batch/flexible workloads (CI/CD, ML training), prices can be *lower* than He
 Wrapping AWS/GCP/Azure adds their markup (~3-10x over bare metal). For CarbonLens to be price-competitive with Hetzner:
 - Use bare-metal/VPS providers (Hetzner, OVH, Vultr) as the primary compute layer
 - Use hyperscalers only for regions where bare-metal isn't available
-- Pass through near-cost pricing + small CarbonLens fee
-
-### Pricing Strategy
-1. **Control plane (API):** Free tier + $29/mo pro — this is the land. Low friction, developers try it.
-2. **Compute:** Hetzner-competitive pricing — this is the expand. Once people see the carbon dashboard, they want managed compute.
-3. **Enterprise:** Carbon SLA + Scope 3 reporting — this is the monetize. Big companies will pay premium for auditable green compute for ESG compliance.
+- Pass through near-cost pricing
 
 ---
 

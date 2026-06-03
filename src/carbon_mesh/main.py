@@ -17,13 +17,10 @@ from slowapi.util import get_remote_address
 
 from prometheus_fastapi_instrumentator import Instrumentator
 
-from carbon_mesh.api.admin import admin_router
 from carbon_mesh.api.routes import router
 from carbon_mesh.api.ws import ws_router
-from carbon_mesh.billing.routes import billing_router
 from carbon_mesh.config import settings
 from carbon_mesh.compliance.routes import router as compliance_router
-from carbon_mesh.orgs.routes import org_router, webhook_router
 from carbon_mesh.scheduler.routes import router as scheduler_router
 from carbon_mesh.sla.routes import router as sla_router
 
@@ -159,10 +156,12 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="CarbonLens",
     description=(
-        "Carbon intensity data API + compliance reporting platform.\n\n"
+        "A free, open API for the real-time carbon intensity of cloud regions. "
+        "No account or API key required; usage is rate-limited so it stays "
+        "responsive for everyone.\n\n"
         "## Carbon Data API\n"
         "- **6 live grid-operator integrations** (UK, EIA, AEMO, GridStatus, ENTSO-E, "
-        "Electricity Maps) plus labeled heuristic and mock fallbacks — 11 sources total, cascading\n"
+        "Electricity Maps) plus labeled heuristic and weather-based estimates, cascading\n"
         "- **Grid carbon intensity** for 75+ cloud regions; every response is tagged with its `source`\n"
         "- **Batch queries** for multiple regions in a single call\n\n"
         "## Compliance Reporting\n"
@@ -172,15 +171,12 @@ app = FastAPI(
         "## Green SLA Monitoring (Beta)\n"
         "- **Define carbon targets** — max gCO2/kWh, min renewable %\n"
         "- **On-demand + background checks** (in-memory state)\n"
-        "- **Attestation-style summary reports**\n"
-        "- **Webhook alerts** on SLA breach\n\n"
+        "- **Attestation-style summary reports**\n\n"
         "## Carbon-Aware Scheduling\n"
         "- **Find optimal time windows** for batch jobs, CI/CD, ML training\n"
         "- **Multi-region evaluation** across AWS, GCP, Azure\n"
         "- **Three strategies** — lowest carbon, highest renewable, balanced\n"
-        "- **Recurring schedules** with automatic green window recommendations\n\n"
-        "## Authentication\n"
-        "When `CARBON_LENS_API_KEY_REQUIRED=true`, pass your key via the `X-API-Key` header."
+        "- Returns a recommendation — it doesn't run or defer your workload itself"
     ),
     version="0.1.0",
     docs_url="/docs",
@@ -209,8 +205,6 @@ app = FastAPI(
             "description": "CSRD/SEC/SB-253 emissions measurement, calculation, and reporting",
         },
         {"name": "Accounting", "description": "Track carbon savings from routed workloads"},
-        {"name": "Billing", "description": "Usage tracking, tier limits, and plan management"},
-        {"name": "Admin", "description": "API key management (requires admin secret)"},
         {"name": "System", "description": "Health checks and operational endpoints"},
     ],
 )
@@ -330,10 +324,6 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 
 
 app.include_router(router, prefix="/api/v1", tags=["Carbon Routing"])
-app.include_router(admin_router, prefix="/api/v1", tags=["Admin"])
-app.include_router(billing_router, prefix="/api/v1", tags=["Billing"])
-app.include_router(org_router, prefix="/api/v1", tags=["Organizations"])
-app.include_router(webhook_router, prefix="/api/v1")
 app.include_router(compliance_router)
 app.include_router(scheduler_router)
 app.include_router(sla_router)
