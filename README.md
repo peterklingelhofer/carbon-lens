@@ -268,10 +268,10 @@ tests/              205 tests
 | Platform | How | Config |
 |----------|-----|--------|
 | **Docker** | `make up` | `Dockerfile`, `docker-compose.yml` |
-| **Render** | New Blueprint Instance | `render.yaml` |
-| **Fly.io** | `fly launch --copy-config --yes` | `fly.toml` |
+| **Render** (API, recommended) | New Web Service, region Oregon | `render.yaml` |
+| **Cloudflare Workers** (frontend) | `cd web && npm run build && npx wrangler deploy` | `web/wrangler.jsonc` |
+| **Fly.io** (API, alternative) | `fly launch --copy-config --yes` | `fly.toml` |
 | **GHCR images** | published by CI on merge to `main` | `.github/workflows/ci.yml` |
-| **Vercel** (frontend) | Connect repo, root = `web/` | `web/vercel.json` |
 | **Kubernetes** | illustrative Helm chart (see `k8s/README.md`) | `k8s/` |
 
 ---
