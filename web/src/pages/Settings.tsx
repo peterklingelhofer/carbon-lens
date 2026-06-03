@@ -1,81 +1,30 @@
-import { useQuery } from "@tanstack/react-query";
-import { api } from "../api/client";
+import { useSnapshot, snapshotEnabled } from "../api/snapshot";
 import { section as sectionFn, card } from "../styles";
 
 const section = sectionFn();
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
-function StatusDot({ ok }: { ok: boolean }) {
-  return (
-    <span
-      style={{
-        display: "inline-block",
-        width: 10,
-        height: 10,
-        borderRadius: "50%",
-        background: ok ? "var(--green-500)" : "var(--gray-300)",
-        marginRight: 8,
-        verticalAlign: "middle",
-      }}
-    />
-  );
+function timeAgo(iso: string): string {
+  const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.round(mins / 60);
+  return `${hrs} hr${hrs > 1 ? "s" : ""} ago`;
 }
 
-function ApiUnreachable({ onRetry }: { onRetry: () => void }) {
+function Stat({ label, value, positive }: { label: string; value: string | number; positive?: boolean }) {
   return (
-    <div style={{ color: "var(--gray-500)", fontSize: "0.85rem" }}>
-      <p style={{ margin: "0 0 0.6rem" }}>
-        Couldn't reach the API. It's a free service that sleeps when idle and can take
-        ~50s to wake on the first request — give it a moment, then retry.
-      </p>
-      <button
-        onClick={onRetry}
-        style={{
-          padding: "0.4rem 1.1rem",
-          borderRadius: 6,
-          border: "1px solid var(--gray-200)",
-          background: "var(--surface)",
-          color: "inherit",
-          cursor: "pointer",
-          fontSize: "0.85rem",
-        }}
-      >
-        Retry
-      </button>
+    <div>
+      <div style={{ fontSize: "0.75rem", color: "var(--gray-500)", textTransform: "uppercase" }}>{label}</div>
+      <div style={{ fontWeight: 700, fontSize: "1.5rem", color: positive ? "var(--green-text)" : "inherit" }}>
+        {value}
+      </div>
     </div>
   );
 }
 
 export function Settings() {
-  // The free API sleeps when idle and needs ~50s to wake, so retry a few times
-  // with backoff before giving up — and surface a real error (not endless
-  // "Loading…") if it can't be reached at all.
-  const retryOpts = {
-    retry: 4,
-    retryDelay: (attempt: number) => Math.min(1000 * 2 ** attempt, 12000),
-  } as const;
-
-  const {
-    data: providers,
-    isLoading: providersLoading,
-    isError: providersError,
-    refetch: refetchProviders,
-  } = useQuery({
-    queryKey: ["providers"],
-    queryFn: () => api.providers(),
-    ...retryOpts,
-  });
-
-  const {
-    data: health,
-    isError: healthError,
-    isFetching: healthFetching,
-    refetch: refetchHealth,
-  } = useQuery({
-    queryKey: ["health"],
-    queryFn: () => api.health(),
-    ...retryOpts,
-  });
+  const { data: snapshot, isLoading, isError } = useSnapshot();
 
   return (
     <div style={section}>
@@ -88,9 +37,9 @@ export function Settings() {
       `}</style>
       <h1 style={{ marginBottom: "0.5rem" }}>Status</h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
-        Live system health and the data sources behind every reading. The public API
-        is free and open — no key required — and rate-limited to keep it responsive
-        for everyone. Browse every endpoint in the{" "}
+        Where every reading comes from, and how fresh it is. The public API is free and
+        open — no key required — and rate-limited to keep it responsive for everyone.
+        Browse every endpoint in the{" "}
         <a
           href={`${API_BASE}/docs`}
           target="_blank"
@@ -102,72 +51,38 @@ export function Settings() {
         .
       </p>
 
-      {/* System Status */}
+      {/* Live data freshness — read from the published snapshot (GitHub CDN), so it
+          has no API cold-start or CORS dependency and always loads. */}
       <div style={card}>
-        <h2 style={{ margin: "0 0 1rem", fontSize: "1.1rem" }}>System Status</h2>
-        {health ? (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1rem" }}>
-            <div>
-              <div style={{ fontSize: "0.75rem", color: "var(--gray-500)", textTransform: "uppercase" }}>Status</div>
-              <div style={{ fontWeight: 600, color: health.status === "ok" ? "var(--green-text)" : "var(--orange-400)" }}>
-                {health.status}
-              </div>
+        <h2 style={{ margin: "0 0 1rem", fontSize: "1.1rem" }}>Live data</h2>
+        {snapshot ? (
+          <>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "1rem" }}>
+              <Stat label="Grid zones live" value={snapshot.summary.live_zones} positive />
+              <Stat label="Estimated" value={snapshot.summary.estimated_zones} />
+              <Stat label="Cloud regions" value={snapshot.regions.length} />
+              <Stat label="Updated" value={timeAgo(snapshot.generated_at)} />
             </div>
-            <div>
-              <div style={{ fontSize: "0.75rem", color: "var(--gray-500)", textTransform: "uppercase" }}>Version</div>
-              <div style={{ fontWeight: 600 }}>{health.version}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: "0.75rem", color: "var(--gray-500)", textTransform: "uppercase" }}>Carbon Source</div>
-              <div style={{ fontWeight: 600 }}>{health.carbon_source}</div>
-            </div>
-          </div>
-        ) : healthError ? (
-          <ApiUnreachable onRetry={() => refetchHealth()} />
-        ) : (
-          <p style={{ color: "var(--gray-400)" }}>
-            {healthFetching ? "Checking… (the API may be waking up — up to ~50s)" : "Loading…"}
+            <p style={{ color: "var(--gray-500)", fontSize: "0.85rem", margin: "1rem 0 0" }}>
+              Real grid-operator data, refreshed roughly every 30 minutes from a scheduled
+              job — never mock data. "Estimated" zones (no live feed available) are clearly
+              labelled wherever they appear.
+            </p>
+          </>
+        ) : !snapshotEnabled ? (
+          <p style={{ color: "var(--gray-500)", fontSize: "0.9rem" }}>
+            Live-data snapshot isn't configured for this deployment.
           </p>
+        ) : isError ? (
+          <p style={{ color: "var(--gray-500)", fontSize: "0.9rem" }}>
+            Couldn't load the data snapshot just now — refresh to try again.
+          </p>
+        ) : (
+          <p style={{ color: "var(--gray-400)" }}>{isLoading ? "Loading…" : "—"}</p>
         )}
       </div>
 
-      {/* Provider Status */}
-      <div style={card}>
-        <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.1rem" }}>
-          Carbon Data Providers
-          {providers && (
-            <span style={{ fontWeight: 400, fontSize: "0.85rem", color: "var(--gray-500)", marginLeft: 8 }}>
-              {providers.total_configured}/{providers.total_available} active
-            </span>
-          )}
-        </h2>
-        <p style={{ color: "var(--gray-500)", fontSize: "0.85rem", marginBottom: "1rem" }}>
-          Providers with credentials deliver real-time grid data. No-key providers work out of the box.
-        </p>
-
-        {providers ? (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: "0.5rem" }}>
-            {Object.entries(providers.configured).map(([name]) => (
-              <div key={name} style={{ padding: "0.5rem", display: "flex", alignItems: "center" }}>
-                <StatusDot ok={true} />
-                <span style={{ fontSize: "0.9rem" }}>{name}</span>
-              </div>
-            ))}
-            {Object.entries(providers.missing).map(([name]) => (
-              <div key={name} style={{ padding: "0.5rem", display: "flex", alignItems: "center" }}>
-                <StatusDot ok={false} />
-                <span style={{ fontSize: "0.9rem", color: "var(--gray-500)" }}>{name}</span>
-              </div>
-            ))}
-          </div>
-        ) : providersError ? (
-          <ApiUnreachable onRetry={() => refetchProviders()} />
-        ) : providersLoading ? (
-          <p style={{ color: "var(--gray-400)" }}>Loading provider status…</p>
-        ) : null}
-      </div>
-
-      {/* Setup Guide */}
+      {/* Data sources */}
       <div style={{ ...card, overflow: "auto" }}>
         <h2 style={{ margin: "0 0 1rem", fontSize: "1.1rem" }}>Data Sources & Setup</h2>
         <p style={{ color: "var(--gray-500)", fontSize: "0.85rem", marginBottom: "1rem" }}>

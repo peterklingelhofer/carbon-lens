@@ -152,14 +152,6 @@ Interactive docs at `/docs` (Swagger) or `/redoc` (ReDoc) when the server is run
 | `/api/v1/compliance/reports/{id}` | GET | Get full report details |
 | `/api/v1/compliance/reports/{id}/export` | GET | Export as JSON or CSV |
 
-### Billing & Organizations
-
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/v1/billing/plans` | GET | Available plans (Free/Pro/Enterprise) |
-| `/api/v1/billing/status` | GET | Current usage and tier |
-| `/api/v1/orgs` | GET/POST | List or create organizations |
-
 ### System
 
 | Endpoint | Method | Description |
@@ -206,8 +198,7 @@ Each region is mapped to a physical electricity grid zone in `data/region_grid_m
 ```
 src/carbon_mesh/
   api/              FastAPI routes + dependency injection + WebSocket
-  auth/             API key generation, hashing, validation
-  billing/          Usage tracking, tier limits, Stripe integration
+  auth/             Optional API key generation, hashing, validation
   carbon_sources/   11 pluggable data providers (Protocol-based)
   compliance/       CSRD/SEC/SB-253 emissions reporting
   engine/           Carbon-aware routing engine + scorer + cache
@@ -215,19 +206,18 @@ src/carbon_mesh/
   models/           Pydantic domain models
   accounting/       Per-request carbon tracking + savings reports
   db/               SQLAlchemy async models + Alembic migrations
-  orgs/             Multi-tenant organization management
   cli/              Typer CLI (carbonlens route, intensity, regions)
   config.py         Environment-based config with validation
   main.py           FastAPI app, middleware, lifespan
 
 web/                Vite + React 19 + TypeScript frontend
-  src/pages/        Landing, API Explorer, Dashboard, Compliance, Plans, Settings, Orgs
+  src/pages/        Landing, Globe, API Explorer, Grid Data, Compliance, SLA, Scheduler, Route, About, Status
   src/api/          Typed API client + WebSocket
 
 terraform/          Terraform data source for green routing
 data/               region_grid_map.yaml (75+ regions -> grid zones)
 alembic/            Database migrations
-tests/              205 tests
+tests/              182 tests
 ```
 
 ---
@@ -282,7 +272,7 @@ tests/              205 tests
 make help       # show all commands
 make setup      # install deps + copy .env + build frontend
 make dev        # API + frontend with hot reload
-make test       # 205 tests
+make test       # 182 tests
 make lint       # ruff + tsc
 make fix        # auto-fix lint
 make migrate    # run Alembic migrations
@@ -302,8 +292,8 @@ The carbon data layer for carbon-aware infrastructure: one cascading API over mu
 - GHG-Protocol Scope 2 + Scope 3 (Cat 1) compliance reporting (location-based)
 - Green SLA check engine, on-demand + background monitoring (in-memory)
 - Cloud-billing ingestion adapters (AWS/GCP/Azure) — coded-to-spec + mock-tested, not live-verified
-- Multi-tenant orgs (hashed API keys), Stripe billing, React 19 dashboard with live WebSocket feed
-- 205 tests, multi-stage Docker build, Alembic migrations
+- Free, open, keyless API (per-IP rate limiting); React 19 dashboard with live WebSocket feed
+- 182 tests, multi-stage Docker build, Alembic migrations
 
 ### What's next
 - Market-based Scope 2 accounting (RECs/PPAs) and supplier-specific Scope 3 factors
