@@ -16,7 +16,9 @@ const POPULAR_REGIONS: Record<string, string[]> = {
 };
 
 // The deployed API base — used for the Swagger link and the copy-pasteable curls.
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+// For display (curl snippets, Swagger link): the page's own origin, which the
+// Worker proxies to the backend — so copy-pasted commands hit a same-origin URL.
+const API_BASE = import.meta.env.VITE_API_URL || (typeof window !== "undefined" ? window.location.origin : "");
 
 // Shared tooltip copy, reused across the result cards and table headers.
 const TIP = {

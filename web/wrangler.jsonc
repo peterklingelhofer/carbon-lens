@@ -1,13 +1,18 @@
 {
-  // Cloudflare Workers "Static Assets" config for the Vite SPA.
-  // Used when deploying via the Workers flow: `npx wrangler deploy` uploads the
-  // built `dist/` as static assets. `single-page-application` makes client-side
-  // routes (e.g. /globe, /dashboard) fall back to index.html.
-  // (Not needed if you use the classic Cloudflare Pages flow instead.)
+  // Cloudflare Worker that serves the built SPA from ./dist AND proxies API
+  // paths to the Render backend (see worker.js), so the browser makes only
+  // same-origin requests — no CORS, and privacy extensions / Firefox ETP can't
+  // block the API calls. Deploy with `npx wrangler deploy` (after `npm run build`).
+  // Test the full thing locally with `npx wrangler dev`.
   "name": "carbonlens",
+  "main": "worker.js",
   "compatibility_date": "2025-01-01",
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    // Run the Worker before serving assets so it can intercept /health, /api/*,
+    // etc.; non-API requests fall through to env.ASSETS (with SPA fallback).
+    "run_worker_first": true
   }
 }
