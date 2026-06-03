@@ -78,13 +78,11 @@ export function Nav() {
           <NavLink to="/route" style={linkStyle}>
             Route
           </NavLink>
-          {/* Plans tab hidden for now
-          <NavLink to="/plans" style={linkStyle}>
-            Plans
-          </NavLink>
-          */}
           <NavLink to="/orgs" style={linkStyle}>
             Orgs
+          </NavLink>
+          <NavLink to="/about" style={linkStyle}>
+            About
           </NavLink>
           <NavLink to="/settings" style={linkStyle}>
             Settings
