@@ -1,8 +1,18 @@
+import { useQuery } from "@tanstack/react-query";
+import { api } from "../api/client";
 import { useSnapshot, snapshotEnabled } from "../api/snapshot";
 import { section as sectionFn, card } from "../styles";
 
 const section = sectionFn();
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
+// The free API sleeps when idle and takes ~50s to wake. Retry with backoff long
+// enough to outlast that (~65s total) so a cold start resolves to real data
+// instead of a premature "couldn't reach" error.
+const COLD_START_RETRY = {
+  retry: 8,
+  retryDelay: (attempt: number) => Math.min(1500 * 2 ** attempt, 10000),
+} as const;
 
 function timeAgo(iso: string): string {
   const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
@@ -10,6 +20,22 @@ function timeAgo(iso: string): string {
   if (mins < 60) return `${mins} min ago`;
   const hrs = Math.round(mins / 60);
   return `${hrs} hr${hrs > 1 ? "s" : ""} ago`;
+}
+
+function StatusDot({ ok }: { ok: boolean }) {
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        width: 10,
+        height: 10,
+        borderRadius: "50%",
+        background: ok ? "var(--green-500)" : "var(--gray-300)",
+        marginRight: 8,
+        verticalAlign: "middle",
+      }}
+    />
+  );
 }
 
 function Stat({ label, value, positive }: { label: string; value: string | number; positive?: boolean }) {
@@ -23,8 +49,54 @@ function Stat({ label, value, positive }: { label: string; value: string | numbe
   );
 }
 
+function Waking({ fetching }: { fetching: boolean }) {
+  return (
+    <p style={{ color: "var(--gray-400)", fontSize: "0.9rem", margin: 0 }}>
+      {fetching ? "Waking the API… (free server, up to ~60s on the first request)" : "Loading…"}
+    </p>
+  );
+}
+
+function ApiUnreachable({ onRetry }: { onRetry: () => void }) {
+  return (
+    <div style={{ color: "var(--gray-500)", fontSize: "0.85rem" }}>
+      <p style={{ margin: "0 0 0.6rem" }}>
+        Couldn't reach the API after waiting for it to wake. Give it a moment, then retry.
+      </p>
+      <button
+        onClick={onRetry}
+        style={{
+          padding: "0.4rem 1.1rem",
+          borderRadius: 6,
+          border: "1px solid var(--gray-200)",
+          background: "var(--surface)",
+          color: "inherit",
+          cursor: "pointer",
+          fontSize: "0.85rem",
+        }}
+      >
+        Retry
+      </button>
+    </div>
+  );
+}
+
 export function Settings() {
-  const { data: snapshot, isLoading, isError } = useSnapshot();
+  const { data: snapshot } = useSnapshot();
+
+  const {
+    data: health,
+    isError: healthError,
+    isFetching: healthFetching,
+    refetch: refetchHealth,
+  } = useQuery({ queryKey: ["health"], queryFn: () => api.health(), ...COLD_START_RETRY });
+
+  const {
+    data: providers,
+    isError: providersError,
+    isFetching: providersFetching,
+    refetch: refetchProviders,
+  } = useQuery({ queryKey: ["providers"], queryFn: () => api.providers(), ...COLD_START_RETRY });
 
   return (
     <div style={section}>
@@ -37,9 +109,9 @@ export function Settings() {
       `}</style>
       <h1 style={{ marginBottom: "0.5rem" }}>Status</h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
-        Where every reading comes from, and how fresh it is. The public API is free and
-        open — no key required — and rate-limited to keep it responsive for everyone.
-        Browse every endpoint in the{" "}
+        Live system health, data freshness, and the sources behind every reading. The
+        public API is free and open — no key required — and rate-limited to keep it
+        responsive for everyone. Browse every endpoint in the{" "}
         <a
           href={`${API_BASE}/docs`}
           target="_blank"
@@ -51,8 +123,35 @@ export function Settings() {
         .
       </p>
 
-      {/* Live data freshness — read from the published snapshot (GitHub CDN), so it
-          has no API cold-start or CORS dependency and always loads. */}
+      {/* System Status — live from the API (cold-start tolerant) */}
+      <div style={card}>
+        <h2 style={{ margin: "0 0 1rem", fontSize: "1.1rem" }}>System Status</h2>
+        {health ? (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1rem" }}>
+            <div>
+              <div style={{ fontSize: "0.75rem", color: "var(--gray-500)", textTransform: "uppercase" }}>API</div>
+              <div style={{ fontWeight: 600, color: health.status === "ok" ? "var(--green-text)" : "var(--orange-400)" }}>
+                <StatusDot ok={health.status === "ok"} />
+                {health.status === "ok" ? "operational" : health.status}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: "0.75rem", color: "var(--gray-500)", textTransform: "uppercase" }}>Version</div>
+              <div style={{ fontWeight: 600 }}>{health.version}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: "0.75rem", color: "var(--gray-500)", textTransform: "uppercase" }}>Carbon Source</div>
+              <div style={{ fontWeight: 600 }}>{health.carbon_source}</div>
+            </div>
+          </div>
+        ) : healthError ? (
+          <ApiUnreachable onRetry={() => refetchHealth()} />
+        ) : (
+          <Waking fetching={healthFetching} />
+        )}
+      </div>
+
+      {/* Live data — from the published snapshot (GitHub CDN), always available */}
       <div style={card}>
         <h2 style={{ margin: "0 0 1rem", fontSize: "1.1rem" }}>Live data</h2>
         {snapshot ? (
@@ -73,12 +172,43 @@ export function Settings() {
           <p style={{ color: "var(--gray-500)", fontSize: "0.9rem" }}>
             Live-data snapshot isn't configured for this deployment.
           </p>
-        ) : isError ? (
-          <p style={{ color: "var(--gray-500)", fontSize: "0.9rem" }}>
-            Couldn't load the data snapshot just now — refresh to try again.
-          </p>
         ) : (
-          <p style={{ color: "var(--gray-400)" }}>{isLoading ? "Loading…" : "—"}</p>
+          <p style={{ color: "var(--gray-400)" }}>Loading…</p>
+        )}
+      </div>
+
+      {/* Provider status — live from the API */}
+      <div style={card}>
+        <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.1rem" }}>
+          Carbon Data Providers
+          {providers && (
+            <span style={{ fontWeight: 400, fontSize: "0.85rem", color: "var(--gray-500)", marginLeft: 8 }}>
+              {providers.total_configured}/{providers.total_available} active
+            </span>
+          )}
+        </h2>
+        <p style={{ color: "var(--gray-500)", fontSize: "0.85rem", marginBottom: "1rem" }}>
+          Providers with credentials deliver real-time grid data. No-key providers work out of the box.
+        </p>
+        {providers ? (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: "0.5rem" }}>
+            {Object.entries(providers.configured).map(([name]) => (
+              <div key={name} style={{ padding: "0.5rem", display: "flex", alignItems: "center" }}>
+                <StatusDot ok={true} />
+                <span style={{ fontSize: "0.9rem" }}>{name}</span>
+              </div>
+            ))}
+            {Object.entries(providers.missing).map(([name]) => (
+              <div key={name} style={{ padding: "0.5rem", display: "flex", alignItems: "center" }}>
+                <StatusDot ok={false} />
+                <span style={{ fontSize: "0.9rem", color: "var(--gray-500)" }}>{name}</span>
+              </div>
+            ))}
+          </div>
+        ) : providersError ? (
+          <ApiUnreachable onRetry={() => refetchProviders()} />
+        ) : (
+          <Waking fetching={providersFetching} />
         )}
       </div>
 
