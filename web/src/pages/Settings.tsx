@@ -1,3 +1,5 @@
+import { useQuery } from "@tanstack/react-query";
+import type { HealthResponse } from "../api/types";
 import { useSnapshot, snapshotEnabled } from "../api/snapshot";
 import { InfoTip } from "../components/InfoTip";
 import { section as sectionFn, card } from "../styles";
@@ -6,6 +8,53 @@ import { DATA_QUALITY_TIP } from "../copy";
 
 const section = sectionFn();
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
+interface ProvidersResponse {
+  configured: Record<string, boolean>;
+  missing: Record<string, boolean>;
+  total_configured: number;
+  total_available: number;
+}
+
+// Single, no-retry probe of the API with a short timeout. If it succeeds we show
+// the live System Status + Provider cards; if it fails for ANY reason (cold start,
+// or a browser/extension blocking the cross-origin request — e.g. Firefox ETP +
+// uBlock), we silently fall back to the snapshot-only view. No retry storm, no
+// endless spinner — at most one failed request in the console for blocked users.
+async function probeApi(): Promise<{ health: HealthResponse; providers: ProvidersResponse }> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 12000);
+  try {
+    const get = async <T,>(path: string): Promise<T> => {
+      const res = await fetch(`${API_BASE}${path}`, { signal: ctrl.signal });
+      if (!res.ok) throw new Error(`${res.status}`);
+      return res.json() as Promise<T>;
+    };
+    const [health, providers] = await Promise.all([
+      get<HealthResponse>("/health"),
+      get<ProvidersResponse>("/health/providers"),
+    ]);
+    return { health, providers };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function StatusDot({ ok }: { ok: boolean }) {
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        width: 10,
+        height: 10,
+        borderRadius: "50%",
+        background: ok ? "var(--green-500)" : "var(--gray-300)",
+        marginRight: 8,
+        verticalAlign: "middle",
+      }}
+    />
+  );
+}
 
 function Stat({ label, value, positive }: { label: string; value: string | number; positive?: boolean }) {
   return (
@@ -20,6 +69,14 @@ function Stat({ label, value, positive }: { label: string; value: string | numbe
 
 export function Settings() {
   const { data: snapshot } = useSnapshot();
+
+  // One shot, no retries — see probeApi() above.
+  const { data: api } = useQuery({
+    queryKey: ["api-probe"],
+    queryFn: probeApi,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
 
   return (
     <div style={section}>
@@ -46,9 +103,35 @@ export function Settings() {
         .
       </p>
 
-      {/* Live data — read from the published snapshot (GitHub CDN), so it has no API
-          cold-start or CORS dependency and always loads. Mirrors the globe's
-          live-vs-estimated + freshness readout. */}
+      {/* System Status — only rendered if the one-shot API probe succeeded. */}
+      {api && (
+        <div style={card}>
+          <h2 style={{ margin: "0 0 1rem", fontSize: "1.1rem" }}>System Status</h2>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1rem" }}>
+            <div>
+              <div style={{ fontSize: "0.75rem", color: "var(--gray-500)", textTransform: "uppercase" }}>API</div>
+              <div style={{ fontWeight: 600, color: api.health.status === "ok" ? "var(--green-text)" : "var(--orange-400)" }}>
+                <StatusDot ok={api.health.status === "ok"} />
+                {api.health.status === "ok" ? "operational" : api.health.status}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: "0.75rem", color: "var(--gray-500)", textTransform: "uppercase" }}>Version</div>
+              <div style={{ fontWeight: 600 }}>{api.health.version}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: "0.75rem", color: "var(--gray-500)", textTransform: "uppercase", display: "inline-flex", alignItems: "center" }}>
+                Carbon Source
+                <InfoTip label="carbon source" text="Which data-source mode the API is running. 'hybrid' cascades through all providers (live feeds first, then estimates) — the normal setting." />
+              </div>
+              <div style={{ fontWeight: 600 }}>{api.health.carbon_source}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Live data — from the published snapshot (GitHub CDN). Always available,
+          no cross-origin API call. Mirrors the globe's live-vs-estimated readout. */}
       <div style={card}>
         <h2 style={{ margin: "0 0 1rem", fontSize: "1.1rem", display: "flex", alignItems: "center" }}>
           Live data
@@ -76,6 +159,35 @@ export function Settings() {
           <p style={{ color: "var(--gray-400)" }}>Loading…</p>
         )}
       </div>
+
+      {/* Provider status — only rendered if the one-shot API probe succeeded. */}
+      {api && (
+        <div style={card}>
+          <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.1rem" }}>
+            Carbon Data Providers
+            <span style={{ fontWeight: 400, fontSize: "0.85rem", color: "var(--gray-500)", marginLeft: 8 }}>
+              {api.providers.total_configured}/{api.providers.total_available} active
+            </span>
+          </h2>
+          <p style={{ color: "var(--gray-500)", fontSize: "0.85rem", marginBottom: "1rem" }}>
+            Providers with credentials deliver real-time grid data. No-key providers work out of the box.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: "0.5rem" }}>
+            {Object.entries(api.providers.configured).map(([name]) => (
+              <div key={name} style={{ padding: "0.5rem", display: "flex", alignItems: "center" }}>
+                <StatusDot ok={true} />
+                <span style={{ fontSize: "0.9rem" }}>{name}</span>
+              </div>
+            ))}
+            {Object.entries(api.providers.missing).map(([name]) => (
+              <div key={name} style={{ padding: "0.5rem", display: "flex", alignItems: "center" }}>
+                <StatusDot ok={false} />
+                <span style={{ fontSize: "0.9rem", color: "var(--gray-500)" }}>{name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Data sources */}
       <div style={{ ...card, overflow: "auto" }}>
