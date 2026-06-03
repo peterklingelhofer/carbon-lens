@@ -283,6 +283,11 @@ export default function CarbonGlobe() {
   // Probed lazily on mount so the fallback shows on the first render, with the
   // try/catch below as a backup for context-lost-after-probe.
   const [webglError, setWebglError] = useState(() => !webglAvailable());
+  // The bottom-left legend is collapsed by default on small screens (it's tall);
+  // a toggle expands it. Open by default on desktop.
+  const [legendOpen, setLegendOpen] = useState(
+    () => typeof window === "undefined" || !window.matchMedia("(max-width: 720px)").matches,
+  );
 
   // Read inside globe.gl accessors so a toggle takes effect without re-init.
   const heightMetricRef = useRef<Metric>(heightMetric);
@@ -497,6 +502,27 @@ export default function CarbonGlobe() {
 
   return (
     <div style={{ position: "relative", width: "100%", height: "calc(100vh - 56px)", background: "#000", overflow: "hidden" }}>
+      <style>{`
+        .globe-legend-toggle { display: none; }
+        @media (max-width: 720px) {
+          /* Title: trim to essentials so it doesn't dominate a phone screen */
+          .globe-title { max-width: 70vw; }
+          .globe-title p { font-size: 0.72rem !important; }
+          /* Legend: collapse behind a toggle; hide everything but the toggle when closed */
+          .globe-legend-toggle {
+            display: inline-flex; align-items: center; gap: 4px;
+            background: rgba(10,15,20,0.7); color: #cbd5e1;
+            border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;
+            font-size: 0.72rem; padding: 4px 9px; cursor: pointer; pointer-events: auto;
+          }
+          .globe-legend:not(.open) > *:not(.globe-legend-toggle) { display: none !important; }
+          /* Detail panel: full-width sheet near the top instead of a floating box */
+          .globe-detail {
+            left: 12px !important; right: 12px !important; width: auto !important;
+            max-height: 55vh; overflow: auto;
+          }
+        }
+      `}</style>
       <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
 
       {/* WebGL unavailable — graceful fallback instead of a crashed page */}
@@ -548,7 +574,7 @@ export default function CarbonGlobe() {
       )}
 
       {/* Title overlay */}
-      <div style={{ position: "absolute", top: 20, left: 24, color: "#fff", pointerEvents: "none", textShadow: "0 1px 8px rgba(0,0,0,0.8)", display: bare || webglError ? "none" : undefined }}>
+      <div className="globe-title" style={{ position: "absolute", top: 20, left: 24, color: "#fff", pointerEvents: "none", textShadow: "0 1px 8px rgba(0,0,0,0.8)", display: bare || webglError ? "none" : undefined }}>
         {/* Visually hidden — kept for the document outline / screen readers. */}
         <h1
           style={{
@@ -594,7 +620,17 @@ export default function CarbonGlobe() {
       </div>
 
       {/* Controls + legend (bottom-left) */}
-      <div style={{ position: "absolute", bottom: 24, left: 24, color: "#fff", fontSize: "0.7rem", textShadow: "0 1px 6px rgba(0,0,0,0.8)", display: bare || webglError ? "none" : undefined }}>
+      <div className={`globe-legend${legendOpen ? " open" : ""}`} style={{ position: "absolute", bottom: 24, left: 24, color: "#fff", fontSize: "0.7rem", textShadow: "0 1px 6px rgba(0,0,0,0.8)", display: bare || webglError ? "none" : undefined }}>
+        {/* Collapse toggle — visible only on small screens (CSS) */}
+        <button
+          type="button"
+          className="globe-legend-toggle"
+          aria-expanded={legendOpen}
+          onClick={() => setLegendOpen((o) => !o)}
+          style={{ marginBottom: legendOpen ? 8 : 0 }}
+        >
+          {legendOpen ? "▾ Hide legend" : "▸ Legend"}
+        </button>
         {/* Color: control + its legend (a gradient) */}
         <MetricToggle
           label="Color"
@@ -720,7 +756,7 @@ export default function CarbonGlobe() {
 
       {/* Selected detail panel */}
       {selected && (
-        <div style={{ position: "absolute", top: 20, right: 24, width: 260, background: "rgba(10,15,20,0.92)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 12, padding: "16px 18px", color: "#fff", backdropFilter: "blur(8px)" }}>
+        <div className="globe-detail" style={{ position: "absolute", top: 20, right: 24, width: 260, background: "rgba(10,15,20,0.92)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 12, padding: "16px 18px", color: "#fff", backdropFilter: "blur(8px)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div style={{ textTransform: "uppercase", letterSpacing: "0.5px", color: "#9ca3af", fontSize: "0.7rem", fontWeight: 700 }}>
               {selected.provider} · {selected.region}
