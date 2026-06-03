@@ -69,7 +69,8 @@ export function SLAMonitor() {
       </h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
         Set carbon targets for your workloads, check them against live grid data, and
-        get summary reports.
+        get summary reports. Checks run live against the grid; state is kept in memory
+        for this demo, so SLAs reset when the server restarts.
       </p>
 
       {/* Monitor Status + Controls */}
@@ -93,16 +94,32 @@ export function SLAMonitor() {
           )}
           <button
             onClick={() => monitorMutation.mutate(monitorStatus?.running ? "stop" : "start")}
-            disabled={monitorMutation.isPending}
+            disabled={monitorMutation.isPending || (!monitorStatus?.running && (!slas || slas.length === 0))}
             style={{
               padding: "0.5rem 1.5rem", borderRadius: 6, border: "none",
               background: monitorStatus?.running ? "var(--gray-200)" : "var(--btn-green)",
               color: monitorStatus?.running ? "var(--gray-700)" : "white",
-              fontWeight: 600, cursor: "pointer", fontSize: "0.85rem",
+              fontWeight: 600, fontSize: "0.85rem",
+              cursor:
+                monitorMutation.isPending || (!monitorStatus?.running && (!slas || slas.length === 0))
+                  ? "not-allowed"
+                  : "pointer",
+              opacity:
+                !monitorStatus?.running && (!slas || slas.length === 0) ? 0.6 : 1,
             }}
           >
             {monitorStatus?.running ? "Stop Monitor" : "Start Monitor"}
           </button>
+          {!monitorStatus?.running && (!slas || slas.length === 0) && (
+            <div style={{ fontSize: "0.78rem", color: "var(--gray-500)", marginTop: "0.5rem" }}>
+              Create an SLA first — the monitor needs at least one target to watch.
+            </div>
+          )}
+          {monitorMutation.isError && (
+            <div style={{ fontSize: "0.78rem", color: "var(--red-400, #f87171)", marginTop: "0.5rem" }}>
+              {(monitorMutation.error as Error).message}
+            </div>
+          )}
         </div>
 
         <div style={card}>
@@ -198,6 +215,16 @@ export function SLAMonitor() {
           >
             {createMutation.isPending ? "Creating..." : "Create SLA"}
           </button>
+          {createMutation.isError && (
+            <div style={{ fontSize: "0.8rem", color: "var(--red-400, #f87171)", marginTop: "0.75rem" }}>
+              {(createMutation.error as Error).message}
+            </div>
+          )}
+        </div>
+      )}
+      {(checkMutation.isError || reportMutation.isError) && (
+        <div style={{ ...card, marginBottom: "2rem", border: "1px solid var(--red-300, #fca5a5)", color: "var(--red-400, #f87171)", fontSize: "0.85rem" }}>
+          {((checkMutation.error || reportMutation.error) as Error)?.message}
         </div>
       )}
 

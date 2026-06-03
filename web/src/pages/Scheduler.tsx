@@ -58,7 +58,7 @@ export function Scheduler() {
         Carbon-aware scheduler
         <InfoTip
           label="carbon-aware scheduling"
-          text="Many jobs don't have to run at a fixed moment — CI/CD pipelines, ML training, nightly batch processing. Carbon-aware scheduling shifts them to the time and region where the grid is cleanest, cutting emissions for the same work."
+          text="Many jobs don't have to run at a fixed moment — CI/CD pipelines, ML training, nightly batch processing. Carbon-aware scheduling runs them when and where the grid is cleanest, cutting emissions for the same work. This tool finds that window for you; a CI runner or scheduler then executes the job — CarbonLens recommends, it doesn't run anything itself."
         />
       </h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
@@ -280,6 +280,27 @@ export function Scheduler() {
           Error: {(findWindow.error as Error).message}
         </div>
       )}
+
+      {/* Recommends vs executes */}
+      <div style={{ ...card, marginBottom: "2rem", borderLeft: "3px solid var(--green-300)" }}>
+        <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.1rem" }}>Recommends — doesn't run your job</h2>
+        <p style={{ color: "var(--gray-600)", fontSize: "0.9rem", margin: 0 }}>
+          CarbonLens tells you the greenest window and region. It doesn't trigger, hold, or relocate
+          any workload — that execution step is yours. To actually gate or defer real CI/CD jobs on
+          grid cleanliness, see{" "}
+          <a
+            href="https://github.com/peterklingelhofer/carbon-aware-dispatcher"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "var(--green-text)", fontWeight: 600 }}
+          >
+            carbon-aware-dispatcher
+          </a>{" "}
+          — a GitHub Action (and CLI) that reads the same kind of live grid data, then skips, waits
+          for, or dispatches a build only when the grid is clean. In short: this page advises{" "}
+          <em>when</em> to run; the dispatcher changes <em>when and where compute actually runs</em>.
+        </p>
+      </div>
 
       {/* Integration Examples */}
       <div style={card}>

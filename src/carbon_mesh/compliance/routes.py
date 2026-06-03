@@ -148,15 +148,29 @@ async def upload_csv(
 ) -> UsageIngestionResponse:
     """Upload a CSV file with cloud usage data."""
     content = await file.read()
-    csv_text = content.decode("utf-8")
+    try:
+        csv_text = content.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise HTTPException(400, "File must be a UTF-8 encoded CSV.") from exc
 
     adapter = ManualCSVAdapter()
-    records = await adapter.fetch_usage(
-        org_id=org_id,
-        period_start=datetime.min,
-        period_end=datetime.max,
-        csv_content=csv_text,
-    )
+    try:
+        records = await adapter.fetch_usage(
+            org_id=org_id,
+            period_start=datetime.min,
+            period_end=datetime.max,
+            csv_content=csv_text,
+        )
+    except (KeyError, ValueError) as exc:
+        raise HTTPException(
+            400,
+            "Could not parse the CSV. Required columns: provider, region, service, "
+            "usage_quantity, usage_unit, period_start, period_end (ISO dates); "
+            f"resource_type is optional. Detail: {exc}",
+        ) from exc
+
+    if not records:
+        raise HTTPException(400, "No usage rows found in the CSV.")
 
     if org_id not in _usage_store:
         _usage_store[org_id] = []
