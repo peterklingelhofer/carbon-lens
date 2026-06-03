@@ -154,7 +154,7 @@ export function Landing() {
             </div>
             <div style={{ color: "var(--green-text)", fontWeight: 600 }}>
               CarbonLens: &nbsp;Query real-time grid data &rarr; Know actual
-              gCO2/kWh right now &rarr; Make informed decisions
+              gCO₂/kWh right now &rarr; Make informed decisions
             </div>
           </div>
         </div>
@@ -202,7 +202,7 @@ export function Landing() {
             </li>
           </ul>
           <p style={{ color: "var(--gray-600)", fontSize: "0.95rem", margin: 0 }}>
-            CarbonLens turns live grid data into a defensible first draft of those reports —
+            CarbonLens turns live grid data into a first draft of those reports —
             emissions measured, not matched.
           </p>
         </div>
@@ -211,7 +211,7 @@ export function Landing() {
           {[
             {
               title: "Carbon intensity API",
-              desc: "Real-time grams of CO₂ per kWh for 75+ cloud regions in one request, with the data source tagged on every response.",
+              desc: "Latest grams of CO₂ per kWh for 75+ cloud regions in one request, with the data source tagged on every response.",
               tip: "An API is how one program asks another for data — here, your code asks ours for a region's live carbon number. gCO₂/kWh = grams of CO₂ emitted per kilowatt-hour of electricity.",
             },
             {
@@ -368,6 +368,12 @@ export function Landing() {
         >
           Data Sources
         </h2>
+        <p style={{ textAlign: "center", margin: "0 auto 1rem", color: "var(--gray-500)", fontSize: "0.9rem" }}>
+          How every number is produced, and where it's an estimate:{" "}
+          <Link to="/methodology" style={{ color: "var(--green-text)", textDecoration: "underline", fontWeight: 600 }}>
+            read the methodology →
+          </Link>
+        </p>
         <div style={{ ...card, overflow: "auto" }}>
           <table
             style={{
@@ -437,6 +443,11 @@ export function Landing() {
               ))}
             </tbody>
           </table>
+          <p style={{ fontSize: "0.8rem", color: "var(--gray-400)", marginTop: "0.75rem", marginBottom: 0 }}>
+            A <strong>balancing authority</strong> / <strong>ISO</strong> (independent system operator) is the body that
+            runs a regional electricity grid and publishes what it's generating — e.g. PJM (US Mid-Atlantic), CAISO
+            (California), National Grid ESO (Great Britain). Carbon is measured at that grid, not the datacenter.
+          </p>
         </div>
 
         {/* CTA */}

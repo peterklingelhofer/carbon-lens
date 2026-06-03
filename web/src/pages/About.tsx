@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
 import { useSnapshot, snapshotEnabled } from "../api/snapshot";
 import { section as sectionFn, card as baseCard } from "../styles";
+import { timeAgo } from "../lib/format";
 
 const section = sectionFn(820);
 const card: React.CSSProperties = { ...baseCard, padding: "2rem" };
@@ -12,13 +13,6 @@ const card: React.CSSProperties = { ...baseCard, padding: "2rem" };
 // Oregon / US-NW-BPAT zone, so its live reading stands in for our own grid.
 const OREGON = { provider: "aws", region: "us-west-2" };
 
-function timeAgo(iso: string): string {
-  const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins} min ago`;
-  const hrs = Math.round(mins / 60);
-  return `${hrs} hr${hrs > 1 ? "s" : ""} ago`;
-}
 
 function OregonGridLive() {
   const { data: snapshot } = useSnapshot();
@@ -173,7 +167,7 @@ export function About() {
         <OregonGridLive />
 
         <p style={{ color: "var(--gray-400)", fontSize: "0.8rem", marginTop: "0.75rem", marginBottom: 0 }}>
-          This is the grid's real-time carbon intensity (location-based) —
+          This is the grid's latest carbon intensity (location-based) —
           measured, not matched. It's a stand-in from the same Oregon / US-NW-BPAT
           zone our server sits in, so it moves hour to hour with the actual grid.
         </p>

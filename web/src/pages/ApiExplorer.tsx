@@ -87,8 +87,9 @@ export function ApiExplorer() {
         />
       </h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "1rem" }}>
-        Try the carbon API by hand. Every query hits live data sources. No key
-        required, rate-limited to 100 requests/min.
+        Try the carbon API by hand. Each query returns the latest reading — live
+        where a grid-operator feed exists, a clearly-labelled estimate otherwise.
+        No key required; rate-limited to 100 requests/min per IP.
       </p>
       <p style={{ marginBottom: "2rem", fontSize: "0.9rem" }}>
         Prefer the full reference?{" "}
@@ -140,7 +141,7 @@ export function ApiExplorer() {
             GET /api/v1/carbon/{"{provider}"}/{"{region}"}
           </h2>
           <p style={{ color: "var(--gray-500)", fontSize: "0.85rem", margin: "0 0 1rem" }}>
-            Get real-time carbon intensity for any cloud region.
+            Get the latest carbon intensity for any cloud region.
           </p>
           <div
             style={{
@@ -264,7 +265,7 @@ export function ApiExplorer() {
                   <thead>
                     <tr style={{ borderBottom: "2px solid var(--gray-200)" }}>
                       <HeadCell label="Region" />
-                      <HeadCell label="gCO2/kWh" tip={TIP.emissions} align="right" />
+                      <HeadCell label="gCO₂/kWh" tip={TIP.emissions} align="right" />
                       <HeadCell label="Renewable %" tip={TIP.renewable} align="right" />
                       <HeadCell label="Source" tip={TIP.source} />
                     </tr>
@@ -316,7 +317,7 @@ export function ApiExplorer() {
             <ResultCard
               label="Carbon emissions"
               value={`${intensityResult.carbon_intensity_gco2_kwh}`}
-              unit="gCO2/kWh"
+              unit="gCO₂/kWh"
               positive={intensityResult.carbon_intensity_gco2_kwh <= 100}
               tip={TIP.emissions}
             />
@@ -383,7 +384,7 @@ export function ApiExplorer() {
               <div>
                 <div style={{ fontSize: "0.7rem", color: "var(--gray-500)" }}>Carbon</div>
                 <div style={{ fontWeight: 700, color: "var(--green-text)" }}>
-                  {routeResult.recommended.carbon_intensity_gco2_kwh} gCO2/kWh
+                  {routeResult.recommended.carbon_intensity_gco2_kwh} gCO₂/kWh
                 </div>
               </div>
               <div>
@@ -414,7 +415,7 @@ export function ApiExplorer() {
                     <tr style={{ borderBottom: "2px solid var(--gray-200)" }}>
                       <HeadCell label="Provider" />
                       <HeadCell label="Region" />
-                      <HeadCell label="gCO2/kWh" tip={TIP.emissions} align="right" />
+                      <HeadCell label="gCO₂/kWh" tip={TIP.emissions} align="right" />
                       <HeadCell label="Renewable %" tip={TIP.renewable} align="right" />
                     </tr>
                   </thead>

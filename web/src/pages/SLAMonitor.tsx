@@ -64,7 +64,7 @@ export function SLAMonitor() {
         Green SLA monitoring
         <InfoTip
           label="SLA"
-          text="An SLA (service-level agreement) is a measurable promise about a service. Here it's a carbon ceiling for your workloads — e.g. 'stay under 100 gCO₂/kWh' — checked against live grid data."
+          text="An SLA (service-level agreement) is a measurable promise about a service. Here it's a carbon ceiling for your workloads — e.g. 'stay under 100 gCO₂/kWh' — checked against live grid data. A 'breach' is a check where a region exceeded your carbon ceiling or fell below your renewable floor."
         />
       </h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
@@ -177,7 +177,7 @@ export function SLAMonitor() {
               />
             </div>
             <div>
-              <label style={labelStyle}>Max Carbon (gCO2/kWh)</label>
+              <label style={labelStyle}>Max Carbon (gCO₂/kWh)</label>
               <input
                 type="range" min={0} max={500} step={10}
                 value={maxCarbon} onChange={(e) => setMaxCarbon(Number(e.target.value))}
@@ -187,7 +187,7 @@ export function SLAMonitor() {
                 color: maxCarbon <= 50 ? "var(--green-text)" : maxCarbon <= 200 ? "var(--green-500)" : "var(--orange-400)",
                 fontWeight: 600,
               }}>
-                {maxCarbon === 0 ? "ZERO CARBON ONLY" : `${maxCarbon} gCO2/kWh`}
+                {maxCarbon === 0 ? "ZERO CARBON ONLY" : `${maxCarbon} gCO₂/kWh`}
               </div>
             </div>
             <div>
@@ -247,34 +247,34 @@ export function SLAMonitor() {
               </thead>
               <tbody>
                 {slas.map((sla) => (
-                  <tr key={sla.id as string} style={{ borderBottom: "1px solid var(--gray-100)" }}>
-                    <td style={{ ...td, fontWeight: 600 }}>{sla.name as string}</td>
+                  <tr key={sla.id} style={{ borderBottom: "1px solid var(--gray-100)" }}>
+                    <td style={{ ...td, fontWeight: 600 }}>{sla.name}</td>
                     <td style={td}>
-                      <StatusBadge status={sla.status as string} />
+                      <StatusBadge status={sla.status} />
                     </td>
                     <td style={{ ...td, textAlign: "right" }}>
-                      {sla.max_carbon_intensity_gco2_kwh as number} gCO2
+                      {sla.max_carbon_intensity_gco2_kwh} gCO₂
                     </td>
                     <td style={{ ...td, textAlign: "right" }}>
-                      {sla.min_renewable_percentage as number}%
+                      {sla.min_renewable_percentage}%
                     </td>
-                    <td style={td}>{sla.check_frequency as string}</td>
+                    <td style={td}>{sla.check_frequency}</td>
                     <td style={{ ...td, fontSize: "0.8rem", color: "var(--gray-500)" }}>
                       {sla.last_checked
-                        ? new Date(sla.last_checked as string).toLocaleString()
+                        ? new Date(sla.last_checked).toLocaleString()
                         : "Never"}
                     </td>
                     <td style={td}>
                       <div style={{ display: "flex", gap: "0.25rem" }}>
                         <button
-                          onClick={() => checkMutation.mutate(sla.id as string)}
+                          onClick={() => checkMutation.mutate(sla.id)}
                           disabled={checkMutation.isPending}
                           style={smallButton}
                         >
                           Check
                         </button>
                         <button
-                          onClick={() => reportMutation.mutate(sla.id as string)}
+                          onClick={() => reportMutation.mutate(sla.id)}
                           disabled={reportMutation.isPending}
                           style={smallButton}
                         >
@@ -305,8 +305,8 @@ export function SLAMonitor() {
             display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
             gap: "0.75rem",
           }}>
-            <StatCard label="Avg Carbon" value={`${checkMutation.data.avg_carbon_intensity_gco2_kwh}`} unit="gCO2/kWh" />
-            <StatCard label="Max Carbon" value={`${checkMutation.data.max_carbon_intensity_gco2_kwh}`} unit="gCO2/kWh" />
+            <StatCard label="Avg Carbon" value={`${checkMutation.data.avg_carbon_intensity_gco2_kwh}`} unit="gCO₂/kWh" />
+            <StatCard label="Max Carbon" value={`${checkMutation.data.max_carbon_intensity_gco2_kwh}`} unit="gCO₂/kWh" />
             <StatCard label="Avg Renewable" value={`${checkMutation.data.avg_renewable_percentage}`} unit="%" positive />
             <StatCard label="Regions Checked" value={`${checkMutation.data.regions_checked}`} />
             <StatCard label="Compliant" value={`${checkMutation.data.regions_compliant}`} positive />
@@ -321,7 +321,7 @@ export function SLAMonitor() {
                     <tr style={{ borderBottom: "2px solid var(--gray-200)" }}>
                       <th style={th}>Provider</th>
                       <th style={th}>Region</th>
-                      <th style={{ ...th, textAlign: "right" }}>gCO2/kWh</th>
+                      <th style={{ ...th, textAlign: "right" }}>gCO₂/kWh</th>
                       <th style={{ ...th, textAlign: "right" }}>Renewable %</th>
                     </tr>
                   </thead>
@@ -329,16 +329,16 @@ export function SLAMonitor() {
                     {checkMutation.data.breached_regions.map((r, i: number) => (
                       <tr key={i} style={{ borderBottom: "1px solid var(--gray-100)" }}>
                         <td style={{ ...td, fontWeight: 600, textTransform: "uppercase", fontSize: "0.8rem" }}>
-                          {r.provider as string}
+                          {r.provider}
                         </td>
                         <td style={{ ...td, fontFamily: "var(--mono)", fontSize: "0.8rem" }}>
-                          {r.region as string}
+                          {r.region}
                         </td>
                         <td style={{ ...td, textAlign: "right", fontWeight: 600, color: "var(--red-400, #f87171)" }}>
-                          {r.carbon_intensity_gco2_kwh as number}
+                          {r.carbon_intensity_gco2_kwh}
                         </td>
                         <td style={{ ...td, textAlign: "right" }}>
-                          {r.renewable_percentage as number}%
+                          {r.renewable_percentage}%
                         </td>
                       </tr>
                     ))}
@@ -353,9 +353,13 @@ export function SLAMonitor() {
       {/* Report Result */}
       {reportMutation.data && (
         <div style={{ ...card, marginBottom: "2rem" }}>
-          <h2 style={{ margin: "0 0 1rem", fontSize: "1.1rem" }}>
-            Attestation Report: {reportMutation.data.sla_name}
+          <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.1rem" }}>
+            SLA summary: {reportMutation.data.sla_name}
           </h2>
+          <div style={{ fontSize: "0.78rem", color: "var(--gray-400)", marginBottom: "0.75rem" }}>
+            Self-generated summary, not a third-party-assured attestation. Checks are in-memory and reset on restart,
+            so a freshly-created SLA may summarise a single check over the stated period rather than continuous history.
+          </div>
           <div style={{ fontSize: "0.8rem", color: "var(--gray-500)", marginBottom: "1rem" }}>
             {new Date(reportMutation.data.period_start).toLocaleDateString()} — {new Date(reportMutation.data.period_end).toLocaleDateString()}
             {" | "}Generated {new Date(reportMutation.data.generated_at).toLocaleString()}
@@ -368,7 +372,7 @@ export function SLAMonitor() {
             <StatCard label="Total Checks" value={`${reportMutation.data.total_checks}`} />
             <StatCard label="Compliant" value={`${reportMutation.data.compliant_checks}`} positive />
             <StatCard label="Breached" value={`${reportMutation.data.breached_checks}`} />
-            <StatCard label="Avg Carbon" value={`${reportMutation.data.avg_carbon_intensity_gco2_kwh}`} unit="gCO2/kWh" />
+            <StatCard label="Avg Carbon" value={`${reportMutation.data.avg_carbon_intensity_gco2_kwh}`} unit="gCO₂/kWh" />
             <StatCard label="Avg Renewable" value={`${reportMutation.data.avg_renewable_percentage}`} unit="%" positive />
           </div>
           <div style={{ padding: "0.75rem", borderRadius: 8, background: "var(--surface-alt)", fontSize: "0.8rem", color: "var(--gray-600)" }}>

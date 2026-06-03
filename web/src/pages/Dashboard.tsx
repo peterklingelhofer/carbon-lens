@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
-import { useSnapshot, type CarbonSnapshot } from "../api/snapshot";
+import { useSnapshot, snapshotEnabled, type CarbonSnapshot } from "../api/snapshot";
 import type { CloudRegion, CarbonIntensity, CarbonUpdate } from "../api/types";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { section as sectionFn, card, providerChip } from "../styles";
 import { InfoTip } from "../components/InfoTip";
 import { DATA_QUALITY_TIP } from "../copy";
+import { timeAgo } from "../lib/format";
 
 const section = sectionFn(1100);
 
@@ -22,13 +23,6 @@ function intensityColor(val: number): string {
   return "var(--red-400)";
 }
 
-function timeAgo(iso: string): string {
-  const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins} min ago`;
-  const hrs = Math.round(mins / 60);
-  return `${hrs} hr${hrs > 1 ? "s" : ""} ago`;
-}
 
 function QualityTag({ quality }: { quality?: CarbonIntensity["quality"] }) {
   if (quality !== "estimated") return null;
@@ -125,7 +119,7 @@ function RegionRow({
           <div>
             <IntensityBar value={intensity.carbon_intensity_gco2_kwh} />
             <span style={{ fontSize: "0.75rem", color: "var(--gray-500)" }}>
-              {intensity.carbon_intensity_gco2_kwh} gCO2/kWh
+              {intensity.carbon_intensity_gco2_kwh} gCO₂/kWh
               <QualityTag quality={intensity.quality} />
             </span>
             {formatLoad(intensity.grid_load_mw) && (
@@ -181,7 +175,7 @@ const COLUMNS: { key: SortKey; label: string; align: "left" | "center"; info?: s
     key: "renewable",
     label: "Renewable %",
     align: "center",
-    info: "Share of the grid's electricity from renewable sources (wind, solar, hydro) right now. Higher is greener.",
+    info: "Share of the grid's electricity from renewables (wind, solar, hydro) right now. Higher is greener — but this excludes nuclear, so a clean nuclear/hydro grid (France, Sweden) can read low here yet still emit little CO₂. Sort by Carbon Intensity for the true 'cleanest' ranking.",
   },
 ];
 
@@ -215,8 +209,11 @@ function sortRegions(
 
 export function Dashboard() {
   const [provider, setProvider] = useState<string>("");
-  const [sortKey, setSortKey] = useState<SortKey | null>("renewable");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [search, setSearch] = useState<string>("");
+  // Default to carbon intensity ascending — lowest gCO₂/kWh first is the rigorous
+  // "greenest" (counts nuclear/hydro), unlike renewable % which excludes nuclear.
+  const [sortKey, setSortKey] = useState<SortKey | null>("intensity");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else {
@@ -228,7 +225,7 @@ export function Dashboard() {
   const { data: snapshot } = useSnapshot();
   const usingSnapshot = !!snapshot;
 
-  const { data: apiRegions, isLoading: apiRegionsLoading } = useQuery({
+  const { data: apiRegions, isLoading: apiRegionsLoading, isError: apiRegionsError } = useQuery({
     queryKey: ["regions", provider],
     queryFn: () => api.regions(provider || undefined),
     enabled: !usingSnapshot,
@@ -255,12 +252,22 @@ export function Dashboard() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["savings"] }),
   });
 
-  const visibleRegions = regions?.slice(0, 20) ?? [];
-  const apiIntensities = useRegionIntensities(usingSnapshot ? [] : visibleRegions);
+  // Fetch intensities for ALL regions (in snapshot mode they're already present),
+  // sort the FULL set, THEN slice to 20 — otherwise "greenest" would only sort the
+  // first 20 as-fetched, showing the wrong regions.
+  const allRegions = regions ?? [];
+  const apiIntensities = useRegionIntensities(usingSnapshot ? [] : allRegions);
   const intensities = usingSnapshot ? snapshot.intensities : apiIntensities;
-  const displayRegions = sortKey
-    ? sortRegions(visibleRegions, intensities, sortKey, sortDir)
-    : visibleRegions;
+  const q = search.trim().toLowerCase();
+  const filteredRegions = q
+    ? allRegions.filter((r) =>
+        `${r.provider} ${r.region} ${r.grid_zone} ${r.location}`.toLowerCase().includes(q),
+      )
+    : allRegions;
+  const sortedRegions = sortKey
+    ? sortRegions(filteredRegions, intensities, sortKey, sortDir)
+    : filteredRegions;
+  const displayRegions = sortedRegions.slice(0, 20);
 
   return (
     <div style={section}>
@@ -274,7 +281,7 @@ export function Dashboard() {
           marginBottom: "0.5rem",
         }}
       >
-        <h1 style={{ margin: 0 }}>Carbon Dashboard</h1>
+        <h1 style={{ margin: 0 }}>Grid Data</h1>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
           <button
             onClick={() => routeSample.mutate()}
@@ -308,7 +315,9 @@ export function Dashboard() {
             marginBottom: routeSample.data ? "0.75rem" : "2rem",
           }}
         >
-          Live carbon intensity data powering the API. 11 cascading sources (6 live integrations), 75+ cloud regions.
+          Live carbon intensity data powering the API. 11 cascading sources
+          <InfoTip label="cascading sources" text="The API tries data sources in priority order and uses the first that covers a zone — a real grid-operator feed where one exists, then a regional heuristic or weather-based estimate, falling back to labelled sample data. So coverage is broad and every reading is tagged with where it came from." />
+          {" "}(6 live integrations), 75+ cloud regions.
         </p>
       )}
       {routeSample.data && (
@@ -318,7 +327,7 @@ export function Dashboard() {
             {routeSample.data.recommended.provider}
           </strong>{" "}
           <code>{routeSample.data.recommended.region}</code> —{" "}
-          {routeSample.data.recommended.carbon_intensity_gco2_kwh} gCO2/kWh,{" "}
+          {routeSample.data.recommended.carbon_intensity_gco2_kwh} gCO₂/kWh,{" "}
           {routeSample.data.recommended.renewable_percentage}% renewable.
         </p>
       )}
@@ -347,15 +356,15 @@ export function Dashboard() {
           </div>
           <div style={card}>
             <div style={{ fontSize: "0.8rem", color: "var(--gray-500)", display: "flex", alignItems: "center" }}>
-              Carbon emissions avoided
+              Carbon-intensity gap (illustrative)
               <InfoTip
-                label="Carbon emissions avoided"
-                text="For each recommendation, the gap in carbon intensity (gCO₂/kWh) between the dirtiest candidate region and the greener one chosen, summed across recommendations. It's illustrative: a per-kWh intensity gap, not absolute tonnes — real savings also depend on how much energy a workload uses."
+                label="Carbon-intensity gap"
+                text="For each recommendation, the gap in carbon intensity (gCO₂/kWh) between the dirtiest candidate region and the greener one chosen, summed across recommendations. It's a rough indicator, not a real emissions total: per-kWh intensities aren't additive across workloads, and actual savings also depend on how much energy each job uses. In-memory for this server instance; resets on restart."
               />
             </div>
             <div style={{ fontSize: "2rem", fontWeight: 700, color: "var(--green-text)" }}>
               {savings.total_carbon_saved_gco2_kwh.toFixed(1)}{" "}
-              <span style={{ fontSize: "0.9rem", fontWeight: 400 }}>gCO2/kWh</span>
+              <span style={{ fontSize: "0.9rem", fontWeight: 400 }}>gCO₂/kWh</span>
             </div>
           </div>
           <div style={card}>
@@ -374,10 +383,10 @@ export function Dashboard() {
       )}
 
       {/* Live WebSocket feed — only when a live API backs it (not in static snapshot mode) */}
-      {!usingSnapshot && <LivePanel />}
+      {!snapshotEnabled && <LivePanel />}
 
       {/* Filter */}
-      <div style={{ marginBottom: "1rem", display: "flex", gap: "0.5rem" }}>
+      <div style={{ marginBottom: "1rem", display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
         {["", "aws", "gcp", "azure"].map((p) => (
           <button
             key={p}
@@ -396,12 +405,35 @@ export function Dashboard() {
             {p || "All"}
           </button>
         ))}
+        <input
+          type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search region, grid zone, or location…"
+          aria-label="Search regions"
+          style={{
+            flex: "1 1 220px",
+            minWidth: 180,
+            padding: "0.4rem 0.75rem",
+            borderRadius: 6,
+            border: "1px solid var(--gray-200)",
+            background: "var(--surface)",
+            color: "inherit",
+            fontSize: "0.85rem",
+          }}
+        />
       </div>
 
       {/* Regions table */}
       <div style={{ ...card, overflow: "auto" }}>
         {regionsLoading ? (
-          <p>Loading regions...</p>
+          <p style={{ color: "var(--gray-400)" }}>Loading regions…</p>
+        ) : apiRegionsError && displayRegions.length === 0 ? (
+          <p style={{ color: "var(--gray-500)" }}>
+            Couldn't reach the API to load regions. It may be waking up (free tier, ~50s) — refresh in a moment.
+          </p>
+        ) : displayRegions.length === 0 ? (
+          <p style={{ color: "var(--gray-400)" }}>No regions match this filter.</p>
         ) : (
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
@@ -464,9 +496,10 @@ export function Dashboard() {
             </tbody>
           </table>
         )}
-        {regions && regions.length > 20 && (
+        {sortedRegions.length > 20 && (
           <p style={{ textAlign: "center", color: "var(--gray-400)", marginTop: "1rem" }}>
-            Showing 20 of {regions.length} regions. Use the API for full data.
+            Showing 20 of {sortedRegions.length}
+            {q ? " matching" : ""} regions{q ? "" : " (sorted)"}. Refine your search or use the API for the full set.
           </p>
         )}
       </div>
@@ -610,7 +643,7 @@ function LivePanel() {
                   color: "var(--gray-500)",
                 }}
               >
-                <span>{d.carbon_intensity_gco2_kwh} gCO2</span>
+                <span>{d.carbon_intensity_gco2_kwh} gCO₂</span>
                 <span
                   style={{
                     color:

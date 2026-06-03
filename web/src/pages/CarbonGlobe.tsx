@@ -7,6 +7,7 @@ import { api } from "../api/client";
 import { useSnapshot, snapshotEnabled, qualityFromSource } from "../api/snapshot";
 import { InfoTip } from "../components/InfoTip";
 import { DATA_QUALITY_TIP } from "../copy";
+import { timeAgo, niceKm } from "../lib/format";
 
 // Some browsers/machines can't create a WebGL context (hardware acceleration
 // off, GPU blocklisted, headless). Detect it up front so we can show a graceful
@@ -53,14 +54,6 @@ interface GlobePoint {
 function formatLoad(mw?: number | null): string | null {
   if (mw == null) return null;
   return mw >= 1000 ? `${(mw / 1000).toFixed(1)} GW` : `${Math.round(mw)} MW`;
-}
-
-function timeAgo(iso: string): string {
-  const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins} min ago`;
-  const hrs = Math.round(mins / 60);
-  return `${hrs} hr${hrs > 1 ? "s" : ""} ago`;
 }
 
 function intensityRGB(v: number): [number, number, number] {
@@ -226,13 +219,6 @@ const EARTH_KM = 6371; // mean Earth radius — globe radius (world units) maps 
 const MAX_BEAM_ALT = 0.04 + 0.5;
 
 // Round to a "nice" 1 / 2 / 5 × 10^n value for the map scale bar.
-function niceKm(x: number): number {
-  const exp = Math.floor(Math.log10(x));
-  const f = x / 10 ** exp;
-  const nice = f < 1.5 ? 1 : f < 3.5 ? 2 : f < 7.5 ? 5 : 10;
-  return nice * 10 ** exp;
-}
-
 function MetricToggle({
   label,
   value,
@@ -270,7 +256,7 @@ function MetricToggle({
               color: value === m ? "#fff" : "#cbd5e1",
             }}
           >
-            {m === "renewable" ? "Renewable %" : "Carbon emissions"}
+            {m === "renewable" ? "Renewable %" : "Carbon intensity"}
           </button>
         ))}
       </div>
@@ -282,13 +268,13 @@ export default function CarbonGlobe() {
   const containerRef = useRef<HTMLDivElement>(null);
   const globeRef = useRef<GlobeInstance | null>(null);
   const points = useGlobePoints();
-  const { data: snapshot } = useSnapshot();
+  const { data: snapshot, isError: dataError } = useSnapshot();
   const [selected, setSelected] = useState<GlobePoint | null>(null);
-  // Default to renewable % — the most intuitive read for a general audience
-  // (higher = greener). Carbon emissions intensity (the more rigorous
-  // "least damage" metric) is one toggle away.
+  // Default to a BIVARIATE view: colour = carbon intensity (the rigorous metric —
+  // lower gCO₂/kWh is genuinely cleaner, nuclear included), height = renewable %.
+  // Two channels, two variables — not the same thing shown twice.
   const [heightMetric, setHeightMetric] = useState<Metric>("renewable");
-  const [colorMetric, setColorMetric] = useState<Metric>("renewable");
+  const [colorMetric, setColorMetric] = useState<Metric>("intensity");
   // Map scale + beam reference, recomputed as the camera zooms (shared px↔km basis):
   //   km / px  = the distance scale bar
   //   beamPx   = on-screen length of a full (100%) beam at this zoom
@@ -352,7 +338,7 @@ export default function CarbonGlobe() {
           <div style="font-family:system-ui;background:rgba(10,15,20,0.92);border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:8px 10px;color:#fff;font-size:12px;min-width:180px">
             <div style="font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;font-size:10px">${p.provider} · ${p.region}</div>
             <div style="margin:2px 0 6px;color:#d1d5db">${p.location} <span style="color:#6b7280">(${p.grid_zone})</span></div>
-            <div style="font-size:18px;font-weight:700;color:${intensityColor(p.intensity)}">${p.intensity} <span style="font-size:11px;font-weight:400;color:#9ca3af">gCO2/kWh</span></div>
+            <div style="font-size:18px;font-weight:700;color:${intensityColor(p.intensity)}">${p.intensity} <span style="font-size:11px;font-weight:400;color:#9ca3af">gCO₂/kWh</span></div>
             <div style="color:#86efac">${p.renewable}% renewable</div>
             ${formatLoad(p.gridLoadMw) ? `<div style="color:#93c5fd">Grid load: ${formatLoad(p.gridLoadMw)} <span style="color:#6b7280">(whole grid)</span></div>` : ""}
             <div style="margin-top:4px;font-size:10px">${tag}</div>
@@ -580,7 +566,7 @@ export default function CarbonGlobe() {
           Carbon Globe
         </h1>
         <p style={{ margin: 0, fontSize: "0.85rem", color: "#cbd5e1", maxWidth: 380 }}>
-          {points.length} cloud regions by live grid carbon emissions and renewable
+          {points.length} cloud regions by live grid carbon intensity and renewable
           share. Drag to spin, scroll to zoom, hover a node for detail.
         </p>
         {points.length > 0 && (
@@ -595,6 +581,16 @@ export default function CarbonGlobe() {
             Data updated {timeAgo(snapshot.generated_at)}
           </p>
         )}
+        {/* Always-available text alternative — for keyboard, screen-reader and
+            colour-vision users who can't read the colour-coded beams. */}
+        <p style={{ margin: "6px 0 0", pointerEvents: "auto", fontSize: "0.72rem" }}>
+          <Link to="/dashboard" style={{ color: "#7dd3fc", textDecoration: "underline" }}>
+            View as a table →
+          </Link>
+          <Link to="/methodology" style={{ color: "#7dd3fc", textDecoration: "underline", marginLeft: 12 }}>
+            Methodology
+          </Link>
+        </p>
       </div>
 
       {/* Controls + legend (bottom-left) */}
@@ -607,7 +603,7 @@ export default function CarbonGlobe() {
           tip={
             colorMetric === "intensity"
               ? "Beam colour shows carbon intensity — gCO₂/kWh, grams of CO₂ per kilowatt-hour of electricity. Green = lower (cleaner), red = higher (dirtier)."
-              : "Beam colour shows renewable share — the % of electricity from renewable sources (wind, solar, hydro) right now. Green = higher (greener), red = lower."
+              : "Beam colour shows renewable share — the % from renewables (wind, solar, hydro) right now; greener = higher. Note: this excludes nuclear, so a clean nuclear/hydro grid (France, Sweden) can read low here yet still emit very little CO₂. Carbon intensity is the better 'how clean' measure."
           }
         />
         {colorMetric === "intensity" ? (
@@ -636,7 +632,7 @@ export default function CarbonGlobe() {
           tip={
             heightMetric === "renewable"
               ? "Beam height shows renewable share. Compare a beam to the scale below to read its value — a full-height beam ≈ 100%, flat ≈ 0%. On a globe on-screen height also depends on where a beam sits, so it's approximate."
-              : "Beam height shows carbon emissions. Compare a beam to the scale below to read its value — a full-height beam ≈ 800+ gCO₂/kWh, flat ≈ 0. On a globe on-screen height also depends on where a beam sits, so it's approximate."
+              : "Beam height shows carbon intensity (gCO₂/kWh). Compare a beam to the scale below to read its value — a full-height beam ≈ 800+ gCO₂/kWh, flat ≈ 0. On a globe on-screen height also depends on where a beam sits, so it's approximate."
           }
         />
         {/* A full beam laid flat at its true on-screen length — lay a beam against it. */}
@@ -705,10 +701,20 @@ export default function CarbonGlobe() {
         )}
       </div>
 
-      {/* Empty / loading state */}
+      {/* Empty / loading / error state — distinguish a failed fetch from loading */}
       {!webglError && points.length === 0 && (
-        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", pointerEvents: "none" }}>
-          Loading live grid data…
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", padding: "1rem", textAlign: "center" }}>
+          {dataError ? (
+            <span>
+              Couldn't load the grid data right now.{" "}
+              <Link to="/dashboard" style={{ color: "#7dd3fc", textDecoration: "underline" }}>
+                Try the dashboard
+              </Link>
+              .
+            </span>
+          ) : (
+            "Loading live grid data…"
+          )}
         </div>
       )}
 
@@ -726,7 +732,7 @@ export default function CarbonGlobe() {
           </div>
           <div style={{ fontSize: "2rem", fontWeight: 700, color: intensityColor(selected.intensity) }}>
             {selected.intensity}
-            <span style={{ fontSize: "0.8rem", fontWeight: 400, color: "#9ca3af" }}> gCO2/kWh</span>
+            <span style={{ fontSize: "0.8rem", fontWeight: 400, color: "#9ca3af" }}> gCO₂/kWh</span>
           </div>
           <div style={{ color: "#86efac", marginTop: 2 }}>{selected.renewable}% renewable</div>
           {formatLoad(selected.gridLoadMw) && (
