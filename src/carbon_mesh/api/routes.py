@@ -15,7 +15,6 @@ from carbon_mesh.api.deps import (
     get_tracker,
 )
 from carbon_mesh.auth.dependencies import require_api_key
-from carbon_mesh.billing.usage import check_usage_limit, increment_usage, is_over_limit
 from carbon_mesh.carbon_sources.base import CarbonDataSource
 from carbon_mesh.config import settings
 from carbon_mesh.db.models import ApiKeyRecord
@@ -39,15 +38,6 @@ async def route_workload(
     key: ApiKeyRecord | None = Depends(require_api_key),
 ) -> RouteResponse:
     """Find the greenest cloud region for your workload."""
-    # Enforce usage limits when DB + auth are active
-    if settings.use_database and session is not None and key is not None:
-        status = await check_usage_limit(session, key)
-        if is_over_limit(status):
-            raise HTTPException(
-                status_code=429,
-                detail=f"Daily usage limit exceeded ({status.daily_limit} requests/day on {key.tier} tier). Upgrade at /api/v1/billing/plans.",
-            )
-
     try:
         response = await engine.route(request.constraints)
     except ValueError as e:
@@ -56,9 +46,6 @@ async def route_workload(
     if settings.use_database and session is not None:
         api_key_id = key.id if key else None
         await db_tracker.record(session, response, api_key_id)
-        # Increment usage counter after successful routing
-        if key is not None:
-            await increment_usage(session, key.id)
     else:
         tracker.record(response)
 

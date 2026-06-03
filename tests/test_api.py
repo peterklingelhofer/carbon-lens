@@ -96,24 +96,6 @@ def test_security_headers(client: TestClient):
     assert "X-Request-ID" in resp.headers
 
 
-def test_billing_plans(client: TestClient):
-    resp = client.get("/api/v1/billing/plans")
-    assert resp.status_code == 200
-    plans = resp.json()
-    assert len(plans) == 3
-    names = {p["name"] for p in plans}
-    assert names == {"Free", "Pro", "Enterprise"}
-    free_plan = next(p for p in plans if p["name"] == "Free")
-    assert free_plan["daily_limit"] == 100
-
-
-def test_billing_status_unauthenticated(client: TestClient):
-    resp = client.get("/api/v1/billing/status")
-    assert resp.status_code == 200
-    data = resp.json()
-    assert data["tier"] == "free"
-
-
 def test_provider_status(client: TestClient):
     resp = client.get("/health/providers")
     assert resp.status_code == 200
