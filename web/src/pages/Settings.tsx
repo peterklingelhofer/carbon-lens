@@ -163,9 +163,9 @@ export function Settings() {
               <Stat label="Updated" value={timeAgo(snapshot.generated_at)} />
             </div>
             <p style={{ color: "var(--gray-500)", fontSize: "0.85rem", margin: "1rem 0 0" }}>
-              Real grid-operator data, refreshed roughly every 30 minutes from a scheduled
-              job — never mock data. "Estimated" zones (no live feed available) are clearly
-              labelled wherever they appear.
+              Real grid-operator data, refreshed periodically from a scheduled job — never
+              mock data. "Estimated" zones (no live feed available) are clearly labelled
+              wherever they appear. (See "Updated" above for the current snapshot's age.)
             </p>
           </>
         ) : !snapshotEnabled ? (

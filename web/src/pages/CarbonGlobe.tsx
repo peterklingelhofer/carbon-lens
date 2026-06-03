@@ -55,6 +55,14 @@ function formatLoad(mw?: number | null): string | null {
   return mw >= 1000 ? `${(mw / 1000).toFixed(1)} GW` : `${Math.round(mw)} MW`;
 }
 
+function timeAgo(iso: string): string {
+  const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.round(mins / 60);
+  return `${hrs} hr${hrs > 1 ? "s" : ""} ago`;
+}
+
 function intensityRGB(v: number): [number, number, number] {
   if (v <= 50) return [34, 197, 94]; // green
   if (v <= 150) return [132, 204, 22]; // lime
@@ -274,6 +282,7 @@ export default function CarbonGlobe() {
   const containerRef = useRef<HTMLDivElement>(null);
   const globeRef = useRef<GlobeInstance | null>(null);
   const points = useGlobePoints();
+  const { data: snapshot } = useSnapshot();
   const [selected, setSelected] = useState<GlobePoint | null>(null);
   // Default to renewable % — the most intuitive read for a general audience
   // (higher = greener). Carbon emissions intensity (the more rigorous
@@ -579,6 +588,11 @@ export default function CarbonGlobe() {
             <span style={{ color: "#4ade80" }}>● {liveCount} live</span>
             {estCount > 0 && <span style={{ color: "#fbbf24", marginLeft: 10 }}>● {estCount} estimated</span>}
             <InfoTip label="live vs estimated" text={DATA_QUALITY_TIP} placement="bottom" />
+          </p>
+        )}
+        {snapshot && (
+          <p style={{ margin: "3px 0 0", fontSize: "0.7rem", color: "#64748b" }}>
+            Data updated {timeAgo(snapshot.generated_at)}
           </p>
         )}
       </div>
