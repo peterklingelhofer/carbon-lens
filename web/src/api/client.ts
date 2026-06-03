@@ -21,7 +21,12 @@ import type {
   UsageIngestionResponse,
 } from "./types";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+// Empty by default → requests are SAME-ORIGIN relative paths (e.g. "/health").
+// In production the Cloudflare Worker proxies those to the Render backend; in dev
+// the Vite proxy forwards them to localhost:8000. This keeps every request
+// first-party (no CORS, not blockable by privacy extensions). Set VITE_API_URL
+// to an absolute origin only if you intentionally want cross-origin calls.
+const BASE_URL = import.meta.env.VITE_API_URL || "";
 
 const API_KEY_STORAGE_KEY = "carbon_mesh_api_key";
 
