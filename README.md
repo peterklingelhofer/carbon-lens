@@ -270,14 +270,26 @@ tests/              182 tests
 
 ```bash
 make help       # show all commands
-make setup      # install deps + copy .env + build frontend
+make setup      # install deps + git hooks + copy .env + build frontend
 make dev        # API + frontend with hot reload
 make test       # 182 tests
-make lint       # ruff + tsc
-make fix        # auto-fix lint
+make lint       # ruff + biome + tsc
+make fix        # auto-fix lint (ruff + biome)
+make hooks      # install pre-commit + commitlint git hooks
 make migrate    # run Alembic migrations
 make up         # docker compose
 make down       # stop everything
+```
+
+`make setup` (or `make hooks`) installs [pre-commit](https://pre-commit.com/)
+hooks that run ruff, Biome, `tsc`, and [commitlint](https://commitlint.js.org/)
+(Conventional Commits) before each commit, so formatting and lint issues are
+caught locally instead of in CI. Under the hood:
+
+```bash
+uv sync --extra dev                          # installs pre-commit
+uv run pre-commit install --install-hooks    # wires the pre-commit + commit-msg hooks
+uv run pre-commit autoupdate                  # (optional) refresh pinned hook versions
 ```
 
 ---
