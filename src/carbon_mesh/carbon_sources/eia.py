@@ -118,9 +118,7 @@ class EIACarbonSource:
             zone = zones_by_respondent[resp_id][0]
             return resp_id, await self.get_carbon_intensity(zone)
 
-        settled = await asyncio.gather(
-            *(fetch(r) for r in respondents), return_exceptions=True
-        )
+        settled = await asyncio.gather(*(fetch(r) for r in respondents), return_exceptions=True)
 
         results: dict[str, CarbonIntensity] = {}
         for item in settled:
