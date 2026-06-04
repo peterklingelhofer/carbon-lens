@@ -1,5 +1,5 @@
-import { Component } from "react";
 import type { ErrorInfo, ReactNode } from "react";
+import { Component } from "react";
 
 interface Props {
   children: ReactNode;
@@ -36,17 +36,20 @@ export class ErrorBoundary extends Component<Props, State> {
           }}
         >
           <div
-            style={{ fontSize: "3rem", fontWeight: 700, color: "var(--red-400)" }}
+            style={{
+              fontSize: "3rem",
+              fontWeight: 700,
+              color: "var(--red-400)",
+            }}
           >
             Oops
           </div>
-          <h1 style={{ margin: "0.5rem 0 1rem", fontSize: "1.3rem" }}>
-            Something went wrong
-          </h1>
+          <h1 style={{ margin: "0.5rem 0 1rem", fontSize: "1.3rem" }}>Something went wrong</h1>
           <p style={{ color: "var(--gray-500)", marginBottom: "1rem" }}>
             {this.state.error?.message || "An unexpected error occurred."}
           </p>
           <button
+            type="button"
             onClick={() => {
               this.setState({ hasError: false, error: null });
               window.location.href = "/";
