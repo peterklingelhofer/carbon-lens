@@ -5,7 +5,7 @@ import type { CloudRegion, CarbonIntensity, CarbonUpdate } from "../api/types";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { section as sectionFn, card, providerChip } from "../styles";
 import { InfoTip } from "../components/InfoTip";
-import { DATA_QUALITY_TIP } from "../copy";
+import { DATA_QUALITY_TIP, DATA_QUALITY_TIP_RICH } from "../copy";
 import { timeAgo } from "../lib/format";
 
 const section = sectionFn(1100);
@@ -51,7 +51,7 @@ function SnapshotBanner({ snapshot }: { snapshot: CarbonSnapshot }) {
     <p style={{ color: "var(--gray-500)", marginBottom: "2rem", fontSize: "0.9rem" }}>
       <strong style={{ color: "var(--green-text)" }}>{live_zones} grid zones live</strong> from
       real grid-operator APIs
-      <InfoTip label="live vs estimated" text={DATA_QUALITY_TIP} />
+      <InfoTip label="live vs estimated" text={DATA_QUALITY_TIP_RICH} />
       {estimated_zones > 0 && (
         <>
           {" "}
