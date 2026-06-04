@@ -1,7 +1,39 @@
+# Activate once with:  uv run pre-commit install --install-hooks
+# (default_install_hook_types wires up both the pre-commit and commit-msg hooks).
+# Update pinned revs with:  uv run pre-commit autoupdate
+default_install_hook_types: [pre-commit, commit-msg]
+
 repos:
+  # Backend (Python): lint + format. ruff-format auto-formats staged files, so a
+  # mis-formatted file like the one that failed CI gets fixed before it commits.
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.11.8
     hooks:
       - id: ruff
         args: [--fix]
       - id: ruff-format
+
+  # Frontend (web/): typecheck + lint on any staged web source. These call the
+  # project scripts, so they track whatever the web toolchain uses.
+  - repo: local
+    hooks:
+      - id: web-typecheck
+        name: web typecheck (tsc)
+        language: system
+        entry: bash -c 'cd web && npx tsc -b'
+        files: ^web/.*\.(ts|tsx)$
+        pass_filenames: false
+      - id: web-lint
+        name: web lint
+        language: system
+        entry: bash -c 'cd web && npm run lint'
+        files: ^web/.*\.(ts|tsx|js|jsx|json|css)$
+        pass_filenames: false
+
+  # Commit messages: enforce Conventional Commits (feat:, fix:, …) at commit-msg.
+  - repo: https://github.com/alessandrojcm/commitlint-pre-commit-hook
+    rev: v9.20.0
+    hooks:
+      - id: commitlint
+        stages: [commit-msg]
+        additional_dependencies: ["@commitlint/config-conventional"]
