@@ -4,7 +4,7 @@ import { useSnapshot, snapshotEnabled } from "../api/snapshot";
 import { InfoTip } from "../components/InfoTip";
 import { section as sectionFn, card } from "../styles";
 import { timeAgo } from "../lib/format";
-import { DATA_QUALITY_TIP } from "../copy";
+import { DATA_QUALITY_TIP_RICH } from "../copy";
 
 const section = sectionFn();
 // Same-origin (proxied) base for the Swagger docs link.
@@ -156,7 +156,7 @@ export function Settings() {
       <div style={card}>
         <h2 style={{ margin: "0 0 1rem", fontSize: "1.1rem", display: "flex", alignItems: "center" }}>
           Live data
-          <InfoTip label="live vs estimated" text={DATA_QUALITY_TIP} />
+          <InfoTip label="live vs estimated" text={DATA_QUALITY_TIP_RICH} />
         </h2>
         {snapshot ? (
           <>
