@@ -4,6 +4,14 @@ import type { CSSProperties } from "react";
 // wherever those badges/counts appear (globe, dashboard, compliance) so the
 // clarity is consistent across the site.
 
+// Why a higher renewable % doesn't always mean lower carbon — nuclear is clean
+// but isn't counted as renewable. Shown wherever renewable % sits next to carbon
+// intensity (scheduler, globe) so the apparent mismatch is explained.
+export const RENEWABLE_TIP =
+  "A higher renewable % isn't always lower carbon. It counts wind, solar and hydro but not " +
+  "nuclear, so a clean nuclear grid (e.g. France, Ontario) can show a modest renewable % yet " +
+  "very low carbon. For how clean a region is, carbon intensity (gCO₂/kWh) is the better measure.";
+
 // Plain-string form — for native attributes that need a string (e.g. title=).
 export const DATA_QUALITY_TIP =
   "Live = measured from the grid operator's real-time feed (EIA, ENTSO-E, UK, AEMO). " +
