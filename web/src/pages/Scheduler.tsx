@@ -1,7 +1,8 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import { api } from "../api/client";
 import { InfoTip } from "../components/InfoTip";
+import { RENEWABLE_TIP } from "../copy";
 import { card, section as sectionFn } from "../styles";
 
 const section = sectionFn(1100);
@@ -368,6 +369,7 @@ export function Scheduler() {
               value={`${recommended.renewable_percentage}`}
               unit="%"
               positive
+              tip={RENEWABLE_TIP}
             />
             <StatCard label="Start" value={new Date(recommended.start).toLocaleString()} />
             <StatCard label="Slots Evaluated" value={`${recommendation.evaluated_slots}`} />
@@ -384,7 +386,10 @@ export function Scheduler() {
                       <th style={th}>Provider</th>
                       <th style={th}>Region</th>
                       <th style={{ ...th, textAlign: "right" }}>gCO₂/kWh</th>
-                      <th style={{ ...th, textAlign: "right" }}>Renewable %</th>
+                      <th style={{ ...th, textAlign: "right" }}>
+                        Renewable %
+                        <InfoTip label="renewable %" text={RENEWABLE_TIP} />
+                      </th>
                       <th style={th}>Start Time</th>
                     </tr>
                   </thead>
@@ -533,12 +538,14 @@ function StatCard({
   unit,
   positive,
   mono,
+  tip,
 }: {
   label: string;
   value: string;
   unit?: string;
   positive?: boolean;
   mono?: boolean;
+  tip?: ReactNode;
 }) {
   return (
     <div
@@ -549,7 +556,17 @@ function StatCard({
         background: "var(--surface-alt)",
       }}
     >
-      <div style={{ fontSize: "0.7rem", color: "var(--gray-500)" }}>{label}</div>
+      <div
+        style={{
+          fontSize: "0.7rem",
+          color: "var(--gray-500)",
+          display: "inline-flex",
+          alignItems: "center",
+        }}
+      >
+        {label}
+        {tip && <InfoTip label={label.toLowerCase()} text={tip} />}
+      </div>
       <div
         style={{
           fontSize: mono ? "0.85rem" : "1.3rem",
