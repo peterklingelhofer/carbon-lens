@@ -504,10 +504,17 @@ export default function CarbonGlobe() {
     <div style={{ position: "relative", width: "100%", height: "calc(100vh - 56px)", background: "#000", overflow: "hidden" }}>
       <style>{`
         .globe-legend-toggle { display: none; }
+        /* Description-in-tooltip swap: the long description shows as text on desktop;
+           on mobile it's hidden and folded into the mobile info icon. */
+        .globe-tip-mobile { display: none; }
         @media (max-width: 720px) {
+          .globe-links-inline { display: none; }
           /* Title: trim to essentials so it doesn't dominate a phone screen */
-          .globe-title { max-width: 70vw; }
-          .globe-title p { font-size: 0.72rem !important; }
+          .globe-title { max-width: 78vw; }
+          .globe-title p { font-size: 0.74rem !important; }
+          .globe-title-desc { display: none; }
+          .globe-tip-desktop { display: none; }
+          .globe-tip-mobile { display: inline-flex; align-items: center; }
           /* Legend: collapse behind a toggle; hide everything but the toggle when closed */
           .globe-legend-toggle {
             display: inline-flex; align-items: center; gap: 4px;
@@ -591,7 +598,7 @@ export default function CarbonGlobe() {
         >
           Carbon Globe
         </h1>
-        <p style={{ margin: 0, fontSize: "0.85rem", color: "#cbd5e1", maxWidth: 380 }}>
+        <p className="globe-title-desc" style={{ margin: 0, fontSize: "0.85rem", color: "#cbd5e1", maxWidth: 380 }}>
           {points.length} cloud regions by live grid carbon intensity and renewable
           share. Drag to spin, scroll to zoom, hover a node for detail.
         </p>
@@ -599,7 +606,18 @@ export default function CarbonGlobe() {
           <p style={{ margin: "6px 0 0", fontSize: "0.75rem", color: "#94a3b8", pointerEvents: "auto", display: "inline-flex", alignItems: "center" }}>
             <span style={{ color: "#4ade80" }}>● {liveCount} live</span>
             {estCount > 0 && <span style={{ color: "#fbbf24", marginLeft: 10 }}>● {estCount} estimated</span>}
-            <InfoTip label="live vs estimated" text={DATA_QUALITY_TIP} placement="bottom" />
+            {/* Desktop: the description is shown above, so this icon only explains live vs estimated. */}
+            <span className="globe-tip-desktop">
+              <InfoTip label="live vs estimated" text={DATA_QUALITY_TIP} placement="bottom" />
+            </span>
+            {/* Mobile: the description is hidden to declutter, so it's folded into this icon. */}
+            <span className="globe-tip-mobile">
+              <InfoTip
+                label="about this view"
+                text={`${points.length} cloud regions — colour shows live grid carbon intensity, beam height shows renewable share. Drag to spin, pinch to zoom, tap a node for detail.\n\n${DATA_QUALITY_TIP}`}
+                placement="bottom"
+              />
+            </span>
           </p>
         )}
         {snapshot && (
@@ -608,8 +626,10 @@ export default function CarbonGlobe() {
           </p>
         )}
         {/* Always-available text alternative — for keyboard, screen-reader and
-            colour-vision users who can't read the colour-coded beams. */}
-        <p style={{ margin: "6px 0 0", pointerEvents: "auto", fontSize: "0.72rem" }}>
+            colour-vision users who can't read the colour-coded beams. Hidden on
+            mobile to declutter; both destinations live in the nav (Grid Data,
+            Methodology), and the no-WebGL fallback keeps its own table link. */}
+        <p className="globe-links-inline" style={{ margin: "6px 0 0", pointerEvents: "auto", fontSize: "0.72rem" }}>
           <Link to="/dashboard" style={{ color: "#7dd3fc", textDecoration: "underline" }}>
             View as a table →
           </Link>

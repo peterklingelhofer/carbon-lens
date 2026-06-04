@@ -22,9 +22,9 @@ const LINKS: { to: string; label: string; end?: boolean }[] = [
   { to: "/sla", label: "SLA" },
   { to: "/scheduler", label: "Scheduler" },
   { to: "/route", label: "Route" },
-  { to: "/about", label: "About" },
   { to: "/methodology", label: "Methodology" },
   { to: "/settings", label: "Status" },
+  { to: "/about", label: "About" },
 ];
 
 export function Nav() {
@@ -78,6 +78,7 @@ export function Nav() {
           cursor: pointer;
         }
         @media (max-width: 860px) {
+          .nav-bar { padding-left: 1.25rem; }
           .nav-toggle { display: inline-flex; align-items: center; }
           .nav-links {
             display: none;
