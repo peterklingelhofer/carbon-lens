@@ -10,9 +10,7 @@ export function NotFound() {
         textAlign: "center",
       }}
     >
-      <div style={{ fontSize: "4rem", fontWeight: 700, color: "var(--gray-300)" }}>
-        404
-      </div>
+      <div style={{ fontSize: "4rem", fontWeight: 700, color: "var(--gray-300)" }}>404</div>
       <h1 style={{ margin: "0.5rem 0 1rem", fontSize: "1.5rem" }}>Page not found</h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
         The page you're looking for doesn't exist or has been moved.
