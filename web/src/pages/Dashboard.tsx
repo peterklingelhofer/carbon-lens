@@ -1,12 +1,12 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
-import { useSnapshot, snapshotEnabled, type CarbonSnapshot } from "../api/snapshot";
-import type { CloudRegion, CarbonIntensity, CarbonUpdate } from "../api/types";
-import { useState, useEffect, useRef, useCallback } from "react";
-import { section as sectionFn, card, providerChip } from "../styles";
+import { type CarbonSnapshot, snapshotEnabled, useSnapshot } from "../api/snapshot";
+import type { CarbonIntensity, CarbonUpdate, CloudRegion } from "../api/types";
 import { InfoTip } from "../components/InfoTip";
 import { DATA_QUALITY_TIP, DATA_QUALITY_TIP_RICH } from "../copy";
 import { timeAgo } from "../lib/format";
+import { card, providerChip, section as sectionFn } from "../styles";
 
 const section = sectionFn(1100);
 
@@ -22,7 +22,6 @@ function intensityColor(val: number): string {
   if (val <= 500) return "var(--orange-400)";
   return "var(--red-400)";
 }
-
 
 function QualityTag({ quality }: { quality?: CarbonIntensity["quality"] }) {
   if (quality !== "estimated") return null;
@@ -48,9 +47,15 @@ function QualityTag({ quality }: { quality?: CarbonIntensity["quality"] }) {
 function SnapshotBanner({ snapshot }: { snapshot: CarbonSnapshot }) {
   const { live_zones, estimated_zones } = snapshot.summary;
   return (
-    <p style={{ color: "var(--gray-500)", marginBottom: "2rem", fontSize: "0.9rem" }}>
-      <strong style={{ color: "var(--green-text)" }}>{live_zones} grid zones live</strong> from
-      real grid-operator APIs
+    <p
+      style={{
+        color: "var(--gray-500)",
+        marginBottom: "2rem",
+        fontSize: "0.9rem",
+      }}
+    >
+      <strong style={{ color: "var(--green-text)" }}>{live_zones} grid zones live</strong> from real
+      grid-operator APIs
       <InfoTip label="live vs estimated" text={DATA_QUALITY_TIP_RICH} />
       {estimated_zones > 0 && (
         <>
@@ -89,13 +94,7 @@ function IntensityBar({ value, max = 800 }: { value: number; max?: number }) {
   );
 }
 
-function RegionRow({
-  region,
-  intensity,
-}: {
-  region: CloudRegion;
-  intensity?: CarbonIntensity;
-}) {
+function RegionRow({ region, intensity }: { region: CloudRegion; intensity?: CarbonIntensity }) {
   return (
     <tr style={{ borderBottom: "1px solid var(--gray-100)" }}>
       <td style={{ padding: "0.5rem" }}>
@@ -109,7 +108,13 @@ function RegionRow({
           {region.provider}
         </span>
       </td>
-      <td style={{ padding: "0.5rem", fontFamily: "var(--mono)", fontSize: "0.85rem" }}>
+      <td
+        style={{
+          padding: "0.5rem",
+          fontFamily: "var(--mono)",
+          fontSize: "0.85rem",
+        }}
+      >
         {region.region}
       </td>
       <td style={{ padding: "0.5rem", fontSize: "0.85rem" }}>{region.grid_zone}</td>
@@ -124,7 +129,11 @@ function RegionRow({
             </span>
             {formatLoad(intensity.grid_load_mw) && (
               <span
-                style={{ display: "block", fontSize: "0.7rem", color: "var(--gray-400)" }}
+                style={{
+                  display: "block",
+                  fontSize: "0.7rem",
+                  color: "var(--gray-400)",
+                }}
                 title="Total load for the whole balancing authority (all consumers, not datacenter-specific)"
               >
                 grid load {formatLoad(intensity.grid_load_mw)}
@@ -155,7 +164,12 @@ function RegionRow({
 
 type SortKey = "provider" | "region" | "grid_zone" | "location" | "intensity" | "renewable";
 
-const COLUMNS: { key: SortKey; label: string; align: "left" | "center"; info?: string }[] = [
+const COLUMNS: {
+  key: SortKey;
+  label: string;
+  align: "left" | "center";
+  info?: string;
+}[] = [
   { key: "provider", label: "Provider", align: "left" },
   { key: "region", label: "Region", align: "left" },
   {
@@ -200,9 +214,7 @@ function sortRegions(
     if (va == null && vb == null) return 0;
     if (va == null) return 1;
     if (vb == null) return -1;
-    const cmp = numeric
-      ? (va as number) - (vb as number)
-      : String(va).localeCompare(String(vb));
+    const cmp = numeric ? (va as number) - (vb as number) : String(va).localeCompare(String(vb));
     return dir === "asc" ? cmp : -cmp;
   });
 }
@@ -225,7 +237,11 @@ export function Dashboard() {
   const { data: snapshot } = useSnapshot();
   const usingSnapshot = !!snapshot;
 
-  const { data: apiRegions, isLoading: apiRegionsLoading, isError: apiRegionsError } = useQuery({
+  const {
+    data: apiRegions,
+    isLoading: apiRegionsLoading,
+    isError: apiRegionsError,
+  } = useQuery({
     queryKey: ["regions", provider],
     queryFn: () => api.regions(provider || undefined),
     enabled: !usingSnapshot,
@@ -284,6 +300,7 @@ export function Dashboard() {
         <h1 style={{ margin: 0 }}>Grid Data</h1>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
           <button
+            type="button"
             onClick={() => routeSample.mutate()}
             disabled={routeSample.isPending}
             style={{
@@ -316,12 +333,21 @@ export function Dashboard() {
           }}
         >
           Live carbon intensity data powering the API. 11 cascading sources
-          <InfoTip label="cascading sources" text="The API tries data sources in priority order and uses the first that covers a zone — a real grid-operator feed where one exists, then a regional heuristic or weather-based estimate, falling back to labelled sample data. So coverage is broad and every reading is tagged with where it came from." />
-          {" "}(6 live integrations), 75+ cloud regions.
+          <InfoTip
+            label="cascading sources"
+            text="The API tries data sources in priority order and uses the first that covers a zone — a real grid-operator feed where one exists, then a regional heuristic or weather-based estimate, falling back to labelled sample data. So coverage is broad and every reading is tagged with where it came from."
+          />{" "}
+          (6 live integrations), 75+ cloud regions.
         </p>
       )}
       {routeSample.data && (
-        <p style={{ color: "var(--gray-600)", fontSize: "0.85rem", marginBottom: "2rem" }}>
+        <p
+          style={{
+            color: "var(--gray-600)",
+            fontSize: "0.85rem",
+            marginBottom: "2rem",
+          }}
+        >
           Recommended:{" "}
           <strong style={{ textTransform: "uppercase" }}>
             {routeSample.data.recommended.provider}
@@ -343,39 +369,78 @@ export function Dashboard() {
           }}
         >
           <div style={card}>
-            <div style={{ fontSize: "0.8rem", color: "var(--gray-500)", display: "flex", alignItems: "center" }}>
+            <div
+              style={{
+                fontSize: "0.8rem",
+                color: "var(--gray-500)",
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
               Recommendations made
               <InfoTip
                 label="Recommendations made"
                 text="How many routing recommendations this demo server has produced — each click of 'Route a sample workload' counts. Tracked in memory, so it resets whenever the server restarts; it's this instance's activity, not an all-time total."
               />
             </div>
-            <div style={{ fontSize: "2rem", fontWeight: 700, color: "var(--green-text)" }}>
+            <div
+              style={{
+                fontSize: "2rem",
+                fontWeight: 700,
+                color: "var(--green-text)",
+              }}
+            >
               {savings.total_requests}
             </div>
           </div>
           <div style={card}>
-            <div style={{ fontSize: "0.8rem", color: "var(--gray-500)", display: "flex", alignItems: "center" }}>
+            <div
+              style={{
+                fontSize: "0.8rem",
+                color: "var(--gray-500)",
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
               Carbon-intensity gap (illustrative)
               <InfoTip
                 label="Carbon-intensity gap"
                 text="For each recommendation, the gap in carbon intensity (gCO₂/kWh) between the dirtiest candidate region and the greener one chosen, summed across recommendations. It's a rough indicator, not a real emissions total: per-kWh intensities aren't additive across workloads, and actual savings also depend on how much energy each job uses. In-memory for this server instance; resets on restart."
               />
             </div>
-            <div style={{ fontSize: "2rem", fontWeight: 700, color: "var(--green-text)" }}>
+            <div
+              style={{
+                fontSize: "2rem",
+                fontWeight: 700,
+                color: "var(--green-text)",
+              }}
+            >
               {savings.total_carbon_saved_gco2_kwh.toFixed(1)}{" "}
               <span style={{ fontSize: "0.9rem", fontWeight: 400 }}>gCO₂/kWh</span>
             </div>
           </div>
           <div style={card}>
-            <div style={{ fontSize: "0.8rem", color: "var(--gray-500)", display: "flex", alignItems: "center" }}>
+            <div
+              style={{
+                fontSize: "0.8rem",
+                color: "var(--gray-500)",
+                display: "flex",
+                alignItems: "center",
+              }}
+            >
               Avg renewable % chosen
               <InfoTip
                 label="Average renewable % chosen"
                 text="Average renewable share of the regions this server has recommended so far."
               />
             </div>
-            <div style={{ fontSize: "2rem", fontWeight: 700, color: "var(--green-text)" }}>
+            <div
+              style={{
+                fontSize: "2rem",
+                fontWeight: 700,
+                color: "var(--green-text)",
+              }}
+            >
               {savings.avg_renewable_percentage}%
             </div>
           </div>
@@ -386,9 +451,18 @@ export function Dashboard() {
       {!snapshotEnabled && <LivePanel />}
 
       {/* Filter */}
-      <div style={{ marginBottom: "1rem", display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
+      <div
+        style={{
+          marginBottom: "1rem",
+          display: "flex",
+          gap: "0.5rem",
+          flexWrap: "wrap",
+          alignItems: "center",
+        }}
+      >
         {["", "aws", "gcp", "azure"].map((p) => (
           <button
+            type="button"
             key={p}
             onClick={() => setProvider(p)}
             style={{
@@ -430,7 +504,8 @@ export function Dashboard() {
           <p style={{ color: "var(--gray-400)" }}>Loading regions…</p>
         ) : apiRegionsError && displayRegions.length === 0 ? (
           <p style={{ color: "var(--gray-500)" }}>
-            Couldn't reach the API to load regions. It may be waking up (free tier, ~50s) — refresh in a moment.
+            Couldn't reach the API to load regions. It may be waking up (free tier, ~50s) — refresh
+            in a moment.
           </p>
         ) : displayRegions.length === 0 ? (
           <p style={{ color: "var(--gray-400)" }}>No regions match this filter.</p>
@@ -444,7 +519,10 @@ export function Dashboard() {
                     <th
                       key={col.key}
                       aria-sort={active ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
-                      style={{ textAlign: col.align, padding: "0.5rem 0.25rem" }}
+                      style={{
+                        textAlign: col.align,
+                        padding: "0.5rem 0.25rem",
+                      }}
                     >
                       <span
                         style={{
@@ -474,7 +552,13 @@ export function Dashboard() {
                           }}
                         >
                           {col.label}
-                          <span aria-hidden style={{ fontSize: "0.7rem", opacity: active ? 1 : 0.35 }}>
+                          <span
+                            aria-hidden
+                            style={{
+                              fontSize: "0.7rem",
+                              opacity: active ? 1 : 0.35,
+                            }}
+                          >
                             {active ? (sortDir === "asc" ? "▲" : "▼") : "↕"}
                           </span>
                         </button>
@@ -497,9 +581,16 @@ export function Dashboard() {
           </table>
         )}
         {sortedRegions.length > 20 && (
-          <p style={{ textAlign: "center", color: "var(--gray-400)", marginTop: "1rem" }}>
+          <p
+            style={{
+              textAlign: "center",
+              color: "var(--gray-400)",
+              marginTop: "1rem",
+            }}
+          >
             Showing 20 of {sortedRegions.length}
-            {q ? " matching" : ""} regions{q ? "" : " (sorted)"}. Refine your search or use the API for the full set.
+            {q ? " matching" : ""} regions{q ? "" : " (sorted)"}. Refine your search or use the API
+            for the full set.
           </p>
         )}
       </div>
@@ -513,8 +604,7 @@ function useCarbonStream() {
   const wsRef = useRef<WebSocket | null>(null);
 
   const connect = useCallback(() => {
-    const wsUrl =
-      (import.meta.env.VITE_WS_URL || "ws://localhost:8000") + "/ws/carbon";
+    const wsUrl = `${import.meta.env.VITE_WS_URL || "ws://localhost:8000"}/ws/carbon`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 
@@ -575,6 +665,7 @@ function LivePanel() {
         </h2>
         {!connected && (
           <button
+            type="button"
             onClick={reconnect}
             style={{
               padding: "0.3rem 0.8rem",
@@ -646,10 +737,7 @@ function LivePanel() {
                 <span>{d.carbon_intensity_gco2_kwh} gCO₂</span>
                 <span
                   style={{
-                    color:
-                      d.renewable_percentage >= 70
-                        ? "var(--green-text)"
-                        : "var(--gray-500)",
+                    color: d.renewable_percentage >= 70 ? "var(--green-text)" : "var(--gray-500)",
                   }}
                 >
                   {d.renewable_percentage}% renew
@@ -671,22 +759,35 @@ function useRegionIntensities(regions: CloudRegion[]) {
     if (regions.length === 0) return;
     let cancelled = false;
 
-    const lookups = regions.map((r) => ({ provider: r.provider, region: r.region }));
-    api.carbonIntensityBatch(lookups).then((result) => {
-      if (!cancelled) setData(result);
-    }).catch(() => {
-      // Batch failed — fall back to individual calls
-      regions.forEach(async (r) => {
-        try {
-          const intensity = await api.carbonIntensity(r.provider, r.region);
-          if (!cancelled) {
-            setData((prev) => ({ ...prev, [`${r.provider}/${r.region}`]: intensity }));
+    const lookups = regions.map((r) => ({
+      provider: r.provider,
+      region: r.region,
+    }));
+    api
+      .carbonIntensityBatch(lookups)
+      .then((result) => {
+        if (!cancelled) setData(result);
+      })
+      .catch(() => {
+        // Batch failed — fall back to individual calls
+        regions.forEach(async (r) => {
+          try {
+            const intensity = await api.carbonIntensity(r.provider, r.region);
+            if (!cancelled) {
+              setData((prev) => ({
+                ...prev,
+                [`${r.provider}/${r.region}`]: intensity,
+              }));
+            }
+          } catch {
+            /* swallow */
           }
-        } catch { /* swallow */ }
+        });
       });
-    });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [regions]);
 
   return data;

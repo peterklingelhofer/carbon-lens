@@ -1,10 +1,10 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../api/client";
 import type { ComplianceReport } from "../api/types";
-import { section as sectionFn, card, providerChip } from "../styles";
 import { InfoTip } from "../components/InfoTip";
 import { DATA_QUALITY_TIP_RICH } from "../copy";
+import { card, providerChip, section as sectionFn } from "../styles";
 
 const section = sectionFn(1100);
 
@@ -12,12 +12,8 @@ export function Compliance() {
   const queryClient = useQueryClient();
   const [orgId] = useState("demo");
   const [orgName] = useState("Demo Organization");
-  const [activeReport, setActiveReport] = useState<ComplianceReport | null>(
-    null
-  );
-  const [step, setStep] = useState<
-    "idle" | "ingesting" | "calculating" | "generating"
-  >("idle");
+  const [activeReport, setActiveReport] = useState<ComplianceReport | null>(null);
+  const [step, setStep] = useState<"idle" | "ingesting" | "calculating" | "generating">("idle");
   const [csvFile, setCsvFile] = useState<File | null>(null);
 
   const { data: reports } = useQuery({
@@ -31,9 +27,7 @@ export function Compliance() {
       return api.compliance.ingestUsage({
         org_id: orgId,
         provider: "mock",
-        period_start: new Date(
-          Date.now() - 30 * 24 * 60 * 60 * 1000
-        ).toISOString(),
+        period_start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
         period_end: new Date().toISOString(),
       });
     },
@@ -93,7 +87,13 @@ export function Compliance() {
 
   return (
     <div style={section}>
-      <h1 style={{ marginBottom: "0.5rem", display: "flex", alignItems: "center" }}>
+      <h1
+        style={{
+          marginBottom: "0.5rem",
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
         Emissions reporting
         <InfoTip
           label="emissions reporting"
@@ -101,8 +101,8 @@ export function Compliance() {
         />
       </h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
-        Turn your cloud usage into a draft emissions report, calculated from real
-        grid data — with the method and data quality shown.
+        Turn your cloud usage into a draft emissions report, calculated from real grid data — with
+        the method and data quality shown.
       </p>
 
       {/* Pipeline action */}
@@ -115,17 +115,15 @@ export function Compliance() {
           gap: "1rem",
         }}
       >
-        <h2 style={{ margin: 0, fontSize: "1.1rem" }}>
-          Option 1 — Try it with demo data
-        </h2>
+        <h2 style={{ margin: 0, fontSize: "1.1rem" }}>Option 1 — Try it with demo data</h2>
         <p style={{ color: "var(--gray-500)", fontSize: "0.85rem", margin: 0 }}>
-          Ingests a sample mid-size SaaS workload, calculates emissions using
-          the latest grid carbon intensity from the live data sources, and
-          generates a CSRD-aligned report — so you can see the output without
-          uploading anything.
+          Ingests a sample mid-size SaaS workload, calculates emissions using the latest grid carbon
+          intensity from the live data sources, and generates a CSRD-aligned report — so you can see
+          the output without uploading anything.
         </p>
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
           <button
+            type="button"
             onClick={runFullPipeline}
             disabled={step !== "idle" || csvPipeline.isPending}
             style={{
@@ -176,8 +174,8 @@ export function Compliance() {
             }}
           >
             Calculated {calculateMutation.data.calculations_count} emissions (
-            {calculateMutation.data.total_emissions_kgco2e.toFixed(4)} kgCO₂e)
-            — Sources: {calculateMutation.data.data_sources_used.join(", ")}
+            {calculateMutation.data.total_emissions_kgco2e.toFixed(4)} kgCO₂e) — Sources:{" "}
+            {calculateMutation.data.data_sources_used.join(", ")}
           </div>
         )}
       </div>
@@ -192,7 +190,14 @@ export function Compliance() {
           gap: "1rem",
         }}
       >
-        <h2 style={{ margin: 0, fontSize: "1.1rem", display: "flex", alignItems: "center" }}>
+        <h2
+          style={{
+            margin: 0,
+            fontSize: "1.1rem",
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
           Option 2 — Use your own usage CSV
           <InfoTip
             label="usage CSV"
@@ -201,14 +206,28 @@ export function Compliance() {
         </h2>
         <p style={{ color: "var(--gray-500)", fontSize: "0.85rem", margin: 0 }}>
           Columns:{" "}
-          <code style={{ fontSize: "0.8rem", background: "var(--surface-alt)", padding: "1px 5px", borderRadius: 4 }}>
+          <code
+            style={{
+              fontSize: "0.8rem",
+              background: "var(--surface-alt)",
+              padding: "1px 5px",
+              borderRadius: 4,
+            }}
+          >
             provider, region, service, usage_quantity, usage_unit, period_start, period_end
           </code>{" "}
           (<code>resource_type</code> optional). Units: <code>vcpu_hours</code>,{" "}
-          <code>gb_hours</code>, <code>requests</code>, <code>gb_transferred</code>, or <code>kwh</code>.
-          Dates are ISO 8601 (e.g. 2026-05-01).
+          <code>gb_hours</code>, <code>requests</code>, <code>gb_transferred</code>, or{" "}
+          <code>kwh</code>. Dates are ISO 8601 (e.g. 2026-05-01).
         </p>
-        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
+        <div
+          style={{
+            display: "flex",
+            gap: "0.75rem",
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}
+        >
           <input
             type="file"
             accept=".csv,text/csv"
@@ -217,6 +236,7 @@ export function Compliance() {
             style={{ fontSize: "0.85rem" }}
           />
           <button
+            type="button"
             onClick={() => csvPipeline.mutate()}
             disabled={!csvFile || csvPipeline.isPending || step !== "idle"}
             style={{
@@ -246,9 +266,7 @@ export function Compliance() {
       {/* Report history */}
       {reports && reports.length > 0 && (
         <div style={card}>
-          <h2 style={{ margin: "0 0 1rem", fontSize: "1.1rem" }}>
-            Report History
-          </h2>
+          <h2 style={{ margin: "0 0 1rem", fontSize: "1.1rem" }}>Report History</h2>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ borderBottom: "2px solid var(--gray-200)" }}>
@@ -347,7 +365,8 @@ export function Compliance() {
 
 function ReportView({ report }: { report: ComplianceReport }) {
   // Same-origin (proxied) base for the export download links.
-  const BASE_URL = import.meta.env.VITE_API_URL || (typeof window !== "undefined" ? window.location.origin : "");
+  const BASE_URL =
+    import.meta.env.VITE_API_URL || (typeof window !== "undefined" ? window.location.origin : "");
   // Demo reports are built from a synthetic usage fixture (not a real CSV upload).
   const isDemo = !report.report_name.toLowerCase().includes("csv");
 
@@ -382,9 +401,7 @@ function ReportView({ report }: { report: ComplianceReport }) {
         }}
       >
         <div>
-          <h2 style={{ margin: 0, fontSize: "1.2rem" }}>
-            {report.report_name}
-          </h2>
+          <h2 style={{ margin: 0, fontSize: "1.2rem" }}>{report.report_name}</h2>
           <div
             style={{
               fontSize: "0.8rem",
@@ -471,7 +488,13 @@ function ReportView({ report }: { report: ComplianceReport }) {
 
       {/* Scope breakdown */}
       <h3
-        style={{ fontSize: "0.95rem", marginBottom: "0.75rem", marginTop: 0, display: "flex", alignItems: "center" }}
+        style={{
+          fontSize: "0.95rem",
+          marginBottom: "0.75rem",
+          marginTop: 0,
+          display: "flex",
+          alignItems: "center",
+        }}
       >
         GHG Protocol scope breakdown
         <InfoTip
@@ -545,9 +568,15 @@ function ReportView({ report }: { report: ComplianceReport }) {
           </tbody>
         </table>
       </div>
-      <p style={{ fontSize: "0.75rem", color: "var(--gray-400)", margin: "-0.75rem 0 1.25rem" }}>
-        Note: with no supplier-specific contracts (RECs/PPAs) supplied, market-based mirrors location-based here — a
-        real market-based figure would apply your contractual instruments.
+      <p
+        style={{
+          fontSize: "0.75rem",
+          color: "var(--gray-400)",
+          margin: "-0.75rem 0 1.25rem",
+        }}
+      >
+        Note: with no supplier-specific contracts (RECs/PPAs) supplied, market-based mirrors
+        location-based here — a real market-based figure would apply your contractual instruments.
       </p>
 
       {/* By provider */}
@@ -570,40 +599,32 @@ function ReportView({ report }: { report: ComplianceReport }) {
               marginBottom: "1.5rem",
             }}
           >
-            {Object.entries(report.scope2_location_by_provider).map(
-              ([provider, kgco2e]) => (
-                <div
-                  key={provider}
-                  style={{
-                    padding: "0.75rem",
-                    borderRadius: 8,
-                    border: "1px solid var(--gray-200)",
-                    background: "var(--surface-alt)",
-                    textAlign: "center",
-                  }}
-                >
-                  <div>
-                    <span
-                      style={{
-                        fontSize: "0.75rem",
-                        textTransform: "uppercase",
-                        ...providerChip(provider),
-                      }}
-                    >
-                      {provider}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: "1.25rem", fontWeight: 700 }}>
-                    {kgco2e.toFixed(4)}
-                  </div>
-                  <div
-                    style={{ fontSize: "0.7rem", color: "var(--gray-500)" }}
+            {Object.entries(report.scope2_location_by_provider).map(([provider, kgco2e]) => (
+              <div
+                key={provider}
+                style={{
+                  padding: "0.75rem",
+                  borderRadius: 8,
+                  border: "1px solid var(--gray-200)",
+                  background: "var(--surface-alt)",
+                  textAlign: "center",
+                }}
+              >
+                <div>
+                  <span
+                    style={{
+                      fontSize: "0.75rem",
+                      textTransform: "uppercase",
+                      ...providerChip(provider),
+                    }}
                   >
-                    kgCO₂e
-                  </div>
+                    {provider}
+                  </span>
                 </div>
-              )
-            )}
+                <div style={{ fontSize: "1.25rem", fontWeight: 700 }}>{kgco2e.toFixed(4)}</div>
+                <div style={{ fontSize: "0.7rem", color: "var(--gray-500)" }}>kgCO₂e</div>
+              </div>
+            ))}
           </div>
         </>
       )}
@@ -619,7 +640,15 @@ function ReportView({ report }: { report: ComplianceReport }) {
           border: `1px solid ${report.eu_taxonomy_aligned ? "var(--green-200)" : "var(--yellow-200, #fef08a)"}`,
         }}
       >
-        <div style={{ fontWeight: 600, fontSize: "0.9rem", marginBottom: 4, display: "inline-flex", alignItems: "center" }}>
+        <div
+          style={{
+            fontWeight: 600,
+            fontSize: "0.9rem",
+            marginBottom: 4,
+            display: "inline-flex",
+            alignItems: "center",
+          }}
+        >
           EU Taxonomy Status:{" "}
           {report.eu_taxonomy_aligned ? "Aligned" : "Eligible (not yet aligned)"}
           <InfoTip
@@ -627,9 +656,7 @@ function ReportView({ report }: { report: ComplianceReport }) {
             text="Simplified screening only: this flags 'aligned' purely from a high renewable share. Real EU Taxonomy alignment also requires technical screening criteria, Do-No-Significant-Harm, and minimum safeguards — none of which are assessed here. Treat as indicative, not a determination."
           />
         </div>
-        <div style={{ fontSize: "0.8rem", color: "var(--gray-600)" }}>
-          {report.taxonomy_notes}
-        </div>
+        <div style={{ fontSize: "0.8rem", color: "var(--gray-600)" }}>{report.taxonomy_notes}</div>
       </div>
 
       {/* Data quality */}
@@ -644,20 +671,22 @@ function ReportView({ report }: { report: ComplianceReport }) {
               flexWrap: "wrap",
             }}
           >
-            <span style={{ fontWeight: 600, display: "inline-flex", alignItems: "center" }}>
+            <span
+              style={{
+                fontWeight: 600,
+                display: "inline-flex",
+                alignItems: "center",
+              }}
+            >
               Data quality:
               <InfoTip label="data quality" text={DATA_QUALITY_TIP_RICH} />
             </span>
-            {Object.entries(report.data_quality_summary).map(
-              ([quality, count]) => (
-                <span key={quality}>
-                  {quality}: {count}
-                </span>
-              )
-            )}
-            <span style={{ marginLeft: "auto" }}>
-              Sources: {report.data_sources.join(", ")}
-            </span>
+            {Object.entries(report.data_quality_summary).map(([quality, count]) => (
+              <span key={quality}>
+                {quality}: {count}
+              </span>
+            ))}
+            <span style={{ marginLeft: "auto" }}>Sources: {report.data_sources.join(", ")}</span>
           </div>
         </div>
       )}
@@ -686,7 +715,11 @@ function StatCard({
       }}
     >
       <div
-        style={{ fontSize: "0.7rem", color: "var(--gray-500)", marginBottom: 2 }}
+        style={{
+          fontSize: "0.7rem",
+          color: "var(--gray-500)",
+          marginBottom: 2,
+        }}
       >
         {label}
       </div>
@@ -698,9 +731,7 @@ function StatCard({
         }}
       >
         {value}
-        <span style={{ fontSize: "0.75rem", fontWeight: 400, marginLeft: 4 }}>
-          {unit}
-        </span>
+        <span style={{ fontSize: "0.75rem", fontWeight: 400, marginLeft: 4 }}>{unit}</span>
       </div>
     </div>
   );

@@ -25,12 +25,12 @@ const pill = (bg: string, fg: string): CSSProperties => ({
 
 export const DATA_QUALITY_TIP_RICH = (
   <>
-    <span style={pill("#4ade80", "#052e16")}>Live</span> = measured from the grid
-    operator's real-time feed (EIA, ENTSO-E, UK, AEMO).
+    <span style={pill("#4ade80", "#052e16")}>Live</span> = measured from the grid operator's
+    real-time feed (EIA, ENTSO-E, UK, AEMO).
     <br />
     <br />
-    <span style={pill("#fbbf24", "#422006")}>Estimated</span> = no live feed for
-    that zone, so it's modelled from weather or a regional grid-mix heuristic: a
-    reasonable approximation, not a measurement.
+    <span style={pill("#fbbf24", "#422006")}>Estimated</span> = no live feed for that zone, so it's
+    modelled from weather or a regional grid-mix heuristic: a reasonable approximation, not a
+    measurement.
   </>
 );

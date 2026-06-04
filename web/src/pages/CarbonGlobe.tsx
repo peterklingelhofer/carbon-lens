@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import Globe, { type GlobeInstance } from "globe.gl";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import * as THREE from "three";
 import { api } from "../api/client";
-import { useSnapshot, snapshotEnabled, qualityFromSource } from "../api/snapshot";
+import { qualityFromSource, snapshotEnabled, useSnapshot } from "../api/snapshot";
 import { InfoTip } from "../components/InfoTip";
 import { DATA_QUALITY_TIP_RICH } from "../copy";
-import { timeAgo, niceKm } from "../lib/format";
+import { niceKm, timeAgo } from "../lib/format";
 
 // Some browsers/machines can't create a WebGL context (hardware acceleration
 // off, GPU blocklisted, headless). Detect it up front so we can show a graceful
@@ -17,7 +17,11 @@ function webglAvailable(): boolean {
     const canvas = document.createElement("canvas");
     return (
       !!window.WebGLRenderingContext &&
-      !!(canvas.getContext("webgl2") || canvas.getContext("webgl") || canvas.getContext("experimental-webgl"))
+      !!(
+        canvas.getContext("webgl2") ||
+        canvas.getContext("webgl") ||
+        canvas.getContext("experimental-webgl")
+      )
     );
   } catch {
     return false;
@@ -87,8 +91,7 @@ function metricRGB(p: GlobePoint, metric: Metric): [number, number, number] {
 
 // Altitude (in globe-radius units) of each beam for the selected metric.
 function beamAltitude(p: GlobePoint, metric: Metric): number {
-  const frac =
-    metric === "intensity" ? Math.min(1, p.intensity / 800) : p.renewable / 100;
+  const frac = metric === "intensity" ? Math.min(1, p.intensity / 800) : p.renewable / 100;
   return 0.04 + frac * 0.5;
 }
 
@@ -160,7 +163,10 @@ function useGlobePoints() {
     queryKey: ["globe-intensities", apiRegions?.length ?? 0],
     queryFn: () =>
       api.carbonIntensityBatch(
-        (apiRegions ?? []).map((r) => ({ provider: r.provider, region: r.region }))
+        (apiRegions ?? []).map((r) => ({
+          provider: r.provider,
+          region: r.region,
+        })),
       ),
     enabled: apiEnabled && !!apiRegions?.length,
   });
@@ -232,13 +238,33 @@ function MetricToggle({
 }) {
   return (
     <div style={{ marginBottom: 4 }}>
-      <div style={{ fontSize: "0.64rem", color: "#94a3b8", marginBottom: 3, textTransform: "uppercase", letterSpacing: "0.04em", display: "inline-flex", alignItems: "center" }}>
+      <div
+        style={{
+          fontSize: "0.64rem",
+          color: "#94a3b8",
+          marginBottom: 3,
+          textTransform: "uppercase",
+          letterSpacing: "0.04em",
+          display: "inline-flex",
+          alignItems: "center",
+        }}
+      >
         {label}
         {tip && <InfoTip label={label} text={tip} placement="top" />}
       </div>
-      <div style={{ display: "flex", width: PANEL_W, border: "1px solid rgba(255,255,255,0.2)", borderRadius: 6, overflow: "hidden", background: "rgba(10,15,20,0.6)" }}>
+      <div
+        style={{
+          display: "flex",
+          width: PANEL_W,
+          border: "1px solid rgba(255,255,255,0.2)",
+          borderRadius: 6,
+          overflow: "hidden",
+          background: "rgba(10,15,20,0.6)",
+        }}
+      >
         {(["renewable", "intensity"] as Metric[]).map((m) => (
           <button
+            type="button"
             key={m}
             onClick={() => onChange(m)}
             style={{
@@ -278,7 +304,11 @@ export default function CarbonGlobe() {
   // Map scale + beam reference, recomputed as the camera zooms (shared px↔km basis):
   //   km / px  = the distance scale bar
   //   beamPx   = on-screen length of a full (100%) beam at this zoom
-  const [scale, setScale] = useState<{ km: number; px: number; beamPx: number } | null>(null);
+  const [scale, setScale] = useState<{
+    km: number;
+    px: number;
+    beamPx: number;
+  } | null>(null);
   // Set when WebGL can't be created — we render a fallback instead of the globe.
   // Probed lazily on mount so the fallback shows on the first render, with the
   // try/catch below as a backup for context-lost-after-probe.
@@ -423,7 +453,7 @@ export default function CarbonGlobe() {
       const b = globe.getScreenCoords(pov.lat + 1, pov.lng, 0);
       if (!a || !b) return;
       const px = Math.hypot(b.x - a.x, b.y - a.y);
-      if (!px || !isFinite(px)) return;
+      if (!px || !Number.isFinite(px)) return;
       const kmPerPx = 111.32 / px;
       const km = niceKm(70 * kmPerPx); // aim for a ~70px bar
       // A full beam's radial height (MAX_BEAM_ALT × Earth radius) measured in the
@@ -472,13 +502,12 @@ export default function CarbonGlobe() {
       .pointsData([...(points as object[])])
       .ringsData([...(points as object[])])
       .customLayerData([...(points as object[])]);
-  }, [points, heightMetric, colorMetric]);
+  }, [points]);
 
   const liveCount = points.filter((p) => p.quality === "live").length;
   const estCount = points.filter((p) => p.quality === "estimated").length;
   // `?bare` hides the overlays — used only for capturing clean globe screenshots.
-  const bare =
-    typeof window !== "undefined" && window.location.search.includes("bare");
+  const bare = typeof window !== "undefined" && window.location.search.includes("bare");
 
   // Height ruler geometry — a 100% beam's true on-screen length at this zoom.
   // The bar is drawn at that length but capped to the panel; ticks beyond the
@@ -497,11 +526,22 @@ export default function CarbonGlobe() {
   for (let v = 0; v <= heightVisibleMax + 0.5; v += heightStep) {
     const pos = (beamPx * v) / heightMax;
     if (pos > PANEL_W + 0.5) break;
-    heightTicks.push({ label: heightMetric === "intensity" && v >= heightMax ? `${v}+` : `${v}`, pos });
+    heightTicks.push({
+      label: heightMetric === "intensity" && v >= heightMax ? `${v}+` : `${v}`,
+      pos,
+    });
   }
 
   return (
-    <div style={{ position: "relative", width: "100%", height: "calc(100vh - 56px)", background: "#000", overflow: "hidden" }}>
+    <div
+      style={{
+        position: "relative",
+        width: "100%",
+        height: "calc(100vh - 56px)",
+        background: "#000",
+        overflow: "hidden",
+      }}
+    >
       <style>{`
         .globe-legend-toggle { display: none; }
         /* Description-in-tooltip swap: the long description shows as text on desktop;
@@ -550,18 +590,36 @@ export default function CarbonGlobe() {
             <div style={{ fontSize: "2.5rem", marginBottom: "0.5rem" }} aria-hidden>
               🌐
             </div>
-            <h1 style={{ color: "#fff", margin: "0 0 0.5rem", fontSize: "1.4rem" }}>
+            <h1
+              style={{
+                color: "#fff",
+                margin: "0 0 0.5rem",
+                fontSize: "1.4rem",
+              }}
+            >
               The 3D globe needs WebGL
             </h1>
-            <p style={{ fontSize: "0.95rem", lineHeight: 1.6, margin: "0 0 0.75rem" }}>
-              Your browser couldn't start WebGL, so the interactive globe can't render
-              here. This usually means hardware acceleration is turned off, or your
-              browser or GPU has it blocked.
+            <p
+              style={{
+                fontSize: "0.95rem",
+                lineHeight: 1.6,
+                margin: "0 0 0.75rem",
+              }}
+            >
+              Your browser couldn't start WebGL, so the interactive globe can't render here. This
+              usually means hardware acceleration is turned off, or your browser or GPU has it
+              blocked.
             </p>
-            <p style={{ fontSize: "0.9rem", lineHeight: 1.6, color: "#94a3b8", margin: "0 0 1.25rem" }}>
-              Try enabling hardware acceleration in your browser settings, updating your
-              browser, or opening this in Chrome. The same live data is available as a
-              table:
+            <p
+              style={{
+                fontSize: "0.9rem",
+                lineHeight: 1.6,
+                color: "#94a3b8",
+                margin: "0 0 1.25rem",
+              }}
+            >
+              Try enabling hardware acceleration in your browser settings, updating your browser, or
+              opening this in Chrome. The same live data is available as a table:
             </p>
             <Link
               to="/dashboard"
@@ -582,7 +640,18 @@ export default function CarbonGlobe() {
       )}
 
       {/* Title overlay */}
-      <div className="globe-title" style={{ position: "absolute", top: 20, left: 24, color: "#fff", pointerEvents: "none", textShadow: "0 1px 8px rgba(0,0,0,0.8)", display: bare || webglError ? "none" : undefined }}>
+      <div
+        className="globe-title"
+        style={{
+          position: "absolute",
+          top: 20,
+          left: 24,
+          color: "#fff",
+          pointerEvents: "none",
+          textShadow: "0 1px 8px rgba(0,0,0,0.8)",
+          display: bare || webglError ? "none" : undefined,
+        }}
+      >
         {/* Visually hidden — kept for the document outline / screen readers. */}
         <h1
           style={{
@@ -599,14 +668,33 @@ export default function CarbonGlobe() {
         >
           Carbon Globe
         </h1>
-        <p className="globe-title-desc" style={{ margin: 0, fontSize: "0.85rem", color: "#cbd5e1", maxWidth: 380 }}>
-          {points.length} cloud regions by live grid carbon intensity and renewable
-          share. Drag to spin, scroll to zoom, hover a node for detail.
+        <p
+          className="globe-title-desc"
+          style={{
+            margin: 0,
+            fontSize: "0.85rem",
+            color: "#cbd5e1",
+            maxWidth: 380,
+          }}
+        >
+          {points.length} cloud regions by live grid carbon intensity and renewable share. Drag to
+          spin, scroll to zoom, hover a node for detail.
         </p>
         {points.length > 0 && (
-          <p style={{ margin: "6px 0 0", fontSize: "0.75rem", color: "#94a3b8", pointerEvents: "auto", display: "inline-flex", alignItems: "center" }}>
+          <p
+            style={{
+              margin: "6px 0 0",
+              fontSize: "0.75rem",
+              color: "#94a3b8",
+              pointerEvents: "auto",
+              display: "inline-flex",
+              alignItems: "center",
+            }}
+          >
             <span style={{ color: "#4ade80" }}>● {liveCount} live</span>
-            {estCount > 0 && <span style={{ color: "#fbbf24", marginLeft: 10 }}>● {estCount} estimated</span>}
+            {estCount > 0 && (
+              <span style={{ color: "#fbbf24", marginLeft: 10 }}>● {estCount} estimated</span>
+            )}
             {/* Desktop: the description is shown above, so this icon only explains live vs estimated. */}
             <span className="globe-tip-desktop">
               <InfoTip label="live vs estimated" text={DATA_QUALITY_TIP_RICH} placement="bottom" />
@@ -637,18 +725,43 @@ export default function CarbonGlobe() {
             colour-vision users who can't read the colour-coded beams. Hidden on
             mobile to declutter; both destinations live in the nav (Grid Data,
             Methodology), and the no-WebGL fallback keeps its own table link. */}
-        <p className="globe-links-inline" style={{ margin: "6px 0 0", pointerEvents: "auto", fontSize: "0.72rem" }}>
+        <p
+          className="globe-links-inline"
+          style={{
+            margin: "6px 0 0",
+            pointerEvents: "auto",
+            fontSize: "0.72rem",
+          }}
+        >
           <Link to="/dashboard" style={{ color: "#7dd3fc", textDecoration: "underline" }}>
             View as a table →
           </Link>
-          <Link to="/methodology" style={{ color: "#7dd3fc", textDecoration: "underline", marginLeft: 12 }}>
+          <Link
+            to="/methodology"
+            style={{
+              color: "#7dd3fc",
+              textDecoration: "underline",
+              marginLeft: 12,
+            }}
+          >
             Methodology
           </Link>
         </p>
       </div>
 
       {/* Controls + legend (bottom-left) */}
-      <div className={`globe-legend${legendOpen ? " open" : ""}`} style={{ position: "absolute", bottom: 24, left: 24, color: "#fff", fontSize: "0.7rem", textShadow: "0 1px 6px rgba(0,0,0,0.8)", display: bare || webglError ? "none" : undefined }}>
+      <div
+        className={`globe-legend${legendOpen ? " open" : ""}`}
+        style={{
+          position: "absolute",
+          bottom: 24,
+          left: 24,
+          color: "#fff",
+          fontSize: "0.7rem",
+          textShadow: "0 1px 6px rgba(0,0,0,0.8)",
+          display: bare || webglError ? "none" : undefined,
+        }}
+      >
         {/* Collapse toggle — visible only on small screens (CSS); sits above the
             keys so collapsing it reclaims the vertical space they take. */}
         <button
@@ -673,16 +786,48 @@ export default function CarbonGlobe() {
         />
         {colorMetric === "intensity" ? (
           <>
-            <div style={{ width: PANEL_W, height: 12, borderRadius: 6, background: "linear-gradient(90deg,#22c55e,#84cc16,#eab308,#f97316,#ef4444)" }} />
-            <div style={{ display: "flex", justifyContent: "space-between", width: PANEL_W, marginTop: 2, marginBottom: 12, color: "#94a3b8" }}>
+            <div
+              style={{
+                width: PANEL_W,
+                height: 12,
+                borderRadius: 6,
+                background: "linear-gradient(90deg,#22c55e,#84cc16,#eab308,#f97316,#ef4444)",
+              }}
+            />
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                width: PANEL_W,
+                marginTop: 2,
+                marginBottom: 12,
+                color: "#94a3b8",
+              }}
+            >
               <span>0 (greener)</span>
               <span>500+ gCO₂ (dirtier)</span>
             </div>
           </>
         ) : (
           <>
-            <div style={{ width: PANEL_W, height: 12, borderRadius: 6, background: "linear-gradient(90deg,#ef4444,#f97316,#eab308,#84cc16,#22c55e)" }} />
-            <div style={{ display: "flex", justifyContent: "space-between", width: PANEL_W, marginTop: 2, marginBottom: 12, color: "#94a3b8" }}>
+            <div
+              style={{
+                width: PANEL_W,
+                height: 12,
+                borderRadius: 6,
+                background: "linear-gradient(90deg,#ef4444,#f97316,#eab308,#84cc16,#22c55e)",
+              }}
+            />
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                width: PANEL_W,
+                marginTop: 2,
+                marginBottom: 12,
+                color: "#94a3b8",
+              }}
+            >
               <span>0% (dirtier)</span>
               <span>100% (greener)</span>
             </div>
@@ -718,14 +863,38 @@ export default function CarbonGlobe() {
           {heightTicks.map((t) => (
             <div
               key={t.label}
-              style={{ position: "absolute", left: t.pos, top: -2, width: 1, height: 16, background: "rgba(148,163,184,0.75)" }}
+              style={{
+                position: "absolute",
+                left: t.pos,
+                top: -2,
+                width: 1,
+                height: 16,
+                background: "rgba(148,163,184,0.75)",
+              }}
             />
           ))}
           {heightCapped && (
-            <span style={{ position: "absolute", left: PANEL_W + 3, top: -1, fontSize: "0.7rem", color: "#94a3b8" }}>+</span>
+            <span
+              style={{
+                position: "absolute",
+                left: PANEL_W + 3,
+                top: -1,
+                fontSize: "0.7rem",
+                color: "#94a3b8",
+              }}
+            >
+              +
+            </span>
           )}
         </div>
-        <div style={{ position: "relative", width: PANEL_W, height: 12, marginTop: 3 }}>
+        <div
+          style={{
+            position: "relative",
+            width: PANEL_W,
+            height: 12,
+            marginTop: 3,
+          }}
+        >
           {heightTicks.map((t) => (
             <span
               key={t.label}
@@ -741,7 +910,14 @@ export default function CarbonGlobe() {
             </span>
           ))}
         </div>
-        <div style={{ width: PANEL_W, marginTop: 1, fontSize: "0.58rem", color: "#94a3b8" }}>
+        <div
+          style={{
+            width: PANEL_W,
+            marginTop: 1,
+            fontSize: "0.58rem",
+            color: "#94a3b8",
+          }}
+        >
           {heightMetric === "renewable" ? "% renewable — beam height" : "gCO₂/kWh — beam height"}
           {heightCapped && " · zoom out for full 100%"}
         </div>
@@ -749,7 +925,10 @@ export default function CarbonGlobe() {
         {/* Map scale bar — real surface distance at the current zoom. Part of the
             legend, so it collapses with everything else when the legend is hidden. */}
         {scale && (
-          <div style={{ marginTop: 14 }} title="Approximate surface distance at this zoom (near the centre of view)">
+          <div
+            style={{ marginTop: 14 }}
+            title="Approximate surface distance at this zoom (near the centre of view)"
+          >
             <div
               style={{
                 width: Math.min(scale.px, PANEL_W),
@@ -769,7 +948,18 @@ export default function CarbonGlobe() {
 
       {/* Empty / loading / error state — distinguish a failed fetch from loading */}
       {!webglError && points.length === 0 && (
-        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#94a3b8", padding: "1rem", textAlign: "center" }}>
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: "#94a3b8",
+            padding: "1rem",
+            textAlign: "center",
+          }}
+        >
           {dataError ? (
             <span>
               Couldn't load the grid data right now.{" "}
@@ -786,17 +976,71 @@ export default function CarbonGlobe() {
 
       {/* Selected detail panel */}
       {selected && (
-        <div className="globe-detail" style={{ position: "absolute", top: 20, right: 24, width: 260, background: "rgba(10,15,20,0.92)", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 12, padding: "16px 18px", color: "#fff", backdropFilter: "blur(8px)" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <div style={{ textTransform: "uppercase", letterSpacing: "0.5px", color: "#9ca3af", fontSize: "0.7rem", fontWeight: 700 }}>
+        <div
+          className="globe-detail"
+          style={{
+            position: "absolute",
+            top: 20,
+            right: 24,
+            width: 260,
+            background: "rgba(10,15,20,0.92)",
+            border: "1px solid rgba(255,255,255,0.15)",
+            borderRadius: 12,
+            padding: "16px 18px",
+            color: "#fff",
+            backdropFilter: "blur(8px)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+            }}
+          >
+            <div
+              style={{
+                textTransform: "uppercase",
+                letterSpacing: "0.5px",
+                color: "#9ca3af",
+                fontSize: "0.7rem",
+                fontWeight: 700,
+              }}
+            >
               {selected.provider} · {selected.region}
             </div>
-            <button onClick={() => setSelected(null)} style={{ background: "none", border: "none", color: "#9ca3af", cursor: "pointer", fontSize: "1rem", lineHeight: 1, padding: 0 }}>×</button>
+            <button
+              type="button"
+              onClick={() => setSelected(null)}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#9ca3af",
+                cursor: "pointer",
+                fontSize: "1rem",
+                lineHeight: 1,
+                padding: 0,
+              }}
+            >
+              ×
+            </button>
           </div>
-          <div style={{ margin: "4px 0 12px", color: "#d1d5db", fontSize: "0.85rem" }}>
+          <div
+            style={{
+              margin: "4px 0 12px",
+              color: "#d1d5db",
+              fontSize: "0.85rem",
+            }}
+          >
             {selected.location} <span style={{ color: "#6b7280" }}>({selected.grid_zone})</span>
           </div>
-          <div style={{ fontSize: "2rem", fontWeight: 700, color: intensityColor(selected.intensity) }}>
+          <div
+            style={{
+              fontSize: "2rem",
+              fontWeight: 700,
+              color: intensityColor(selected.intensity),
+            }}
+          >
             {selected.intensity}
             <span style={{ fontSize: "0.8rem", fontWeight: 400, color: "#9ca3af" }}> gCO₂/kWh</span>
           </div>
@@ -807,7 +1051,15 @@ export default function CarbonGlobe() {
               <span style={{ color: "#6b7280" }}> · whole grid, all consumers</span>
             </div>
           )}
-          <div style={{ marginTop: 12, fontSize: "0.72rem", display: "inline-flex", alignItems: "center", color: selected.quality === "estimated" ? "#fbbf24" : "#4ade80" }}>
+          <div
+            style={{
+              marginTop: 12,
+              fontSize: "0.72rem",
+              display: "inline-flex",
+              alignItems: "center",
+              color: selected.quality === "estimated" ? "#fbbf24" : "#4ade80",
+            }}
+          >
             {selected.quality === "estimated" ? "Estimated" : "Live grid data"}
             <span style={{ color: "#6b7280" }}> · {selected.source}</span>
             <InfoTip label="live vs estimated" text={DATA_QUALITY_TIP_RICH} placement="top" />
