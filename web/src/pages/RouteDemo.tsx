@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { api } from "../api/client";
 import type { RouteResponse } from "../api/types";
-import { section as sectionFn, card } from "../styles";
 import { InfoTip } from "../components/InfoTip";
+import { card, section as sectionFn } from "../styles";
 
 const section = sectionFn();
-const API_BASE = import.meta.env.VITE_API_URL || (typeof window !== "undefined" ? window.location.origin : "");
+const API_BASE =
+  import.meta.env.VITE_API_URL || (typeof window !== "undefined" ? window.location.origin : "");
 
 // Shared tooltip copy for the alternatives table headers.
 const TIP = {
@@ -17,7 +18,15 @@ const TIP = {
     "The electricity grid (balancing authority) powering this region — e.g. SE-SE3 for southern Sweden. Carbon is measured at the grid, not the datacenter.",
 };
 
-function Th({ label, tip, align = "left" }: { label: string; tip?: string; align?: "left" | "right" }) {
+function Th({
+  label,
+  tip,
+  align = "left",
+}: {
+  label: string;
+  tip?: string;
+  align?: "left" | "right";
+}) {
   return (
     <th style={{ textAlign: align, padding: "0.5rem" }}>
       <span
@@ -50,9 +59,7 @@ export function RouteDemo() {
   const [error, setError] = useState("");
 
   const toggleProvider = (p: string) => {
-    setProviders((prev) =>
-      prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]
-    );
+    setProviders((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]));
   };
 
   const handleRoute = async () => {
@@ -81,7 +88,13 @@ export function RouteDemo() {
 
   return (
     <div style={section}>
-      <h1 style={{ marginBottom: "0.5rem", display: "flex", alignItems: "center" }}>
+      <h1
+        style={{
+          marginBottom: "0.5rem",
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
         Green route demo
         <InfoTip
           label="green route"
@@ -89,8 +102,8 @@ export function RouteDemo() {
         />
       </h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
-        Choose providers and how much to favour clean energy over cost, and see which
-        region comes out greenest right now.
+        Choose providers and how much to favour clean energy over cost, and see which region comes
+        out greenest right now.
       </p>
 
       {/* Form */}
@@ -99,21 +112,26 @@ export function RouteDemo() {
 
         {/* Providers */}
         <div style={{ marginBottom: "1.25rem" }}>
-          <label style={{ fontWeight: 600, display: "block", marginBottom: "0.5rem" }}>
+          <label
+            style={{
+              fontWeight: 600,
+              display: "block",
+              marginBottom: "0.5rem",
+            }}
+          >
             Cloud Providers
           </label>
           <div style={{ display: "flex", gap: "0.5rem" }}>
             {["aws", "gcp", "azure"].map((p) => (
               <button
+                type="button"
                 key={p}
                 onClick={() => toggleProvider(p)}
                 style={{
                   padding: "0.5rem 1.25rem",
                   borderRadius: 6,
                   border: "2px solid",
-                  borderColor: providers.includes(p)
-                    ? "var(--green-500)"
-                    : "var(--gray-200)",
+                  borderColor: providers.includes(p) ? "var(--green-500)" : "var(--gray-200)",
                   background: providers.includes(p) ? "var(--green-50)" : "var(--surface)",
                   color: providers.includes(p) ? "var(--green-800)" : "var(--gray-600)",
                   cursor: "pointer",
@@ -129,7 +147,14 @@ export function RouteDemo() {
 
         {/* Data Residency */}
         <div style={{ marginBottom: "1.25rem" }}>
-          <label style={{ fontWeight: 600, display: "inline-flex", alignItems: "center", marginBottom: "0.5rem" }}>
+          <label
+            style={{
+              fontWeight: 600,
+              display: "inline-flex",
+              alignItems: "center",
+              marginBottom: "0.5rem",
+            }}
+          >
             Data Residency (optional)
             <InfoTip
               label="data residency"
@@ -157,13 +182,21 @@ export function RouteDemo() {
         </div>
 
         {/* Ranking basis — honest about what the engine actually optimizes */}
-        <div style={{ marginBottom: "1.5rem", fontSize: "0.85rem", color: "var(--gray-500)" }}>
-          Regions are ranked by <strong style={{ color: "var(--green-text)" }}>lowest carbon intensity</strong> right
-          now, within your provider and residency filters. Cost-aware ranking (trading carbon against price) is on the
-          roadmap — it isn't factored in yet.
+        <div
+          style={{
+            marginBottom: "1.5rem",
+            fontSize: "0.85rem",
+            color: "var(--gray-500)",
+          }}
+        >
+          Regions are ranked by{" "}
+          <strong style={{ color: "var(--green-text)" }}>lowest carbon intensity</strong> right now,
+          within your provider and residency filters. Cost-aware ranking (trading carbon against
+          price) is on the roadmap — it isn't factored in yet.
         </div>
 
         <button
+          type="button"
           onClick={handleRoute}
           disabled={loading}
           style={{
@@ -180,9 +213,7 @@ export function RouteDemo() {
           {loading ? "Routing..." : "Find Greenest Region"}
         </button>
 
-        {error && (
-          <p style={{ color: "var(--red-500)", marginTop: "1rem" }}>{error}</p>
-        )}
+        {error && <p style={{ color: "var(--red-500)", marginTop: "1rem" }}>{error}</p>}
       </div>
 
       {/* Result */}
@@ -195,10 +226,23 @@ export function RouteDemo() {
               borderColor: "var(--green-200)",
             }}
           >
-            <div style={{ fontSize: "0.8rem", color: "var(--gray-500)", marginBottom: "0.25rem" }}>
+            <div
+              style={{
+                fontSize: "0.8rem",
+                color: "var(--gray-500)",
+                marginBottom: "0.25rem",
+              }}
+            >
               Recommended Region
             </div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: "1rem", flexWrap: "wrap" }}>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                gap: "1rem",
+                flexWrap: "wrap",
+              }}
+            >
               <span
                 style={{
                   fontSize: "1.5rem",
@@ -210,11 +254,13 @@ export function RouteDemo() {
                 {result.recommended.provider}/{result.recommended.region}
               </span>
               <span
-                style={{
-                  ...intensityLabel(result.recommended.carbon_intensity_gco2_kwh),
-                  fontWeight: 600,
-                  fontSize: "0.9rem",
-                } as React.CSSProperties}
+                style={
+                  {
+                    ...intensityLabel(result.recommended.carbon_intensity_gco2_kwh),
+                    fontWeight: 600,
+                    fontSize: "0.9rem",
+                  } as React.CSSProperties
+                }
               >
                 {intensityLabel(result.recommended.carbon_intensity_gco2_kwh).label}
               </span>
@@ -233,7 +279,14 @@ export function RouteDemo() {
                 <div style={{ fontWeight: 600 }}>{result.recommended.grid_zone}</div>
               </div>
               <div>
-                <div style={{ fontSize: "0.75rem", color: "var(--gray-500)", display: "inline-flex", alignItems: "center" }}>
+                <div
+                  style={{
+                    fontSize: "0.75rem",
+                    color: "var(--gray-500)",
+                    display: "inline-flex",
+                    alignItems: "center",
+                  }}
+                >
                   Carbon emissions
                   <InfoTip label="Carbon emissions" text={TIP.emissions} />
                 </div>
@@ -256,9 +309,7 @@ export function RouteDemo() {
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: "0.75rem", color: "var(--gray-500)" }}>
-                  Carbon Savings
-                </div>
+                <div style={{ fontSize: "0.75rem", color: "var(--gray-500)" }}>Carbon Savings</div>
                 <div style={{ fontWeight: 600, color: "var(--green-text)" }}>
                   {result.recommended.carbon_savings_vs_worst_pct.toFixed(1)}% greener
                 </div>
@@ -269,19 +320,33 @@ export function RouteDemo() {
           {/* Alternatives */}
           {result.alternatives.length > 0 && (
             <div style={card}>
-              <h3 style={{ marginTop: 0 }}>
-                Alternatives ({result.alternatives.length})
-              </h3>
+              <h3 style={{ marginTop: 0 }}>Alternatives ({result.alternatives.length})</h3>
               <div style={{ overflow: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem" }}>
+                <table
+                  style={{
+                    width: "100%",
+                    borderCollapse: "collapse",
+                    fontSize: "0.85rem",
+                  }}
+                >
                   <thead>
                     <tr style={{ borderBottom: "2px solid var(--gray-200)" }}>
-                      <Th label="#" tip="Rank by your carbon/cost priority. #1 is the recommended region above; these are the next-best." />
-                      <Th label="Region" tip="The cloud provider and region — e.g. aws / eu-north-1." />
+                      <Th
+                        label="#"
+                        tip="Rank by your carbon/cost priority. #1 is the recommended region above; these are the next-best."
+                      />
+                      <Th
+                        label="Region"
+                        tip="The cloud provider and region — e.g. aws / eu-north-1."
+                      />
                       <Th label="Grid Zone" tip={TIP.gridZone} />
                       <Th label="gCO₂/kWh" tip={TIP.emissions} align="right" />
                       <Th label="Renewable" tip={TIP.renewable} align="right" />
-                      <Th label="Score" tip="Ranking score derived from carbon intensity (lower = greener). It's a relative ordering within this result set, not a physical unit, and isn't comparable across different queries. Cost is not yet a factor." align="right" />
+                      <Th
+                        label="Score"
+                        tip="Ranking score derived from carbon intensity (lower = greener). It's a relative ordering within this result set, not a physical unit, and isn't comparable across different queries. Cost is not yet a factor."
+                        align="right"
+                      />
                     </tr>
                   </thead>
                   <tbody>
@@ -290,10 +355,20 @@ export function RouteDemo() {
                         key={`${alt.provider}-${alt.region}`}
                         style={{ borderBottom: "1px solid var(--gray-100)" }}
                       >
-                        <td style={{ padding: "0.5rem", color: "var(--gray-400)" }}>
+                        <td
+                          style={{
+                            padding: "0.5rem",
+                            color: "var(--gray-400)",
+                          }}
+                        >
                           {i + 2}
                         </td>
-                        <td style={{ padding: "0.5rem", fontFamily: "var(--mono)" }}>
+                        <td
+                          style={{
+                            padding: "0.5rem",
+                            fontFamily: "var(--mono)",
+                          }}
+                        >
                           {alt.provider}/{alt.region}
                         </td>
                         <td style={{ padding: "0.5rem" }}>{alt.grid_zone}</td>
@@ -345,7 +420,7 @@ export function RouteDemo() {
       },
     },
     null,
-    2
+    2,
   )}'`}
             </pre>
           </div>

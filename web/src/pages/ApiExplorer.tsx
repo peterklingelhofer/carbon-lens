@@ -1,9 +1,9 @@
-import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { api } from "../api/client";
 import type { CarbonIntensity, RouteResponse } from "../api/types";
-import { section as sectionFn, card } from "../styles";
 import { InfoTip } from "../components/InfoTip";
+import { card, section as sectionFn } from "../styles";
 
 const section = sectionFn(1100);
 
@@ -11,14 +11,22 @@ const PROVIDERS = ["aws", "gcp", "azure"] as const;
 
 const POPULAR_REGIONS: Record<string, string[]> = {
   aws: ["us-east-1", "us-west-2", "eu-west-1", "eu-central-1", "ap-southeast-1", "ca-central-1"],
-  gcp: ["us-central1", "europe-north1", "europe-west1", "us-east4", "asia-southeast1", "australia-southeast1"],
+  gcp: [
+    "us-central1",
+    "europe-north1",
+    "europe-west1",
+    "us-east4",
+    "asia-southeast1",
+    "australia-southeast1",
+  ],
   azure: ["eastus", "westeurope", "norwayeast", "uksouth", "australiaeast", "canadacentral"],
 };
 
 // The deployed API base — used for the Swagger link and the copy-pasteable curls.
 // For display (curl snippets, Swagger link): the page's own origin, which the
 // Worker proxies to the backend — so copy-pasted commands hit a same-origin URL.
-const API_BASE = import.meta.env.VITE_API_URL || (typeof window !== "undefined" ? window.location.origin : "");
+const API_BASE =
+  import.meta.env.VITE_API_URL || (typeof window !== "undefined" ? window.location.origin : "");
 
 // Shared tooltip copy, reused across the result cards and table headers.
 const TIP = {
@@ -81,7 +89,13 @@ export function ApiExplorer() {
 
   return (
     <div style={section}>
-      <h1 style={{ marginBottom: "0.5rem", display: "flex", alignItems: "center" }}>
+      <h1
+        style={{
+          marginBottom: "0.5rem",
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
         API explorer
         <InfoTip
           label="API"
@@ -89,9 +103,9 @@ export function ApiExplorer() {
         />
       </h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "1rem" }}>
-        Try the carbon API by hand. Each query returns the latest reading — live
-        where a grid-operator feed exists, a clearly-labelled estimate otherwise.
-        No key required; rate-limited to 100 requests/min per IP.
+        Try the carbon API by hand. Each query returns the latest reading — live where a
+        grid-operator feed exists, a clearly-labelled estimate otherwise. No key required;
+        rate-limited to 100 requests/min per IP.
       </p>
       <p style={{ marginBottom: "2rem", fontSize: "0.9rem" }}>
         Prefer the full reference?{" "}
@@ -99,7 +113,11 @@ export function ApiExplorer() {
           href={`${API_BASE}/docs`}
           target="_blank"
           rel="noopener noreferrer"
-          style={{ color: "var(--green-text)", fontWeight: 600, textDecoration: "underline" }}
+          style={{
+            color: "var(--green-text)",
+            fontWeight: 600,
+            textDecoration: "underline",
+          }}
         >
           Open the interactive Swagger docs ↗
         </a>{" "}
@@ -112,12 +130,15 @@ export function ApiExplorer() {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.5rem" }}>
-        {([
-          { key: "intensity", label: "GET Carbon Intensity" },
-          { key: "route", label: "POST Route" },
-          { key: "batch", label: "POST Batch" },
-        ] as const).map((tab) => (
+        {(
+          [
+            { key: "intensity", label: "GET Carbon Intensity" },
+            { key: "route", label: "POST Route" },
+            { key: "batch", label: "POST Batch" },
+          ] as const
+        ).map((tab) => (
           <button
+            type="button"
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             style={{
@@ -142,7 +163,13 @@ export function ApiExplorer() {
           <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.1rem" }}>
             GET /api/v1/carbon/{"{provider}"}/{"{region}"}
           </h2>
-          <p style={{ color: "var(--gray-500)", fontSize: "0.85rem", margin: "0 0 1rem" }}>
+          <p
+            style={{
+              color: "var(--gray-500)",
+              fontSize: "0.85rem",
+              margin: "0 0 1rem",
+            }}
+          >
             Get the latest carbon intensity for any cloud region.
           </p>
           <div
@@ -165,13 +192,20 @@ export function ApiExplorer() {
                 style={inputStyle}
               >
                 {PROVIDERS.map((p) => (
-                  <option key={p} value={p}>{p.toUpperCase()}</option>
+                  <option key={p} value={p}>
+                    {p.toUpperCase()}
+                  </option>
                 ))}
               </select>
             </div>
             <div>
               <label style={labelStyle}>Region</label>
-              <select aria-label="Region" value={region} onChange={(e) => setRegion(e.target.value)} style={inputStyle}>
+              <select
+                aria-label="Region"
+                value={region}
+                onChange={(e) => setRegion(e.target.value)}
+                style={inputStyle}
+              >
                 {(allRegions || [])
                   .filter((r) => r.provider === provider)
                   .map((r) => (
@@ -179,19 +213,25 @@ export function ApiExplorer() {
                       {r.region} ({r.location})
                     </option>
                   ))}
-                {!allRegions && POPULAR_REGIONS[provider]?.map((r) => (
-                  <option key={r} value={r}>{r}</option>
-                ))}
+                {!allRegions &&
+                  POPULAR_REGIONS[provider]?.map((r) => (
+                    <option key={r} value={r}>
+                      {r}
+                    </option>
+                  ))}
               </select>
             </div>
           </div>
 
           {/* curl example */}
           <div style={codeBlockStyle}>
-            <code>curl {API_BASE}/api/v1/carbon/{provider}/{region}</code>
+            <code>
+              curl {API_BASE}/api/v1/carbon/{provider}/{region}
+            </code>
           </div>
 
           <button
+            type="button"
             onClick={() => intensityMutation.mutate()}
             disabled={intensityMutation.isPending}
             style={buttonStyle(intensityMutation.isPending)}
@@ -204,10 +244,14 @@ export function ApiExplorer() {
       {/* Route Tab */}
       {activeTab === "route" && (
         <div style={{ ...card, marginBottom: "2rem" }}>
-          <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.1rem" }}>
-            POST /api/v1/route
-          </h2>
-          <p style={{ color: "var(--gray-500)", fontSize: "0.85rem", margin: "0 0 1rem" }}>
+          <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.1rem" }}>POST /api/v1/route</h2>
+          <p
+            style={{
+              color: "var(--gray-500)",
+              fontSize: "0.85rem",
+              margin: "0 0 1rem",
+            }}
+          >
             Find the greenest cloud region across all providers right now.
           </p>
 
@@ -218,6 +262,7 @@ export function ApiExplorer() {
           </div>
 
           <button
+            type="button"
             onClick={() => routeMutation.mutate()}
             disabled={routeMutation.isPending}
             style={buttonStyle(routeMutation.isPending)}
@@ -230,10 +275,14 @@ export function ApiExplorer() {
       {/* Batch Tab */}
       {activeTab === "batch" && (
         <div style={{ ...card, marginBottom: "2rem" }}>
-          <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.1rem" }}>
-            POST /api/v1/carbon/batch
-          </h2>
-          <p style={{ color: "var(--gray-500)", fontSize: "0.85rem", margin: "0 0 1rem" }}>
+          <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.1rem" }}>POST /api/v1/carbon/batch</h2>
+          <p
+            style={{
+              color: "var(--gray-500)",
+              fontSize: "0.85rem",
+              margin: "0 0 1rem",
+            }}
+          >
             Query multiple regions in a single call. Returns carbon data for each.
           </p>
 
@@ -251,6 +300,7 @@ export function ApiExplorer() {
           </div>
 
           <button
+            type="button"
             onClick={() => batchMutation.mutate()}
             disabled={batchMutation.isPending}
             style={buttonStyle(batchMutation.isPending)}
@@ -274,24 +324,52 @@ export function ApiExplorer() {
                   </thead>
                   <tbody>
                     {Object.entries(batchMutation.data)
-                      .sort(([, a], [, b]) => a.carbon_intensity_gco2_kwh - b.carbon_intensity_gco2_kwh)
+                      .sort(
+                        ([, a], [, b]) => a.carbon_intensity_gco2_kwh - b.carbon_intensity_gco2_kwh,
+                      )
                       .map(([key, val]) => (
                         <tr key={key} style={{ borderBottom: "1px solid var(--gray-100)" }}>
-                          <td style={{ ...td, fontFamily: "var(--mono)", fontSize: "0.8rem" }}>{key}</td>
-                          <td style={{
-                            ...td, textAlign: "right", fontWeight: 600,
-                            color: val.carbon_intensity_gco2_kwh <= 50 ? "var(--green-text)" :
-                                   val.carbon_intensity_gco2_kwh <= 200 ? "var(--green-500)" : "var(--orange-400)",
-                          }}>
+                          <td
+                            style={{
+                              ...td,
+                              fontFamily: "var(--mono)",
+                              fontSize: "0.8rem",
+                            }}
+                          >
+                            {key}
+                          </td>
+                          <td
+                            style={{
+                              ...td,
+                              textAlign: "right",
+                              fontWeight: 600,
+                              color:
+                                val.carbon_intensity_gco2_kwh <= 50
+                                  ? "var(--green-text)"
+                                  : val.carbon_intensity_gco2_kwh <= 200
+                                    ? "var(--green-500)"
+                                    : "var(--orange-400)",
+                            }}
+                          >
                             {val.carbon_intensity_gco2_kwh}
                           </td>
-                          <td style={{
-                            ...td, textAlign: "right",
-                            color: val.renewable_percentage >= 70 ? "var(--green-text)" : "inherit",
-                          }}>
+                          <td
+                            style={{
+                              ...td,
+                              textAlign: "right",
+                              color:
+                                val.renewable_percentage >= 70 ? "var(--green-text)" : "inherit",
+                            }}
+                          >
                             {val.renewable_percentage}%
                           </td>
-                          <td style={{ ...td, fontSize: "0.8rem", color: "var(--gray-500)" }}>
+                          <td
+                            style={{
+                              ...td,
+                              fontSize: "0.8rem",
+                              color: "var(--gray-500)",
+                            }}
+                          >
                             {val.source}
                           </td>
                         </tr>
@@ -330,16 +408,8 @@ export function ApiExplorer() {
               positive={intensityResult.renewable_percentage >= 50}
               tip={TIP.renewable}
             />
-            <ResultCard
-              label="Grid Zone"
-              value={intensityResult.grid_zone}
-              tip={TIP.gridZone}
-            />
-            <ResultCard
-              label="Data Source"
-              value={intensityResult.source}
-              tip={TIP.source}
-            />
+            <ResultCard label="Grid Zone" value={intensityResult.grid_zone} tip={TIP.gridZone} />
+            <ResultCard label="Data Source" value={intensityResult.source} tip={TIP.source} />
           </div>
           <div style={codeBlockStyle}>
             <code style={{ whiteSpace: "pre", fontSize: "0.8rem" }}>
@@ -352,9 +422,7 @@ export function ApiExplorer() {
       {/* Route Result */}
       {routeResult && (
         <div style={{ ...card, marginBottom: "2rem" }}>
-          <h3 style={{ margin: "0 0 1rem", fontSize: "1rem" }}>
-            Greenest Region Right Now
-          </h3>
+          <h3 style={{ margin: "0 0 1rem", fontSize: "1rem" }}>Greenest Region Right Now</h3>
           <div
             style={{
               padding: "1rem",
@@ -424,23 +492,47 @@ export function ApiExplorer() {
                   <tbody>
                     {routeResult.alternatives.slice(0, 10).map((alt, i) => (
                       <tr key={i} style={{ borderBottom: "1px solid var(--gray-100)" }}>
-                        <td style={{ ...td, fontWeight: 600, textTransform: "uppercase", fontSize: "0.8rem" }}>
+                        <td
+                          style={{
+                            ...td,
+                            fontWeight: 600,
+                            textTransform: "uppercase",
+                            fontSize: "0.8rem",
+                          }}
+                        >
                           {alt.provider}
                         </td>
-                        <td style={{ ...td, fontFamily: "var(--mono)", fontSize: "0.8rem" }}>
+                        <td
+                          style={{
+                            ...td,
+                            fontFamily: "var(--mono)",
+                            fontSize: "0.8rem",
+                          }}
+                        >
                           {alt.region}
                         </td>
-                        <td style={{
-                          ...td, textAlign: "right", fontWeight: 600,
-                          color: alt.carbon_intensity_gco2_kwh <= 50 ? "var(--green-text)" :
-                                 alt.carbon_intensity_gco2_kwh <= 200 ? "var(--green-500)" : "var(--orange-400)",
-                        }}>
+                        <td
+                          style={{
+                            ...td,
+                            textAlign: "right",
+                            fontWeight: 600,
+                            color:
+                              alt.carbon_intensity_gco2_kwh <= 50
+                                ? "var(--green-text)"
+                                : alt.carbon_intensity_gco2_kwh <= 200
+                                  ? "var(--green-500)"
+                                  : "var(--orange-400)",
+                          }}
+                        >
                           {alt.carbon_intensity_gco2_kwh}
                         </td>
-                        <td style={{
-                          ...td, textAlign: "right",
-                          color: alt.renewable_percentage >= 70 ? "var(--green-text)" : "inherit",
-                        }}>
+                        <td
+                          style={{
+                            ...td,
+                            textAlign: "right",
+                            color: alt.renewable_percentage >= 70 ? "var(--green-text)" : "inherit",
+                          }}
+                        >
                           {alt.renewable_percentage}%
                         </td>
                       </tr>
@@ -478,7 +570,14 @@ function ResultCard({
         background: "var(--surface-alt)",
       }}
     >
-      <div style={{ fontSize: "0.7rem", color: "var(--gray-500)", display: "flex", alignItems: "center" }}>
+      <div
+        style={{
+          fontSize: "0.7rem",
+          color: "var(--gray-500)",
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
         {label}
         {tip && <InfoTip label={label} text={tip} />}
       </div>
@@ -491,9 +590,7 @@ function ResultCard({
       >
         {value}
         {unit && (
-          <span style={{ fontSize: "0.75rem", fontWeight: 400, marginLeft: 4 }}>
-            {unit}
-          </span>
+          <span style={{ fontSize: "0.75rem", fontWeight: 400, marginLeft: 4 }}>{unit}</span>
         )}
       </div>
     </div>
@@ -547,7 +644,15 @@ const th: React.CSSProperties = {
 };
 
 // A table header cell with an optional info tooltip.
-function HeadCell({ label, tip, align = "left" }: { label: string; tip?: string; align?: "left" | "right" }) {
+function HeadCell({
+  label,
+  tip,
+  align = "left",
+}: {
+  label: string;
+  tip?: string;
+  align?: "left" | "right";
+}) {
   return (
     <th style={{ ...th, textAlign: align }}>
       <span

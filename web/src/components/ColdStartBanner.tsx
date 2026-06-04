@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
 import { useIsFetching, useIsMutating } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { getLastApiResponseAt } from "../api/client";
 
 // The free-tier API (Render) sleeps after ~15 min idle and takes ~50s to wake.
@@ -18,7 +18,9 @@ type Mode = "hidden" | "loading" | "waking";
 export function ColdStartBanner() {
   // Count only real API traffic — exclude the CDN snapshot query, which is fast
   // and unrelated to the API server waking up.
-  const apiFetching = useIsFetching({ predicate: (q) => q.queryKey[0] !== "snapshot" });
+  const apiFetching = useIsFetching({
+    predicate: (q) => q.queryKey[0] !== "snapshot",
+  });
   const mutating = useIsMutating();
   const busy = apiFetching + mutating > 0;
   const [mode, setMode] = useState<Mode>("hidden");
