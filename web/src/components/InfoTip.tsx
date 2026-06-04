@@ -1,4 +1,4 @@
-import { useCallback, useId, useState, type ReactNode } from "react";
+import { type ReactNode, useCallback, useId, useState } from "react";
 
 // A small "i" icon that reveals a plain-language definition on hover, focus, or
 // click — for domain jargon (gCO₂/kWh, carbon intensity, balancing authority…).
@@ -32,7 +32,13 @@ export function InfoTip({
   }, []);
 
   return (
-    <span style={{ position: "relative", display: "inline-flex", verticalAlign: "middle" }}>
+    <span
+      style={{
+        position: "relative",
+        display: "inline-flex",
+        verticalAlign: "middle",
+      }}
+    >
       <button
         type="button"
         aria-label={`What is ${label}?`}
