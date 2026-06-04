@@ -4,6 +4,7 @@ Docs: https://www.eia.gov/opendata/documentation.php
 Endpoint: /v2/electricity/rto/fuel-type-data/data
 """
 
+import asyncio
 from datetime import datetime, timezone
 
 from carbon_mesh.carbon_sources.http_pool import shared_client
@@ -26,6 +27,7 @@ _GRID_ZONE_TO_EIA: dict[str, str] = {
     "US-SE-SOCO": "SOCO",
     "US-SW-NEVP": "NEVP",
     "US-SW-AZPS": "AZPS",
+    "US-TEX-ERCO": "ERCO",
 }
 
 
@@ -91,72 +93,41 @@ class EIACarbonSource:
         )
 
     async def get_carbon_intensity_batch(self, grid_zones: list[str]) -> dict[str, CarbonIntensity]:
-        # Collect all respondents we need
-        respondents = set()
-        zone_to_respondent: dict[str, str] = {}
+        # Group the requested zones by EIA respondent (multiple cloud regions can
+        # share one respondent, e.g. us-east-1 and eastus both map to PJM).
+        zones_by_respondent: dict[str, list[str]] = {}
         for zone in grid_zones:
             resp_id = _GRID_ZONE_TO_EIA.get(zone)
             if resp_id:
-                respondents.add(resp_id)
-                zone_to_respondent[zone] = resp_id
+                zones_by_respondent.setdefault(resp_id, []).append(zone)
 
-        if not respondents:
+        if not zones_by_respondent:
             return {}
 
-        # Single batch request for all respondents
-        params: list[tuple[str, str]] = [
-            ("api_key", self._api_key),
-            ("frequency", "hourly"),
-            ("data[0]", "value"),
-            ("sort[0][column]", "period"),
-            ("sort[0][direction]", "desc"),
-            ("length", str(len(respondents) * 15)),  # ~10 fuel types per respondent
-        ]
-        for r in respondents:
-            params.append(("facets[respondent][]", r))
+        # One request per respondent, concurrently. A single combined request
+        # sorted by period is length-capped, so respondents reporting on time
+        # crowd out any whose EIA-930 fuel-mix reporting lags (PJM/MISO/SOCO can
+        # run a day-plus behind), silently dropping them. Per-respondent fetches
+        # each one's own latest period regardless of how far behind it is.
+        respondents = list(zones_by_respondent.keys())
 
-        resp = await self._client.get("/electricity/rto/fuel-type-data/data", params=params)
-        resp.raise_for_status()
-        data = resp.json()
+        async def fetch(resp_id: str) -> tuple[str, CarbonIntensity]:
+            # Reuse the single-zone path (correct latest-period handling); the
+            # representative zone only seeds the request, then we fan the reading
+            # back out to every zone on this respondent below.
+            zone = zones_by_respondent[resp_id][0]
+            return resp_id, await self.get_carbon_intensity(zone)
 
-        rows = data.get("response", {}).get("data", [])
-
-        # Group by respondent → latest period → fuel mix
-        respondent_fuel: dict[str, dict[str, float]] = {}
-        respondent_period: dict[str, str] = {}
-        for row in rows:
-            r = row.get("respondent", "")
-            period = row.get("period", "")
-            if r not in respondent_period:
-                respondent_period[r] = period
-            if period != respondent_period[r]:
-                continue  # Only use latest period per respondent
-            eia_code = row.get("fueltype", "OTH")
-            normalized = EIA_FUEL_MAP.get(eia_code, "other")
-            value = float(row.get("value") or 0)
-            if r not in respondent_fuel:
-                respondent_fuel[r] = {}
-            respondent_fuel[r][normalized] = respondent_fuel[r].get(normalized, 0) + value
+        settled = await asyncio.gather(
+            *(fetch(r) for r in respondents), return_exceptions=True
+        )
 
         results: dict[str, CarbonIntensity] = {}
-        for zone, resp_id in zone_to_respondent.items():
-            fuel_mix = respondent_fuel.get(resp_id, {})
-            if not fuel_mix:
+        for item in settled:
+            if isinstance(item, Exception):
                 continue
-            intensity = calculate_carbon_intensity(fuel_mix)
-            renewable_pct = calculate_renewable_percentage(fuel_mix)
-            period_str = respondent_period.get(resp_id, "")
-            try:
-                ts = datetime.strptime(period_str, "%Y-%m-%dT%H").replace(tzinfo=timezone.utc)
-            except ValueError:
-                ts = datetime.now(timezone.utc)
-            results[zone] = CarbonIntensity(
-                grid_zone=zone,
-                carbon_intensity_gco2_kwh=round(intensity, 1),
-                renewable_percentage=round(renewable_pct, 1),
-                timestamp=ts,
-                source="eia",
-                grid_load_mw=round(sum(fuel_mix.values())),
-            )
+            resp_id, intensity = item
+            for zone in zones_by_respondent[resp_id]:
+                results[zone] = intensity.model_copy(update={"grid_zone": zone})
 
         return results

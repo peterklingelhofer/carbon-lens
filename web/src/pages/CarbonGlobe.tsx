@@ -6,7 +6,7 @@ import * as THREE from "three";
 import { api } from "../api/client";
 import { useSnapshot, snapshotEnabled, qualityFromSource } from "../api/snapshot";
 import { InfoTip } from "../components/InfoTip";
-import { DATA_QUALITY_TIP } from "../copy";
+import { DATA_QUALITY_TIP_RICH } from "../copy";
 import { timeAgo, niceKm } from "../lib/format";
 
 // Some browsers/machines can't create a WebGL context (hardware acceleration
@@ -522,6 +522,7 @@ export default function CarbonGlobe() {
             border: 1px solid rgba(255,255,255,0.2); border-radius: 6px;
             font-size: 0.72rem; padding: 4px 9px; cursor: pointer; pointer-events: auto;
           }
+          /* Collapsed: show only the toggle, hide every other legend element. */
           .globe-legend:not(.open) > *:not(.globe-legend-toggle) { display: none !important; }
           /* Detail panel: full-width sheet near the top instead of a floating box */
           .globe-detail {
@@ -608,13 +609,20 @@ export default function CarbonGlobe() {
             {estCount > 0 && <span style={{ color: "#fbbf24", marginLeft: 10 }}>● {estCount} estimated</span>}
             {/* Desktop: the description is shown above, so this icon only explains live vs estimated. */}
             <span className="globe-tip-desktop">
-              <InfoTip label="live vs estimated" text={DATA_QUALITY_TIP} placement="bottom" />
+              <InfoTip label="live vs estimated" text={DATA_QUALITY_TIP_RICH} placement="bottom" />
             </span>
             {/* Mobile: the description is hidden to declutter, so it's folded into this icon. */}
             <span className="globe-tip-mobile">
               <InfoTip
                 label="about this view"
-                text={`${points.length} cloud regions — colour shows live grid carbon intensity, beam height shows renewable share. Drag to spin, pinch to zoom, tap a node for detail.\n\n${DATA_QUALITY_TIP}`}
+                text={
+                  <>
+                    Drag to spin, tap a node for detail.
+                    <br />
+                    <br />
+                    {DATA_QUALITY_TIP_RICH}
+                  </>
+                }
                 placement="bottom"
               />
             </span>
@@ -641,7 +649,8 @@ export default function CarbonGlobe() {
 
       {/* Controls + legend (bottom-left) */}
       <div className={`globe-legend${legendOpen ? " open" : ""}`} style={{ position: "absolute", bottom: 24, left: 24, color: "#fff", fontSize: "0.7rem", textShadow: "0 1px 6px rgba(0,0,0,0.8)", display: bare || webglError ? "none" : undefined }}>
-        {/* Collapse toggle — visible only on small screens (CSS) */}
+        {/* Collapse toggle — visible only on small screens (CSS); sits above the
+            keys so collapsing it reclaims the vertical space they take. */}
         <button
           type="button"
           className="globe-legend-toggle"
@@ -737,7 +746,8 @@ export default function CarbonGlobe() {
           {heightCapped && " · zoom out for full 100%"}
         </div>
 
-        {/* Map scale bar — real surface distance at the current zoom */}
+        {/* Map scale bar — real surface distance at the current zoom. Part of the
+            legend, so it collapses with everything else when the legend is hidden. */}
         {scale && (
           <div style={{ marginTop: 14 }} title="Approximate surface distance at this zoom (near the centre of view)">
             <div
@@ -800,7 +810,7 @@ export default function CarbonGlobe() {
           <div style={{ marginTop: 12, fontSize: "0.72rem", display: "inline-flex", alignItems: "center", color: selected.quality === "estimated" ? "#fbbf24" : "#4ade80" }}>
             {selected.quality === "estimated" ? "Estimated" : "Live grid data"}
             <span style={{ color: "#6b7280" }}> · {selected.source}</span>
-            <InfoTip label="live vs estimated" text={DATA_QUALITY_TIP} placement="top" />
+            <InfoTip label="live vs estimated" text={DATA_QUALITY_TIP_RICH} placement="top" />
           </div>
         </div>
       )}

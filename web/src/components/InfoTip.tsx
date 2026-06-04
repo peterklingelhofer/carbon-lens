@@ -1,4 +1,4 @@
-import { useId, useState } from "react";
+import { useCallback, useId, useState, type ReactNode } from "react";
 
 // A small "i" icon that reveals a plain-language definition on hover, focus, or
 // click — for domain jargon (gCO₂/kWh, carbon intensity, balancing authority…).
@@ -9,12 +9,27 @@ export function InfoTip({
   placement = "bottom",
 }: {
   label: string;
-  text: string;
+  text: ReactNode;
   placement?: "top" | "bottom";
 }) {
   const [open, setOpen] = useState(false);
   const id = useId();
   const pos = placement === "top" ? { bottom: "calc(100% + 6px)" } : { top: "calc(100% + 6px)" };
+
+  // The tip is centred on the icon, but near a screen edge centring would push
+  // it off-window. A callback ref measures the tip the moment it mounts (before
+  // paint, so no flicker) and nudges it back via the transform so it's always
+  // fully on-screen — works for icons anywhere (legend corner, table cells…).
+  const clampToViewport = useCallback((el: HTMLSpanElement | null) => {
+    if (!el) return;
+    el.style.transform = "translateX(-50%)";
+    const pad = 8;
+    const r = el.getBoundingClientRect();
+    let shift = 0;
+    if (r.left < pad) shift = pad - r.left;
+    else if (r.right > window.innerWidth - pad) shift = window.innerWidth - pad - r.right;
+    if (shift) el.style.transform = `translateX(calc(-50% + ${shift}px))`;
+  }, []);
 
   return (
     <span style={{ position: "relative", display: "inline-flex", verticalAlign: "middle" }}>
@@ -59,6 +74,7 @@ export function InfoTip({
         <span
           id={id}
           role="tooltip"
+          ref={clampToViewport}
           style={{
             position: "absolute",
             ...pos,
@@ -74,7 +90,13 @@ export function InfoTip({
             padding: "8px 10px",
             fontSize: "0.72rem",
             fontWeight: 400,
+            // Reset inherited text styling from the surrounding context: the
+            // globe title's drop-shadow and the legend labels' uppercase /
+            // italics would otherwise bleed into the tip and garble it.
             fontStyle: "normal",
+            textTransform: "none",
+            letterSpacing: "normal",
+            textShadow: "none",
             lineHeight: 1.5,
             textAlign: "left",
             boxShadow: "var(--card-shadow)",
