@@ -1,19 +1,19 @@
 import { lazy, Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
-import { Nav } from "./components/Nav";
-import { ErrorBoundary } from "./components/ErrorBoundary";
+import { Route, Routes } from "react-router-dom";
 import { ColdStartBanner } from "./components/ColdStartBanner";
-import { Landing } from "./pages/Landing";
-import { Dashboard } from "./pages/Dashboard";
-import { RouteDemo } from "./pages/RouteDemo";
-import { Settings } from "./pages/Settings";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { Nav } from "./components/Nav";
 import { About } from "./pages/About";
-import { Methodology } from "./pages/Methodology";
-import { Compliance } from "./pages/Compliance";
 import { ApiExplorer } from "./pages/ApiExplorer";
-import { Scheduler } from "./pages/Scheduler";
-import { SLAMonitor } from "./pages/SLAMonitor";
+import { Compliance } from "./pages/Compliance";
+import { Dashboard } from "./pages/Dashboard";
+import { Landing } from "./pages/Landing";
+import { Methodology } from "./pages/Methodology";
 import { NotFound } from "./pages/NotFound";
+import { RouteDemo } from "./pages/RouteDemo";
+import { Scheduler } from "./pages/Scheduler";
+import { Settings } from "./pages/Settings";
+import { SLAMonitor } from "./pages/SLAMonitor";
 
 // Lazy-loaded so three.js / globe.gl stay out of the main bundle.
 const CarbonGlobe = lazy(() => import("./pages/CarbonGlobe"));
@@ -32,7 +32,16 @@ export default function App() {
           element={
             <Suspense
               fallback={
-                <div style={{ height: "calc(100vh - 56px)", display: "flex", alignItems: "center", justifyContent: "center", background: "#000", color: "#94a3b8" }}>
+                <div
+                  style={{
+                    height: "calc(100vh - 56px)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "#000",
+                    color: "#94a3b8",
+                  }}
+                >
                   Loading globe…
                 </div>
               }

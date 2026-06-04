@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
-import { section as sectionFn, card as baseCard, grid3, badge } from "../styles";
 import { InfoTip } from "../components/InfoTip";
+import { badge, card as baseCard, grid3, section as sectionFn } from "../styles";
 
 const section: React.CSSProperties = { ...sectionFn(), padding: "3rem 2rem" };
 const card: React.CSSProperties = { ...baseCard, padding: "2rem" };
@@ -47,9 +47,9 @@ export function Landing() {
             opacity: 0.92,
           }}
         >
-          Every cloud region runs on a local power grid. CarbonLens measures how much
-          CO₂ that grid emits per kilowatt-hour right now — its <strong>carbon
-          intensity</strong> — from live grid-operator data. Lower means greener.
+          Every cloud region runs on a local power grid. CarbonLens measures how much CO₂ that grid
+          emits per kilowatt-hour right now — its <strong>carbon intensity</strong> — from live
+          grid-operator data. Lower means greener.
         </p>
         <p
           className="hero-subtitle"
@@ -60,9 +60,8 @@ export function Landing() {
             opacity: 0.75,
           }}
         >
-          75+ regions across AWS, GCP, and Azure. Route your workloads to the cleanest
-          one — and turn the same data into the emissions reports regulators are
-          starting to require.
+          75+ regions across AWS, GCP, and Azure. Route your workloads to the cleanest one — and
+          turn the same data into the emissions reports regulators are starting to require.
         </p>
         <div
           className="hero-cta"
@@ -104,8 +103,8 @@ export function Landing() {
             opacity: 0.8,
           }}
         >
-          Free to use, no account required — a public service for anyone working
-          to measure and cut cloud emissions.{" "}
+          Free to use, no account required — a public service for anyone working to measure and cut
+          cloud emissions.{" "}
           <Link to="/about" style={{ color: "white", textDecoration: "underline" }}>
             Why it's free
           </Link>
@@ -132,9 +131,9 @@ export function Landing() {
             marginRight: "auto",
           }}
         >
-          Providers match their annual electricity use with renewable certificates.
-          That doesn't tell you whether your 2 a.m. job actually ran on wind or on gas.
-          CarbonLens reports the grid's real carbon intensity, hour by hour.
+          Providers match their annual electricity use with renewable certificates. That doesn't
+          tell you whether your 2 a.m. job actually ran on wind or on gas. CarbonLens reports the
+          grid's real carbon intensity, hour by hour.
         </p>
 
         <div style={card}>
@@ -149,12 +148,12 @@ export function Landing() {
             }}
           >
             <div style={{ color: "var(--gray-500)" }}>
-              Cloud providers: Run 24/7 &rarr; Buy RECs at year-end &rarr;
-              Claim "100% renewable" on annual report
+              Cloud providers: Run 24/7 &rarr; Buy RECs at year-end &rarr; Claim "100% renewable" on
+              annual report
             </div>
             <div style={{ color: "var(--green-text)", fontWeight: 600 }}>
-              CarbonLens: &nbsp;Query real-time grid data &rarr; Know actual
-              gCO₂/kWh right now &rarr; Make informed decisions
+              CarbonLens: &nbsp;Query real-time grid data &rarr; Know actual gCO₂/kWh right now
+              &rarr; Make informed decisions
             </div>
           </div>
         </div>
@@ -166,17 +165,23 @@ export function Landing() {
           </h3>
           <p style={{ color: "var(--gray-600)", fontSize: "0.95rem" }}>
             Over a year, a provider buys enough <strong>renewable-energy certificates</strong>{" "}
-            (RECs), or signs enough power-purchase agreements, to match its total electricity
-            use. The certificates and the electricity are counted separately — so a data
-            center can draw from a gas-heavy grid at midnight and still "count" as 100%
-            renewable on its annual report. It's real money funding real renewables, but it's
-            an accounting match, not proof that clean electrons ran your job.
+            (RECs), or signs enough power-purchase agreements, to match its total electricity use.
+            The certificates and the electricity are counted separately — so a data center can draw
+            from a gas-heavy grid at midnight and still "count" as 100% renewable on its annual
+            report. It's real money funding real renewables, but it's an accounting match, not proof
+            that clean electrons ran your job.
           </p>
 
           <h3 style={{ fontSize: "1.15rem", marginBottom: "0.5rem" }}>
             Why measuring is starting to matter
           </h3>
-          <p style={{ color: "var(--gray-600)", fontSize: "0.95rem", marginTop: 0 }}>
+          <p
+            style={{
+              color: "var(--gray-600)",
+              fontSize: "0.95rem",
+              marginTop: 0,
+            }}
+          >
             Regulators increasingly want the real numbers, not just the annual offset:
           </p>
           <ul
@@ -189,8 +194,8 @@ export function Landing() {
             }}
           >
             <li>
-              <strong>CSRD</strong> — the EU's Corporate Sustainability Reporting Directive:
-              large companies must report audited, real-world emissions.
+              <strong>CSRD</strong> — the EU's Corporate Sustainability Reporting Directive: large
+              companies must report audited, real-world emissions.
             </li>
             <li>
               <strong>SEC climate rule</strong> — US rules pushing public companies to disclose
@@ -202,8 +207,8 @@ export function Landing() {
             </li>
           </ul>
           <p style={{ color: "var(--gray-600)", fontSize: "0.95rem", margin: 0 }}>
-            CarbonLens turns live grid data into a first draft of those reports —
-            emissions measured, not matched.
+            CarbonLens turns live grid data into a first draft of those reports — emissions
+            measured, not matched.
           </p>
         </div>
 
@@ -245,9 +250,7 @@ export function Landing() {
                 <span style={badge}>{item.title}</span>
                 <InfoTip label={item.title} text={item.tip} />
               </span>
-              <p style={{ marginTop: "0.75rem", fontSize: "0.95rem" }}>
-                {item.desc}
-              </p>
+              <p style={{ marginTop: "0.75rem", fontSize: "0.95rem" }}>{item.desc}</p>
             </div>
           ))}
         </div>
@@ -271,12 +274,11 @@ export function Landing() {
             margin: "0 auto 1.5rem",
           }}
         >
-          Electricity comes from a mix of sources — wind, solar, hydro, nuclear, gas,
-          coal. When more of a region's power is coming from clean sources, each
-          kilowatt-hour emits less CO₂, so it's greener. That mix shifts hour to hour
-          with the weather and demand: a sunny, windy afternoon is far cleaner than a
-          still night running on gas. CarbonLens reads that live mix from each grid
-          operator and turns it into one number — <strong>carbon intensity</strong>,
+          Electricity comes from a mix of sources — wind, solar, hydro, nuclear, gas, coal. When
+          more of a region's power is coming from clean sources, each kilowatt-hour emits less CO₂,
+          so it's greener. That mix shifts hour to hour with the weather and demand: a sunny, windy
+          afternoon is far cleaner than a still night running on gas. CarbonLens reads that live mix
+          from each grid operator and turns it into one number — <strong>carbon intensity</strong>,
           in grams of CO₂ per kWh.
         </p>
 
@@ -340,9 +342,7 @@ export function Landing() {
                 >
                   {s.step}
                 </div>
-                <h3 style={{ margin: "0.5rem 0 0.25rem", fontSize: "1rem" }}>
-                  {s.title}
-                </h3>
+                <h3 style={{ margin: "0.5rem 0 0.25rem", fontSize: "1rem" }}>{s.title}</h3>
                 <p
                   style={{
                     fontSize: "0.85rem",
@@ -368,9 +368,23 @@ export function Landing() {
         >
           Data Sources
         </h2>
-        <p style={{ textAlign: "center", margin: "0 auto 1rem", color: "var(--gray-500)", fontSize: "0.9rem" }}>
+        <p
+          style={{
+            textAlign: "center",
+            margin: "0 auto 1rem",
+            color: "var(--gray-500)",
+            fontSize: "0.9rem",
+          }}
+        >
           How every number is produced, and where it's an estimate:{" "}
-          <Link to="/methodology" style={{ color: "var(--green-text)", textDecoration: "underline", fontWeight: 600 }}>
+          <Link
+            to="/methodology"
+            style={{
+              color: "var(--green-text)",
+              textDecoration: "underline",
+              fontWeight: 600,
+            }}
+          >
             read the methodology →
           </Link>
         </p>
@@ -384,12 +398,8 @@ export function Landing() {
           >
             <thead>
               <tr style={{ borderBottom: "2px solid var(--gray-200)" }}>
-                <th style={{ textAlign: "left", padding: "0.5rem" }}>
-                  Provider
-                </th>
-                <th style={{ textAlign: "left", padding: "0.5rem" }}>
-                  Coverage
-                </th>
+                <th style={{ textAlign: "left", padding: "0.5rem" }}>Provider</th>
+                <th style={{ textAlign: "left", padding: "0.5rem" }}>Coverage</th>
                 <th style={{ textAlign: "left", padding: "0.5rem" }}>
                   <span style={{ display: "inline-flex", alignItems: "center" }}>
                     Type
@@ -423,18 +433,13 @@ export function Landing() {
                 ["Open-Meteo", "Worldwide (40+ zones)", "Weather estimate", "Free, no key"],
                 ["Electricity Maps", "Global (200+ zones)", "Live API", "Paid key"],
               ].map(([name, coverage, res, auth]) => (
-                <tr
-                  key={name}
-                  style={{ borderBottom: "1px solid var(--gray-100)" }}
-                >
+                <tr key={name} style={{ borderBottom: "1px solid var(--gray-100)" }}>
                   <td style={{ padding: "0.5rem", fontWeight: 500 }}>{name}</td>
                   <td style={{ padding: "0.5rem" }}>{coverage}</td>
                   <td style={{ padding: "0.5rem" }}>{res}</td>
                   <td style={{ padding: "0.5rem" }}>
                     {auth?.includes("no key") ? (
-                      <span style={{ color: "var(--green-text)", fontWeight: 600 }}>
-                        {auth}
-                      </span>
+                      <span style={{ color: "var(--green-text)", fontWeight: 600 }}>{auth}</span>
                     ) : (
                       <span>{auth}</span>
                     )}
@@ -443,10 +448,18 @@ export function Landing() {
               ))}
             </tbody>
           </table>
-          <p style={{ fontSize: "0.8rem", color: "var(--gray-400)", marginTop: "0.75rem", marginBottom: 0 }}>
-            A <strong>balancing authority</strong> / <strong>ISO</strong> (independent system operator) is the body that
-            runs a regional electricity grid and publishes what it's generating — e.g. PJM (US Mid-Atlantic), CAISO
-            (California), National Grid ESO (Great Britain). Carbon is measured at that grid, not the datacenter.
+          <p
+            style={{
+              fontSize: "0.8rem",
+              color: "var(--gray-400)",
+              marginTop: "0.75rem",
+              marginBottom: 0,
+            }}
+          >
+            A <strong>balancing authority</strong> / <strong>ISO</strong> (independent system
+            operator) is the body that runs a regional electricity grid and publishes what it's
+            generating — e.g. PJM (US Mid-Atlantic), CAISO (California), National Grid ESO (Great
+            Britain). Carbon is measured at that grid, not the datacenter.
           </p>
         </div>
 
@@ -477,7 +490,10 @@ export function Landing() {
             Real grid-operator data, updated continuously — or{" "}
             <Link
               to="/api-explorer"
-              style={{ color: "var(--green-text)", textDecoration: "underline" }}
+              style={{
+                color: "var(--green-text)",
+                textDecoration: "underline",
+              }}
             >
               explore the API
             </Link>

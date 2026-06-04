@@ -82,7 +82,6 @@ export interface CarbonUpdate {
   }>;
 }
 
-
 export interface RegionLookup {
   provider: string;
   region: string;

@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { timeAgo, niceKm } from "./format";
+import { describe, expect, it } from "vitest";
+import { niceKm, timeAgo } from "./format";
 
 describe("timeAgo", () => {
   const ago = (ms: number) => new Date(Date.now() - ms).toISOString();

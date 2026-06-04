@@ -62,7 +62,9 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   // bodyless GET makes it a non-"simple" request, which forces a CORS preflight
   // (OPTIONS) on every read — doubling round-trips and adding a failure point
   // during cold starts. GETs with no key stay simple (no preflight).
-  const headers: Record<string, string> = { ...(options?.headers as Record<string, string> | undefined) };
+  const headers: Record<string, string> = {
+    ...(options?.headers as Record<string, string> | undefined),
+  };
   if (options?.body) headers["Content-Type"] = "application/json";
   if (apiKey) headers["X-API-Key"] = apiKey;
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
@@ -95,9 +97,7 @@ export const api = {
 
   // Regions
   regions: (provider?: string) =>
-    request<CloudRegion[]>(
-      `/api/v1/regions${provider ? `?provider=${provider}` : ""}`
-    ),
+    request<CloudRegion[]>(`/api/v1/regions${provider ? `?provider=${provider}` : ""}`),
 
   // Carbon data
   carbonIntensity: (provider: string, region: string) =>
@@ -114,8 +114,7 @@ export const api = {
 
   // SLA Monitoring
   sla: {
-    list: (orgId: string) =>
-      request<SLASummary[]>(`/api/v1/sla/list?org_id=${orgId}`),
+    list: (orgId: string) => request<SLASummary[]>(`/api/v1/sla/list?org_id=${orgId}`),
 
     create: (body: {
       org_id: string;
@@ -129,21 +128,17 @@ export const api = {
         body: JSON.stringify(body),
       }),
 
-    get: (slaId: string) =>
-      request<GreenSLA>(`/api/v1/sla/${slaId}`),
+    get: (slaId: string) => request<GreenSLA>(`/api/v1/sla/${slaId}`),
 
     check: (slaId: string) =>
       request<SLACheck>(`/api/v1/sla/${slaId}/check`, {
         method: "POST",
       }),
 
-    status: (slaId: string) =>
-      request<SLACheck | null>(`/api/v1/sla/${slaId}/status`),
+    status: (slaId: string) => request<SLACheck | null>(`/api/v1/sla/${slaId}/status`),
 
     checks: (slaId: string, limit?: number) =>
-      request<SLACheck[]>(
-        `/api/v1/sla/${slaId}/checks${limit ? `?limit=${limit}` : ""}`
-      ),
+      request<SLACheck[]>(`/api/v1/sla/${slaId}/checks${limit ? `?limit=${limit}` : ""}`),
 
     generateReport: (slaId: string, body: { org_name: string; period_days?: number }) =>
       request<SLAReport>(`/api/v1/sla/${slaId}/report`, {
@@ -151,8 +146,7 @@ export const api = {
         body: JSON.stringify(body),
       }),
 
-    reports: (slaId: string) =>
-      request<SLAReport[]>(`/api/v1/sla/${slaId}/reports`),
+    reports: (slaId: string) => request<SLAReport[]>(`/api/v1/sla/${slaId}/reports`),
 
     startMonitor: (orgId: string) =>
       request<SLAMonitorStatus>(`/api/v1/sla/monitor/start?org_id=${orgId}`, {
@@ -164,13 +158,10 @@ export const api = {
         method: "POST",
       }),
 
-    monitorStatus: () =>
-      request<SLAMonitorStatus>("/api/v1/sla/monitor/status"),
+    monitorStatus: () => request<SLAMonitorStatus>("/api/v1/sla/monitor/status"),
 
     alerts: (limit?: number) =>
-      request<AlertEvent[]>(
-        `/api/v1/sla/monitor/alerts${limit ? `?limit=${limit}` : ""}`
-      ),
+      request<AlertEvent[]>(`/api/v1/sla/monitor/alerts${limit ? `?limit=${limit}` : ""}`),
   },
 
   // Scheduler
@@ -189,7 +180,7 @@ export const api = {
 
     bestNow: (durationMinutes?: number, providers?: string) =>
       request<ScheduleRecommendation>(
-        `/api/v1/scheduler/now?duration_minutes=${durationMinutes ?? 30}&providers=${providers ?? "aws,gcp,azure"}`
+        `/api/v1/scheduler/now?duration_minutes=${durationMinutes ?? 30}&providers=${providers ?? "aws,gcp,azure"}`,
       ),
 
     createSchedule: (body: {
@@ -207,12 +198,9 @@ export const api = {
       }),
 
     listSchedules: (orgId: string) =>
-      request<CronSchedule[]>(
-        `/api/v1/scheduler/schedules?org_id=${orgId}`
-      ),
+      request<CronSchedule[]>(`/api/v1/scheduler/schedules?org_id=${orgId}`),
 
-    getSchedule: (id: string) =>
-      request<CronSchedule>(`/api/v1/scheduler/schedules/${id}`),
+    getSchedule: (id: string) => request<CronSchedule>(`/api/v1/scheduler/schedules/${id}`),
 
     deleteSchedule: (id: string) =>
       request<{ deleted: string }>(`/api/v1/scheduler/schedules/${id}`, {
@@ -220,19 +208,14 @@ export const api = {
       }),
 
     nextWindow: (id: string) =>
-      request<ScheduleRecommendation>(
-        `/api/v1/scheduler/schedules/${id}/next`,
-        { method: "POST" }
-      ),
+      request<ScheduleRecommendation>(`/api/v1/scheduler/schedules/${id}/next`, { method: "POST" }),
   },
 
   // Carbon zones
-  carbonZones: () =>
-    request<Array<Record<string, unknown>>>("/api/v1/carbon/zones"),
+  carbonZones: () => request<Array<Record<string, unknown>>>("/api/v1/carbon/zones"),
 
   // Source health
-  sourceHealth: () =>
-    request<Record<string, unknown>>("/api/v1/status/sources"),
+  sourceHealth: () => request<Record<string, unknown>>("/api/v1/status/sources"),
 
   // Compliance
   compliance: {
@@ -270,24 +253,16 @@ export const api = {
         body: JSON.stringify({ org_id: orgId, method }),
       }),
 
-    generateReport: (body: {
-      org_id: string;
-      org_name: string;
-      report_name?: string;
-    }) =>
+    generateReport: (body: { org_id: string; org_name: string; report_name?: string }) =>
       request<ComplianceReport>("/api/v1/compliance/reports/generate", {
         method: "POST",
         body: JSON.stringify(body),
       }),
 
     listReports: (orgId: string) =>
-      request<ComplianceReportSummary[]>(
-        `/api/v1/compliance/reports?org_id=${orgId}`
-      ),
+      request<ComplianceReportSummary[]>(`/api/v1/compliance/reports?org_id=${orgId}`),
 
     getReport: (reportId: string, orgId: string) =>
-      request<ComplianceReport>(
-        `/api/v1/compliance/reports/${reportId}?org_id=${orgId}`
-      ),
+      request<ComplianceReport>(`/api/v1/compliance/reports/${reportId}?org_id=${orgId}`),
   },
 };
