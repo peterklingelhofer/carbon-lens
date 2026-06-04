@@ -1,4 +1,4 @@
-.PHONY: help dev test lint fix migrate docker up down clean
+.PHONY: help dev test lint fix hooks migrate docker up down clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -26,13 +26,17 @@ test: ## Run all Python tests
 test-fast: ## Run tests without verbose output
 	uv run pytest tests/ -q
 
-lint: ## Run linter (ruff)
+lint: ## Run linters (ruff + biome) and typecheck
 	uv run ruff check src tests
-	cd web && npx tsc --noEmit
+	cd web && npm run lint && npx tsc --noEmit
 
-fix: ## Auto-fix lint errors
+fix: ## Auto-fix lint errors (ruff + biome)
 	uv run ruff check src tests --fix
 	uv run ruff format src tests
+	cd web && npm run format
+
+hooks: ## Install git hooks (pre-commit + commit-msg)
+	uv run pre-commit install --install-hooks
 
 # ── Database ───────────────────────────────────────────────────
 
@@ -67,7 +71,7 @@ install: ## Install all dependencies (backend + frontend)
 	uv sync --all-extras
 	cd web && npm install
 
-setup: install ## Full setup: install deps, copy env, build frontend
+setup: install hooks ## Full setup: install deps, git hooks, copy env, build frontend
 	@test -f .env || cp .env.example .env
 	@echo "Edit .env to add your API keys (EIA, GridStatus, etc.)"
 	cd web && npm run build
