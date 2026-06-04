@@ -41,37 +41,63 @@ export function ColdStartBanner() {
   if (mode === "hidden") return null;
 
   return (
-    <div
-      role="status"
-      aria-live="polite"
-      style={{
-        // Normal flow, directly under the sticky nav — never covers navigation.
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "0.6rem",
-        padding: "0.6rem 1rem",
-        background: "var(--btn-green)",
-        color: "white",
-        fontSize: "0.85rem",
-        textAlign: "center",
-      }}
-    >
-      <span
-        aria-hidden
+    <>
+      <style>{`
+        .cold-short { display: none; }
+        @media (max-width: 600px) {
+          .cold-full { display: none; }
+          .cold-short { display: inline; }
+        }
+      `}</style>
+      <div
+        role="status"
+        aria-live="polite"
         style={{
-          width: 14,
-          height: 14,
-          borderRadius: "50%",
-          border: "2px solid rgba(255,255,255,0.4)",
-          borderTopColor: "white",
-          animation: "cl-spin 0.7s linear infinite",
-          flexShrink: 0,
+          // Pinned just below the sticky 56px nav as an overlay (not in normal
+          // flow), so appearing/disappearing never reflows the page beneath it.
+          // z below the nav's 20 keeps the menu usable.
+          position: "fixed",
+          top: 56,
+          left: 0,
+          right: 0,
+          zIndex: 15,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "0.6rem",
+          padding: "0.6rem 1rem",
+          background: "var(--btn-green)",
+          color: "white",
+          fontSize: "0.85rem",
+          textAlign: "center",
         }}
-      />
-      {mode === "waking"
-        ? "Waking up the API — this free public server sleeps after 15 min of inactivity and takes ~50s to start. This only happens on the first request."
-        : "Loading…"}
-    </div>
+      >
+        <span
+          aria-hidden
+          style={{
+            width: 14,
+            height: 14,
+            borderRadius: "50%",
+            border: "2px solid rgba(255,255,255,0.4)",
+            borderTopColor: "white",
+            animation: "cl-spin 0.7s linear infinite",
+            flexShrink: 0,
+          }}
+        />
+        {mode === "waking" ? (
+          <span>
+            <span className="cold-full">
+              Waking the API. This free server spins down when idle to save energy and takes ~50s to
+              start, only on the first request.
+            </span>
+            <span className="cold-short">
+              Waking the API. It spins down when idle to save energy (~50s).
+            </span>
+          </span>
+        ) : (
+          "Loading live data…"
+        )}
+      </div>
+    </>
   );
 }
