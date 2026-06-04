@@ -26,6 +26,7 @@ dev = [
     "pytest-asyncio>=0.25",
     "pytest-httpx>=0.35",
     "ruff>=0.9",
+    "pre-commit>=4.0",
 ]
 # Live cloud-billing ingestion adapters (AWS Cost Explorer, GCP BigQuery billing
 # export, Azure Cost Management). Optional — the core API and demo run without them.
