@@ -6,10 +6,11 @@ help: ## Show this help
 # ── Local Development ──────────────────────────────────────────
 
 dev: ## Start API + frontend in dev mode (hot reload)
-	@echo "API → http://localhost:8000   |   App → http://localhost:5173/dashboard"
+	@echo "API -> http://localhost:8000   |   App -> http://localhost:5173/dashboard"
 	@set -a; [ -f .env ] && . ./.env; set +a; \
-		uv run serve & API_PID=$$!; \
-		trap "kill $$API_PID 2>/dev/null" EXIT INT TERM; \
+		lsof -ti:8000 | xargs kill 2>/dev/null || true; \
+		uv run serve & \
+		trap 'lsof -ti:8000 | xargs kill 2>/dev/null || true' EXIT INT TERM; \
 		cd web && npm run dev
 
 api: ## Start API server only
