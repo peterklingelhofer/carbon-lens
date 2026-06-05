@@ -32,7 +32,7 @@
   --amber: #b45309;
 
   --sans: "Ubuntu", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --mono: ui-monospace, "Cascadia Code", Consolas, monospace;
+  --mono: "Ubuntu Mono", ui-monospace, "Cascadia Code", Consolas, monospace;
 
   /* Semantic green tokens (WCAG AA). green-600 alone can't serve as both a
      button background (white text needs it dark) and on-surface text (needs it
@@ -60,6 +60,11 @@
   line-height: 1.6;
   color: var(--gray-800);
   background: var(--gray-50);
+
+  /* Crisper Ubuntu rendering on webkit/macOS, and kerning/ligatures on */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -109,6 +114,29 @@ a {
 }
 a:hover {
   text-decoration: underline;
+}
+
+/* Headings: tighter tracking + line-height read more polished than the browser
+   defaults. Components still set their own sizes/weights inline. */
+h1,
+h2,
+h3,
+h4 {
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+}
+h1 {
+  letter-spacing: -0.025em;
+}
+
+/* Monospace: use the self-hosted Ubuntu Mono and align digits so live numbers
+   don't shift width as they update. */
+code,
+pre,
+kbd,
+samp {
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
 }
 
 @keyframes cl-spin {
