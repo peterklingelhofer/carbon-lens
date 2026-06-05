@@ -2,11 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
-import "@fontsource/ubuntu/400.css";
-import "@fontsource/ubuntu/500.css";
-import "@fontsource/ubuntu/700.css";
-import "@fontsource/ubuntu-mono/400.css";
-import "@fontsource/ubuntu-mono/700.css";
+import "@fontsource-variable/plus-jakarta-sans/index.css";
 import App from "./App";
 import "./index.css";
 
