@@ -24,7 +24,14 @@ def test_route_endpoint(client: TestClient):
     assert resp.status_code == 200
     data = resp.json()
     assert "recommended" in data
-    assert data["recommended"]["renewable_percentage"] >= 90
+    # carbon_weight=1.0 minimizes carbon, so the pick must be the lowest-carbon
+    # region offered. (Asserting it's also high-renewable would be wrong: a clean
+    # nuclear grid can be very low-carbon yet low-renewable.)
+    rec = data["recommended"]
+    assert all(
+        rec["carbon_intensity_gco2_kwh"] <= alt["carbon_intensity_gco2_kwh"]
+        for alt in data["alternatives"]
+    )
 
 
 def test_route_with_residency(client: TestClient):
