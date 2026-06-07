@@ -1,24 +1,32 @@
-"""Australian Energy Market Operator (AEMO) — free, no API key required.
+"""Australian NEM carbon data — free, no API key required.
 
-Covers 5 Australian NEM regions: NSW, QLD, VIC, SA, TAS.
+Fuel-mix per NEM region (NSW, QLD, VIC, SA, TAS) comes from OpenElectricity
+(api.openelectricity.org.au, formerly OpenNEM), which republishes AEMO dispatch
+data with a per-fueltech breakdown. AEMO's own public ``5MIN`` report was
+retired (now returns HTTP 204) and its replacement summary feed dropped the
+fuel breakdown, so OpenElectricity is the parseable free source for the mix.
+
 Updates every 5 minutes.
 """
 
 from datetime import datetime, timezone
 
-from carbon_mesh.carbon_sources.http_pool import shared_client
-
 from carbon_mesh.carbon_sources.emission_factors import (
     calculate_carbon_intensity,
     calculate_renewable_percentage,
 )
+from carbon_mesh.carbon_sources.http_pool import shared_client
 from carbon_mesh.models.carbon import CarbonIntensity
 
-API_URL = "https://visualisations.aemo.com.au/aemo/apps/api/report/5MIN"
+# Per-region power, grouped by fuel-tech. One request returns every NEM region.
+API_URL = (
+    "https://api.openelectricity.org.au/v4/data/network/NEM"
+    "?metrics=power&primary_grouping=network_region&secondary_grouping=fueltech_group"
+)
 
 AEMO_ZONES = {"AU-NSW", "AU-QLD", "AU-VIC", "AU-SA", "AU-TAS"}
 
-# Map AEMO region IDs to our zone IDs
+# OpenElectricity region id -> our zone id
 _REGION_MAP = {
     "NSW1": "AU-NSW",
     "QLD1": "AU-QLD",
@@ -27,32 +35,31 @@ _REGION_MAP = {
     "TAS1": "AU-TAS",
 }
 
-# AEMO fuel type to normalized fuel type
-_FUEL_MAP = {
-    "black_coal": "coal",
-    "brown_coal": "coal",
-    "natural_gas": "natural_gas",
-    "natural_gas_ccgt": "natural_gas",
-    "natural_gas_ocgt": "natural_gas",
-    "natural_gas_steam": "natural_gas",
-    "kerosene": "petroleum",
-    "diesel": "petroleum",
-    "oil": "petroleum",
+# OpenElectricity fueltech_group -> normalized fuel. Storage/charging groups
+# (battery*, pumps) are deliberately omitted: they're loads or net-zero stores
+# and counting them would double-count or push the mix negative.
+_FUELTECH_MAP = {
+    "coal": "coal",
+    "gas": "natural_gas",
+    "distillate": "petroleum",
     "hydro": "hydro",
     "wind": "wind",
-    "solar_utility": "solar",
-    "solar_rooftop": "solar",
-    "battery_discharging": "battery",
-    "battery_charging": "battery",
-    "biomass": "biomass",
-    "geothermal": "geothermal",
-    "other": "other",
+    "solar": "solar",
+    "bioenergy": "biomass",
 }
+
+
+def _latest(points: list) -> float | None:
+    """Most recent non-null MW value from a [[timestamp, value], ...] series."""
+    for _, value in reversed(points or []):
+        if value is not None:
+            return float(value)
+    return None
 
 
 class AEMOCarbonSource:
     def __init__(self) -> None:
-        self._client = shared_client(timeout=10.0)
+        self._client = shared_client(timeout=20.0)
 
     def can_handle(self, grid_zone: str) -> bool:
         return grid_zone in AEMO_ZONES
@@ -60,27 +67,27 @@ class AEMOCarbonSource:
     async def get_carbon_intensity(self, grid_zone: str) -> CarbonIntensity:
         results = await self.get_carbon_intensity_batch([grid_zone])
         if grid_zone not in results:
-            raise ValueError(f"No AEMO data for zone: {grid_zone}")
+            raise ValueError(f"No AEMO/OpenElectricity data for zone: {grid_zone}")
         return results[grid_zone]
 
     async def get_carbon_intensity_batch(self, grid_zones: list[str]) -> dict[str, CarbonIntensity]:
-        resp = await self._client.get(API_URL)
+        resp = await self._client.get(API_URL, headers={"User-Agent": "Mozilla/5.0"})
         resp.raise_for_status()
         data = resp.json()
 
-        # Group generation by region
+        # Sum the latest MW per (zone, fuel) across all fueltech series.
         region_fuel: dict[str, dict[str, float]] = {}
-        for row in data.get("5MIN", []):
-            aemo_region = row.get("REGIONID", "")
-            zone = _REGION_MAP.get(aemo_region)
-            if zone is None or zone not in grid_zones:
+        for series in data.get("data", [{}])[0].get("results", []):
+            cols = series.get("columns", {})
+            zone = _REGION_MAP.get(cols.get("region", ""))
+            fuel = _FUELTECH_MAP.get(cols.get("fueltech_group", ""))
+            if zone is None or fuel is None or zone not in grid_zones:
                 continue
-            fuel_type_raw = row.get("FUELTYPE", "other").lower().replace(" ", "_")
-            normalized = _FUEL_MAP.get(fuel_type_raw, "other")
-            mw = float(row.get("GENERATIONVALUE", 0) or 0)
-            if zone not in region_fuel:
-                region_fuel[zone] = {}
-            region_fuel[zone][normalized] = region_fuel[zone].get(normalized, 0) + mw
+            mw = _latest(series.get("data", []))
+            if mw is None or mw <= 0:
+                continue
+            region_fuel.setdefault(zone, {})
+            region_fuel[zone][fuel] = region_fuel[zone].get(fuel, 0) + mw
 
         results: dict[str, CarbonIntensity] = {}
         now = datetime.now(timezone.utc)
@@ -93,7 +100,7 @@ class AEMOCarbonSource:
                 carbon_intensity_gco2_kwh=round(calculate_carbon_intensity(fuel_mix), 1),
                 renewable_percentage=round(calculate_renewable_percentage(fuel_mix), 1),
                 timestamp=now,
-                source="aemo",
+                source="openelectricity",
                 grid_load_mw=round(sum(fuel_mix.values())),
             )
 
