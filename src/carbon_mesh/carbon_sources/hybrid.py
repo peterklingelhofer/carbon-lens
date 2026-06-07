@@ -18,6 +18,7 @@ import asyncio
 import logging
 
 from carbon_mesh.carbon_sources.aemo import AEMOCarbonSource, AEMO_ZONES
+from carbon_mesh.carbon_sources.canada import CanadaCarbonSource, CANADA_ZONES
 from carbon_mesh.carbon_sources.eia import EIACarbonSource, _GRID_ZONE_TO_EIA
 from carbon_mesh.carbon_sources.entsoe import ENTSOECarbonSource, ENTSOE_ZONES
 from carbon_mesh.carbon_sources.eskom import EskomCarbonSource, ESKOM_ZONES
@@ -47,6 +48,7 @@ class HybridCarbonSource:
         self._grid_india = GridIndiaCarbonSource()
         self._ons_brazil = ONSBrazilCarbonSource()
         self._eskom = EskomCarbonSource()
+        self._canada = CanadaCarbonSource()
         self._open_meteo = OpenMeteoCarbonSource()
 
         # Key-based providers
@@ -76,6 +78,7 @@ class HybridCarbonSource:
         chain.extend(
             [
                 ("AEMO", self._aemo, AEMO_ZONES),
+                ("Canada", self._canada, CANADA_ZONES),
                 ("Grid India", self._grid_india, INDIA_ZONES),
                 ("ONS Brazil", self._ons_brazil, BRAZIL_ZONES),
                 ("Eskom", self._eskom, ESKOM_ZONES),
