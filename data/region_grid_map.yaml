@@ -42,8 +42,7 @@ aws:
     latitude: 45.8
     longitude: -119.3
   ca-central-1:
-    grid_zone: CA-ON
-    gridstatus_iso: ieso
+    grid_zone: CA-QC
     location: Montreal
     latitude: 45.5
     longitude: -73.6
