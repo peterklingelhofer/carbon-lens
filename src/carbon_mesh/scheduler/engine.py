@@ -46,6 +46,10 @@ class ScheduleRecommendation(BaseModel):
     id: str
     recommended: TimeSlot
     alternatives: list[TimeSlot]
+    forecast: list[TimeSlot] = Field(
+        default_factory=list,
+        description="The recommended region's hourly intensity curve across the window",
+    )
     job_duration_minutes: int
     window_start: datetime
     window_end: datetime
@@ -221,6 +225,17 @@ class SchedulingEngine:
         recommended = slots[0]
         alternatives = slots[1:10]  # Top 10 alternatives
 
+        # The recommended region's full hourly curve over the window, so the UI
+        # can plot how its intensity evolves and where the chosen slot sits.
+        forecast = sorted(
+            (
+                s
+                for s in slots
+                if s.provider == recommended.provider and s.region == recommended.region
+            ),
+            key=lambda s: s.start,
+        )
+
         # Calculate savings vs running right now at worst region
         now_slots = [s for s in slots if s.start == now]
         if now_slots:
@@ -236,6 +251,7 @@ class SchedulingEngine:
             id=str(uuid.uuid4()),
             recommended=recommended,
             alternatives=alternatives,
+            forecast=forecast,
             job_duration_minutes=job_duration_minutes,
             window_start=now,
             window_end=window_end,
