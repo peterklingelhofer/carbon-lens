@@ -19,6 +19,12 @@ class Settings(BaseSettings):
     carbon_source: str = "hybrid"
     cache_ttl_seconds: int = 300
 
+    # Published snapshot the scheduler reads current intensity from (one cached
+    # fetch of all zones) instead of live-fetching dozens of zones per request.
+    snapshot_url: str = (
+        "https://raw.githubusercontent.com/peterklingelhofer/carbonlens/data/snapshot.json"
+    )
+
     region_map_path: Path = (
         Path(__file__).resolve().parent.parent.parent / "data" / "region_grid_map.yaml"
     )
