@@ -163,7 +163,7 @@ export function Scheduler() {
           Find Optimal Window
           <InfoTip
             label="how the window is estimated"
-            text="Honest caveat: future hours use a simplified time-of-day model (a solar/demand curve anchored to each region's local solar time, applied to the current reading), NOT a real grid forecast. The 'carbon saved' figure compares the best future slot against the dirtiest candidate region right now. Treat it as directional guidance, not a precise prediction."
+            text="How future hours are estimated: European (ENTSO-E) zones use the real day-ahead wind/solar + load forecast to project each hour's renewable share. Elsewhere, where no free forecast exists, a simplified time-of-day model (a solar/demand curve anchored to the region's local solar time) is applied to the current reading. The 'carbon saved' figure compares the best future slot against the dirtiest candidate region right now. Treat it as directional guidance, not a precise prediction."
           />
         </h2>
 
