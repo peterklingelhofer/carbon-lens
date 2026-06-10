@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 
 from carbon_mesh.carbon_sources.emission_factors import (
     calculate_carbon_intensity,
+    calculate_marginal_intensity,
     calculate_renewable_percentage,
 )
 from carbon_mesh.carbon_sources.http_pool import shared_client
@@ -106,6 +107,7 @@ class AEMOCarbonSource:
                 timestamp=now,
                 source="openelectricity",
                 grid_load_mw=round(sum(fuel_mix.values())),
+                marginal_intensity_gco2_kwh=round(calculate_marginal_intensity(fuel_mix), 1),
             )
 
         return results

@@ -94,6 +94,31 @@ def calculate_carbon_intensity(fuel_mix_mw: dict[str, float]) -> float:
     return weighted_sum / total_mw
 
 
+# Typical merit order of dispatchable fuels, most-expensive (price-setting) first.
+# The marginal unit -- what responds to a small change in demand -- is usually the
+# costliest running fossil (oil peaker, then gas), with coal as marginal only when
+# it's the sole fossil. Cost order, not carbon order: coal is cheap baseload, gas
+# the flexible peaker, so gas (not the dirtier coal) typically sets the margin.
+_MARGINAL_MERIT_ORDER = ("petroleum", "oil", "natural_gas", "coal", "biomass")
+
+
+def calculate_marginal_intensity(fuel_mix_mw: dict[str, float]) -> float:
+    """Estimate the marginal emission factor (gCO2/kWh): roughly what an extra kWh
+    of demand right now would emit, based on the price-setting generator.
+
+    This is a heuristic from the fuel mix, NOT a dispatch model or measured
+    marginal data: it takes the emission factor of the most-flexible fossil
+    currently generating, or -- on an all-clean grid with no fossil running --
+    falls back to the average (extra demand met by ramping clean/flexible units).
+    """
+    if not fuel_mix_mw or sum(max(0, v) for v in fuel_mix_mw.values()) == 0:
+        return 0.0
+    for fuel in _MARGINAL_MERIT_ORDER:
+        if fuel_mix_mw.get(fuel, 0) > 0:
+            return float(EMISSION_FACTORS.get(fuel, EMISSION_FACTORS["other"]))
+    return round(calculate_carbon_intensity(fuel_mix_mw), 1)
+
+
 def calculate_renewable_percentage(fuel_mix_mw: dict[str, float]) -> float:
     """Calculate percentage of generation from renewable sources.
 

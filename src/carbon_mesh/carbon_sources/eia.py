@@ -12,6 +12,7 @@ from carbon_mesh.carbon_sources.http_pool import shared_client
 from carbon_mesh.carbon_sources.emission_factors import (
     EIA_FUEL_MAP,
     calculate_carbon_intensity,
+    calculate_marginal_intensity,
     calculate_renewable_percentage,
 )
 from carbon_mesh.models.carbon import CarbonIntensity
@@ -90,6 +91,7 @@ class EIACarbonSource:
             timestamp=ts,
             source="eia",
             grid_load_mw=round(sum(fuel_mix_mw.values())),
+            marginal_intensity_gco2_kwh=round(calculate_marginal_intensity(fuel_mix_mw), 1),
         )
 
     async def get_carbon_intensity_batch(self, grid_zones: list[str]) -> dict[str, CarbonIntensity]:

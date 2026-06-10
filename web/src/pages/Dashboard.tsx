@@ -165,6 +165,15 @@ function RegionRow({ region, intensity }: { region: CloudRegion; intensity?: Car
                 />
               </span>
             )}
+            {intensity.marginal_intensity_gco2_kwh != null && (
+              <span style={{ display: "block", fontSize: "0.7rem", color: "var(--gray-400)" }}>
+                marginal ~{intensity.marginal_intensity_gco2_kwh} gCO₂
+                <InfoTip
+                  label="marginal intensity"
+                  text="Estimated emissions of an extra kWh of demand right now, set by the price-setting generator (usually the flexible gas peaker). That's what actually changes when you shift load, not the average. A heuristic from the fuel mix, not measured marginal data."
+                />
+              </span>
+            )}
             {formatLoad(intensity.grid_load_mw) && (
               <span
                 style={{

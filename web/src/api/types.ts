@@ -49,6 +49,9 @@ export interface CarbonIntensity {
   // European zones. Differs from the production-based value above when a region
   // imports notably cleaner or dirtier power than it generates.
   consumption_intensity_gco2_kwh?: number;
+  // Estimated marginal emission factor (what an extra kWh would emit). A
+  // heuristic from the fuel mix, not measured marginal data.
+  marginal_intensity_gco2_kwh?: number;
 }
 
 export interface EmissionsRecord {
