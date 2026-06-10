@@ -12,6 +12,7 @@ import pytest
 
 from carbon_mesh.carbon_sources.aemo import region_fuel_from_oe
 from carbon_mesh.carbon_sources.canada import aeso_fuel_mix, ieso_fuel_mix
+from carbon_mesh.carbon_sources.emission_factors import calculate_marginal_intensity
 from carbon_mesh.carbon_sources.entsoe_forecast import _series_by_hour
 from carbon_mesh.carbon_sources.flow_tracing import _parse_flow_latest
 from carbon_mesh.carbon_sources.taiwan import _fuel_of, fuel_mix_from_rows
@@ -165,3 +166,16 @@ def test_safe_xml_blocks_entity_expansion_but_parses_normal_xml():
     with pytest.raises(EntitiesForbidden):
         parse_xml(bomb)
     assert parse_xml("<a><b>1</b></a>").find("b").text == "1"
+
+
+# --- Marginal emissions heuristic ---
+
+
+def test_marginal_intensity_picks_the_price_setting_fossil():
+    # Gas is the flexible peaker, so it sets the margin even alongside cheaper coal.
+    assert calculate_marginal_intensity({"coal": 5000, "natural_gas": 1000}) == 430.0
+    # Coal as the only fossil -> coal is marginal.
+    assert calculate_marginal_intensity({"coal": 5000, "hydro": 1000}) == 900.0
+    # All-clean grid: no fossil running -> falls back to the (low) average.
+    assert calculate_marginal_intensity({"hydro": 1000, "wind": 1000, "nuclear": 1000}) < 30
+    assert calculate_marginal_intensity({}) == 0.0
