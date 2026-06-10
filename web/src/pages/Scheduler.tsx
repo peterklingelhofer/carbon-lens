@@ -303,8 +303,11 @@ export function Scheduler() {
         >
           {/* Duration */}
           <div>
-            <label style={labelStyle}>Job Duration (minutes)</label>
+            <label style={labelStyle} htmlFor="sched-duration">
+              Job Duration (minutes)
+            </label>
             <input
+              id="sched-duration"
               type="range"
               aria-label="Job duration in minutes"
               min={5}
@@ -321,8 +324,11 @@ export function Scheduler() {
 
           {/* Max Delay */}
           <div>
-            <label style={labelStyle}>Max Delay (hours)</label>
+            <label style={labelStyle} htmlFor="sched-maxdelay">
+              Max Delay (hours)
+            </label>
             <input
+              id="sched-maxdelay"
               type="range"
               aria-label="Max delay in hours"
               min={1}
@@ -339,7 +345,7 @@ export function Scheduler() {
 
           {/* Strategy */}
           <div>
-            <label style={labelStyle}>Strategy</label>
+            <span style={labelStyle}>Strategy</span>
             <div
               style={{
                 display: "flex",
@@ -387,7 +393,7 @@ export function Scheduler() {
 
           {/* Providers */}
           <div>
-            <label style={labelStyle}>Cloud Providers</label>
+            <span style={labelStyle}>Cloud Providers</span>
             <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
               {PROVIDERS.map((p) => (
                 <button
@@ -524,8 +530,11 @@ export function Scheduler() {
                     </tr>
                   </thead>
                   <tbody>
-                    {alternatives.slice(0, 8).map((alt, i) => (
-                      <tr key={i} style={{ borderBottom: "1px solid var(--gray-100)" }}>
+                    {alternatives.slice(0, 8).map((alt) => (
+                      <tr
+                        key={`${alt.provider}-${alt.region}-${alt.start}`}
+                        style={{ borderBottom: "1px solid var(--gray-100)" }}
+                      >
                         <td
                           style={{
                             ...td,
