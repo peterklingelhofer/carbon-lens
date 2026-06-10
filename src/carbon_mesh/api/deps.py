@@ -20,6 +20,24 @@ _tracker = CarbonTracker()
 _db_tracker = DBCarbonTracker()
 
 
+class _CachedCarbonSource:
+    """Wraps a carbon source with the shared stale-while-revalidate cache, so
+    repeat reads (scheduler, bestNow, carbon API) don't each re-fetch every zone
+    from upstream. Without this the scheduler re-hit ~40 live zones per request."""
+
+    def __init__(self, source: CarbonDataSource, cache: IntensityCache) -> None:
+        self._source = source
+        self._cache = cache
+
+    async def get_carbon_intensity(self, grid_zone: str):
+        return await self._cache.get_or_fetch(grid_zone, self._source.get_carbon_intensity)
+
+    async def get_carbon_intensity_batch(self, grid_zones: list[str]):
+        return await self._cache.get_or_fetch_batch(
+            grid_zones, self._source.get_carbon_intensity_batch
+        )
+
+
 def _build_carbon_source() -> CarbonDataSource:
     if settings.carbon_source == "electricity_maps":
         return ElectricityMapsCarbonSource(api_key=settings.electricity_maps_api_key)
@@ -58,6 +76,7 @@ def _build_carbon_source() -> CarbonDataSource:
 
 
 _carbon_source = _build_carbon_source()
+_cached_source = _CachedCarbonSource(_carbon_source, _cache)
 _engine = RoutingEngine(
     carbon_source=_carbon_source,
     grid_mapper=_grid_mapper,
@@ -74,7 +93,7 @@ def get_grid_mapper() -> GridMapper:
 
 
 def get_carbon_source() -> CarbonDataSource:
-    return _carbon_source
+    return _cached_source
 
 
 def get_tracker() -> CarbonTracker:
