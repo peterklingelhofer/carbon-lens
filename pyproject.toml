@@ -18,6 +18,7 @@ dependencies = [
     "typer>=0.24.1",
     "prometheus-fastapi-instrumentator>=7.1.0",
     "python-multipart>=0.0.22",
+    "defusedxml>=0.7",
 ]
 
 [project.optional-dependencies]

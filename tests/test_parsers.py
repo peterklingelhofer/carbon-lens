@@ -8,11 +8,14 @@ silently going dark in production.
 
 from datetime import datetime, timezone
 
+import pytest
+
 from carbon_mesh.carbon_sources.aemo import region_fuel_from_oe
 from carbon_mesh.carbon_sources.canada import aeso_fuel_mix, ieso_fuel_mix
 from carbon_mesh.carbon_sources.entsoe_forecast import _series_by_hour
 from carbon_mesh.carbon_sources.flow_tracing import _parse_flow_latest
 from carbon_mesh.carbon_sources.taiwan import _fuel_of, fuel_mix_from_rows
+from carbon_mesh.carbon_sources.xml_safe import parse_xml
 
 # --- Taiwan (Taipower per-unit JSON rows) ---
 
@@ -146,3 +149,19 @@ def test_parse_flow_latest_returns_last_point():
     </Period></TimeSeries></doc>"""
     assert _parse_flow_latest(xml) == 650.0
     assert _parse_flow_latest("not xml") is None
+
+
+# --- XML hardening (defusedxml) ---
+
+
+def test_safe_xml_blocks_entity_expansion_but_parses_normal_xml():
+    from defusedxml.common import EntitiesForbidden
+
+    bomb = (
+        '<?xml version="1.0"?>'
+        '<!DOCTYPE lolz [<!ENTITY lol "lol"><!ENTITY lol2 "&lol;&lol;">]>'
+        "<doc>&lol2;</doc>"
+    )
+    with pytest.raises(EntitiesForbidden):
+        parse_xml(bomb)
+    assert parse_xml("<a><b>1</b></a>").find("b").text == "1"
