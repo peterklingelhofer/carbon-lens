@@ -16,6 +16,13 @@ class CarbonIntensity(BaseModel):
         "(whole grid, all consumers — not datacenter-specific). None when the "
         "source does not report it.",
     )
+    marginal_intensity_gco2_kwh: float | None = Field(
+        default=None,
+        ge=0,
+        description="Estimated marginal emission factor (what an extra kWh of demand "
+        "would emit). A heuristic from the fuel mix, not measured marginal data. "
+        "None for sources without a real fuel mix.",
+    )
 
 
 class EnergyMix(BaseModel):
