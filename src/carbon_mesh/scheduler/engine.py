@@ -6,6 +6,7 @@ intensity across time slots and regions to find the greenest execution window.
 
 from __future__ import annotations
 
+import asyncio
 import uuid
 from datetime import datetime, timezone, timedelta
 from enum import Enum
@@ -13,6 +14,7 @@ from enum import Enum
 from pydantic import BaseModel, Field
 
 from carbon_mesh.carbon_sources.base import CarbonDataSource
+from carbon_mesh.carbon_sources.entsoe_forecast import ENTSOEForecastSource
 from carbon_mesh.grid.mapper import GridMapper
 from carbon_mesh.models.carbon import CarbonIntensity
 
@@ -84,9 +86,11 @@ class SchedulingEngine:
         self,
         carbon_source: CarbonDataSource,
         grid_mapper: GridMapper,
+        forecast_source: ENTSOEForecastSource | None = None,
     ) -> None:
         self._carbon_source = carbon_source
         self._grid_mapper = grid_mapper
+        self._forecast_source = forecast_source
 
     async def find_optimal_window(
         self,
@@ -121,6 +125,19 @@ class SchedulingEngine:
 
         current_intensities = await self._carbon_source.get_carbon_intensity_batch(zones)
 
+        # Real day-ahead forecast curves for any ENTSO-E (EU) zones, fetched once
+        # per zone. Maps zone -> {hour_offset: forecasted VRE share of load}.
+        zone_curve: dict[str, dict[int, float]] = {}
+        if self._forecast_source:
+            fc_zones = [z for z in zones if self._forecast_source.can_forecast(z)]
+            settled = await asyncio.gather(
+                *(self._forecast_source.vre_fraction_curve(z, max_delay_hours) for z in fc_zones),
+                return_exceptions=True,
+            )
+            for z, curve in zip(fc_zones, settled):
+                if isinstance(curve, dict) and curve:
+                    zone_curve[z] = curve
+
         # Build time slots: current + projected slots at intervals
         slots: list[TimeSlot] = []
         slot_interval_hours = max(
@@ -140,7 +157,16 @@ class SchedulingEngine:
                     continue
 
                 # Apply time-of-day heuristic to project future carbon intensity
-                projected = self._project_intensity(current, hour_offset, zone_lng.get(zone, 0.0))
+                curve = zone_curve.get(zone)
+                projected = None
+                if curve and hour_offset in curve and 0 in curve:
+                    projected = self._project_with_forecast(
+                        current, curve[0], curve[hour_offset], hour_offset
+                    )
+                if projected is None:
+                    projected = self._project_intensity(
+                        current, hour_offset, zone_lng.get(zone, 0.0)
+                    )
 
                 score = self._score_slot(projected, strategy)
 
@@ -216,6 +242,37 @@ class SchedulingEngine:
             strategy=strategy,
             carbon_saved_vs_now_pct=max(saved_pct, 0),
             evaluated_slots=len(slots),
+        )
+
+    def _project_with_forecast(
+        self,
+        current: CarbonIntensity,
+        vre_now: float,
+        vre_future: float,
+        hours_ahead: int,
+    ) -> CarbonIntensity | None:
+        """Project intensity from a real day-ahead VRE-share forecast.
+
+        Carbon comes from the non-VRE residual, so scaling current intensity by
+        the change in residual share (1 - vre) gives a forecast-driven estimate:
+        I(h) = I0 * (1 - vre_future) / (1 - vre_now). Returns None when the
+        current zone is already ~100% VRE (no residual to scale).
+        """
+        if hours_ahead == 0:
+            return current
+        if vre_now >= 0.99:
+            return None
+        mult = (1 - vre_future) / (1 - vre_now)
+        carbon = max(0.0, current.carbon_intensity_gco2_kwh * mult)
+        renewable = min(
+            100.0, max(0.0, current.renewable_percentage + (vre_future - vre_now) * 100)
+        )
+        return CarbonIntensity(
+            grid_zone=current.grid_zone,
+            carbon_intensity_gco2_kwh=round(carbon, 2),
+            renewable_percentage=round(renewable, 1),
+            timestamp=datetime.now(timezone.utc) + timedelta(hours=hours_ahead),
+            source=f"{current.source} (forecast +{hours_ahead}h)",
         )
 
     def _project_intensity(
