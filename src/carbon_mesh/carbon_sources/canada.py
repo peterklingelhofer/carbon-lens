@@ -17,6 +17,7 @@ from carbon_mesh.carbon_sources.emission_factors import (
     calculate_renewable_percentage,
 )
 from carbon_mesh.carbon_sources.http_pool import shared_client
+from carbon_mesh.carbon_sources.xml_safe import parse_xml
 from carbon_mesh.models.carbon import CarbonIntensity
 
 CANADA_ZONES = {"CA-ON", "CA-AB", "CA-QC"}
@@ -65,7 +66,7 @@ def _localname(el: ET.Element) -> str:
 def ieso_fuel_mix(xml: bytes) -> dict[str, float]:
     """Latest-hour generation-by-fuel (MW) from IESO's GenOutputbyFuelHourly XML.
     Returns {} if no hour has generation."""
-    root = ET.fromstring(xml)
+    root = parse_xml(xml)
     dailies = [e for e in root.iter() if _localname(e) == "DailyData"]
     if not dailies:
         return {}
