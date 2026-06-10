@@ -42,6 +42,9 @@ export interface CarbonIntensity {
   source: string;
   quality?: "live" | "estimated" | "mock";
   grid_load_mw?: number | null;
+  // Set by the snapshot builder when a transient upstream gap was bridged with
+  // this zone's last live reading (see scripts/build_snapshot.py carry-forward).
+  carried_forward?: boolean;
 }
 
 export interface EmissionsRecord {
