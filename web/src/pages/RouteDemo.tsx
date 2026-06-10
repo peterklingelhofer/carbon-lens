@@ -112,7 +112,7 @@ export function RouteDemo() {
 
         {/* Providers */}
         <div style={{ marginBottom: "1.25rem" }}>
-          <label
+          <span
             style={{
               fontWeight: 600,
               display: "block",
@@ -120,7 +120,7 @@ export function RouteDemo() {
             }}
           >
             Cloud Providers
-          </label>
+          </span>
           <div style={{ display: "flex", gap: "0.5rem" }}>
             {["aws", "gcp", "azure"].map((p) => (
               <button
@@ -147,7 +147,7 @@ export function RouteDemo() {
 
         {/* Data Residency */}
         <div style={{ marginBottom: "1.25rem" }}>
-          <label
+          <span
             style={{
               fontWeight: 600,
               display: "inline-flex",
@@ -160,7 +160,7 @@ export function RouteDemo() {
               label="data residency"
               text="A rule about where your data is legally allowed to live — e.g. 'EU only' for GDPR. Restricting residency limits routing to regions in that area, so the greenest pick may differ."
             />
-          </label>
+          </span>
           <select
             aria-label="Data residency"
             value={residency}
