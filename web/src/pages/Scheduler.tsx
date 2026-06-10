@@ -1,9 +1,135 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type ReactNode, useState } from "react";
 import { api } from "../api/client";
+import type { TimeSlot } from "../api/types";
 import { InfoTip } from "../components/InfoTip";
 import { RENEWABLE_TIP } from "../copy";
 import { card, section as sectionFn } from "../styles";
+
+// Carbon-intensity colour ramp (green clean -> red dirty), matching the globe.
+function intensityColor(v: number): string {
+  if (v <= 50) return "#22c55e";
+  if (v <= 150) return "#84cc16";
+  if (v <= 300) return "#eab308";
+  if (v <= 500) return "#f97316";
+  return "#ef4444";
+}
+
+// Inline SVG line chart of the recommended region's intensity across the window,
+// with the chosen slot marked. No chart dependency; hand-drawn to match the app.
+function ForecastChart({
+  slots,
+  recommendedStart,
+}: {
+  slots: TimeSlot[];
+  recommendedStart: string;
+}) {
+  if (slots.length < 2) return null;
+  const W = 720;
+  const H = 170;
+  const padL = 44;
+  const padR = 14;
+  const padT = 14;
+  const padB = 28;
+
+  const times = slots.map((s) => new Date(s.start).getTime());
+  const vals = slots.map((s) => s.carbon_intensity_gco2_kwh);
+  const t0 = times[0];
+  const t1 = times[times.length - 1];
+  const vmax = Math.max(...vals);
+  const vmin = Math.min(...vals);
+  const yhi = Math.max(1, Math.ceil((vmax * 1.08) / 10) * 10);
+  const ylo = Math.max(0, Math.floor((vmin * 0.92) / 10) * 10);
+
+  const px = (t: number) => padL + (W - padL - padR) * (t1 > t0 ? (t - t0) / (t1 - t0) : 0);
+  const py = (v: number) => padT + (H - padT - padB) * (1 - (v - ylo) / (yhi - ylo || 1));
+
+  const line = slots.map(
+    (s) => `${px(new Date(s.start).getTime())},${py(s.carbon_intensity_gco2_kwh)}`,
+  );
+  const area = `${px(t0)},${py(ylo)} ${line.join(" ")} ${px(t1)},${py(ylo)}`;
+
+  const recT = new Date(recommendedStart).getTime();
+  const rec = slots.find((s) => new Date(s.start).getTime() === recT) ?? slots[0];
+  const recX = px(new Date(rec.start).getTime());
+  const recY = py(rec.carbon_intensity_gco2_kwh);
+  const fmtHour = (t: number) =>
+    new Date(t).toLocaleTimeString([], { hour: "numeric", hour12: true });
+
+  return (
+    <div style={{ marginTop: "0.5rem" }}>
+      <h3
+        style={{
+          margin: "0 0 0.25rem",
+          fontSize: "0.95rem",
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
+        Forecast for the recommended region
+        <InfoTip
+          label="forecast chart"
+          text="Projected carbon intensity for the recommended region across the delay window. EU zones use ENTSO-E's real day-ahead wind/solar + load forecast; elsewhere a local time-of-day model. The dot marks the chosen slot."
+        />
+      </h3>
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img" aria-label="Carbon intensity forecast">
+        <title>Carbon intensity over the scheduling window for the recommended region</title>
+        {[yhi, ylo].map((v) => (
+          <text
+            key={v}
+            x={padL - 6}
+            y={py(v) + 3}
+            textAnchor="end"
+            fontSize="10"
+            fill="var(--gray-500)"
+          >
+            {v}
+          </text>
+        ))}
+        <polygon points={area} fill="var(--green-100)" opacity={0.5} />
+        <polyline
+          points={line.join(" ")}
+          fill="none"
+          stroke="var(--green-600)"
+          strokeWidth={2}
+          strokeLinejoin="round"
+        />
+        <line
+          x1={recX}
+          y1={padT}
+          x2={recX}
+          y2={H - padB}
+          stroke="var(--gray-300)"
+          strokeDasharray="3 3"
+        />
+        <circle
+          cx={recX}
+          cy={recY}
+          r={5}
+          fill={intensityColor(rec.carbon_intensity_gco2_kwh)}
+          stroke="#fff"
+          strokeWidth={1.5}
+        />
+        <text x={padL} y={H - 8} fontSize="10" fill="var(--gray-500)">
+          {fmtHour(t0)}
+        </text>
+        <text x={W - padR} y={H - 8} textAnchor="end" fontSize="10" fill="var(--gray-500)">
+          {fmtHour(t1)}
+        </text>
+        <text
+          x={recX}
+          y={recY - 10}
+          textAnchor="middle"
+          fontSize="10"
+          fontWeight={600}
+          fill="var(--green-text)"
+        >
+          best
+        </text>
+      </svg>
+    </div>
+  );
+}
 
 const section = sectionFn(1100);
 
@@ -374,6 +500,10 @@ export function Scheduler() {
             <StatCard label="Start" value={new Date(recommended.start).toLocaleString()} />
             <StatCard label="Slots Evaluated" value={`${recommendation.evaluated_slots}`} />
           </div>
+
+          {recommendation.forecast && recommendation.forecast.length > 1 && (
+            <ForecastChart slots={recommendation.forecast} recommendedStart={recommended.start} />
+          )}
 
           {/* Alternatives */}
           {alternatives.length > 0 && (

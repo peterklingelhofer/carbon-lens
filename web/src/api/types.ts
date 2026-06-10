@@ -287,6 +287,7 @@ export interface ScheduleRecommendation {
   id: string;
   recommended: TimeSlot;
   alternatives: TimeSlot[];
+  forecast?: TimeSlot[];
   job_duration_minutes: number;
   window_start: string;
   window_end: string;
