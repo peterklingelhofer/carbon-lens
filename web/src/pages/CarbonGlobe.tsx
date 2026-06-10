@@ -52,6 +52,7 @@ interface GlobePoint {
   source: string;
   quality?: "live" | "estimated" | "mock";
   gridLoadMw?: number | null;
+  consumptionIntensity?: number;
 }
 
 // Total grid load (whole balancing authority, all consumers), formatted.
@@ -189,6 +190,7 @@ function useGlobePoints() {
             source: i.source,
             quality: i.quality ?? qualityFromSource(i.source),
             gridLoadMw: i.grid_load_mw,
+            consumptionIntensity: i.consumption_intensity_gco2_kwh,
           };
         })
         .filter((p): p is GlobePoint => p !== null);
@@ -210,6 +212,7 @@ function useGlobePoints() {
             source: i.source,
             quality: i.quality ?? qualityFromSource(i.source),
             gridLoadMw: i.grid_load_mw,
+            consumptionIntensity: i.consumption_intensity_gco2_kwh,
           };
         })
         .filter((p): p is GlobePoint => p !== null);
@@ -1045,6 +1048,15 @@ export default function CarbonGlobe() {
             <span style={{ fontSize: "0.8rem", fontWeight: 400, color: "#9ca3af" }}> gCO₂/kWh</span>
           </div>
           <div style={{ color: "#86efac", marginTop: 2 }}>{selected.renewable}% renewable</div>
+          {selected.consumptionIntensity != null && (
+            <div
+              style={{ color: "#cbd5e1", marginTop: 6, fontSize: "0.85rem" }}
+              title="Flow-traced across the European grid: what this region actually consumes after imports and exports, versus what it generates locally (the figure above)."
+            >
+              Consumed: ~{selected.consumptionIntensity}
+              <span style={{ color: "#6b7280" }}> gCO₂/kWh · flow-traced</span>
+            </div>
+          )}
           {formatLoad(selected.gridLoadMw) && (
             <div style={{ color: "#93c5fd", marginTop: 6, fontSize: "0.85rem" }}>
               Grid load: {formatLoad(selected.gridLoadMw)}
