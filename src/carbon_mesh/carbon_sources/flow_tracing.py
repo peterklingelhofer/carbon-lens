@@ -18,10 +18,10 @@ from __future__ import annotations
 
 import asyncio
 from datetime import datetime, timedelta, timezone
-from xml.etree import ElementTree
 
 from carbon_mesh.carbon_sources.entsoe import ENTSOE_ZONE_MAP, ENTSOECarbonSource
 from carbon_mesh.carbon_sources.http_pool import ENTSOE_SEMAPHORE, get_with_retry, shared_client
+from carbon_mesh.carbon_sources.xml_safe import parse_xml
 
 A11_URL = "https://web-api.tp.entsoe.eu/api"
 
@@ -125,8 +125,8 @@ def trace_consumption_intensity(
 def _parse_flow_latest(xml_text: str) -> float | None:
     """Most recent physical-flow value (MW) from an ENTSO-E A11 document."""
     try:
-        root = ElementTree.fromstring(xml_text)
-    except ElementTree.ParseError:
+        root = parse_xml(xml_text)
+    except Exception:
         return None
     ns = {"ns": root.tag.split("}")[0].strip("{")}
     latest: float | None = None
