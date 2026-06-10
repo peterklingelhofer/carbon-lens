@@ -29,10 +29,18 @@ _schedule_store: dict[str, CronSchedule] = {}
 
 def _get_engine() -> SchedulingEngine:
     from carbon_mesh.carbon_sources.entsoe_forecast import ENTSOEForecastSource
+    from carbon_mesh.carbon_sources.snapshot_source import SnapshotBackedSource
     from carbon_mesh.config import settings
 
+    # Read current intensity from the published snapshot (one cached fetch of all
+    # zones) instead of live-fetching dozens per request. Skipped under "mock"
+    # so the test suite stays offline.
+    source = get_carbon_source()
+    if settings.snapshot_url and settings.carbon_source != "mock":
+        source = SnapshotBackedSource(settings.snapshot_url, source)
+
     return SchedulingEngine(
-        carbon_source=get_carbon_source(),
+        carbon_source=source,
         grid_mapper=get_grid_mapper(),
         forecast_source=ENTSOEForecastSource(settings.entsoe_token),
     )
