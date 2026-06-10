@@ -12,7 +12,7 @@ from datetime import datetime, timedelta, timezone
 from xml.etree import ElementTree
 
 from carbon_mesh.carbon_sources.entsoe import ENTSOE_ZONE_MAP
-from carbon_mesh.carbon_sources.http_pool import shared_client
+from carbon_mesh.carbon_sources.http_pool import ENTSOE_SEMAPHORE, get_with_retry, shared_client
 
 API_URL = "https://web-api.tp.entsoe.eu/api"
 
@@ -70,7 +70,12 @@ class ENTSOEForecastSource:
         return bool(self._token) and grid_zone in ENTSOE_ZONE_MAP
 
     async def _fetch(self, params: dict) -> str:
-        resp = await self._client.get(API_URL, params={"securityToken": self._token, **params})
+        resp = await get_with_retry(
+            self._client,
+            API_URL,
+            params={"securityToken": self._token, **params},
+            semaphore=ENTSOE_SEMAPHORE,
+        )
         resp.raise_for_status()
         return resp.text
 

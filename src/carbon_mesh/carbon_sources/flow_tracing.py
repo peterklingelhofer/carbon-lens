@@ -21,7 +21,7 @@ from datetime import datetime, timedelta, timezone
 from xml.etree import ElementTree
 
 from carbon_mesh.carbon_sources.entsoe import ENTSOE_ZONE_MAP, ENTSOECarbonSource
-from carbon_mesh.carbon_sources.http_pool import shared_client
+from carbon_mesh.carbon_sources.http_pool import ENTSOE_SEMAPHORE, get_with_retry, shared_client
 
 A11_URL = "https://web-api.tp.entsoe.eu/api"
 
@@ -151,7 +151,8 @@ class ConsumptionIntensitySource:
     async def _flow(self, in_eic: str, out_eic: str, period_start: str, period_end: str) -> float:
         """Latest physical flow out_eic -> in_eic (MW); 0 on any failure."""
         try:
-            resp = await self._client.get(
+            resp = await get_with_retry(
+                self._client,
                 A11_URL,
                 params={
                     "securityToken": self._token,
@@ -161,6 +162,7 @@ class ConsumptionIntensitySource:
                     "periodStart": period_start,
                     "periodEnd": period_end,
                 },
+                semaphore=ENTSOE_SEMAPHORE,
             )
             resp.raise_for_status()
             return _parse_flow_latest(resp.text) or 0.0
