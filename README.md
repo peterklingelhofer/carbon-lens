@@ -14,7 +14,7 @@
 
 <sub>The data behind it — a live carbon-intensity dashboard pulling real EIA / ENTSO-E / UK / AEMO feeds, every reading tagged with its source. More screens: [API Explorer](docs/screenshots/03-api-explorer.png) · [Carbon-aware routing](docs/screenshots/04-route.png) · [Compliance](docs/screenshots/06-compliance.png)</sub>
 
-CarbonLens aggregates electricity-grid carbon data into one cascading API: six live grid-operator integrations (UK, EIA, AEMO, GridStatus, ENTSO-E, Electricity Maps) with heuristic and mock fallbacks, each tagged in the `source` field so you always know how a number was produced. On top sit carbon-aware routing, GHG-Protocol Scope 2/3 compliance reporting, and Green SLA monitoring.
+CarbonLens aggregates electricity-grid carbon data into one cascading API: eight live grid-operator integrations (UK, EIA, OpenElectricity/AEMO, IESO/AESO, Taipower, GridStatus, ENTSO-E, Electricity Maps) with heuristic and mock fallbacks, each tagged in the `source` field so you always know how a number was produced. On top sit consumption-based (flow-traced) and marginal intensity, carbon-aware routing and scheduling, GHG-Protocol Scope 2/3 compliance reporting, and Green SLA monitoring.
 
 > **Status:** portfolio / demo project, not a production service. See [What's real vs. estimated vs. mock](#whats-real-vs-estimated-vs-mock) for which parts are live integrations and which are stubs.
 
@@ -50,7 +50,7 @@ make dev
 | Interactive API Explorer | http://localhost:5173/api-explorer |
 | Swagger API docs | http://localhost:8000/docs |
 
-Runs with **no API keys** — 6 live government grid sources work key-free; any region without a live source returns labeled fallback data. (Add keys to `.env` for US/EU coverage; see [Adding Credentials](#adding-credentials).)
+Runs with **no API keys** — several live grid sources work key-free (UK, Australia, Canada, Taiwan); any region without a live source returns labeled fallback data. (Add keys to `.env` for US/EU coverage; see [Adding Credentials](#adding-credentials).)
 
 ### Try the API
 
@@ -74,7 +74,7 @@ curl -X POST http://localhost:8000/api/v1/carbon/batch \
 ## Products
 
 ### 1. Carbon Intensity API
-Electricity-grid carbon data for 75+ cloud regions, behind one cascading interface — 6 live grid-operator integrations plus labeled heuristic and mock fallbacks.
+Electricity-grid carbon data for 75+ cloud regions, behind one cascading interface — 8 live grid-operator integrations plus labeled heuristic and mock fallbacks. Beyond the headline production-based intensity, it also exposes a flow-traced **consumption-based** intensity for the interconnected European grid and an estimated **marginal** intensity (the price-setting fuel) for load-shifting decisions.
 
 ### 2. Compliance Reporting
 GHG-Protocol Scope 2 (location-based) + Scope 3 Cat 1 emissions reporting for cloud workloads, aimed at CSRD / SEC Climate / SB 253 workflows. Documented methodology, data-quality summary, JSON/CSV export.
@@ -83,8 +83,8 @@ You supply the usage data (it isn't auto-detected); CarbonLens maps service+regi
 
 > Scope: a structured *first draft*, not an assured report. Market-based accounting, supplier-specific Scope 3 factors, utilization-aware modeling, and signed PDFs are not implemented (see [roadmap](#whats-next)). The billing adapters are coded-to-spec and mock-tested, **not** verified against live accounts.
 
-### 3. Carbon-Aware Routing
-Route workloads to the greenest cloud region in real-time. Works with AWS, GCP, and Azure region sets.
+### 3. Carbon-Aware Routing & Scheduling
+Route workloads to the greenest cloud region in real-time, or shift them in time to the cleanest upcoming window. Works with AWS, GCP, and Azure region sets. For European zones the scheduler projects the renewable share from ENTSO-E's real day-ahead wind/solar/load forecast; elsewhere it falls back to a labeled time-of-day model.
 
 ### 4. Green SLA Monitoring (Beta)
 Define carbon targets, run on-demand and background compliance checks against live grid data, and generate attestation-style summary reports. Note: the background monitor and all SLA/check/report state are currently **in-memory** (reset on restart, single-worker); the "attestation" format is a self-defined summary, not an assured third-party standard.
@@ -93,31 +93,37 @@ Define carbon targets, run on-demand and background compliance checks against li
 
 ## Data Sources
 
-CarbonLens cascades through 11 providers, using the highest-priority source that covers each grid zone. The **Type** column is the honest part: only `Live API` providers fetch and parse a real grid-operator response.
+CarbonLens cascades through 13 providers, using the highest-priority source that covers each grid zone. The **Type** column is the honest part: only `Live API` providers fetch and parse a real grid-operator response.
 
 | # | Provider | Coverage | Type | Auth |
 |---|----------|----------|------|------|
 | 1 | UK Carbon Intensity | UK (18 zones) | **Live API** (renewable % estimated) | Free, no key |
 | 2 | EIA (US DOE) | US (60+ balancing authorities) | **Live API** (intensity from fuel mix) | Free key |
-| 3 | AEMO | Australia (5 states) | **Live API** (unofficial endpoint) | Free, no key |
-| 4 | Grid India | India (5 regions) | Heuristic fallback | Free, no key |
-| 5 | ONS Brazil | Brazil (5 regions) | Heuristic fallback | Free, no key |
-| 6 | Eskom | South Africa | Heuristic (time-of-day model) | Free, no key |
-| 7 | GridStatus.io | US ISOs (7) | **Live API** | Paid key |
-| 8 | ENTSO-E | Europe (36+ countries) | **Live API** (IEC-62325 XML) | Free token |
-| 9 | Open-Meteo | Worldwide (40+ zones) | **Estimate from weather** (not measured carbon) | Free, no key |
-| 10 | Electricity Maps | Global (200+ zones) | **Live API** | Paid key |
-| 11 | Mock (fallback) | All zones | Static demo data | None |
+| 3 | OpenElectricity (AEMO) | Australia (5 states) | **Live API** (fuel mix) | Free, no key |
+| 4 | IESO & AESO | Canada (Ontario, Alberta) | **Live API** (fuel mix; Québec heuristic) | Free, no key |
+| 5 | Taipower | Taiwan | **Live API** (per-unit fuel mix) | Free, no key |
+| 6 | Grid India | India (5 regions) | Heuristic fallback | Free, no key |
+| 7 | ONS Brazil | Brazil (5 regions) | Heuristic fallback | Free, no key |
+| 8 | Eskom | South Africa | Heuristic (time-of-day model) | Free, no key |
+| 9 | GridStatus.io | US ISOs (7) | **Live API** | Paid key |
+| 10 | ENTSO-E | Europe (36+ countries) | **Live API** (IEC-62325 XML) | Free token |
+| 11 | Open-Meteo | Worldwide (40+ zones) | **Estimate from weather** (not measured carbon) | Free, no key |
+| 12 | Electricity Maps | Global (200+ zones) | **Live API** | Paid key |
+| 13 | Mock (fallback) | All zones | Static demo data | None |
 
-**Priority chain:** UK > EIA > AEMO > Grid India > ONS Brazil > Eskom > GridStatus > ENTSO-E > Open-Meteo > Electricity Maps > Mock
+**Priority chain:** UK > EIA > OpenElectricity > IESO/AESO > Taipower > Grid India > ONS Brazil > Eskom > GridStatus > ENTSO-E > Open-Meteo > Electricity Maps > Mock
 
-Every response includes a `source` field (e.g. `uk`, `eskom_heuristic`, `open_meteo`, `mock`) so callers can see exactly how a number was produced. The chain never errors out to the caller — if every real source fails for a zone, it falls through to labeled mock data rather than returning an error.
+Every response includes a `source` field (e.g. `uk`, `taipower`, `eskom_heuristic`, `open_meteo`, `mock`) so callers can see exactly how a number was produced. The chain never errors out to the caller — if every real source fails for a zone, it falls through to labeled mock data rather than returning an error.
+
+XML feeds (ENTSO-E, IESO) are parsed with `defusedxml`, so a malicious or malformed upstream document can't trigger entity-expansion or external-entity attacks.
 
 ### What's real vs. estimated vs. mock
 
-- **Live grid-operator APIs (6):** UK, EIA, AEMO, GridStatus, ENTSO-E, Electricity Maps — fetch and parse real upstream responses. GridStatus/Electricity Maps need paid keys; ENTSO-E a free token.
-- **Heuristic estimators (4):** Grid India, ONS Brazil, Eskom (time-of-day models) and Open-Meteo (rough intensity from weather — **not** a carbon measurement). Demo coverage, not authoritative, tagged as such.
+- **Live grid-operator APIs (8):** UK, EIA, OpenElectricity (AEMO), IESO/AESO, Taipower, GridStatus, ENTSO-E, Electricity Maps — fetch and parse real upstream responses. GridStatus/Electricity Maps need paid keys; ENTSO-E a free token.
+- **Heuristic estimators (4):** Grid India, ONS Brazil, Eskom and Québec (time-of-day models) and Open-Meteo (rough intensity from weather — **not** a carbon measurement). Demo coverage, not authoritative, tagged as such.
 - **Mock (1):** static fixtures, labeled, last-resort fallback so the API always returns something.
+
+The published demo **snapshot** is rebuilt on a schedule from these feeds. When a feed has a brief gap, the snapshot **carries forward** that zone's last live reading (while it's still recent) rather than dropping it to an estimate, so a transient blip doesn't downgrade a zone we normally measure.
 
 ---
 
@@ -299,8 +305,9 @@ uv run pre-commit autoupdate                  # (optional) refresh pinned hook v
 The carbon data layer for carbon-aware infrastructure: one cascading API over multiple grid sources, with routing, reporting, and monitoring on top.
 
 **Built (and real):**
-- Cascading carbon-intensity API: **6 live grid-operator integrations** + labeled heuristic/mock fallbacks, 75+ cloud regions
-- Carbon-aware routing engine with stale-while-revalidate caching
+- Cascading carbon-intensity API: **8 live grid-operator integrations** + labeled heuristic/mock fallbacks, 75+ cloud regions
+- Consumption-based (flow-traced) intensity for the European grid and an estimated marginal intensity, alongside the production-based headline
+- Carbon-aware routing and scheduling (real ENTSO-E day-ahead forecast in the EU) with stale-while-revalidate caching
 - GHG-Protocol Scope 2 + Scope 3 (Cat 1) compliance reporting (location-based)
 - Green SLA check engine, on-demand + background monitoring (in-memory)
 - Cloud-billing ingestion adapters (AWS/GCP/Azure) — coded-to-spec + mock-tested, not live-verified
