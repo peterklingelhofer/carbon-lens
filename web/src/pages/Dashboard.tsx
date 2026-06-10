@@ -156,6 +156,15 @@ function RegionRow({ region, intensity }: { region: CloudRegion; intensity?: Car
               {intensity.carbon_intensity_gco2_kwh} gCO₂/kWh
               <QualityTag quality={intensity.quality} />
             </span>
+            {intensity.consumption_intensity_gco2_kwh != null && (
+              <span style={{ display: "block", fontSize: "0.7rem", color: "var(--gray-400)" }}>
+                consumed ~{intensity.consumption_intensity_gco2_kwh} gCO₂
+                <InfoTip
+                  label="consumption-based intensity"
+                  text="Flow-traced across the European grid: what this region actually consumes after imports and exports, versus what it generates locally (the figure above). They diverge when a region imports notably cleaner or dirtier power than it produces."
+                />
+              </span>
+            )}
             {formatLoad(intensity.grid_load_mw) && (
               <span
                 style={{

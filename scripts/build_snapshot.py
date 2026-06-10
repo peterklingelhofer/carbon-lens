@@ -24,6 +24,7 @@ import httpx
 from carbon_mesh.carbon_sources.eia import EIACarbonSource
 from carbon_mesh.carbon_sources.electricity_maps import ElectricityMapsCarbonSource
 from carbon_mesh.carbon_sources.entsoe import ENTSOECarbonSource
+from carbon_mesh.carbon_sources.flow_tracing import ConsumptionIntensitySource
 from carbon_mesh.carbon_sources.gridstatus import GridStatusCarbonSource
 from carbon_mesh.carbon_sources.hybrid import HybridCarbonSource
 from carbon_mesh.config import settings
@@ -160,6 +161,19 @@ async def build_snapshot(baseline: dict | None = None, max_stale_hours: float = 
             }
 
     carried = _carry_forward(snapshot_intensities, region_meta, baseline, max_stale_hours)
+
+    # Consumption-based intensity for European zones via flow tracing. Best-effort
+    # and additive: annotates the relevant entries with consumption_intensity and
+    # never blocks the build (a failure just omits the extra field).
+    if settings.entsoe_token:
+        try:
+            consumption = await ConsumptionIntensitySource(settings.entsoe_token).compute()
+        except Exception:
+            consumption = {}
+        for entry in snapshot_intensities.values():
+            zone = entry.get("grid_zone")
+            if zone in consumption:
+                entry["consumption_intensity_gco2_kwh"] = consumption[zone]
 
     # Rebuild the region list from the final published set (carry-forward may have
     # re-added regions that this run's fetch dropped).
