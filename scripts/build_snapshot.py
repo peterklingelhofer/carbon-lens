@@ -17,7 +17,9 @@ import argparse
 import asyncio
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+
+import httpx
 
 from carbon_mesh.carbon_sources.eia import EIACarbonSource
 from carbon_mesh.carbon_sources.electricity_maps import ElectricityMapsCarbonSource
@@ -35,6 +37,58 @@ def _quality(source: str) -> str:
     if source in {"mock", "electricity_maps_error"}:
         return "mock"
     return "live"
+
+
+def _load_baseline(source: str) -> dict:
+    """Load the previously published snapshot (URL or file path) for carry-forward.
+    Any failure is non-fatal -- we simply skip carry-forward this run."""
+    if not source:
+        return {}
+    try:
+        if source.startswith(("http://", "https://")):
+            resp = httpx.get(source, timeout=20.0, follow_redirects=True)
+            resp.raise_for_status()
+            return resp.json()
+        with open(source) as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"  (carry-forward baseline unavailable: {e})", file=sys.stderr)
+        return {}
+
+
+def _carry_forward(
+    intensities: dict[str, dict],
+    region_meta: dict[str, dict],
+    baseline: dict | None,
+    max_stale_hours: float,
+) -> int:
+    """Bridge transient upstream blips: when a region would publish an estimate
+    (or nothing) this run, keep its last *live* reading from the previous
+    snapshot instead -- but only while that reading is still recent. Real data a
+    few hours old beats a generic model for a zone we usually measure. Returns
+    the number of regions carried forward."""
+    if not baseline:
+        return 0
+    now = datetime.now(timezone.utc)
+    cutoff = timedelta(hours=max_stale_hours)
+    carried = 0
+    for key, prev in baseline.get("intensities", {}).items():
+        if key not in region_meta or prev.get("quality") != "live":
+            continue
+        current = intensities.get(key)
+        if current is not None and current.get("quality") == "live":
+            continue  # fresh live data this run -- keep it
+        try:
+            ts = datetime.fromisoformat(prev["timestamp"])
+        except (KeyError, ValueError):
+            continue
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+        if now - ts > cutoff:
+            continue  # last real reading is too old to trust
+        intensities[key] = {**prev, "carried_forward": True}
+        carried += 1
+    return carried
 
 
 def _build_source() -> HybridCarbonSource:
@@ -61,7 +115,7 @@ def _build_source() -> HybridCarbonSource:
     )
 
 
-async def build_snapshot() -> dict:
+async def build_snapshot(baseline: dict | None = None, max_stale_hours: float = 6.0) -> dict:
     mapper = GridMapper(settings.region_map_path)
     source = _build_source()
 
@@ -85,20 +139,16 @@ async def build_snapshot() -> dict:
 
     intensities = await source.get_carbon_intensity_batch(list(zone_to_keys.keys()))
 
-    snapshot_regions: list[dict] = []
     snapshot_intensities: dict[str, dict] = {}
     counts = {"live": 0, "estimated": 0, "mock": 0}
-    degraded: list[str] = []
 
     for zone, intensity in intensities.items():
         quality = _quality(intensity.source)
         counts[quality] += 1
         for key in zone_to_keys.get(zone, []):
             if quality == "mock":
-                # Never publish mock data -- it stays out of the demo entirely.
+                # Never publish fresh mock data -- it stays out of the demo.
                 continue
-            if quality == "estimated":
-                degraded.append(key)
             snapshot_intensities[key] = {
                 "grid_zone": intensity.grid_zone,
                 "carbon_intensity_gco2_kwh": round(intensity.carbon_intensity_gco2_kwh, 1),
@@ -108,9 +158,16 @@ async def build_snapshot() -> dict:
                 "quality": quality,
                 "grid_load_mw": intensity.grid_load_mw,
             }
-            snapshot_regions.append(region_meta[key])
 
-    snapshot_regions.sort(key=lambda r: (r["provider"], r["region"]))
+    carried = _carry_forward(snapshot_intensities, region_meta, baseline, max_stale_hours)
+
+    # Rebuild the region list from the final published set (carry-forward may have
+    # re-added regions that this run's fetch dropped).
+    snapshot_regions = sorted(
+        (region_meta[k] for k in snapshot_intensities),
+        key=lambda r: (r["provider"], r["region"]),
+    )
+    degraded = sorted(k for k, v in snapshot_intensities.items() if v["quality"] == "estimated")
 
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -120,8 +177,9 @@ async def build_snapshot() -> dict:
             "live_zones": counts["live"],
             "estimated_zones": counts["estimated"],
             "mock_zones_dropped": counts["mock"],
+            "carried_forward": carried,
             "regions_published": len(snapshot_regions),
-            "degraded": sorted(set(degraded)),
+            "degraded": degraded,
         },
     }
 
@@ -135,9 +193,21 @@ async def _main() -> int:
         default=1,
         help="Fail (exit 1) if fewer than this many zones resolve to live data",
     )
+    parser.add_argument(
+        "--baseline",
+        default="https://raw.githubusercontent.com/peterklingelhofer/carbonlens/data/snapshot.json",
+        help="Previous snapshot (URL or path) to carry forward from; '' to disable",
+    )
+    parser.add_argument(
+        "--max-stale-hours",
+        type=float,
+        default=6.0,
+        help="Oldest a carried-forward live reading may be before it's dropped",
+    )
     args = parser.parse_args()
 
-    snapshot = await build_snapshot()
+    baseline = _load_baseline(args.baseline)
+    snapshot = await build_snapshot(baseline=baseline, max_stale_hours=args.max_stale_hours)
     with open(args.out, "w") as f:
         json.dump(snapshot, f, indent=2)
 
@@ -145,14 +215,15 @@ async def _main() -> int:
     print(
         f"Wrote {args.out}: {s['regions_published']} regions "
         f"({s['live_zones']} live zones, {s['estimated_zones']} estimated, "
-        f"{s['mock_zones_dropped']} mock dropped)"
+        f"{s['mock_zones_dropped']} mock dropped, {s['carried_forward']} carried forward)"
     )
     if s["degraded"]:
         print(f"  estimated/intermittent: {', '.join(s['degraded'])}")
 
-    if s["live_zones"] < args.min_live:
+    published_live = sum(1 for v in snapshot["intensities"].values() if v["quality"] == "live")
+    if published_live < args.min_live:
         print(
-            f"ERROR: only {s['live_zones']} live zones (< {args.min_live}). "
+            f"ERROR: only {published_live} live regions published (< {args.min_live}). "
             "Check provider API keys / upstream availability.",
             file=sys.stderr,
         )
