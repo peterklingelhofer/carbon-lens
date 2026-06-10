@@ -158,6 +158,7 @@ async def build_snapshot(baseline: dict | None = None, max_stale_hours: float = 
                 "source": intensity.source,
                 "quality": quality,
                 "grid_load_mw": intensity.grid_load_mw,
+                "marginal_intensity_gco2_kwh": intensity.marginal_intensity_gco2_kwh,
             }
 
     carried = _carry_forward(snapshot_intensities, region_meta, baseline, max_stale_hours)
