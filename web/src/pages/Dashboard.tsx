@@ -44,6 +44,35 @@ function QualityTag({ quality }: { quality?: CarbonIntensity["quality"] }) {
   );
 }
 
+// Surfaces data freshness: a "carried" badge when the snapshot bridged a
+// transient upstream gap with this zone's last live reading, otherwise just the
+// reading's age when it's noticeably stale. Keeps fresh rows uncluttered.
+function FreshnessTag({ intensity }: { intensity: CarbonIntensity }) {
+  const ageMs = Date.now() - new Date(intensity.timestamp).getTime();
+  if (intensity.carried_forward) {
+    return (
+      <span
+        title={`Last live reading from ${timeAgo(intensity.timestamp)} — its upstream feed was briefly unavailable, so the snapshot kept the real value rather than dropping to an estimate.`}
+        style={{
+          display: "block",
+          fontSize: "0.7rem",
+          color: "var(--amber)",
+        }}
+      >
+        ↻ carried · {timeAgo(intensity.timestamp)}
+      </span>
+    );
+  }
+  if (ageMs > 90 * 60 * 1000) {
+    return (
+      <span style={{ display: "block", fontSize: "0.7rem", color: "var(--gray-400)" }}>
+        {timeAgo(intensity.timestamp)}
+      </span>
+    );
+  }
+  return null;
+}
+
 function SnapshotBanner({ snapshot }: { snapshot: CarbonSnapshot }) {
   const { live_zones, estimated_zones } = snapshot.summary;
   return (
@@ -139,6 +168,7 @@ function RegionRow({ region, intensity }: { region: CloudRegion; intensity?: Car
                 grid load {formatLoad(intensity.grid_load_mw)}
               </span>
             )}
+            <FreshnessTag intensity={intensity} />
           </div>
         ) : (
           <span style={{ color: "var(--gray-400)", fontSize: "0.8rem" }}>loading...</span>
