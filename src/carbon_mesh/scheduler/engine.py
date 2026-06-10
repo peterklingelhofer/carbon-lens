@@ -109,11 +109,14 @@ class SchedulingEngine:
 
         # Fetch current carbon intensity for all regions
         zone_map: dict[str, tuple[str, str]] = {}
+        zone_lng: dict[str, float] = {}
         zones: list[str] = []
         for provider, region in regions:
             zone = self._grid_mapper.get_grid_zone(provider, region)
             if zone and zone not in zones:
                 zone_map[zone] = (provider, region)
+                info = self._grid_mapper.get_region(provider, region)
+                zone_lng[zone] = info.longitude if info else 0.0
                 zones.append(zone)
 
         current_intensities = await self._carbon_source.get_carbon_intensity_batch(zones)
@@ -137,7 +140,7 @@ class SchedulingEngine:
                     continue
 
                 # Apply time-of-day heuristic to project future carbon intensity
-                projected = self._project_intensity(current, hour_offset)
+                projected = self._project_intensity(current, hour_offset, zone_lng.get(zone, 0.0))
 
                 score = self._score_slot(projected, strategy)
 
@@ -215,23 +218,27 @@ class SchedulingEngine:
             evaluated_slots=len(slots),
         )
 
-    def _project_intensity(self, current: CarbonIntensity, hours_ahead: int) -> CarbonIntensity:
-        """Project carbon intensity forward using time-of-day heuristics.
+    def _project_intensity(
+        self, current: CarbonIntensity, hours_ahead: int, longitude: float = 0.0
+    ) -> CarbonIntensity:
+        """Project carbon intensity forward using a local time-of-day model.
 
-        This is a simplified model. Real forecasting would use weather data,
-        grid operator forecasts, and ML models. For now we apply basic
-        solar/demand cycle adjustments.
+        Still a heuristic, not a real grid forecast (that would need day-ahead
+        operator forecasts / weather / ML). But it now anchors the solar/demand
+        cycle to each region's *local* solar time, derived from longitude at 15°
+        per hour, instead of UTC -- so midday solar and evening demand land at
+        the right wall-clock hour for that region rather than being up to 12h off.
         """
         if hours_ahead == 0:
             return current
 
         now = datetime.now(timezone.utc)
-        future_hour = (now.hour + hours_ahead) % 24
+        # 15° of longitude == 1 hour offset from UTC -> approximate local hour.
+        local_hour = (now.hour + hours_ahead + longitude / 15.0) % 24
 
-        # Solar generation peaks 10am-3pm local (rough UTC approximation)
-        # Demand peaks 6pm-9pm, lowest 2am-5am
-        solar_factor = self._solar_factor(future_hour)
-        demand_factor = self._demand_factor(future_hour)
+        # Solar generation peaks midday local; demand peaks early evening local.
+        solar_factor = self._solar_factor(local_hour)
+        demand_factor = self._demand_factor(local_hour)
 
         # Project: lower demand + higher solar = lower carbon
         adjustment = 1.0 + (demand_factor - solar_factor) * 0.15
@@ -250,22 +257,20 @@ class SchedulingEngine:
         )
 
     @staticmethod
-    def _solar_factor(hour_utc: int) -> float:
-        """Solar generation factor (0-1) by UTC hour. Peaks midday."""
-        # Bell curve centered around noon UTC (rough global average)
-        if 6 <= hour_utc <= 18:
-            # Parabolic approximation peaking at noon
-            return max(0, 1 - ((hour_utc - 12) / 6) ** 2)
+    def _solar_factor(hour: float) -> float:
+        """Solar generation factor (0-1) by local hour. Peaks midday."""
+        # Parabolic bell curve peaking at local noon.
+        if 6 <= hour <= 18:
+            return max(0, 1 - ((hour - 12) / 6) ** 2)
         return 0.0
 
     @staticmethod
-    def _demand_factor(hour_utc: int) -> float:
-        """Electricity demand factor (0-1) by UTC hour. Peaks evening."""
-        # Higher demand 7am-10pm, peak at 6pm
-        if 7 <= hour_utc <= 22:
-            if 17 <= hour_utc <= 20:
-                return 1.0  # Peak
-            elif 7 <= hour_utc <= 9:
+    def _demand_factor(hour: float) -> float:
+        """Electricity demand factor (0-1) by local hour. Peaks early evening."""
+        if 7 <= hour <= 22:
+            if 17 <= hour <= 20:
+                return 1.0  # Evening peak
+            elif 7 <= hour <= 9:
                 return 0.7  # Morning ramp
             else:
                 return 0.5  # Daytime baseline
