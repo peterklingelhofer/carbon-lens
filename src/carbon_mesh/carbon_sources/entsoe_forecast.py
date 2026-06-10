@@ -7,6 +7,7 @@ carbon intensity by how that share changes versus now -- a real forecast signal
 rather than a fixed daily curve. EU bidding zones only; needs the free token.
 """
 
+import time
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from xml.etree import ElementTree
@@ -19,6 +20,12 @@ API_URL = "https://web-api.tp.entsoe.eu/api"
 # Wind onshore (B19), wind offshore (B18), solar (B16) -- the variable renewables
 # ENTSO-E publishes a day-ahead forecast for.
 _VRE_PSR = {"B16", "B18", "B19"}
+
+# Day-ahead forecasts refresh ~hourly, so cache each zone's absolute-hour series
+# across requests. Keyed by zone (not offset) so it stays valid as "now" moves
+# within the TTL, and shared process-wide (the source is built per request).
+_SERIES_TTL_SECONDS = 1800.0
+_SERIES_CACHE: dict[str, tuple[float, dict[datetime, float]]] = {}
 
 
 def _series_by_hour(xml_text: str, psr_filter: set[str] | None) -> dict[datetime, float]:
@@ -79,19 +86,19 @@ class ENTSOEForecastSource:
         resp.raise_for_status()
         return resp.text
 
-    async def vre_fraction_curve(self, grid_zone: str, max_hours: int) -> dict[int, float]:
-        """Forecasted variable-renewable share of load per hour offset from now.
+    async def _zone_series(self, grid_zone: str) -> dict[datetime, float]:
+        """Forecasted VRE share of load per absolute UTC hour, cached per zone."""
+        cached = _SERIES_CACHE.get(grid_zone)
+        if cached and time.monotonic() - cached[0] < _SERIES_TTL_SECONDS:
+            return cached[1]
 
-        Returns {hour_offset: vre_fraction in 0..1}. Empty if the zone isn't an
-        ENTSO-E zone, the token is missing, or the forecast is unavailable.
-        """
         eic = ENTSOE_ZONE_MAP.get(grid_zone)
         if not eic or not self._token:
             return {}
 
         now = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
         period_start = now.strftime("%Y%m%d%H00")
-        period_end = (now + timedelta(hours=max_hours + 1)).strftime("%Y%m%d%H00")
+        period_end = (now + timedelta(hours=48)).strftime("%Y%m%d%H00")
 
         try:
             gen_xml = await self._fetch(
@@ -117,14 +124,28 @@ class ENTSOEForecastSource:
 
         vre = _series_by_hour(gen_xml, _VRE_PSR)
         load = _series_by_hour(load_xml, None)
-        if not vre or not load:
-            return {}
+        series = {
+            hour: min(1.0, max(0.0, vre[hour] / mw_load))
+            for hour, mw_load in load.items()
+            if mw_load > 0 and hour in vre
+        }
+        if series:
+            _SERIES_CACHE[grid_zone] = (time.monotonic(), series)
+        return series
 
+    async def vre_fraction_curve(self, grid_zone: str, max_hours: int) -> dict[int, float]:
+        """Forecasted variable-renewable share of load per hour offset from now.
+
+        Returns {hour_offset: vre_fraction in 0..1}. Empty if the zone isn't an
+        ENTSO-E zone, the token is missing, or the forecast is unavailable.
+        """
+        series = await self._zone_series(grid_zone)
+        if not series:
+            return {}
+        now = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
         curve: dict[int, float] = {}
         for offset in range(0, max_hours + 1):
-            hour = now + timedelta(hours=offset)
-            mw_load = load.get(hour)
-            mw_vre = vre.get(hour)
-            if mw_load and mw_load > 0 and mw_vre is not None:
-                curve[offset] = min(1.0, max(0.0, mw_vre / mw_load))
+            frac = series.get(now + timedelta(hours=offset))
+            if frac is not None:
+                curve[offset] = frac
         return curve
