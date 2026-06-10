@@ -62,6 +62,21 @@ class MockGridMapper:
     def get_grid_zone(self, provider: str, region: str) -> str | None:
         return self._regions.get((provider, region))
 
+    def get_region(self, provider: str, region: str):
+        from carbon_mesh.models.region import CloudRegion
+
+        zone = self._regions.get((provider, region))
+        if zone is None:
+            return None
+        return CloudRegion(
+            provider=provider,
+            region=region,
+            grid_zone=zone,
+            location="Test",
+            latitude=0,
+            longitude=0,
+        )
+
     def list_regions(self, provider: str | None = None):
         from carbon_mesh.models.region import CloudRegion
 
