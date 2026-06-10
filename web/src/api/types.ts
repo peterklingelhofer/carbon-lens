@@ -45,6 +45,10 @@ export interface CarbonIntensity {
   // Set by the snapshot builder when a transient upstream gap was bridged with
   // this zone's last live reading (see scripts/build_snapshot.py carry-forward).
   carried_forward?: boolean;
+  // Consumption-based intensity (flow-traced across imports/exports), for
+  // European zones. Differs from the production-based value above when a region
+  // imports notably cleaner or dirtier power than it generates.
+  consumption_intensity_gco2_kwh?: number;
 }
 
 export interface EmissionsRecord {
