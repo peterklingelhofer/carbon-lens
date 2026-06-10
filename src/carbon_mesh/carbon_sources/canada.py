@@ -62,6 +62,42 @@ def _localname(el: ET.Element) -> str:
     return el.tag.rsplit("}", 1)[-1]
 
 
+def ieso_fuel_mix(xml: bytes) -> dict[str, float]:
+    """Latest-hour generation-by-fuel (MW) from IESO's GenOutputbyFuelHourly XML.
+    Returns {} if no hour has generation."""
+    root = ET.fromstring(xml)
+    dailies = [e for e in root.iter() if _localname(e) == "DailyData"]
+    if not dailies:
+        return {}
+    hours = [e for e in dailies[-1].iter() if _localname(e) == "HourlyData"]
+    for hourly in reversed(hours):  # latest hour with generation wins
+        fuel_mix: dict[str, float] = {}
+        for ft in (e for e in hourly.iter() if _localname(e) == "FuelTotal"):
+            fuel = next((c for c in ft.iter() if _localname(c) == "Fuel"), None)
+            out = next((c for c in ft.iter() if _localname(c) == "Output"), None)
+            norm = (
+                _IESO_FUEL_MAP.get((fuel.text or "").strip().upper()) if fuel is not None else None
+            )
+            if norm is None or out is None:
+                continue
+            fuel_mix[norm] = fuel_mix.get(norm, 0) + float(out.text or 0)
+        if sum(fuel_mix.values()) > 0:
+            return fuel_mix
+    return {}
+
+
+def aeso_fuel_mix(html: str) -> dict[str, float]:
+    """Generation-by-fuel (MW, the TNG column) from AESO's Current Supply Demand
+    HTML summary. Returns {} if nothing parsed."""
+    fuel_mix: dict[str, float] = {}
+    for name, _mc, tng, _dcr in _AESO_ROW.findall(html):
+        norm = _AESO_FUEL_MAP.get(name.strip())
+        if norm is None:
+            continue
+        fuel_mix[norm] = fuel_mix.get(norm, 0) + float(tng)
+    return fuel_mix if sum(fuel_mix.values()) > 0 else {}
+
+
 class CanadaCarbonSource:
     def __init__(self) -> None:
         # IESO's by-fuel XML is several MB, so allow a generous read timeout.
@@ -89,40 +125,16 @@ class CanadaCarbonSource:
     async def _ieso(self) -> CarbonIntensity:
         resp = await self._client.get(IESO_URL)
         resp.raise_for_status()
-        root = ET.fromstring(resp.content)
-
-        dailies = [e for e in root.iter() if _localname(e) == "DailyData"]
-        if not dailies:
-            raise ValueError("IESO: no DailyData")
-        # Latest day, latest hour that actually has generation.
-        hours = [e for e in dailies[-1].iter() if _localname(e) == "HourlyData"]
-        for hourly in reversed(hours):
-            fuel_mix: dict[str, float] = {}
-            for ft in (e for e in hourly.iter() if _localname(e) == "FuelTotal"):
-                fuel = next((c for c in ft.iter() if _localname(c) == "Fuel"), None)
-                out = next((c for c in ft.iter() if _localname(c) == "Output"), None)
-                norm = (
-                    _IESO_FUEL_MAP.get((fuel.text or "").strip().upper())
-                    if fuel is not None
-                    else None
-                )
-                if norm is None or out is None:
-                    continue
-                fuel_mix[norm] = fuel_mix.get(norm, 0) + float(out.text or 0)
-            if sum(fuel_mix.values()) > 0:
-                return self._build("CA-ON", fuel_mix, "ieso")
-        raise ValueError("IESO: no hour with generation")
+        fuel_mix = ieso_fuel_mix(resp.content)
+        if not fuel_mix:
+            raise ValueError("IESO: no hour with generation")
+        return self._build("CA-ON", fuel_mix, "ieso")
 
     async def _aeso(self) -> CarbonIntensity:
         resp = await self._client.get(AESO_URL, headers={"User-Agent": "Mozilla/5.0"})
         resp.raise_for_status()
-        fuel_mix: dict[str, float] = {}
-        for name, _mc, tng, _dcr in _AESO_ROW.findall(resp.text):
-            norm = _AESO_FUEL_MAP.get(name.strip())
-            if norm is None:
-                continue
-            fuel_mix[norm] = fuel_mix.get(norm, 0) + float(tng)
-        if sum(fuel_mix.values()) <= 0:
+        fuel_mix = aeso_fuel_mix(resp.text)
+        if not fuel_mix:
             raise ValueError("AESO: no generation parsed")
         return self._build("CA-AB", fuel_mix, "aeso")
 

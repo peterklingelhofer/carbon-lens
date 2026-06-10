@@ -57,6 +57,24 @@ def _latest(points: list) -> float | None:
     return None
 
 
+def region_fuel_from_oe(data: dict, grid_zones: list[str]) -> dict[str, dict[str, float]]:
+    """Latest MW per (zone, normalized fuel) from an OpenElectricity power
+    response grouped by network_region + fueltech_group."""
+    region_fuel: dict[str, dict[str, float]] = {}
+    for series in data.get("data", [{}])[0].get("results", []):
+        cols = series.get("columns", {})
+        zone = _REGION_MAP.get(cols.get("region", ""))
+        fuel = _FUELTECH_MAP.get(cols.get("fueltech_group", ""))
+        if zone is None or fuel is None or zone not in grid_zones:
+            continue
+        mw = _latest(series.get("data", []))
+        if mw is None or mw <= 0:
+            continue
+        region_fuel.setdefault(zone, {})
+        region_fuel[zone][fuel] = region_fuel[zone].get(fuel, 0) + mw
+    return region_fuel
+
+
 class AEMOCarbonSource:
     def __init__(self) -> None:
         self._client = shared_client(timeout=20.0)
@@ -73,21 +91,7 @@ class AEMOCarbonSource:
     async def get_carbon_intensity_batch(self, grid_zones: list[str]) -> dict[str, CarbonIntensity]:
         resp = await self._client.get(API_URL, headers={"User-Agent": "Mozilla/5.0"})
         resp.raise_for_status()
-        data = resp.json()
-
-        # Sum the latest MW per (zone, fuel) across all fueltech series.
-        region_fuel: dict[str, dict[str, float]] = {}
-        for series in data.get("data", [{}])[0].get("results", []):
-            cols = series.get("columns", {})
-            zone = _REGION_MAP.get(cols.get("region", ""))
-            fuel = _FUELTECH_MAP.get(cols.get("fueltech_group", ""))
-            if zone is None or fuel is None or zone not in grid_zones:
-                continue
-            mw = _latest(series.get("data", []))
-            if mw is None or mw <= 0:
-                continue
-            region_fuel.setdefault(zone, {})
-            region_fuel[zone][fuel] = region_fuel[zone].get(fuel, 0) + mw
+        region_fuel = region_fuel_from_oe(resp.json(), grid_zones)
 
         results: dict[str, CarbonIntensity] = {}
         now = datetime.now(timezone.utc)
