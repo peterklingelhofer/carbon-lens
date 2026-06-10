@@ -26,6 +26,7 @@ from carbon_mesh.carbon_sources.grid_india import GridIndiaCarbonSource, INDIA_Z
 from carbon_mesh.carbon_sources.gridstatus import GridStatusCarbonSource, _GRID_ZONE_TO_ISO
 from carbon_mesh.carbon_sources.mock import MockCarbonSource
 from carbon_mesh.carbon_sources.ons_brazil import ONSBrazilCarbonSource, BRAZIL_ZONES
+from carbon_mesh.carbon_sources.taiwan import TaiwanCarbonSource, TAIWAN_ZONES
 from carbon_mesh.carbon_sources.open_meteo import OpenMeteoCarbonSource, ZONE_COORDINATES
 from carbon_mesh.carbon_sources.uk import UKCarbonSource, UK_ZONES
 from carbon_mesh.models.carbon import CarbonIntensity
@@ -49,6 +50,7 @@ class HybridCarbonSource:
         self._ons_brazil = ONSBrazilCarbonSource()
         self._eskom = EskomCarbonSource()
         self._canada = CanadaCarbonSource()
+        self._taiwan = TaiwanCarbonSource()
         self._open_meteo = OpenMeteoCarbonSource()
 
         # Key-based providers
@@ -79,6 +81,7 @@ class HybridCarbonSource:
             [
                 ("AEMO", self._aemo, AEMO_ZONES),
                 ("Canada", self._canada, CANADA_ZONES),
+                ("Taiwan", self._taiwan, TAIWAN_ZONES),
                 ("Grid India", self._grid_india, INDIA_ZONES),
                 ("ONS Brazil", self._ons_brazil, BRAZIL_ZONES),
                 ("Eskom", self._eskom, ESKOM_ZONES),
