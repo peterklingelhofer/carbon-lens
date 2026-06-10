@@ -18,6 +18,11 @@ from carbon_mesh.carbon_sources.entsoe_forecast import ENTSOEForecastSource
 from carbon_mesh.grid.mapper import GridMapper
 from carbon_mesh.models.carbon import CarbonIntensity
 
+# Fetch real day-ahead forecasts only for the cleanest-right-now EU zones (the
+# recommendation almost always comes from these). Bounds the per-request API
+# fan-out; other zones use the local-time heuristic.
+_FORECAST_TOP_K = 4
+
 
 class ScheduleStrategy(str, Enum):
     """How to optimize the schedule."""
@@ -133,7 +138,14 @@ class SchedulingEngine:
         # per zone. Maps zone -> {hour_offset: forecasted VRE share of load}.
         zone_curve: dict[str, dict[int, float]] = {}
         if self._forecast_source:
-            fc_zones = [z for z in zones if self._forecast_source.can_forecast(z)]
+            eu_zones = [
+                z
+                for z in zones
+                if z in current_intensities and self._forecast_source.can_forecast(z)
+            ]
+            # Cleanest-now first; only the top few get a real forecast fetch.
+            eu_zones.sort(key=lambda z: current_intensities[z].carbon_intensity_gco2_kwh)
+            fc_zones = eu_zones[:_FORECAST_TOP_K]
             settled = await asyncio.gather(
                 *(self._forecast_source.vre_fraction_curve(z, max_delay_hours) for z in fc_zones),
                 return_exceptions=True,
