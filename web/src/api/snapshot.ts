@@ -14,6 +14,7 @@ export interface CarbonSnapshot {
     live_zones: number;
     estimated_zones: number;
     mock_zones_dropped: number;
+    carried_forward?: number;
     regions_published: number;
     degraded: string[];
   };
