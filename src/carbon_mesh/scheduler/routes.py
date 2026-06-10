@@ -28,9 +28,13 @@ _schedule_store: dict[str, CronSchedule] = {}
 
 
 def _get_engine() -> SchedulingEngine:
+    from carbon_mesh.carbon_sources.entsoe_forecast import ENTSOEForecastSource
+    from carbon_mesh.config import settings
+
     return SchedulingEngine(
         carbon_source=get_carbon_source(),
         grid_mapper=get_grid_mapper(),
+        forecast_source=ENTSOEForecastSource(settings.entsoe_token),
     )
 
 
