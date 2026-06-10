@@ -5,7 +5,7 @@ directly by the frontend, so user traffic never hits upstream provider APIs:
 quota cost is O(zones x cadence), not O(users).
 
 Quality is derived from each reading's ``source`` field:
-  live      real grid-operator API (EIA, ENTSO-E, UK, AEMO, GridStatus, Grid India, ONS Brazil)
+  live      real grid-operator API (UK, EIA, OpenElectricity/AEMO, IESO/AESO, Taipower, GridStatus, ENTSO-E, Electricity Maps)
   estimated heuristic or weather-derived model (``*_heuristic``, Open-Meteo)
   mock      static fallback -- dropped from the snapshot entirely
 
