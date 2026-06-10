@@ -5,11 +5,11 @@ Docs: https://transparency.entsoe.eu/content/static_content/Static%20content/web
 """
 
 from datetime import datetime, timezone, timedelta
-from xml.etree import ElementTree
 
 import httpx
 
 from carbon_mesh.carbon_sources.http_pool import ENTSOE_SEMAPHORE, get_with_retry, shared_client
+from carbon_mesh.carbon_sources.xml_safe import parse_xml
 
 from carbon_mesh.carbon_sources.emission_factors import (
     calculate_carbon_intensity,
@@ -138,7 +138,7 @@ class ENTSOECarbonSource:
         """Parse ENTSO-E XML response into fuel mix dict."""
         fuel_mix: dict[str, float] = {}
         try:
-            root = ElementTree.fromstring(xml_text)
+            root = parse_xml(xml_text)
             ns = {"ns": "urn:iec62325.351:tc57wg16:451-6:generationloaddocument:3:0"}
 
             for ts in root.findall(".//ns:TimeSeries", ns):
@@ -156,7 +156,7 @@ class ENTSOECarbonSource:
                     if qty_elem is not None and qty_elem.text:
                         mw = float(qty_elem.text)
                         fuel_mix[normalized] = fuel_mix.get(normalized, 0) + mw
-        except ElementTree.ParseError:
+        except Exception:
             pass
 
         return fuel_mix

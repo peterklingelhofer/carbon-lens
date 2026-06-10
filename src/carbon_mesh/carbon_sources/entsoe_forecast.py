@@ -10,10 +10,10 @@ rather than a fixed daily curve. EU bidding zones only; needs the free token.
 import time
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
-from xml.etree import ElementTree
 
 from carbon_mesh.carbon_sources.entsoe import ENTSOE_ZONE_MAP
 from carbon_mesh.carbon_sources.http_pool import ENTSOE_SEMAPHORE, get_with_retry, shared_client
+from carbon_mesh.carbon_sources.xml_safe import parse_xml
 
 API_URL = "https://web-api.tp.entsoe.eu/api"
 
@@ -36,8 +36,8 @@ def _series_by_hour(xml_text: str, psr_filter: set[str] | None) -> dict[datetime
     multiple matching TimeSeries (e.g. wind + solar) are summed per hour.
     """
     try:
-        root = ElementTree.fromstring(xml_text)
-    except ElementTree.ParseError:
+        root = parse_xml(xml_text)
+    except Exception:
         return {}
     ns = {"ns": root.tag.split("}")[0].strip("{")}
 
