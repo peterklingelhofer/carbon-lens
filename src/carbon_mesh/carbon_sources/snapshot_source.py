@@ -19,6 +19,28 @@ _TTL_SECONDS = 180.0
 _CACHE: dict[str, tuple[float, dict[str, CarbonIntensity]]] = {}
 
 
+def zone_map_from_intensities(intensities: dict) -> dict[str, CarbonIntensity]:
+    """Build {grid_zone: CarbonIntensity} from a snapshot's intensities block,
+    keeping the first reading per zone (many regions share one zone)."""
+    zone_map: dict[str, CarbonIntensity] = {}
+    for entry in intensities.values():
+        zone = entry.get("grid_zone")
+        if not zone or zone in zone_map:
+            continue
+        try:
+            zone_map[zone] = CarbonIntensity(
+                grid_zone=zone,
+                carbon_intensity_gco2_kwh=entry["carbon_intensity_gco2_kwh"],
+                renewable_percentage=entry["renewable_percentage"],
+                timestamp=datetime.fromisoformat(entry["timestamp"]),
+                source=entry.get("source", "snapshot"),
+                grid_load_mw=entry.get("grid_load_mw"),
+            )
+        except (KeyError, ValueError):
+            continue
+    return zone_map
+
+
 class SnapshotBackedSource:
     def __init__(self, snapshot_url: str, fallback: CarbonDataSource) -> None:
         self._url = snapshot_url
@@ -39,22 +61,7 @@ class SnapshotBackedSource:
         except Exception:
             return {}
 
-        zone_map: dict[str, CarbonIntensity] = {}
-        for entry in intensities.values():
-            zone = entry.get("grid_zone")
-            if not zone or zone in zone_map:  # many regions share one zone
-                continue
-            try:
-                zone_map[zone] = CarbonIntensity(
-                    grid_zone=zone,
-                    carbon_intensity_gco2_kwh=entry["carbon_intensity_gco2_kwh"],
-                    renewable_percentage=entry["renewable_percentage"],
-                    timestamp=datetime.fromisoformat(entry["timestamp"]),
-                    source=entry.get("source", "snapshot"),
-                    grid_load_mw=entry.get("grid_load_mw"),
-                )
-            except (KeyError, ValueError):
-                continue
+        zone_map = zone_map_from_intensities(intensities)
         if zone_map:
             _CACHE[self._url] = (time.monotonic(), zone_map)
         return zone_map
