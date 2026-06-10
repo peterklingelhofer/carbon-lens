@@ -66,6 +66,29 @@ def _fuel_of(label: str) -> str | None:
     return "other"
 
 
+def fuel_mix_from_rows(rows: list) -> dict[str, float]:
+    """Sum Taipower per-unit generation rows into a normalized fuel mix (MW).
+
+    Each row is [fuel-label-HTML, _, unit, capacity, generation, pct]; we read
+    the fuel from the label and the MW from column 4.
+    """
+    fuel_mix: dict[str, float] = {}
+    for r in rows:
+        if len(r) < 5:
+            continue
+        fuel = _fuel_of(_TAG_RE.sub("", r[0]))
+        if fuel is None:
+            continue
+        try:
+            mw = float(r[4])
+        except (TypeError, ValueError):
+            continue
+        if mw <= 0:
+            continue
+        fuel_mix[fuel] = fuel_mix.get(fuel, 0) + mw
+    return fuel_mix
+
+
 class TaiwanCarbonSource:
     def __init__(self) -> None:
         self._client = httpx.AsyncClient(timeout=15.0, verify=_TLS, headers=_HEADERS)
@@ -88,21 +111,7 @@ class TaiwanCarbonSource:
         # parse explicitly rather than relying on resp.json().
         rows = json.loads(resp.content.decode("utf-8-sig")).get("aaData", [])
 
-        fuel_mix: dict[str, float] = {}
-        for r in rows:
-            if len(r) < 5:
-                continue
-            fuel = _fuel_of(_TAG_RE.sub("", r[0]))
-            if fuel is None:
-                continue
-            try:
-                mw = float(r[4])
-            except (TypeError, ValueError):
-                continue
-            if mw <= 0:
-                continue
-            fuel_mix[fuel] = fuel_mix.get(fuel, 0) + mw
-
+        fuel_mix = fuel_mix_from_rows(rows)
         if sum(fuel_mix.values()) <= 0:
             return {}
         return {
