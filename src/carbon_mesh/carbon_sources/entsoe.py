@@ -9,7 +9,7 @@ from xml.etree import ElementTree
 
 import httpx
 
-from carbon_mesh.carbon_sources.http_pool import shared_client
+from carbon_mesh.carbon_sources.http_pool import ENTSOE_SEMAPHORE, get_with_retry, shared_client
 
 from carbon_mesh.carbon_sources.emission_factors import (
     calculate_carbon_intensity,
@@ -106,7 +106,8 @@ class ENTSOECarbonSource:
         period_start = (now - timedelta(hours=1)).strftime("%Y%m%d%H00")
         period_end = now.strftime("%Y%m%d%H00")
 
-        resp = await self._client.get(
+        resp = await get_with_retry(
+            self._client,
             API_URL,
             params={
                 "securityToken": self._token,
@@ -116,6 +117,7 @@ class ENTSOECarbonSource:
                 "periodStart": period_start,
                 "periodEnd": period_end,
             },
+            semaphore=ENTSOE_SEMAPHORE,
         )
         resp.raise_for_status()
 
