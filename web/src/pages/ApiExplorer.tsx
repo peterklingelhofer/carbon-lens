@@ -181,8 +181,11 @@ export function ApiExplorer() {
             }}
           >
             <div>
-              <label style={labelStyle}>Cloud Provider</label>
+              <label style={labelStyle} htmlFor="api-provider">
+                Cloud Provider
+              </label>
               <select
+                id="api-provider"
                 aria-label="Cloud provider"
                 value={provider}
                 onChange={(e) => {
@@ -199,8 +202,11 @@ export function ApiExplorer() {
               </select>
             </div>
             <div>
-              <label style={labelStyle}>Region</label>
+              <label style={labelStyle} htmlFor="api-region">
+                Region
+              </label>
               <select
+                id="api-region"
                 aria-label="Region"
                 value={region}
                 onChange={(e) => setRegion(e.target.value)}
@@ -490,8 +496,11 @@ export function ApiExplorer() {
                     </tr>
                   </thead>
                   <tbody>
-                    {routeResult.alternatives.slice(0, 10).map((alt, i) => (
-                      <tr key={i} style={{ borderBottom: "1px solid var(--gray-100)" }}>
+                    {routeResult.alternatives.slice(0, 10).map((alt) => (
+                      <tr
+                        key={`${alt.provider}-${alt.region}`}
+                        style={{ borderBottom: "1px solid var(--gray-100)" }}
+                      >
                         <td
                           style={{
                             ...td,

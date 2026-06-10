@@ -236,8 +236,11 @@ export function SLAMonitor() {
             }}
           >
             <div>
-              <label style={labelStyle}>SLA Name</label>
+              <label style={labelStyle} htmlFor="sla-name">
+                SLA Name
+              </label>
               <input
+                id="sla-name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -245,8 +248,11 @@ export function SLAMonitor() {
               />
             </div>
             <div>
-              <label style={labelStyle}>Max Carbon (gCO₂/kWh)</label>
+              <label style={labelStyle} htmlFor="sla-maxcarbon">
+                Max Carbon (gCO₂/kWh)
+              </label>
               <input
+                id="sla-maxcarbon"
                 type="range"
                 min={0}
                 max={500}
@@ -272,8 +278,11 @@ export function SLAMonitor() {
               </div>
             </div>
             <div>
-              <label style={labelStyle}>Min Renewable (%)</label>
+              <label style={labelStyle} htmlFor="sla-minrenew">
+                Min Renewable (%)
+              </label>
               <input
+                id="sla-minrenew"
                 type="range"
                 min={0}
                 max={100}
@@ -466,8 +475,11 @@ export function SLAMonitor() {
                     </tr>
                   </thead>
                   <tbody>
-                    {checkMutation.data.breached_regions.map((r, i: number) => (
-                      <tr key={i} style={{ borderBottom: "1px solid var(--gray-100)" }}>
+                    {checkMutation.data.breached_regions.map((r) => (
+                      <tr
+                        key={`${r.provider}-${r.region}`}
+                        style={{ borderBottom: "1px solid var(--gray-100)" }}
+                      >
                         <td
                           style={{
                             ...td,
