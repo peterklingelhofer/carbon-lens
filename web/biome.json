@@ -14,13 +14,7 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true,
-      "a11y": {
-        "noLabelWithoutControl": "off"
-      },
-      "suspicious": {
-        "noArrayIndexKey": "off"
-      }
+      "recommended": true
     }
   },
   "javascript": {
