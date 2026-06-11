@@ -44,9 +44,10 @@ function QualityTag({ quality }: { quality?: CarbonIntensity["quality"] }) {
   );
 }
 
-// Surfaces data freshness: a "carried" badge when the snapshot bridged a
-// transient upstream gap with this zone's last live reading, otherwise just the
-// reading's age when it's noticeably stale. Keeps fresh rows uncluttered.
+// Surfaces data freshness: a "last live reading" badge when the snapshot
+// bridged a transient upstream gap with this zone's last live reading,
+// otherwise just the reading's age when it's noticeably stale. Keeps fresh rows
+// uncluttered.
 function FreshnessTag({ intensity }: { intensity: CarbonIntensity }) {
   const ageMs = Date.now() - new Date(intensity.timestamp).getTime();
   if (intensity.carried_forward) {
@@ -59,7 +60,7 @@ function FreshnessTag({ intensity }: { intensity: CarbonIntensity }) {
           color: "var(--amber)",
         }}
       >
-        ↻ carried · {timeAgo(intensity.timestamp)}
+        last live reading · {timeAgo(intensity.timestamp)}
       </span>
     );
   }
@@ -93,7 +94,7 @@ function SnapshotBanner({ snapshot }: { snapshot: CarbonSnapshot }) {
           <span style={{ color: "var(--amber)", fontWeight: 600 }}>est.</span>)
         </>
       )}{" "}
-      · updated {timeAgo(snapshot.generated_at)}. No mock data.
+      · updated {timeAgo(snapshot.generated_at)}
     </p>
   );
 }
@@ -607,7 +608,7 @@ export function Dashboard() {
                               opacity: active ? 1 : 0.35,
                             }}
                           >
-                            {active ? (sortDir === "asc" ? "▲" : "▼") : "↕"}
+                            {active ? (sortDir === "asc" ? "▲" : "▼") : "▴▾"}
                           </span>
                         </button>
                         {col.info && <InfoTip label={col.label} text={col.info} />}
