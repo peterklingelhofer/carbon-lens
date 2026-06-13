@@ -52,6 +52,8 @@ async def _build_update(
     for r in regions:
         try:
             zone = mapper.get_grid_zone(r["provider"], r["region"])
+            if zone is None:
+                continue
             zone_to_regions.setdefault(zone, []).append(r)
         except Exception:
             logger.warning("Unknown region %s/%s, skipping", r["provider"], r["region"])
