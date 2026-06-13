@@ -15,6 +15,7 @@ from carbon_mesh.carbon_sources.emission_factors import (
     calculate_carbon_intensity,
     calculate_marginal_intensity,
     calculate_renewable_percentage,
+    power_breakdown,
 )
 from carbon_mesh.carbon_sources.http_pool import shared_client
 from carbon_mesh.models.carbon import CarbonIntensity
@@ -108,6 +109,7 @@ class AEMOCarbonSource:
                 source="openelectricity",
                 grid_load_mw=round(sum(fuel_mix.values())),
                 marginal_intensity_gco2_kwh=round(calculate_marginal_intensity(fuel_mix), 1),
+                power_breakdown_mw=power_breakdown(fuel_mix),
             )
 
         return results
