@@ -177,6 +177,20 @@ def test_websocket_custom_subscription(client: TestClient):
         assert data["data"][0]["region"] == "us-east-1"
 
 
+def test_sla_monitor_status_route_not_shadowed(client: TestClient):
+    """GET /sla/monitor/status must hit the monitor route, not /{sla_id}/status.
+
+    Regression: the literal /monitor/* routes were declared after /{sla_id}/status,
+    so Starlette bound sla_id="monitor" and 404'd -- which made the dashboard's
+    monitor status read fail and the Start Monitor button appear to do nothing.
+    """
+    resp = client.get("/api/v1/sla/monitor/status")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "running" in body
+    assert "checks_completed" in body
+
+
 def test_batch_returns_all_regions_sharing_a_grid_zone(client: TestClient):
     """Regions that map to the same grid zone must each appear in the batch result.
 
