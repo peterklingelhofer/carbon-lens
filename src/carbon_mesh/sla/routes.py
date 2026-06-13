@@ -124,6 +124,46 @@ async def list_slas(org_id: str = Query(...)) -> list[SLASummary]:
     return result
 
 
+# --- Monitor control ---
+# Literal "/monitor/..." paths are declared BEFORE the parameterized "/{sla_id}/..."
+# routes below: Starlette matches in definition order, so otherwise a request for
+# GET /monitor/status would bind sla_id="monitor" on /{sla_id}/status and 404.
+
+
+@router.post("/monitor/start")
+async def start_monitor(org_id: str = Query(...)) -> dict:
+    """Start the background SLA monitor for an organization's SLAs."""
+    slas = [s for s in _sla_store.values() if s.org_id == org_id and s.active]
+    if not slas:
+        raise HTTPException(404, f"No active SLAs found for org {org_id}")
+
+    monitor = _get_monitor()
+    await monitor.start(slas)
+    return monitor.get_status()
+
+
+@router.post("/monitor/stop")
+async def stop_monitor() -> dict:
+    """Stop the background SLA monitor."""
+    monitor = _get_monitor()
+    await monitor.stop()
+    return monitor.get_status()
+
+
+@router.get("/monitor/status")
+async def monitor_status() -> dict:
+    """Get the current status of the SLA monitor."""
+    monitor = _get_monitor()
+    return monitor.get_status()
+
+
+@router.get("/monitor/alerts", response_model=list[AlertEvent])
+async def list_alerts(limit: int = Query(50, ge=1, le=500)) -> list[AlertEvent]:
+    """List recent SLA breach alerts."""
+    monitor = _get_monitor()
+    return monitor.get_recent_alerts(limit)
+
+
 @router.get("/{sla_id}", response_model=GreenSLA)
 async def get_sla(sla_id: str) -> GreenSLA:
     """Get an SLA definition by ID."""
@@ -256,40 +296,3 @@ async def list_reports(sla_id: str) -> list[SLAReport]:
     if sla_id not in _sla_store:
         raise HTTPException(404, f"SLA {sla_id} not found")
     return _report_store.get(sla_id, [])
-
-
-# --- Monitor control ---
-
-
-@router.post("/monitor/start")
-async def start_monitor(org_id: str = Query(...)) -> dict:
-    """Start the background SLA monitor for an organization's SLAs."""
-    slas = [s for s in _sla_store.values() if s.org_id == org_id and s.active]
-    if not slas:
-        raise HTTPException(404, f"No active SLAs found for org {org_id}")
-
-    monitor = _get_monitor()
-    await monitor.start(slas)
-    return monitor.get_status()
-
-
-@router.post("/monitor/stop")
-async def stop_monitor() -> dict:
-    """Stop the background SLA monitor."""
-    monitor = _get_monitor()
-    await monitor.stop()
-    return monitor.get_status()
-
-
-@router.get("/monitor/status")
-async def monitor_status() -> dict:
-    """Get the current status of the SLA monitor."""
-    monitor = _get_monitor()
-    return monitor.get_status()
-
-
-@router.get("/monitor/alerts", response_model=list[AlertEvent])
-async def list_alerts(limit: int = Query(50, ge=1, le=500)) -> list[AlertEvent]:
-    """List recent SLA breach alerts."""
-    monitor = _get_monitor()
-    return monitor.get_recent_alerts(limit)
