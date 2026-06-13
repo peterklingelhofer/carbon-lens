@@ -3,6 +3,7 @@ import { Route, Routes, useLocation } from "react-router-dom";
 import { ColdStartBanner } from "./components/ColdStartBanner";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Nav } from "./components/Nav";
+import { ScrollToTop } from "./components/ScrollToTop";
 import { About } from "./pages/About";
 import { ApiExplorer } from "./pages/ApiExplorer";
 import { Compliance } from "./pages/Compliance";
@@ -21,6 +22,7 @@ const CarbonGlobe = lazy(() => import("./pages/CarbonGlobe"));
 export default function App() {
   return (
     <ErrorBoundary>
+      <ScrollToTop />
       <Nav />
       <ColdStartBanner />
       <RoutedContent />
