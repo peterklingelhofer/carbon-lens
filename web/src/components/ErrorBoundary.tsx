@@ -45,28 +45,48 @@ export class ErrorBoundary extends Component<Props, State> {
             Oops
           </div>
           <h1 style={{ margin: "0.5rem 0 1rem", fontSize: "1.3rem" }}>Something went wrong</h1>
-          <p style={{ color: "var(--gray-500)", marginBottom: "1rem" }}>
+          <p style={{ color: "var(--gray-500)", marginBottom: "1.5rem" }}>
             {this.state.error?.message || "An unexpected error occurred."}
           </p>
-          <button
-            type="button"
-            onClick={() => {
-              this.setState({ hasError: false, error: null });
-              window.location.href = "/";
-            }}
-            style={{
-              padding: "0.75rem 2rem",
-              background: "var(--btn-green)",
-              color: "white",
-              border: "none",
-              borderRadius: 8,
-              cursor: "pointer",
-              fontWeight: 600,
-              fontSize: "1rem",
-            }}
+          <div
+            style={{ display: "flex", gap: "0.75rem", justifyContent: "center", flexWrap: "wrap" }}
           >
-            Back to Home
-          </button>
+            <button
+              type="button"
+              onClick={() => this.setState({ hasError: false, error: null })}
+              style={{
+                padding: "0.75rem 2rem",
+                background: "var(--btn-green)",
+                color: "white",
+                border: "none",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: 600,
+                fontSize: "1rem",
+              }}
+            >
+              Try again
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                this.setState({ hasError: false, error: null });
+                window.location.href = "/";
+              }}
+              style={{
+                padding: "0.75rem 2rem",
+                background: "transparent",
+                color: "var(--green-text)",
+                border: "1px solid var(--gray-300)",
+                borderRadius: 8,
+                cursor: "pointer",
+                fontWeight: 600,
+                fontSize: "1rem",
+              }}
+            >
+              Back to Home
+            </button>
+          </div>
         </div>
       );
     }
