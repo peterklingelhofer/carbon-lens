@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import { ColdStartBanner } from "./components/ColdStartBanner";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Nav } from "./components/Nav";
@@ -23,6 +23,18 @@ export default function App() {
     <ErrorBoundary>
       <Nav />
       <ColdStartBanner />
+      <RoutedContent />
+    </ErrorBoundary>
+  );
+}
+
+// Page content sits behind its own error boundary, keyed on the path so a crash
+// in one page leaves the Nav intact and clears itself when the user navigates
+// elsewhere -- the outer boundary only trips for app-shell (Nav) failures.
+function RoutedContent() {
+  const location = useLocation();
+  return (
+    <ErrorBoundary key={location.pathname}>
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/api-explorer" element={<ApiExplorer />} />
