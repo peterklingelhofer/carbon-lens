@@ -365,8 +365,8 @@ async def health() -> dict:
     return result
 
 
-@app.get("/ready", tags=["System"])
-async def readiness() -> dict:
+@app.get("/ready", tags=["System"], response_model=None)
+async def readiness() -> dict | JSONResponse:
     """Readiness probe — returns 200 only when all dependencies are available.
 
     Use this for Kubernetes readinessProbe or load balancer health checks.

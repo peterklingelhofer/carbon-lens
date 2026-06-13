@@ -365,7 +365,9 @@ class AzureCostManagementAdapter:
                 client_secret=creds.get("client_secret", ""),
             )
             client = CostManagementClient(credential)
-            result = client.query.usage(scope=scope, parameters=query)
+            # Azure's SDK accepts a plain dict for `parameters` at runtime; its
+            # stubs demand a typed QueryDefinition model
+            result = client.query.usage(scope=scope, parameters=query)  # pyright: ignore[reportCallIssue, reportArgumentType]
         except Exception as e:
             raise CloudIngestionError(f"Azure Cost Management query failed: {e}") from e
 

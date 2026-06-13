@@ -58,7 +58,7 @@ def _series_by_hour(xml_text: str, psr_filter: set[str] | None) -> dict[datetime
             for pt in period.findall("ns:Point", ns):
                 pos_el = pt.find("ns:position", ns)
                 qty_el = pt.find("ns:quantity", ns)
-                if pos_el is None or qty_el is None or qty_el.text is None:
+                if pos_el is None or pos_el.text is None or qty_el is None or qty_el.text is None:
                     continue
                 dt = start + timedelta(minutes=(int(pos_el.text) - 1) * step)
                 hour = dt.replace(minute=0, second=0, microsecond=0)
