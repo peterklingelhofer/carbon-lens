@@ -320,3 +320,30 @@ class TestHybridSource:
         results = await hybrid.get_carbon_intensity_batch(zones)
         assert len(results) == 4
         assert all(z in results for z in zones)
+
+    @pytest.mark.asyncio
+    async def test_mock_fallback_is_logged(self, caplog):
+        """A zone with no live source should surface at INFO, not silently."""
+        import logging
+
+        from carbon_mesh.carbon_sources.hybrid import HybridCarbonSource
+
+        hybrid = HybridCarbonSource()
+        with caplog.at_level(logging.INFO, logger="carbon_mesh.carbon_sources.hybrid"):
+            await hybrid.get_carbon_intensity("TOTALLY-UNKNOWN")
+        assert any(
+            "mock fallback" in r.message and "TOTALLY-UNKNOWN" in r.message for r in caplog.records
+        )
+
+    @pytest.mark.asyncio
+    async def test_batch_mock_fallback_names_the_zones(self, caplog):
+        """The batch fall-through log should name the dark zones for debugging."""
+        import logging
+
+        from carbon_mesh.carbon_sources.hybrid import HybridCarbonSource
+
+        hybrid = HybridCarbonSource()
+        with caplog.at_level(logging.INFO, logger="carbon_mesh.carbon_sources.hybrid"):
+            await hybrid.get_carbon_intensity_batch(["ZA", "UNKNOWN-A", "UNKNOWN-B"])
+        msgs = [r.message for r in caplog.records if "mock fallback" in r.message]
+        assert msgs and "UNKNOWN-A" in msgs[-1] and "UNKNOWN-B" in msgs[-1]
