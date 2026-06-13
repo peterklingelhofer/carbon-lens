@@ -398,12 +398,6 @@ export default function CarbonGlobe() {
   const heightMetricRef = useRef<Metric>(heightMetric);
   const colorMetricRef = useRef<Metric>(colorMetric);
 
-  // Keep the refs current before the data effect below re-digests the globe.
-  useEffect(() => {
-    heightMetricRef.current = heightMetric;
-    colorMetricRef.current = colorMetric;
-  }, [heightMetric, colorMetric]);
-
   // Instantiate the globe once.
   useEffect(() => {
     const el = containerRef.current;
@@ -566,10 +560,16 @@ export default function CarbonGlobe() {
     };
   }, []);
 
-  // Feed data into the globe whenever it changes.
+  // Feed data into the globe whenever the data OR the selected metric changes.
+  // The globe.gl accessors read the metric refs, and they only re-run when the
+  // layer data is re-digested -- so a metric toggle must re-feed here too, or the
+  // beams never rescale/recolor. We sync the refs first so the re-digest below
+  // reads the new metric.
   useEffect(() => {
     const globe = globeRef.current;
     if (!globe) return;
+    heightMetricRef.current = heightMetric;
+    colorMetricRef.current = colorMetric;
     // Fresh array copies force globe.gl to re-digest, so the accessors re-read
     // the metric refs: beams rescale (height) and recolor (color), rings and
     // hit-targets update too.
@@ -577,7 +577,7 @@ export default function CarbonGlobe() {
       .pointsData([...(points as object[])])
       .ringsData([...(points as object[])])
       .customLayerData([...(points as object[])]);
-  }, [points]);
+  }, [points, heightMetric, colorMetric]);
 
   const liveCount = points.filter((p) => p.quality === "live").length;
   const estCount = points.filter((p) => p.quality === "estimated").length;
