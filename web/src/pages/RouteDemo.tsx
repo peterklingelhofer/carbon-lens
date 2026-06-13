@@ -295,7 +295,16 @@ export function RouteDemo() {
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: "0.75rem", color: "var(--gray-500)" }}>Renewable %</div>
+                <div
+                  style={{
+                    fontSize: "0.75rem",
+                    color: "var(--gray-500)",
+                    display: "inline-flex",
+                    alignItems: "center",
+                  }}
+                >
+                  Renewable %<InfoTip label="Renewable %" text={TIP.renewable} />
+                </div>
                 <div
                   style={{
                     fontWeight: 600,
@@ -315,6 +324,19 @@ export function RouteDemo() {
                 </div>
               </div>
             </div>
+
+            <p
+              style={{
+                margin: "1rem 0 0",
+                fontSize: "0.78rem",
+                color: "var(--gray-500)",
+                lineHeight: 1.5,
+              }}
+            >
+              Ranked by <strong>carbon intensity</strong> — which counts nuclear and hydro, not just
+              renewables — so the greenest pick can show a lower renewable % than an alternative. To
+              rank by renewable share instead, raise its weight in your priorities.
+            </p>
           </div>
 
           {/* Alternatives */}
