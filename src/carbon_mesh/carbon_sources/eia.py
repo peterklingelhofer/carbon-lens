@@ -124,7 +124,7 @@ class EIACarbonSource:
 
         results: dict[str, CarbonIntensity] = {}
         for item in settled:
-            if isinstance(item, Exception):
+            if isinstance(item, BaseException):
                 continue
             resp_id, intensity = item
             for zone in zones_by_respondent[resp_id]:

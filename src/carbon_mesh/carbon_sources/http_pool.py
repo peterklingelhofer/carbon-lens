@@ -5,6 +5,7 @@ different hosts, reducing handshake overhead on repeated requests.
 """
 
 import asyncio
+from typing import Any
 
 import httpx
 
@@ -17,7 +18,7 @@ ENTSOE_SEMAPHORE = asyncio.Semaphore(6)
 async def get_with_retry(
     client: httpx.AsyncClient,
     url: str,
-    params: object = None,
+    params: dict[str, Any] | None = None,
     *,
     attempts: int = 3,
     base_delay: float = 0.6,

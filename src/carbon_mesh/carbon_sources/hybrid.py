@@ -18,6 +18,7 @@ import asyncio
 import logging
 
 from carbon_mesh.carbon_sources.aemo import AEMOCarbonSource, AEMO_ZONES
+from carbon_mesh.carbon_sources.base import CarbonDataSource
 from carbon_mesh.carbon_sources.canada import CanadaCarbonSource, CANADA_ZONES
 from carbon_mesh.carbon_sources.eia import EIACarbonSource, _GRID_ZONE_TO_EIA
 from carbon_mesh.carbon_sources.entsoe import ENTSOECarbonSource, ENTSOE_ZONES
@@ -40,7 +41,7 @@ class HybridCarbonSource:
         eia: EIACarbonSource | None = None,
         gridstatus: GridStatusCarbonSource | None = None,
         entsoe: ENTSOECarbonSource | None = None,
-        electricity_maps: object | None = None,
+        electricity_maps: CarbonDataSource | None = None,
         mock: MockCarbonSource | None = None,
     ) -> None:
         # Free providers (no API key needed)
@@ -65,14 +66,14 @@ class HybridCarbonSource:
         # Precompute the provider chain once (immutable after init)
         self._chain = self._build_provider_chain()
 
-    def _build_provider_chain(self) -> list[tuple[str, object, set[str]]]:
+    def _build_provider_chain(self) -> list[tuple[str, CarbonDataSource, set[str]]]:
         """Build the ordered provider chain once at init time.
 
         Providers with ``None`` instances (missing API key) are skipped.
         Electricity Maps accepts any zone so uses an empty sentinel set handled
         specially by callers.
         """
-        chain: list[tuple[str, object, set[str]]] = [
+        chain: list[tuple[str, CarbonDataSource, set[str]]] = [
             ("UK", self._uk, UK_ZONES),
         ]
         if self._eia:

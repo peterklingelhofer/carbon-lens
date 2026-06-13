@@ -39,6 +39,9 @@ jobs:
           uv run ruff check src
           uv run ruff format --check src
 
+      - name: Type check
+        run: uv run pyright src
+
       - name: Test
         env:
           CARBON_LENS_CARBON_SOURCE: mock
