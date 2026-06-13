@@ -27,6 +27,7 @@ dev = [
     "pytest-asyncio>=0.25",
     "pytest-httpx>=0.35",
     "ruff>=0.9",
+    "pyright>=1.1.390",
     "pre-commit>=4.0",
 ]
 # Live cloud-billing ingestion adapters (AWS Cost Explorer, GCP BigQuery billing
@@ -53,6 +54,10 @@ packages = ["src/carbon_mesh"]
 [tool.ruff]
 target-version = "py312"
 line-length = 100
+
+[tool.pyright]
+include = ["src"]
+pythonVersion = "3.12"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
