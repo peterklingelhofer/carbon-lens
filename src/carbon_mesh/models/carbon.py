@@ -23,13 +23,10 @@ class CarbonIntensity(BaseModel):
         "would emit). A heuristic from the fuel mix, not measured marginal data. "
         "None for sources without a real fuel mix.",
     )
-
-
-class EnergyMix(BaseModel):
-    solar: float = 0
-    wind: float = 0
-    hydro: float = 0
-    nuclear: float = 0
-    gas: float = 0
-    coal: float = 0
-    other: float = 0
+    power_breakdown_mw: dict[str, float] | None = Field(
+        default=None,
+        description="Live generation breakdown by fuel type in MW (e.g. "
+        '{"wind": 4200, "natural_gas": 1800, "nuclear": 9500}). Only the fuels '
+        "actually generating are listed. None for sources without a real fuel mix "
+        "(heuristic and weather-based estimates).",
+    )

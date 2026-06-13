@@ -52,6 +52,10 @@ export interface CarbonIntensity {
   // Estimated marginal emission factor (what an extra kWh would emit). A
   // heuristic from the fuel mix, not measured marginal data.
   marginal_intensity_gco2_kwh?: number;
+  // Live generation breakdown by fuel type in MW (only fuels actually
+  // generating). Present for sources with a real fuel mix; absent for
+  // heuristic/weather-based estimates.
+  power_breakdown_mw?: Record<string, number>;
 }
 
 export interface EmissionsRecord {
