@@ -147,6 +147,18 @@ const STRATEGIES: { value: Strategy; label: string; desc: string }[] = [
 
 const PROVIDERS = ["aws", "gcp", "azure"];
 
+// Window times are shown in the viewer's local timezone; label it explicitly
+// (e.g. "EDT", "GMT+1") so the recommended date is never ambiguous.
+function fmtWindow(iso: string): string {
+  return new Date(iso).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  });
+}
+
 export function Scheduler() {
   // Find-window form state
   const [duration, setDuration] = useState(30);
@@ -503,7 +515,7 @@ export function Scheduler() {
               positive
               tip={RENEWABLE_TIP}
             />
-            <StatCard label="Start" value={new Date(recommended.start).toLocaleString()} />
+            <StatCard label="Start" value={fmtWindow(recommended.start)} />
             <StatCard label="Slots Evaluated" value={`${recommendation.evaluated_slots}`} />
           </div>
 
@@ -574,7 +586,7 @@ export function Scheduler() {
                             color: "var(--gray-500)",
                           }}
                         >
-                          {new Date(alt.start).toLocaleString()}
+                          {fmtWindow(alt.start)}
                         </td>
                       </tr>
                     ))}
