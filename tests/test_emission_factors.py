@@ -1,6 +1,7 @@
 from carbon_mesh.carbon_sources.emission_factors import (
     calculate_carbon_intensity,
     calculate_renewable_percentage,
+    power_breakdown,
 )
 
 
@@ -47,3 +48,15 @@ def test_nuclear_not_renewable():
     assert calculate_renewable_percentage(mix) == 0.0
     # But very low carbon
     assert calculate_carbon_intensity(mix) == 12.0
+
+
+def test_power_breakdown_keeps_generating_fuels_rounded():
+    mix = {"wind": 4200.4, "natural_gas": 1800.6, "battery": -100, "coal": 0}
+    # Negative (storage charging) and zero fuels drop out; rest rounds to whole MW.
+    assert power_breakdown(mix) == {"wind": 4200, "natural_gas": 1801}
+
+
+def test_power_breakdown_empty_is_none():
+    # No real generation -> field stays absent rather than an empty dict.
+    assert power_breakdown({}) is None
+    assert power_breakdown({"battery": -50}) is None
