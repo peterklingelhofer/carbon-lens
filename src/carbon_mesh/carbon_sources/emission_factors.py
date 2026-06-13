@@ -134,3 +134,13 @@ def calculate_renewable_percentage(fuel_mix_mw: dict[str, float]) -> float:
 
     renewable_mw = sum(max(0, fuel_mix_mw.get(f, 0)) for f in RENEWABLE_TYPES)
     return (renewable_mw / total_mw) * 100
+
+
+def power_breakdown(fuel_mix_mw: dict[str, float]) -> dict[str, float] | None:
+    """Normalize a fuel mix into the per-fuel generation breakdown carried on the
+    API response. Keeps only fuels actually generating (positive MW), rounded to
+    whole MW, so storage charging (negative) and absent fuels drop out. Returns
+    None for an empty/non-generating mix so the field stays absent rather than {}.
+    """
+    breakdown = {fuel: float(round(mw)) for fuel, mw in fuel_mix_mw.items() if mw > 0}
+    return breakdown or None
