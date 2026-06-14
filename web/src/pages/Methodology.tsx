@@ -27,7 +27,7 @@ export function Methodology() {
           margin: "0 auto 2.5rem",
         }}
       >
-        How every number on this site is produced — and, just as importantly, where it's an estimate
+        How every number on this site is produced - and, just as importantly, where it's an estimate
         rather than a measurement. The short version: we read public grid-operator data, tag every
         reading with its source, and never hide an estimate behind a real one.
       </p>
@@ -36,7 +36,7 @@ export function Methodology() {
         <h2 style={h2}>What we measure</h2>
         <p style={p}>
           <strong>Carbon intensity</strong> is the grams of CO₂-equivalent emitted per kilowatt-hour
-          of electricity on a given grid right now (gCO₂/kWh) — a <em>rate</em>, not a total. It's a
+          of electricity on a given grid right now (gCO₂/kWh) - a <em>rate</em>, not a total. It's a
           <strong> location-based</strong> figure: the average intensity of the physical grid a
           region draws from, regardless of any renewable certificates bought against it. Lower is
           genuinely cleaner.
@@ -63,7 +63,7 @@ export function Methodology() {
           </li>
           <li style={li}>
             <strong>Sample (fallback):</strong> static representative values, last resort so the API
-            always returns something. Dropped from the published snapshot — the dashboard shows no
+            always returns something. Dropped from the published snapshot - the dashboard shows no
             sample data.
           </li>
         </ul>
@@ -80,10 +80,10 @@ export function Methodology() {
       <div style={{ ...card, marginTop: "1.5rem" }}>
         <h2 style={h2}>Renewable % is not the same as "clean"</h2>
         <p style={p}>
-          "Renewable %" counts wind, solar, and hydro — but <strong>not nuclear</strong>. So a
+          "Renewable %" counts wind, solar, and hydro - but <strong>not nuclear</strong>. So a
           low-carbon nuclear/hydro grid (France, Sweden, Ontario) can show a modest renewable %
           while emitting very little CO₂, and a grid can be high-renewable yet still dirty when the
-          rest is coal. <strong>Carbon intensity is the rigorous "how clean" measure</strong> — it's
+          rest is coal. <strong>Carbon intensity is the rigorous "how clean" measure</strong> - it's
           why the globe colours by it and the dashboard sorts by it by default. Treat renewable % as
           context, not the headline.
         </p>
@@ -130,7 +130,7 @@ export function Methodology() {
         <ul style={{ paddingLeft: "1.2rem", margin: 0 }}>
           <li style={li}>
             The weather-based estimate infers renewables from <em>current</em> solar irradiance and
-            wind only, so it understates steady hydro/nuclear baseload — it can read a near-zero
+            wind only, so it understates steady hydro/nuclear baseload - it can read a near-zero
             renewable % for a grid that's actually very clean. Configure a live feed (e.g. an
             ENTSO-E token) for accurate fuel-mix data.
           </li>
@@ -164,7 +164,7 @@ export function Methodology() {
       <div style={{ ...card, marginTop: "1.5rem" }}>
         <h2 style={h2}>What this is not</h2>
         <p style={{ ...p, margin: 0 }}>
-          A free public tool for orientation and first drafts — not assured/audited reporting, and
+          A free public tool for orientation and first drafts - not assured/audited reporting, and
           not financial, legal, or compliance advice. Where it estimates, it says so.
         </p>
       </div>

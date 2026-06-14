@@ -31,7 +31,7 @@ const BASE_URL = import.meta.env.VITE_API_URL || "";
 const API_KEY_STORAGE_KEY = "carbon_mesh_api_key";
 
 // Timestamp (ms) of the last time the API server returned ANY HTTP response.
-// A response — even a 4xx/5xx — means the server is awake, so the cold-start
+// A response - even a 4xx/5xx - means the server is awake, so the cold-start
 // banner can tell "first/idle request" apart from "awake but slow".
 let lastApiResponseAt = 0;
 
@@ -52,7 +52,7 @@ export function setApiKey(key: string): void {
     if (key) localStorage.setItem(API_KEY_STORAGE_KEY, key);
     else localStorage.removeItem(API_KEY_STORAGE_KEY);
   } catch {
-    // localStorage unavailable (SSR/private mode) — no-op
+    // localStorage unavailable (SSR/private mode) - no-op
   }
 }
 
@@ -60,7 +60,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const apiKey = getApiKey();
   // Only attach headers that are actually needed. Sending Content-Type on a
   // bodyless GET makes it a non-"simple" request, which forces a CORS preflight
-  // (OPTIONS) on every read — doubling round-trips and adding a failure point
+  // (OPTIONS) on every read - doubling round-trips and adding a failure point
   // during cold starts. GETs with no key stay simple (no preflight).
   const headers: Record<string, string> = {
     ...(options?.headers as Record<string, string> | undefined),
@@ -225,7 +225,7 @@ export const api = {
         body: JSON.stringify(body),
       }),
 
-    // Multipart upload — can't use `request` (which forces JSON); let the browser
+    // Multipart upload - can't use `request` (which forces JSON); let the browser
     // set the multipart boundary itself.
     uploadCsv: async (orgId: string, file: File): Promise<UsageIngestionResponse> => {
       const form = new FormData();

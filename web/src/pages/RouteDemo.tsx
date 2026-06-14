@@ -11,11 +11,11 @@ const API_BASE =
 // Shared tooltip copy for the alternatives table headers.
 const TIP = {
   emissions:
-    "Carbon emitted per kilowatt-hour of electricity, in gCO₂/kWh — an intensity, not a total. Lower is cleaner.",
+    "Carbon emitted per kilowatt-hour of electricity, in gCO₂/kWh - an intensity, not a total. Lower is cleaner.",
   renewable:
-    "Share of the grid's power from renewables (wind, solar, hydro) right now. Low-carbon grids that lean on nuclear (e.g. France, Sweden) can show a low renewable % while still emitting very little CO₂ — and where no live fuel-mix feed is configured, this falls back to a weather estimate that only sees solar and wind.",
+    "Share of the grid's power from renewables (wind, solar, hydro) right now. Low-carbon grids that lean on nuclear (e.g. France, Sweden) can show a low renewable % while still emitting very little CO₂ - and where no live fuel-mix feed is configured, this falls back to a weather estimate that only sees solar and wind.",
   gridZone:
-    "The electricity grid (balancing authority) powering this region — e.g. SE-SE3 for southern Sweden. Carbon is measured at the grid, not the datacenter.",
+    "The electricity grid (balancing authority) powering this region - e.g. SE-SE3 for southern Sweden. Carbon is measured at the grid, not the datacenter.",
 };
 
 function Th({
@@ -98,7 +98,7 @@ export function RouteDemo() {
         Green route demo
         <InfoTip
           label="green route"
-          text="Routing means choosing where to run a workload. This ranks every eligible region by your priorities and returns the greenest match. It's a recommendation you'd act on yourself (e.g. in a deploy script) — nothing is deployed or run here."
+          text="Routing means choosing where to run a workload. This ranks every eligible region by your priorities and returns the greenest match. It's a recommendation you'd act on yourself (e.g. in a deploy script) - nothing is deployed or run here."
         />
       </h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
@@ -158,7 +158,7 @@ export function RouteDemo() {
             Data Residency (optional)
             <InfoTip
               label="data residency"
-              text="A rule about where your data is legally allowed to live — e.g. 'EU only' for GDPR. Restricting residency limits routing to regions in that area, so the greenest pick may differ."
+              text="A rule about where your data is legally allowed to live - e.g. 'EU only' for GDPR. Restricting residency limits routing to regions in that area, so the greenest pick may differ."
             />
           </span>
           <select
@@ -181,7 +181,7 @@ export function RouteDemo() {
           </select>
         </div>
 
-        {/* Ranking basis — honest about what the engine actually optimizes */}
+        {/* Ranking basis - honest about what the engine actually optimizes */}
         <div
           style={{
             marginBottom: "1.5rem",
@@ -192,7 +192,7 @@ export function RouteDemo() {
           Regions are ranked by{" "}
           <strong style={{ color: "var(--green-text)" }}>lowest carbon intensity</strong> right now,
           within your provider and residency filters. Cost-aware ranking (trading carbon against
-          price) is on the roadmap — it isn't factored in yet.
+          price) is on the roadmap - it isn't factored in yet.
         </div>
 
         <button
@@ -333,8 +333,8 @@ export function RouteDemo() {
                 lineHeight: 1.5,
               }}
             >
-              Ranked by <strong>carbon intensity</strong> — which counts nuclear and hydro, not just
-              renewables — so the greenest pick can show a lower renewable % than an alternative. To
+              Ranked by <strong>carbon intensity</strong> - which counts nuclear and hydro, not just
+              renewables - so the greenest pick can show a lower renewable % than an alternative. To
               rank by renewable share instead, raise its weight in your priorities.
             </p>
           </div>
@@ -359,7 +359,7 @@ export function RouteDemo() {
                       />
                       <Th
                         label="Region"
-                        tip="The cloud provider and region — e.g. aws / eu-north-1."
+                        tip="The cloud provider and region - e.g. aws / eu-north-1."
                       />
                       <Th label="Grid Zone" tip={TIP.gridZone} />
                       <Th label="gCO₂/kWh" tip={TIP.emissions} align="right" />

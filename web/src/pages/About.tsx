@@ -90,7 +90,7 @@ function OregonGridLive() {
             }}
           >
             Measured from {i.source}
-            {i.quality === "estimated" && " (estimated — upstream feed intermittent)"} · updated{" "}
+            {i.quality === "estimated" && " (estimated - upstream feed intermittent)"} · updated{" "}
             {timeAgo(i.timestamp)}
           </div>
         </>
@@ -128,7 +128,7 @@ export function About() {
           Most of what CarbonLens needs already exists: grid operators publish what they're
           generating, and the readings are public. CarbonLens just reads those official feeds, turns
           them into one comparable number per region, and shows it. Keeping that open felt more
-          useful than locking it behind a sign-up — the whole point is to make the grid's real
+          useful than locking it behind a sign-up - the whole point is to make the grid's real
           carbon cost easy to see.
         </p>
         <ul
@@ -140,7 +140,7 @@ export function About() {
             margin: "0.5rem 0 0",
           }}
         >
-          <li>No account, no card, no trial clock — open the site and use it.</li>
+          <li>No account, no card, no trial clock - open the site and use it.</li>
           <li>
             The API answers without a key on the public demo. There's a generous fair-use limit so
             the service stays responsive for everyone.
@@ -157,8 +157,8 @@ export function About() {
         <p style={{ color: "var(--gray-600)", fontSize: "0.95rem" }}>
           CarbonLens tries to practise what it measures. It's a deliberately lightweight service: a
           small API that reads public grid feeds and caches the results, plus a static site served
-          from a CDN. There's no heavy compute behind it — no model training, no crypto, no
-          sprawling data pipeline — so it draws very little power to run, and it sleeps after a
+          from a CDN. There's no heavy compute behind it - no model training, no crypto, no
+          sprawling data pipeline - so it draws very little power to run, and it sleeps after a
           short idle period and wakes on demand. The few-second wait on the first request is that
           wake-up.
         </p>
@@ -172,7 +172,7 @@ export function About() {
           The API runs on a free Render instance in their Oregon region, which draws from the
           Pacific Northwest grid (Bonneville Power Administration, zone US-NW-BPAT). That grid is
           hydro-heavy and usually among the cleaner ones in North America. Rather than ask you to
-          take that on faith, here's what it's emitting right now — the same live, measured reading
+          take that on faith, here's what it's emitting right now - the same live, measured reading
           the rest of the site uses, not an annual "matched to renewable" claim:
         </p>
 
@@ -186,7 +186,7 @@ export function About() {
             marginBottom: 0,
           }}
         >
-          This is the grid's latest carbon intensity (location-based) — measured, not matched. It's
+          This is the grid's latest carbon intensity (location-based) - measured, not matched. It's
           a stand-in from the same Oregon / US-NW-BPAT zone our server sits in, so it moves hour to
           hour with the actual grid.
         </p>

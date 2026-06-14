@@ -8,7 +8,7 @@ import { getLastApiResponseAt } from "../api/client";
 const DELAY_MS = 4000;
 
 // If the API answered within this window it's almost certainly still awake
-// (Render's idle timeout is ~15 min), so a slow request is just slow — show a
+// (Render's idle timeout is ~15 min), so a slow request is just slow - show a
 // neutral spinner instead of the "waking up" copy. Only show the cold-start
 // message when we have NOT heard from the API recently (first request / long idle).
 const LIKELY_AWAKE_MS = 10 * 60 * 1000;
@@ -16,7 +16,7 @@ const LIKELY_AWAKE_MS = 10 * 60 * 1000;
 type Mode = "hidden" | "loading" | "waking";
 
 export function ColdStartBanner() {
-  // Count only real API traffic — exclude the CDN snapshot query, which is fast
+  // Count only real API traffic - exclude the CDN snapshot query, which is fast
   // and unrelated to the API server waking up.
   const apiFetching = useIsFetching({
     predicate: (q) => q.queryKey[0] !== "snapshot",

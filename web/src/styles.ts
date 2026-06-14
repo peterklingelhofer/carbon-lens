@@ -22,7 +22,7 @@ const PROV_BG: Record<string, string> = {
 };
 
 /** A cloud-provider label rendered as a solid brand-colored pill with white text.
- *  Identical in light and dark mode — the chip supplies its own contrast. */
+ *  Identical in light and dark mode - the chip supplies its own contrast. */
 export function providerChip(provider: string): React.CSSProperties {
   return {
     display: "inline-block",
