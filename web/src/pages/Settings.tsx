@@ -262,9 +262,8 @@ export function Settings() {
                 margin: "1rem 0 0",
               }}
             >
-              Real grid-operator data, refreshed periodically from a scheduled job — never mock
-              data. "Estimated" zones (no live feed available) are clearly labelled wherever they
-              appear.
+              Real grid-operator data, refreshed periodically from a scheduled job. "Estimated"
+              zones (no live feed available) are clearly labelled wherever they appear.
             </p>
           </>
         ) : !snapshotEnabled ? (
