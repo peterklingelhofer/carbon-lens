@@ -538,6 +538,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/sla/monitor/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Run Due Checks
+         * @description Run every SLA check that's due now and persist the results.
+         *
+         *     This is the durable, scale-to-zero-friendly path: a scheduler (the GitHub
+         *     Actions cron in .github/workflows/sla-monitor.yml) POSTs here on a cadence, so
+         *     checks happen and persist even when the API would otherwise be idle -- unlike
+         *     the in-process monitor loop, which only runs while the service is awake.
+         *     Admin-only (X-API-Key must match CARBON_LENS_ADMIN_SECRET).
+         */
+        post: operations["run_due_checks_api_v1_sla_monitor_run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sla/monitor/start": {
         parameters: {
             query?: never;
@@ -550,6 +576,9 @@ export interface paths {
         /**
          * Start Monitor
          * @description Start the background SLA monitor for an organization's SLAs.
+         *
+         *     Note: the in-process monitor only runs while the API is awake. For durable,
+         *     scheduled checking on a scale-to-zero host, use POST /monitor/run from a cron.
          */
         post: operations["start_monitor_api_v1_sla_monitor_start_post"];
         delete?: never;
@@ -2756,6 +2785,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    run_due_checks_api_v1_sla_monitor_run_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
         };

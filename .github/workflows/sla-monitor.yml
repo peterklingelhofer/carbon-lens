@@ -1,0 +1,37 @@
+name: SLA monitor
+
+# Durable SLA checking for a scale-to-zero deployment. The API's in-process
+# monitor only runs while the service is awake; this hourly cron POSTs to the
+# admin-only /monitor/run endpoint so due checks happen (and persist to Postgres)
+# even when nobody is hitting the app. The request also wakes the free instance.
+#
+# Configure once: repo variable SLA_API_URL (e.g. https://<app>.onrender.com) and
+# repo secret CARBON_LENS_ADMIN_SECRET (matching the API's admin secret). Unset =>
+# the job no-ops, so forks and undeployed checkouts don't fail.
+
+on:
+  schedule:
+    - cron: "0 * * * *" # hourly
+  workflow_dispatch: {}
+
+concurrency:
+  group: sla-monitor
+  cancel-in-progress: true
+
+jobs:
+  run-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger due SLA checks
+        env:
+          API_URL: ${{ vars.SLA_API_URL }}
+          ADMIN_SECRET: ${{ secrets.CARBON_LENS_ADMIN_SECRET }}
+        run: |
+          if [ -z "$API_URL" ] || [ -z "$ADMIN_SECRET" ]; then
+            echo "SLA_API_URL var or CARBON_LENS_ADMIN_SECRET secret not set; skipping."
+            exit 0
+          fi
+          # --retry-all-errors covers the free instance's cold start (~50s).
+          curl -fsS -X POST "$API_URL/api/v1/sla/monitor/run" \
+            -H "X-API-Key: $ADMIN_SECRET" \
+            --retry 4 --retry-all-errors --retry-delay 15 --max-time 150

@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from carbon_mesh.api.deps import get_carbon_source, get_grid_mapper, get_sla_repository
-from carbon_mesh.auth.dependencies import require_api_key
+from carbon_mesh.auth.dependencies import require_admin, require_api_key
 from carbon_mesh.models.sla import (
     AlertChannel,
     AlertEvent,
@@ -21,7 +21,7 @@ from carbon_mesh.models.sla import (
     SLASummary,
 )
 from carbon_mesh.sla.engine import SLAEngine
-from carbon_mesh.sla.monitor import SLAMonitor
+from carbon_mesh.sla.monitor import FREQUENCY_SECONDS, SLAMonitor
 from carbon_mesh.sla.repository import SLARepository
 
 logger = logging.getLogger(__name__)
@@ -168,6 +168,35 @@ async def list_alerts(limit: int = Query(50, ge=1, le=500)) -> list[AlertEvent]:
     """List recent SLA breach alerts."""
     monitor = _get_monitor()
     return monitor.get_recent_alerts(limit)
+
+
+@router.post("/monitor/run", dependencies=[Depends(require_admin)])
+async def run_due_checks(
+    repo: SLARepository = Depends(get_sla_repository),
+) -> dict:
+    """Run every SLA check that's due now and persist the results.
+
+    This is the durable, scale-to-zero-friendly path: a scheduler (the GitHub
+    Actions cron in .github/workflows/sla-monitor.yml) POSTs here on a cadence, so
+    checks happen and persist even when the API would otherwise be idle -- unlike
+    the in-process monitor loop, which only runs while the service is awake.
+    Admin-only (X-API-Key must match CARBON_LENS_ADMIN_SECRET)."""
+    engine = _get_engine()
+    now = datetime.now(timezone.utc)
+    slas = await repo.list_active_slas()
+    checks_run = 0
+    for sla in slas:
+        last = await repo.latest_check(sla.id)
+        interval = FREQUENCY_SECONDS[sla.check_frequency]
+        if last is not None and (now - last.checked_at).total_seconds() < interval:
+            continue  # not due yet
+        try:
+            check = await engine.check_sla(sla)
+            await repo.add_check(check)
+            checks_run += 1
+        except Exception as e:
+            logger.error("Scheduled SLA check failed for [%s]: %s", sla.name, e)
+    return {"active_slas": len(slas), "checks_run": checks_run, "ran_at": now.isoformat()}
 
 
 @router.get("/{sla_id}", response_model=GreenSLA)
