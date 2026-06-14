@@ -76,6 +76,11 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: API client up to date
+        run: |
+          npm run gen:api
+          git diff --exit-code src/api/schema.ts
+
       - name: TypeScript check
         run: npx tsc -b
 
