@@ -3591,7 +3591,7 @@
     },
     "/api/v1/sla/monitor/start": {
       "post": {
-        "description": "Start the background SLA monitor for an organization's SLAs.",
+        "description": "Start the background SLA monitor for an organization's SLAs.\n\nNote: the in-process monitor only runs while the API is awake. For durable,\nscheduled checking on a scale-to-zero host, use POST /monitor/run from a cron.",
         "operationId": "start_monitor_api_v1_sla_monitor_start_post",
         "parameters": [
           {
