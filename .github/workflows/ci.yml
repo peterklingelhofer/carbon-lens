@@ -42,6 +42,13 @@ jobs:
       - name: Type check
         run: uv run pyright src
 
+      - name: OpenAPI spec up to date
+        env:
+          CARBON_LENS_CARBON_SOURCE: mock
+        run: |
+          uv run python scripts/export_openapi.py --out openapi.json
+          git diff --exit-code openapi.json
+
       - name: Test
         env:
           CARBON_LENS_CARBON_SOURCE: mock
