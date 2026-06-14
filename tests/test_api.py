@@ -228,6 +228,33 @@ def test_carbon_history_unknown_region(client: TestClient):
     assert resp.status_code == 404
 
 
+def test_sla_crud_and_check_flow(client: TestClient):
+    """Create -> get -> check -> status -> list -> delete through the repository."""
+    created = client.post(
+        "/api/v1/sla/create",
+        json={
+            "org_id": "org-flow",
+            "name": "Greenest",
+            "max_carbon_intensity_gco2_kwh": 300,
+            "min_renewable_percentage": 40,
+        },
+    )
+    assert created.status_code == 200
+    sid = created.json()["id"]
+
+    assert client.get(f"/api/v1/sla/{sid}").status_code == 200
+    assert any(s["id"] == sid for s in client.get("/api/v1/sla/list?org_id=org-flow").json())
+
+    check = client.post(f"/api/v1/sla/{sid}/check")
+    assert check.status_code == 200
+    status = client.get(f"/api/v1/sla/{sid}/status").json()
+    assert status is not None and status["sla_id"] == sid
+    assert len(client.get(f"/api/v1/sla/{sid}/checks").json()) >= 1
+
+    assert client.delete(f"/api/v1/sla/{sid}").status_code == 200
+    assert client.get(f"/api/v1/sla/{sid}").status_code == 404
+
+
 def test_sla_monitor_status_route_not_shadowed(client: TestClient):
     """GET /sla/monitor/status must hit the monitor route, not /{sla_id}/status.
 
