@@ -46,3 +46,19 @@ class CarbonForecast(BaseModel):
         description="Hour-by-hour projection over the horizon; the first point is "
         "the current reading.",
     )
+
+
+class CarbonHistoryPoint(BaseModel):
+    timestamp: datetime
+    carbon_intensity_gco2_kwh: float = Field(ge=0)
+    renewable_percentage: float = Field(ge=0, le=100)
+
+
+class CarbonHistory(BaseModel):
+    grid_zone: str
+    provider: str
+    region: str
+    points: list[CarbonHistoryPoint] = Field(
+        description="Past readings for this region, oldest first, from the "
+        "published rolling history archive. Empty until the archive accumulates.",
+    )
