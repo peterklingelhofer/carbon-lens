@@ -1,5 +1,7 @@
 from typing import TYPE_CHECKING, AsyncGenerator
 
+from fastapi import Depends
+
 from carbon_mesh.accounting.tracker import CarbonTracker, DBCarbonTracker
 from carbon_mesh.carbon_sources.base import CarbonDataSource
 from carbon_mesh.carbon_sources.eia import EIACarbonSource
@@ -13,6 +15,7 @@ from carbon_mesh.config import settings
 from carbon_mesh.engine.cache import IntensityCache
 from carbon_mesh.engine.router import RoutingEngine
 from carbon_mesh.grid.mapper import GridMapper
+from carbon_mesh.sla.repository import DBSLARepository, InMemorySLARepository, SLARepository
 
 if TYPE_CHECKING:
     from carbon_mesh.scheduler.engine import SchedulingEngine
@@ -82,6 +85,8 @@ def _build_carbon_source() -> CarbonDataSource:
 _carbon_source = _build_carbon_source()
 _cached_source = _CachedCarbonSource(_carbon_source, _cache)
 _history_store = HistoryStore(settings.history_url)
+# Demo/test fallback store; the DB-backed repo is used per-request when a DB is on.
+_in_memory_sla_repo = InMemorySLARepository()
 _engine = RoutingEngine(
     carbon_source=_carbon_source,
     grid_mapper=_grid_mapper,
@@ -140,3 +145,11 @@ async def get_session() -> AsyncGenerator:
 
     async with AsyncSessionLocal() as session:
         yield session
+
+
+def get_sla_repository(session=Depends(get_session)) -> SLARepository:
+    """Durable Postgres-backed SLA store when a DB is configured; the process-local
+    in-memory store otherwise (keyless demo, tests)."""
+    if settings.use_database and session is not None:
+        return DBSLARepository(session)
+    return _in_memory_sla_repo
