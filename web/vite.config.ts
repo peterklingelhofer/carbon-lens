@@ -1,8 +1,14 @@
+/// <reference types="vitest/config" />
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [react()],
+  test: {
+    // jsdom so component tests can render React; setup file wires RTL cleanup.
+    environment: "jsdom",
+    setupFiles: ["./src/test/setup.ts"],
+  },
   server: {
     // Mirror the production Cloudflare Worker proxy (worker.js): forward API
     // paths to the local backend so the app makes same-origin relative requests
