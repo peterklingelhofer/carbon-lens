@@ -2,6 +2,7 @@ import type {
   AlertEvent,
   CalculationResponse,
   CarbonForecast,
+  CarbonHistory,
   CarbonIntensity,
   CarbonSavingsReport,
   CloudRegion,
@@ -112,6 +113,9 @@ export const api = {
 
   carbonForecast: (provider: string, region: string, hours = 24) =>
     request<CarbonForecast>(`/api/v1/carbon/forecast/${provider}/${region}?hours=${hours}`),
+
+  carbonHistory: (provider: string, region: string, hours = 168) =>
+    request<CarbonHistory>(`/api/v1/carbon/history/${provider}/${region}?hours=${hours}`),
 
   // Accounting
   savings: () => request<CarbonSavingsReport>("/api/v1/accounting/savings"),
