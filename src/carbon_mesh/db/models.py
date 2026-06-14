@@ -9,6 +9,7 @@ from sqlalchemy import (
     Integer,
     String,
     Boolean,
+    Text,
     func,
     UniqueConstraint,
 )
@@ -176,3 +177,47 @@ class ComplianceReportDB(Base):
         String(100), nullable=False, default="CSRD / ESRS E1"
     )
     report_json: Mapped[str | None] = mapped_column(nullable=True)  # Full report as JSON for export
+
+
+# --- Green SLA tables ---
+# Each row stores its domain model as JSON (payload) plus a few indexed columns
+# for querying. The nested shape (breached_regions, checks_by_day, ...) round-trips
+# losslessly via pydantic, so the schema stays stable as those details evolve.
+
+
+class GreenSLADB(Base):
+    """A persisted Green SLA definition."""
+
+    __tablename__ = "green_slas"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    org_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, index=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc)
+    )
+    payload: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class SLACheckDB(Base):
+    """A persisted SLA compliance check result."""
+
+    __tablename__ = "sla_checks"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    sla_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    checked_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, index=True
+    )
+    payload: Mapped[str] = mapped_column(Text, nullable=False)
+
+
+class SLAReportDB(Base):
+    """A persisted SLA attestation report."""
+
+    __tablename__ = "sla_reports"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    sla_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
+    generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    payload: Mapped[str] = mapped_column(Text, nullable=False)
