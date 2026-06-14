@@ -131,6 +131,80 @@ function PowerMix({ breakdown }: { breakdown: Record<string, number> }) {
   );
 }
 
+// Next-24h carbon-intensity forecast for the selected region, fetched live from
+// the API's /carbon/forecast endpoint and drawn as a sparkline. EU zones get a
+// real ENTSO-E day-ahead curve; elsewhere it's the labelled time-of-day model.
+function RegionForecast({ provider, region }: { provider: string; region: string }) {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["forecast", provider, region],
+    queryFn: () => api.carbonForecast(provider, region, 24),
+    staleTime: 5 * 60_000,
+    retry: 1,
+  });
+
+  const label = (
+    <div style={{ fontSize: "0.72rem", color: "#9ca3af", marginBottom: 4 }}>Next 24h</div>
+  );
+
+  if (isLoading) {
+    return (
+      <div style={{ marginTop: 10 }}>
+        {label}
+        <div style={{ fontSize: "0.7rem", color: "#6b7280" }}>Loading forecast…</div>
+      </div>
+    );
+  }
+  if (isError || !data || data.points.length < 2) return null;
+
+  const vals = data.points.map((p) => p.carbon_intensity_gco2_kwh);
+  const min = Math.min(...vals);
+  const max = Math.max(...vals);
+  const span = max - min || 1;
+  const w = 224;
+  const h = 44;
+  const n = vals.length - 1;
+  const x = (i: number) => (i / n) * w;
+  const y = (v: number) => h - 4 - ((v - min) / span) * (h - 8);
+  const points = vals.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const last = vals[vals.length - 1];
+  const trendPct = vals[0] > 0 ? Math.round(((last - vals[0]) / vals[0]) * 100) : 0;
+  const trend =
+    trendPct <= -5
+      ? `cleaner (${trendPct}%)`
+      : trendPct >= 5
+        ? `dirtier (+${trendPct}%)`
+        : "steady";
+  const methodLabel =
+    data.method === "entsoe_day_ahead" ? "ENTSO-E day-ahead" : "time-of-day model";
+
+  return (
+    <div style={{ marginTop: 10 }}>
+      {label}
+      <svg
+        width={w}
+        height={h}
+        viewBox={`0 0 ${w} ${h}`}
+        role="img"
+        aria-label={`24-hour carbon intensity forecast, trending ${trend}`}
+        style={{ display: "block" }}
+      >
+        <polyline
+          points={points}
+          fill="none"
+          stroke={intensityColor(last)}
+          strokeWidth={1.5}
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
+        <circle cx={x(0)} cy={y(vals[0])} r={2.2} fill="#fff" />
+      </svg>
+      <div style={{ fontSize: "0.65rem", color: "#6b7280", marginTop: 2 }}>
+        {min}–{max} gCO₂/kWh · {trend} · {methodLabel}
+      </div>
+    </div>
+  );
+}
+
 function intensityRGB(v: number): [number, number, number] {
   if (v <= 50) return [34, 197, 94]; // green
   if (v <= 150) return [132, 204, 22]; // lime
@@ -1136,6 +1210,7 @@ export default function CarbonGlobe() {
             </div>
           )}
           {selected.powerBreakdown && <PowerMix breakdown={selected.powerBreakdown} />}
+          <RegionForecast provider={selected.provider} region={selected.region} />
           <div
             style={{
               marginTop: 12,
