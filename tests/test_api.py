@@ -194,6 +194,40 @@ def test_carbon_forecast_unknown_region(client: TestClient):
     assert resp.status_code == 404
 
 
+def test_carbon_history(client: TestClient):
+    from datetime import datetime, timedelta, timezone
+
+    from carbon_mesh.api.deps import get_history_store
+    from carbon_mesh.carbon_sources.history_store import HistoryStore
+    from carbon_mesh.main import app
+
+    now = datetime.now(timezone.utc)
+    data = {
+        "series": {
+            "aws/us-west-2": [
+                {"t": (now - timedelta(days=30)).isoformat(), "c": 400.0, "r": 30.0},
+                {"t": (now - timedelta(hours=2)).isoformat(), "c": 120.0, "r": 70.0},
+            ]
+        }
+    }
+    app.dependency_overrides[get_history_store] = lambda: HistoryStore("", data=data)
+    try:
+        resp = client.get("/api/v1/carbon/history/aws/us-west-2?hours=24")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["grid_zone"] == "US-NW-BPAT"
+        # Only the 2-hours-ago point falls inside the 24h window; the 30-day-old drops.
+        assert len(body["points"]) == 1
+        assert body["points"][0]["carbon_intensity_gco2_kwh"] == 120.0
+    finally:
+        app.dependency_overrides.pop(get_history_store, None)
+
+
+def test_carbon_history_unknown_region(client: TestClient):
+    resp = client.get("/api/v1/carbon/history/aws/nonexistent")
+    assert resp.status_code == 404
+
+
 def test_sla_monitor_status_route_not_shadowed(client: TestClient):
     """GET /sla/monitor/status must hit the monitor route, not /{sla_id}/status.
 

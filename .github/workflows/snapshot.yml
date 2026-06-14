@@ -49,10 +49,11 @@ jobs:
         run: |
           mkdir -p /tmp/pub
           cp snapshot.json /tmp/pub/snapshot.json
+          cp history.json /tmp/pub/history.json
           cd /tmp/pub
           git init -q
           git checkout -q -b data
-          git add snapshot.json
+          git add snapshot.json history.json
           git -c user.name="carbonlens-bot" \
               -c user.email="github-actions[bot]@users.noreply.github.com" \
               commit -qm "snapshot ${{ github.run_id }}"
