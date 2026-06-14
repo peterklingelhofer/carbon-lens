@@ -177,6 +177,23 @@ def test_websocket_custom_subscription(client: TestClient):
         assert data["data"][0]["region"] == "us-east-1"
 
 
+def test_carbon_forecast(client: TestClient):
+    resp = client.get("/api/v1/carbon/forecast/aws/us-west-2?hours=6")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["grid_zone"] == "US-NW-BPAT"
+    assert data["provider"] == "aws"
+    assert data["method"] in ("entsoe_day_ahead", "time_of_day_model")
+    # hours=6 -> the current reading plus 6 hourly projections
+    assert len(data["points"]) == 7
+    assert all(p["carbon_intensity_gco2_kwh"] >= 0 for p in data["points"])
+
+
+def test_carbon_forecast_unknown_region(client: TestClient):
+    resp = client.get("/api/v1/carbon/forecast/aws/nonexistent")
+    assert resp.status_code == 404
+
+
 def test_sla_monitor_status_route_not_shadowed(client: TestClient):
     """GET /sla/monitor/status must hit the monitor route, not /{sla_id}/status.
 
