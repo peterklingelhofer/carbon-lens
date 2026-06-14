@@ -16,8 +16,8 @@ const linkStyle = ({ isActive }: { isActive: boolean }) =>
 const LINKS: { to: string; label: string; end?: boolean }[] = [
   { to: "/", label: "Home", end: true },
   { to: "/globe", label: "Globe" },
-  { to: "/api-explorer", label: "API Explorer" },
   { to: "/dashboard", label: "Grid Data" },
+  { to: "/api-explorer", label: "API Explorer" },
   { to: "/compliance", label: "Compliance" },
   { to: "/sla", label: "SLA" },
   { to: "/scheduler", label: "Scheduler" },
