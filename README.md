@@ -129,13 +129,14 @@ The published demo **snapshot** is rebuilt on a schedule from these feeds. When 
 
 ## API Reference
 
-Interactive docs at `/docs` (Swagger) or `/redoc` (ReDoc) when the server is running.
+Interactive docs at `/docs` (Swagger) or `/redoc` (ReDoc) when the server is running. The full schema is also checked in at [`openapi.json`](openapi.json) (regenerate with `make openapi`; CI fails if it drifts), so you can generate a typed client without booting the server.
 
 ### Carbon Data
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/v1/carbon/{provider}/{region}` | GET | Real-time carbon intensity for a cloud region |
+| `/api/v1/carbon/forecast/{provider}/{region}` | GET | Hour-by-hour intensity forecast (real EU day-ahead, heuristic elsewhere) |
 | `/api/v1/carbon/batch` | POST | Batch query multiple regions in one call |
 | `/api/v1/regions` | GET | List all 75+ supported cloud regions |
 | `/api/v1/regions?provider=aws` | GET | Filter regions by cloud provider |
