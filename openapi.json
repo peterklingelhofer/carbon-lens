@@ -3589,6 +3589,35 @@
         ]
       }
     },
+    "/api/v1/sla/monitor/run": {
+      "post": {
+        "description": "Run every SLA check that's due now and persist the results.\n\nThis is the durable, scale-to-zero-friendly path: a scheduler (the GitHub\nActions cron in .github/workflows/sla-monitor.yml) POSTs here on a cadence, so\nchecks happen and persist even when the API would otherwise be idle -- unlike\nthe in-process monitor loop, which only runs while the service is awake.\nAdmin-only (X-API-Key must match CARBON_LENS_ADMIN_SECRET).",
+        "operationId": "run_due_checks_api_v1_sla_monitor_run_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Run Due Checks Api V1 Sla Monitor Run Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Run Due Checks",
+        "tags": [
+          "SLA Monitoring"
+        ]
+      }
+    },
     "/api/v1/sla/monitor/start": {
       "post": {
         "description": "Start the background SLA monitor for an organization's SLAs.\n\nNote: the in-process monitor only runs while the API is awake. For durable,\nscheduled checking on a scale-to-zero host, use POST /monitor/run from a cron.",
