@@ -71,6 +71,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/carbon/history/{provider}/{region}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Carbon History
+         * @description Past carbon intensity for a cloud region, from the published rolling archive.
+         *
+         *     Oldest first. The archive is accumulated by the scheduled snapshot builder, so
+         *     a region returns points only once it has been observed (empty until then).
+         */
+        get: operations["get_carbon_history_api_v1_carbon_history__provider___region__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/carbon/zones": {
         parameters: {
             query?: never;
@@ -885,6 +908,32 @@ export interface components {
             provider: string;
             /** Region */
             region: string;
+        };
+        /** CarbonHistory */
+        CarbonHistory: {
+            /** Grid Zone */
+            grid_zone: string;
+            /**
+             * Points
+             * @description Past readings for this region, oldest first, from the published rolling history archive. Empty until the archive accumulates.
+             */
+            points: components["schemas"]["CarbonHistoryPoint"][];
+            /** Provider */
+            provider: string;
+            /** Region */
+            region: string;
+        };
+        /** CarbonHistoryPoint */
+        CarbonHistoryPoint: {
+            /** Carbon Intensity Gco2 Kwh */
+            carbon_intensity_gco2_kwh: number;
+            /** Renewable Percentage */
+            renewable_percentage: number;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
         };
         /** CarbonIntensity */
         CarbonIntensity: {
@@ -1930,6 +1979,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CarbonForecast"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_carbon_history_api_v1_carbon_history__provider___region__get: {
+        parameters: {
+            query?: {
+                /** @description How far back to return (1-720 hours). */
+                hours?: number;
+            };
+            header?: never;
+            path: {
+                provider: string;
+                region: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CarbonHistory"];
                 };
             };
             /** @description Validation Error */

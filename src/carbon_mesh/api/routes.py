@@ -1,6 +1,6 @@
 import hashlib
 import json as _json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, Response
@@ -12,18 +12,25 @@ from carbon_mesh.api.deps import (
     get_db_tracker,
     get_engine,
     get_grid_mapper,
+    get_history_store,
     get_scheduling_engine,
     get_session,
     get_tracker,
 )
 from carbon_mesh.auth.dependencies import require_api_key
 from carbon_mesh.carbon_sources.base import CarbonDataSource
+from carbon_mesh.carbon_sources.history_store import HistoryStore
 from carbon_mesh.config import settings
 from carbon_mesh.db.models import ApiKeyRecord
 from carbon_mesh.engine.router import RoutingEngine
 from carbon_mesh.grid.mapper import GridMapper
 from carbon_mesh.models.accounting import CarbonSavingsReport
-from carbon_mesh.models.carbon import CarbonForecast, CarbonIntensity
+from carbon_mesh.models.carbon import (
+    CarbonForecast,
+    CarbonHistory,
+    CarbonHistoryPoint,
+    CarbonIntensity,
+)
 from carbon_mesh.models.region import CloudRegion
 from carbon_mesh.models.routing import RouteRequest, RouteResponse
 from carbon_mesh.scheduler.engine import SchedulingEngine
@@ -154,6 +161,39 @@ async def get_carbon_forecast(
         method=method,
         points=points,
     )
+
+
+@router.get(
+    "/carbon/history/{provider}/{region}",
+    response_model=CarbonHistory,
+    tags=["Carbon Data"],
+)
+async def get_carbon_history(
+    provider: str,
+    region: str,
+    hours: int = Query(168, ge=1, le=720, description="How far back to return (1-720 hours)."),
+    mapper: GridMapper = Depends(get_grid_mapper),
+    store: HistoryStore = Depends(get_history_store),
+) -> CarbonHistory:
+    """Past carbon intensity for a cloud region, from the published rolling archive.
+
+    Oldest first. The archive is accumulated by the scheduled snapshot builder, so
+    a region returns points only once it has been observed (empty until then).
+    """
+    zone = mapper.get_grid_zone(provider, region)
+    if zone is None:
+        raise HTTPException(status_code=404, detail=f"Unknown region: {provider}/{region}")
+    since = datetime.now(timezone.utc) - timedelta(hours=hours)
+    raw = await store.series_for(f"{provider}/{region}", since)
+    points = [
+        CarbonHistoryPoint(
+            timestamp=p["t"],
+            carbon_intensity_gco2_kwh=p["c"],
+            renewable_percentage=p["r"],
+        )
+        for p in raw
+    ]
+    return CarbonHistory(grid_zone=zone, provider=provider, region=region, points=points)
 
 
 @router.get("/carbon/zones", tags=["Carbon Data"])

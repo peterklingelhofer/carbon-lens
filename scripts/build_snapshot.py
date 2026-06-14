@@ -200,6 +200,34 @@ async def build_snapshot(baseline: dict | None = None, max_stale_hours: float = 
     }
 
 
+# Roughly 7 days at the 30-min publish cadence; bounds history.json size per region.
+_HISTORY_MAX_POINTS = 336
+
+
+def append_history(
+    prev_history: dict | None, snapshot: dict, max_points: int = _HISTORY_MAX_POINTS
+) -> dict:
+    """Append this snapshot's readings to the rolling per-region history archive.
+
+    Keyed by the same ``provider/region`` keys as the snapshot; each point is a
+    compact ``{"t","c","r"}`` (timestamp, carbon, renewable). Points beyond
+    ``max_points`` are dropped so the file stays bounded, and a repeated timestamp
+    (a re-run) replaces the last point rather than duplicating it."""
+    series: dict[str, list[dict]] = dict((prev_history or {}).get("series", {}))
+    generated_at = snapshot["generated_at"]
+    for key, entry in snapshot["intensities"].items():
+        point = {
+            "t": generated_at,
+            "c": entry["carbon_intensity_gco2_kwh"],
+            "r": entry["renewable_percentage"],
+        }
+        prev_points = list(series.get(key, []))
+        if prev_points and prev_points[-1].get("t") == generated_at:
+            prev_points.pop()
+        series[key] = (prev_points + [point])[-max_points:]
+    return {"generated_at": generated_at, "series": series}
+
+
 async def _main() -> int:
     parser = argparse.ArgumentParser(description="Build the public carbon snapshot")
     parser.add_argument("--out", default="snapshot.json", help="Output path")
@@ -220,12 +248,29 @@ async def _main() -> int:
         default=6.0,
         help="Oldest a carried-forward live reading may be before it's dropped",
     )
+    parser.add_argument(
+        "--history-out",
+        default="history.json",
+        help="Rolling history archive output path; '' to skip",
+    )
+    parser.add_argument(
+        "--history-baseline",
+        default="https://raw.githubusercontent.com/peterklingelhofer/carbonlens/data/history.json",
+        help="Previous history archive (URL or path) to append to; '' to disable",
+    )
     args = parser.parse_args()
 
     baseline = _load_baseline(args.baseline)
     snapshot = await build_snapshot(baseline=baseline, max_stale_hours=args.max_stale_hours)
     with open(args.out, "w") as f:
         json.dump(snapshot, f, indent=2)
+
+    if args.history_out:
+        prev_history = _load_baseline(args.history_baseline)
+        history = append_history(prev_history, snapshot)
+        with open(args.history_out, "w") as f:
+            json.dump(history, f, separators=(",", ":"))
+        print(f"Wrote {args.history_out}: {len(history['series'])} regions tracked")
 
     s = snapshot["summary"]
     print(

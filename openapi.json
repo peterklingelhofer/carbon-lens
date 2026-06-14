@@ -177,6 +177,65 @@
         "title": "CarbonForecast",
         "type": "object"
       },
+      "CarbonHistory": {
+        "properties": {
+          "grid_zone": {
+            "title": "Grid Zone",
+            "type": "string"
+          },
+          "points": {
+            "description": "Past readings for this region, oldest first, from the published rolling history archive. Empty until the archive accumulates.",
+            "items": {
+              "$ref": "#/components/schemas/CarbonHistoryPoint"
+            },
+            "title": "Points",
+            "type": "array"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "region": {
+            "title": "Region",
+            "type": "string"
+          }
+        },
+        "required": [
+          "grid_zone",
+          "provider",
+          "region",
+          "points"
+        ],
+        "title": "CarbonHistory",
+        "type": "object"
+      },
+      "CarbonHistoryPoint": {
+        "properties": {
+          "carbon_intensity_gco2_kwh": {
+            "minimum": 0.0,
+            "title": "Carbon Intensity Gco2 Kwh",
+            "type": "number"
+          },
+          "renewable_percentage": {
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Renewable Percentage",
+            "type": "number"
+          },
+          "timestamp": {
+            "format": "date-time",
+            "title": "Timestamp",
+            "type": "string"
+          }
+        },
+        "required": [
+          "timestamp",
+          "carbon_intensity_gco2_kwh",
+          "renewable_percentage"
+        ],
+        "title": "CarbonHistoryPoint",
+        "type": "object"
+      },
       "CarbonIntensity": {
         "properties": {
           "carbon_intensity_gco2_kwh": {
@@ -2248,6 +2307,73 @@
           }
         },
         "summary": "Get Carbon Forecast",
+        "tags": [
+          "Carbon Routing",
+          "Carbon Data"
+        ]
+      }
+    },
+    "/api/v1/carbon/history/{provider}/{region}": {
+      "get": {
+        "description": "Past carbon intensity for a cloud region, from the published rolling archive.\n\nOldest first. The archive is accumulated by the scheduled snapshot builder, so\na region returns points only once it has been observed (empty until then).",
+        "operationId": "get_carbon_history_api_v1_carbon_history__provider___region__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "title": "Provider",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "region",
+            "required": true,
+            "schema": {
+              "title": "Region",
+              "type": "string"
+            }
+          },
+          {
+            "description": "How far back to return (1-720 hours).",
+            "in": "query",
+            "name": "hours",
+            "required": false,
+            "schema": {
+              "default": 168,
+              "description": "How far back to return (1-720 hours).",
+              "maximum": 720,
+              "minimum": 1,
+              "title": "Hours",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CarbonHistory"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Carbon History",
         "tags": [
           "Carbon Routing",
           "Carbon Data"
