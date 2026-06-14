@@ -129,7 +129,7 @@ The published demo **snapshot** is rebuilt on a schedule from these feeds. When 
 
 ## API Reference
 
-Interactive docs at `/docs` (Swagger) or `/redoc` (ReDoc) when the server is running. The full schema is also checked in at [`openapi.json`](openapi.json) (regenerate with `make openapi`; CI fails if it drifts), so you can generate a typed client without booting the server.
+Interactive docs at `/docs` (Swagger) or `/redoc` (ReDoc) when the server is running. The full schema is also checked in at [`openapi.json`](openapi.json) (regenerate with `make openapi`; CI fails if it drifts), so you can generate a typed client without booting the server. A generated TypeScript client lives at [`web/src/api/schema.ts`](web/src/api/schema.ts) (`npm run gen:api`); import `ApiSchemas` / `paths` from `src/api/types` for fully-typed requests and responses.
 
 ### Carbon Data
 

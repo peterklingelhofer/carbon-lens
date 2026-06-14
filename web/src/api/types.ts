@@ -1,3 +1,14 @@
+import type { components } from "./schema";
+
+// Types generated from the API's OpenAPI spec (run `npm run gen:api` to refresh;
+// CI fails if they drift). This is the canonical request/response contract -- new
+// code can pull schemas straight from here, e.g.
+// `type Forecast = ApiSchemas["CarbonForecast"]`. The hand-written interfaces
+// below predate the generator and remain for existing call sites.
+export type { components, operations, paths } from "./schema";
+
+export type ApiSchemas = components["schemas"];
+
 export interface RegionRecommendation {
   provider: string;
   region: string;
