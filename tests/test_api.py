@@ -255,6 +255,31 @@ def test_sla_crud_and_check_flow(client: TestClient):
     assert client.get(f"/api/v1/sla/{sid}").status_code == 404
 
 
+def test_sla_run_due_checks_is_admin_gated_and_runs(client: TestClient, monkeypatch):
+    from carbon_mesh.config import settings
+
+    monkeypatch.setattr(settings, "admin_secret", "test-admin")
+    sid = client.post(
+        "/api/v1/sla/create",
+        json={
+            "org_id": "org-cron",
+            "name": "Cron",
+            "max_carbon_intensity_gco2_kwh": 300,
+            "min_renewable_percentage": 40,
+        },
+    ).json()["id"]
+    try:
+        # No admin secret -> rejected.
+        assert client.post("/api/v1/sla/monitor/run").status_code == 403
+        # With the secret -> runs and checks the never-checked (due) SLA.
+        resp = client.post("/api/v1/sla/monitor/run", headers={"X-API-Key": "test-admin"})
+        assert resp.status_code == 200
+        assert resp.json()["checks_run"] >= 1
+        assert len(client.get(f"/api/v1/sla/{sid}/checks").json()) >= 1
+    finally:
+        client.delete(f"/api/v1/sla/{sid}")
+
+
 def test_sla_monitor_status_route_not_shadowed(client: TestClient):
     """GET /sla/monitor/status must hit the monitor route, not /{sla_id}/status.
 
