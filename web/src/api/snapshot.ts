@@ -25,7 +25,7 @@ const SNAPSHOT_URL = import.meta.env.VITE_SNAPSHOT_URL || "";
 export const snapshotEnabled = !!SNAPSHOT_URL;
 
 // Derive data quality from a provider's source string. The snapshot builder
-// stamps `quality` server-side, but the live API does not — so the live-API
+// stamps `quality` server-side, but the live API does not - so the live-API
 // fallback (local dev without a snapshot) derives it here. Mirrors the Python
 // `_quality` in scripts/build_snapshot.py.
 export function qualityFromSource(source: string): "live" | "estimated" | "mock" {

@@ -31,7 +31,7 @@ function webglAvailable(): boolean {
 // A spinnable 3D globe plotting every cloud region at its real datacenter
 // coordinates, glowing by carbon intensity (green = clean, red = dirty), with
 // bar height = renewable share and a radar pulse per site. Data is the same
-// real/estimated snapshot the dashboard uses — no continuous-surface coloring,
+// real/estimated snapshot the dashboard uses - no continuous-surface coloring,
 // so empty regions are simply dark (honest), not faked.
 
 // Self-hosted from public/textures (copied from three-globe). Avoids three-globe's
@@ -167,7 +167,7 @@ function beamAltitude(p: GlobePoint, metric: Metric): number {
 }
 
 // A tapered, open-ended beam of UNIT height whose color fades to transparent at
-// the tip — it reads as a glowing light shaft, not a solid blocky cylinder. The
+// the tip - it reads as a glowing light shaft, not a solid blocky cylinder. The
 // height is applied per-frame via mesh.scale.y so the metric toggle just
 // rescales existing meshes (no geometry rebuild).
 function buildBeam(p: GlobePoint, globeRadius: number, colorMetric: Metric): THREE.Mesh {
@@ -202,14 +202,14 @@ function buildBeam(p: GlobePoint, globeRadius: number, colorMetric: Metric): THR
   for (let i = 0; i < pos.count; i++) {
     const t = Math.min(1, Math.max(0, pos.getY(i))); // 0 base → 1 tip (unit height)
     // Full, saturated color through the lower ~⅔ of the beam, fading to
-    // transparent only near the tip — so the hue reads clearly even zoomed out.
+    // transparent only near the tip - so the hue reads clearly even zoomed out.
     const alpha = Math.min(1, (1 - t) * 1.5);
     colors.set([r, g, b, alpha], i * 4);
   }
   geom.setAttribute("color", new THREE.BufferAttribute(colors, 4));
 
   // Normal (alpha) blending preserves the true hue. Additive blending washed
-  // colors toward white — yellow especially — and over the bright city-lights
+  // colors toward white - yellow especially - and over the bright city-lights
   // texture. depthWrite:false keeps overlapping beams compositing cleanly.
   const mat = new THREE.MeshBasicMaterial({
     vertexColors: true,
@@ -295,7 +295,7 @@ function useGlobePoints() {
 
 // Shared width so the metric toggles and the colour legend always line up.
 const PANEL_W = 250;
-const EARTH_KM = 6371; // mean Earth radius — globe radius (world units) maps to this
+const EARTH_KM = 6371; // mean Earth radius - globe radius (world units) maps to this
 // Radial height of a full (max-value) beam, in globe-radius units (= beamAltitude max).
 const MAX_BEAM_ALT = 0.04 + 0.5;
 
@@ -350,7 +350,7 @@ function MetricToggle({
               cursor: "pointer",
               padding: "3px 6px",
               fontSize: "0.68rem",
-              // Constant weight — the green fill signals "active", so we don't
+              // Constant weight - the green fill signals "active", so we don't
               // bold (which would widen the text and wrap it to two lines).
               fontWeight: 500,
               background: value === m ? "var(--btn-green)" : "transparent",
@@ -371,9 +371,9 @@ export default function CarbonGlobe() {
   const points = useGlobePoints();
   const { data: snapshot, isError: dataError } = useSnapshot();
   const [selected, setSelected] = useState<GlobePoint | null>(null);
-  // Default to a BIVARIATE view: colour = carbon intensity (the rigorous metric —
+  // Default to a BIVARIATE view: colour = carbon intensity (the rigorous metric -
   // lower gCO₂/kWh is genuinely cleaner, nuclear included), height = renewable %.
-  // Two channels, two variables — not the same thing shown twice.
+  // Two channels, two variables - not the same thing shown twice.
   const [heightMetric, setHeightMetric] = useState<Metric>("renewable");
   const [colorMetric, setColorMetric] = useState<Metric>("intensity");
   // Map scale + beam reference, recomputed as the camera zooms (shared px↔km basis):
@@ -384,7 +384,7 @@ export default function CarbonGlobe() {
     px: number;
     beamPx: number;
   } | null>(null);
-  // Set when WebGL can't be created — we render a fallback instead of the globe.
+  // Set when WebGL can't be created - we render a fallback instead of the globe.
   // Probed lazily on mount so the fallback shows on the first render, with the
   // try/catch below as a backup for context-lost-after-probe.
   const [webglError, setWebglError] = useState(() => !webglAvailable());
@@ -411,7 +411,7 @@ export default function CarbonGlobe() {
       globe = new Globe(el);
     } catch {
       // WebGL context creation failed even though the probe passed (e.g. context
-      // lost / driver exhausted) — fall back gracefully rather than crash. This
+      // lost / driver exhausted) - fall back gracefully rather than crash. This
       // is a one-shot error path, not a cascading-render risk.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setWebglError(true);
@@ -424,7 +424,7 @@ export default function CarbonGlobe() {
       .showAtmosphere(true)
       .atmosphereColor("#3a9efd")
       .atmosphereAltitude(0.18)
-      // Points are invisible — they exist only as hover/click hit-targets that
+      // Points are invisible - they exist only as hover/click hit-targets that
       // span each beam. The visible beams are the custom layer below.
       .pointLat("lat")
       .pointLng("lng")
@@ -581,17 +581,17 @@ export default function CarbonGlobe() {
 
   const liveCount = points.filter((p) => p.quality === "live").length;
   const estCount = points.filter((p) => p.quality === "estimated").length;
-  // `?bare` hides the overlays — used only for capturing clean globe screenshots.
+  // `?bare` hides the overlays - used only for capturing clean globe screenshots.
   const bare = typeof window !== "undefined" && window.location.search.includes("bare");
 
-  // Height ruler geometry — a 100% beam's true on-screen length at this zoom.
+  // Height ruler geometry - a 100% beam's true on-screen length at this zoom.
   // The bar is drawn at that length but capped to the panel; ticks beyond the
   // panel are dropped and a "+" marks that the full 100% sits off-panel.
   const beamPx = scale?.beamPx ?? PANEL_W;
   const heightBarW = Math.min(beamPx, PANEL_W);
   const heightCapped = beamPx > PANEL_W + 1;
   // Pick a nice tick step for the *visible* value range so 4–6 labels always
-  // span the bar — even when it's capped and only a slice of the beam shows.
+  // span the bar - even when it's capped and only a slice of the beam shows.
   const heightMax = heightMetric === "renewable" ? 100 : 800; // value at full beam
   const heightSteps = heightMetric === "renewable" ? [2, 5, 10, 25, 50] : [25, 50, 100, 200, 400];
   const heightVisibleMax = heightMax * Math.min(1, PANEL_W / beamPx);
@@ -648,7 +648,7 @@ export default function CarbonGlobe() {
       `}</style>
       <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
 
-      {/* WebGL unavailable — graceful fallback instead of a crashed page */}
+      {/* WebGL unavailable - graceful fallback instead of a crashed page */}
       {webglError && (
         <div
           style={{
@@ -727,7 +727,7 @@ export default function CarbonGlobe() {
           display: bare || webglError ? "none" : undefined,
         }}
       >
-        {/* Visually hidden — kept for the document outline / screen readers. */}
+        {/* Visually hidden - kept for the document outline / screen readers. */}
         <h1
           style={{
             position: "absolute",
@@ -796,7 +796,7 @@ export default function CarbonGlobe() {
             Data updated {timeAgo(snapshot.generated_at)}
           </p>
         )}
-        {/* Always-available text alternative — for keyboard, screen-reader and
+        {/* Always-available text alternative - for keyboard, screen-reader and
             colour-vision users who can't read the colour-coded beams. Hidden on
             mobile to declutter; both destinations live in the nav (Grid Data,
             Methodology), and the no-WebGL fallback keeps its own table link. */}
@@ -837,7 +837,7 @@ export default function CarbonGlobe() {
           display: bare || webglError ? "none" : undefined,
         }}
       >
-        {/* Collapse toggle — visible only on small screens (CSS); sits above the
+        {/* Collapse toggle - visible only on small screens (CSS); sits above the
             keys so collapsing it reclaims the vertical space they take. */}
         <button
           type="button"
@@ -855,8 +855,8 @@ export default function CarbonGlobe() {
           onChange={setColorMetric}
           tip={
             colorMetric === "intensity"
-              ? "Beam colour shows carbon intensity — gCO₂/kWh, grams of CO₂ per kilowatt-hour of electricity. Green = lower (cleaner), red = higher (dirtier)."
-              : "Beam colour shows renewable share — the % from renewables (wind, solar, hydro) right now; greener = higher. Note: this excludes nuclear, so a clean nuclear/hydro grid (France, Sweden) can read low here yet still emit very little CO₂. Carbon intensity is the better 'how clean' measure."
+              ? "Beam colour shows carbon intensity - gCO₂/kWh, grams of CO₂ per kilowatt-hour of electricity. Green = lower (cleaner), red = higher (dirtier)."
+              : "Beam colour shows renewable share - the % from renewables (wind, solar, hydro) right now; greener = higher. Note: this excludes nuclear, so a clean nuclear/hydro grid (France, Sweden) can read low here yet still emit very little CO₂. Carbon intensity is the better 'how clean' measure."
           }
         />
         {colorMetric === "intensity" ? (
@@ -916,11 +916,11 @@ export default function CarbonGlobe() {
           onChange={setHeightMetric}
           tip={
             heightMetric === "renewable"
-              ? "Beam height shows renewable share. Compare a beam to the scale below to read its value — a full-height beam ≈ 100%, flat ≈ 0%. On a globe on-screen height also depends on where a beam sits, so it's approximate."
-              : "Beam height shows carbon intensity (gCO₂/kWh). Compare a beam to the scale below to read its value — a full-height beam ≈ 800+ gCO₂/kWh, flat ≈ 0. On a globe on-screen height also depends on where a beam sits, so it's approximate."
+              ? "Beam height shows renewable share. Compare a beam to the scale below to read its value - a full-height beam ≈ 100%, flat ≈ 0%. On a globe on-screen height also depends on where a beam sits, so it's approximate."
+              : "Beam height shows carbon intensity (gCO₂/kWh). Compare a beam to the scale below to read its value - a full-height beam ≈ 800+ gCO₂/kWh, flat ≈ 0. On a globe on-screen height also depends on where a beam sits, so it's approximate."
           }
         />
-        {/* A full beam laid flat at its true on-screen length — lay a beam against it. */}
+        {/* A full beam laid flat at its true on-screen length - lay a beam against it. */}
         <div aria-hidden style={{ position: "relative", width: PANEL_W, height: 12 }}>
           <div
             style={{
@@ -993,11 +993,11 @@ export default function CarbonGlobe() {
             color: "#94a3b8",
           }}
         >
-          {heightMetric === "renewable" ? "% renewable — beam height" : "gCO₂/kWh — beam height"}
+          {heightMetric === "renewable" ? "% renewable - beam height" : "gCO₂/kWh - beam height"}
           {heightCapped && " · zoom out for full 100%"}
         </div>
 
-        {/* Map scale bar — real surface distance at the current zoom. Part of the
+        {/* Map scale bar - real surface distance at the current zoom. Part of the
             legend, so it collapses with everything else when the legend is hidden. */}
         {scale && (
           <div
@@ -1021,7 +1021,7 @@ export default function CarbonGlobe() {
         )}
       </div>
 
-      {/* Empty / loading / error state — distinguish a failed fetch from loading */}
+      {/* Empty / loading / error state - distinguish a failed fetch from loading */}
       {!webglError && points.length === 0 && (
         <div
           style={{

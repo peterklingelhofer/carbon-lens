@@ -27,7 +27,7 @@
   --blue-400: #60a5fa;
   --blue-500: #3b82f6;
 
-  /* Mid-range carbon-intensity indicator — dark gold for contrast on light,
+  /* Mid-range carbon-intensity indicator - dark gold for contrast on light,
      remapped to a bright amber in dark mode below. */
   --amber: #b45309;
 
@@ -41,8 +41,8 @@
   /* Semantic green tokens (WCAG AA). green-600 alone can't serve as both a
      button background (white text needs it dark) and on-surface text (needs it
      light on dark mode), so split the roles:
-       --btn-green   solid button bg — white text is 5.0:1 in both modes
-       --green-text  green text/links — dark green on light, bright on dark   */
+       --btn-green   solid button bg - white text is 5.0:1 in both modes
+       --green-text  green text/links - dark green on light, bright on dark   */
   --btn-green: #15803d;
   --btn-green-hover: #166534;
   --green-text: #15803d; /* on white: 5.0:1 */
@@ -53,12 +53,12 @@
   --card-bg: #ffffff;
   --card-shadow: 0 1px 3px rgba(16, 24, 40, 0.08), 0 1px 2px rgba(16, 24, 40, 0.04);
 
-  /* Provider label chips — solid brand-colored pill with white text, identical in
+  /* Provider label chips - solid brand-colored pill with white text, identical in
      light and dark mode. Self-contained contrast (white on a dark-enough brand
      color, all ≥4.5:1), so it's theme-independent and needs no per-mode tuning. */
-  --prov-aws-bg: #c2410c; /* orange — 5.2:1 on white */
-  --prov-gcp-bg: #4f46e5; /* indigo — 6.3:1 on white */
-  --prov-azure-bg: #0067b8; /* blue   — 5.8:1 on white */
+  --prov-aws-bg: #c2410c; /* orange - 5.2:1 on white */
+  --prov-gcp-bg: #4f46e5; /* indigo - 6.3:1 on white */
+  --prov-azure-bg: #0067b8; /* blue   - 5.8:1 on white */
 
   font-family: var(--sans);
   line-height: 1.6;
@@ -73,13 +73,13 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    /* Surfaces — explicit so they don't depend on the remapped ramp below */
+    /* Surfaces - explicit so they don't depend on the remapped ramp below */
     --surface: #1f2937;
     --surface-alt: #111827;
     --nav-bg: #1f2937;
     --card-bg: #1f2937;
     --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
-    --amber: #fbbf24; /* bright amber — legible on dark surfaces */
+    --amber: #fbbf24; /* bright amber - legible on dark surfaces */
 
     /* Remap the gray ramp for a dark background: low numbers stay dark
        (borders / fills), 400–600 become light (text). This keeps every
@@ -89,7 +89,7 @@
     --gray-200: #374151; /* borders */
     --gray-300: #4b5563; /* stronger borders / decorative */
     --gray-400: #97a3b2; /* faint text (placeholders, "Loading…") */
-    --gray-500: #b3bdc9; /* muted / secondary text — the main contrast fix */
+    --gray-500: #b3bdc9; /* muted / secondary text - the main contrast fix */
     --gray-600: #ced6e0; /* stronger secondary text */
     --gray-700: #e5e7eb;
     --gray-800: #f1f5f9;

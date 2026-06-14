@@ -2,7 +2,7 @@ import { type ReactNode, useCallback, useEffect, useId, useRef, useState } from 
 import { createPortal } from "react-dom";
 
 // A small "i" icon that reveals a plain-language definition on hover, focus, or
-// click — for domain jargon (gCO₂/kWh, carbon intensity, balancing authority…).
+// click - for domain jargon (gCO₂/kWh, carbon intensity, balancing authority…).
 // Keyboard-accessible: it's a real button with an aria-label and role=tooltip.
 export function InfoTip({
   label,

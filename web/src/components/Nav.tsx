@@ -64,7 +64,7 @@ export function Nav() {
           font-size: clamp(0.78rem, 1.5vw, 0.95rem);
           white-space: nowrap;
         }
-        /* Hamburger — hidden on desktop, shown on mobile */
+        /* Hamburger - hidden on desktop, shown on mobile */
         .nav-toggle {
           display: none;
           margin-left: auto;

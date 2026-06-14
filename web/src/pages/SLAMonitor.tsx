@@ -73,7 +73,7 @@ export function SLAMonitor() {
         Green SLA monitoring
         <InfoTip
           label="SLA"
-          text="An SLA (service-level agreement) is a measurable promise about a service. Here it's a carbon ceiling for your workloads — e.g. 'stay under 100 gCO₂/kWh' — checked against live grid data. A 'breach' is a check where a region exceeded your carbon ceiling or fell below your renewable floor."
+          text="An SLA (service-level agreement) is a measurable promise about a service. Here it's a carbon ceiling for your workloads - e.g. 'stay under 100 gCO₂/kWh' - checked against live grid data. A 'breach' is a check where a region exceeded your carbon ceiling or fell below your renewable floor."
         />
       </h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
@@ -158,7 +158,7 @@ export function SLAMonitor() {
                 marginTop: "0.5rem",
               }}
             >
-              Create an SLA first — the monitor needs at least one target to watch.
+              Create an SLA first - the monitor needs at least one target to watch.
             </div>
           )}
           {monitorMutation.isError && (
@@ -544,7 +544,7 @@ export function SLAMonitor() {
               marginBottom: "1rem",
             }}
           >
-            {new Date(reportMutation.data.period_start).toLocaleDateString()} —{" "}
+            {new Date(reportMutation.data.period_start).toLocaleDateString()} -{" "}
             {new Date(reportMutation.data.period_end).toLocaleDateString()}
             {" | "}Generated {new Date(reportMutation.data.generated_at).toLocaleString()}
           </div>

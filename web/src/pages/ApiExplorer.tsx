@@ -22,20 +22,20 @@ const POPULAR_REGIONS: Record<string, string[]> = {
   azure: ["eastus", "westeurope", "norwayeast", "uksouth", "australiaeast", "canadacentral"],
 };
 
-// The deployed API base — used for the Swagger link and the copy-pasteable curls.
+// The deployed API base - used for the Swagger link and the copy-pasteable curls.
 // For display (curl snippets, Swagger link): the page's own origin, which the
-// Worker proxies to the backend — so copy-pasted commands hit a same-origin URL.
+// Worker proxies to the backend - so copy-pasted commands hit a same-origin URL.
 const API_BASE =
   import.meta.env.VITE_API_URL || (typeof window !== "undefined" ? window.location.origin : "");
 
 // Shared tooltip copy, reused across the result cards and table headers.
 const TIP = {
   emissions:
-    "Carbon emitted per kilowatt-hour of electricity, in gCO₂/kWh — an intensity (emissions per unit of power), not a total. Lower is cleaner.",
+    "Carbon emitted per kilowatt-hour of electricity, in gCO₂/kWh - an intensity (emissions per unit of power), not a total. Lower is cleaner.",
   renewable:
     "Share of the grid's electricity from renewables (wind, solar, hydro) right now. Note: low-carbon grids that lean on nuclear (e.g. France, Sweden) can show a low renewable % while still emitting very little CO₂.",
   gridZone:
-    "The electricity grid (balancing authority) powering this region — e.g. US-NW-BPAT for Oregon, SE-SE3 for southern Sweden. Carbon is measured at the grid, not the datacenter.",
+    "The electricity grid (balancing authority) powering this region - e.g. US-NW-BPAT for Oregon, SE-SE3 for southern Sweden. Carbon is measured at the grid, not the datacenter.",
   source:
     "Where the reading came from: a live grid-operator feed (eia, entsoe, uk, aemo, …) or a clearly-labelled estimate (e.g. the open_meteo weather model) when no live feed is configured for that zone.",
 };
@@ -103,7 +103,7 @@ export function ApiExplorer() {
         />
       </h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "1rem" }}>
-        Try the carbon API by hand. Each query returns the latest reading — live where a
+        Try the carbon API by hand. Each query returns the latest reading - live where a
         grid-operator feed exists, a clearly-labelled estimate otherwise. No key required;
         rate-limited to 100 requests/min per IP.
       </p>
@@ -122,7 +122,7 @@ export function ApiExplorer() {
           Open the interactive Swagger docs ↗
         </a>{" "}
         <span style={{ color: "var(--gray-500)" }}>
-          (every endpoint, with request/response schemas — also at{" "}
+          (every endpoint, with request/response schemas - also at{" "}
           <code style={{ fontSize: "0.8rem" }}>/redoc</code> and{" "}
           <code style={{ fontSize: "0.8rem" }}>/openapi.json</code>)
         </span>

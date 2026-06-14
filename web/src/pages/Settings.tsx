@@ -13,7 +13,7 @@ const API_BASE =
 
 // The free Render server sleeps when idle and can take 1–2 min to wake. The
 // requests are same-origin (proxied by the Worker), so they never fail to CORS
-// or get blocked — they just wait while the server boots. Retry patiently so a
+// or get blocked - they just wait while the server boots. Retry patiently so a
 // cold start resolves instead of giving up.
 const COLD_START_RETRY = {
   retry: 24,
@@ -142,7 +142,7 @@ export function Settings() {
       <h1 style={{ marginBottom: "0.5rem" }}>Status</h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
         Live system health, data freshness, and the sources behind every reading. The public API is
-        free and open — no key required — and rate-limited to keep it responsive for everyone.
+        free and open - no key required - and rate-limited to keep it responsive for everyone.
         Browse every endpoint in the{" "}
         <a
           href={`${API_BASE}/docs`}
@@ -159,7 +159,7 @@ export function Settings() {
         .
       </p>
 
-      {/* System Status — live from the API (same-origin via the Worker proxy) */}
+      {/* System Status - live from the API (same-origin via the Worker proxy) */}
       <div style={card}>
         <h2 style={{ margin: "0 0 1rem", fontSize: "1.1rem" }}>System Status</h2>
         {health ? (
@@ -215,7 +215,7 @@ export function Settings() {
                 Carbon Source
                 <InfoTip
                   label="carbon source"
-                  text="Which data-source mode the API is running. 'hybrid' cascades through all providers (live feeds first, then estimates) — the normal setting."
+                  text="Which data-source mode the API is running. 'hybrid' cascades through all providers (live feeds first, then estimates) - the normal setting."
                 />
               </div>
               <div style={{ fontWeight: 600 }}>{health.carbon_source}</div>
@@ -228,7 +228,7 @@ export function Settings() {
         )}
       </div>
 
-      {/* Live data — from the published snapshot (GitHub CDN), always available */}
+      {/* Live data - from the published snapshot (GitHub CDN), always available */}
       <div style={card}>
         <h2
           style={{
@@ -275,7 +275,7 @@ export function Settings() {
         )}
       </div>
 
-      {/* Provider status — live from the API */}
+      {/* Provider status - live from the API */}
       <div style={card}>
         <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.1rem" }}>
           Carbon Data Providers
