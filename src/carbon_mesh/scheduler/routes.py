@@ -8,7 +8,6 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from carbon_mesh.api.deps import get_carbon_source, get_grid_mapper
 from carbon_mesh.auth.dependencies import require_api_key
 from carbon_mesh.scheduler.engine import (
     CronSchedule,
@@ -28,22 +27,11 @@ _schedule_store: dict[str, CronSchedule] = {}
 
 
 def _get_engine() -> SchedulingEngine:
-    from carbon_mesh.carbon_sources.entsoe_forecast import ENTSOEForecastSource
-    from carbon_mesh.carbon_sources.snapshot_source import SnapshotBackedSource
-    from carbon_mesh.config import settings
+    # Shared wiring (snapshot-backed current intensity + ENTSO-E forecast) lives
+    # in deps so the public /carbon/forecast endpoint uses the same engine.
+    from carbon_mesh.api.deps import get_scheduling_engine
 
-    # Read current intensity from the published snapshot (one cached fetch of all
-    # zones) instead of live-fetching dozens per request. Skipped under "mock"
-    # so the test suite stays offline.
-    source = get_carbon_source()
-    if settings.snapshot_url and settings.carbon_source != "mock":
-        source = SnapshotBackedSource(settings.snapshot_url, source)
-
-    return SchedulingEngine(
-        carbon_source=source,
-        grid_mapper=get_grid_mapper(),
-        forecast_source=ENTSOEForecastSource(settings.entsoe_token),
-    )
+    return get_scheduling_engine()
 
 
 # --- Request models ---
