@@ -171,3 +171,39 @@ def test_carry_forward_skips_stale_and_keeps_fresh_live():
     intensities = {"aws/x": _reading("DE", 195.0, "live", now.isoformat())}
     build_snapshot._carry_forward(intensities, region_meta, baseline, 6.0)
     assert intensities["aws/x"]["carbon_intensity_gco2_kwh"] == 195.0
+
+
+def test_append_history_accumulates_and_dedupes():
+    snap1 = {
+        "generated_at": "2026-06-14T00:00:00+00:00",
+        "intensities": {
+            "aws/x": {"carbon_intensity_gco2_kwh": 300.0, "renewable_percentage": 40.0}
+        },
+    }
+    snap2 = {
+        "generated_at": "2026-06-14T00:30:00+00:00",
+        "intensities": {
+            "aws/x": {"carbon_intensity_gco2_kwh": 250.0, "renewable_percentage": 55.0}
+        },
+    }
+    h1 = build_snapshot.append_history(None, snap1)
+    h2 = build_snapshot.append_history(h1, snap2)
+    series = h2["series"]["aws/x"]
+    assert [p["c"] for p in series] == [300.0, 250.0]  # oldest first, accumulated
+    # Re-running the same snapshot replaces the last point rather than duplicating.
+    h3 = build_snapshot.append_history(h2, snap2)
+    assert len(h3["series"]["aws/x"]) == 2
+
+
+def test_append_history_caps_to_max_points():
+    history = None
+    for i in range(10):
+        snap = {
+            "generated_at": f"2026-06-14T{i:02d}:00:00+00:00",
+            "intensities": {
+                "aws/x": {"carbon_intensity_gco2_kwh": float(i), "renewable_percentage": 0.0}
+            },
+        }
+        history = build_snapshot.append_history(history, snap, max_points=3)
+    series = history["series"]["aws/x"]
+    assert [p["c"] for p in series] == [7.0, 8.0, 9.0]  # only the newest 3 kept

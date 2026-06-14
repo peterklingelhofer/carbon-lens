@@ -6,6 +6,7 @@ from carbon_mesh.carbon_sources.eia import EIACarbonSource
 from carbon_mesh.carbon_sources.electricity_maps import ElectricityMapsCarbonSource
 from carbon_mesh.carbon_sources.entsoe import ENTSOECarbonSource
 from carbon_mesh.carbon_sources.gridstatus import GridStatusCarbonSource
+from carbon_mesh.carbon_sources.history_store import HistoryStore
 from carbon_mesh.carbon_sources.hybrid import HybridCarbonSource
 from carbon_mesh.carbon_sources.mock import MockCarbonSource
 from carbon_mesh.config import settings
@@ -80,6 +81,7 @@ def _build_carbon_source() -> CarbonDataSource:
 
 _carbon_source = _build_carbon_source()
 _cached_source = _CachedCarbonSource(_carbon_source, _cache)
+_history_store = HistoryStore(settings.history_url)
 _engine = RoutingEngine(
     carbon_source=_carbon_source,
     grid_mapper=_grid_mapper,
@@ -97,6 +99,10 @@ def get_grid_mapper() -> GridMapper:
 
 def get_carbon_source() -> CarbonDataSource:
     return _cached_source
+
+
+def get_history_store() -> HistoryStore:
+    return _history_store
 
 
 def get_scheduling_engine() -> "SchedulingEngine":

@@ -25,6 +25,12 @@ class Settings(BaseSettings):
         "https://raw.githubusercontent.com/peterklingelhofer/carbonlens/data/snapshot.json"
     )
 
+    # Published rolling history archive (accumulated by the snapshot builder) the
+    # /carbon/history endpoint reads. Set to "" to disable history.
+    history_url: str = (
+        "https://raw.githubusercontent.com/peterklingelhofer/carbonlens/data/history.json"
+    )
+
     region_map_path: Path = (
         Path(__file__).resolve().parent.parent.parent / "data" / "region_grid_map.yaml"
     )
