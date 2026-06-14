@@ -1,6 +1,7 @@
 import type {
   AlertEvent,
   CalculationResponse,
+  CarbonForecast,
   CarbonIntensity,
   CarbonSavingsReport,
   CloudRegion,
@@ -108,6 +109,9 @@ export const api = {
       method: "POST",
       body: JSON.stringify(regions),
     }),
+
+  carbonForecast: (provider: string, region: string, hours = 24) =>
+    request<CarbonForecast>(`/api/v1/carbon/forecast/${provider}/${region}?hours=${hours}`),
 
   // Accounting
   savings: () => request<CarbonSavingsReport>("/api/v1/accounting/savings"),

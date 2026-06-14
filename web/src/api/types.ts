@@ -69,6 +69,17 @@ export interface CarbonIntensity {
   power_breakdown_mw?: Record<string, number>;
 }
 
+export interface CarbonForecast {
+  grid_zone: string;
+  provider: string;
+  region: string;
+  generated_at: string;
+  // "entsoe_day_ahead" (real EU day-ahead forecast) or "time_of_day_model".
+  method: string;
+  // Hour-by-hour projection; the first point is the current reading.
+  points: CarbonIntensity[];
+}
+
 export interface EmissionsRecord {
   request_id: string;
   timestamp: string;
