@@ -6,8 +6,11 @@ import * as THREE from "three";
 import { api } from "../api/client";
 import { qualityFromSource, snapshotEnabled, useSnapshot } from "../api/snapshot";
 import { InfoTip } from "../components/InfoTip";
+import { MiniSparkline, trendLabel } from "../components/MiniSparkline";
+import { PowerMix } from "../components/PowerMix";
 import { DATA_QUALITY_TIP_RICH } from "../copy";
 import { niceKm, timeAgo } from "../lib/format";
+import { intensityColor, intensityRGB, renewableRGB } from "../lib/intensity";
 
 // Some browsers/machines can't create a WebGL context (hardware acceleration
 // off, GPU blocklisted, headless). Detect it up front so we can show a graceful
@@ -60,126 +63,6 @@ interface GlobePoint {
 function formatLoad(mw?: number | null): string | null {
   if (mw == null) return null;
   return mw >= 1000 ? `${(mw / 1000).toFixed(1)} GW` : `${Math.round(mw)} MW`;
-}
-
-// Stable colour + label per normalized fuel key (matches the backend's
-// emission_factors vocabulary). Fuels not listed fall back to a neutral grey.
-const FUEL_META: Record<string, { label: string; color: string }> = {
-  solar: { label: "Solar", color: "#fbbf24" },
-  wind: { label: "Wind", color: "#38bdf8" },
-  hydro: { label: "Hydro", color: "#22d3ee" },
-  nuclear: { label: "Nuclear", color: "#a78bfa" },
-  geothermal: { label: "Geothermal", color: "#fb923c" },
-  biomass: { label: "Biomass", color: "#84cc16" },
-  natural_gas: { label: "Gas", color: "#f87171" },
-  coal: { label: "Coal", color: "#9ca3af" },
-  oil: { label: "Oil", color: "#9f1239" },
-  petroleum: { label: "Oil", color: "#9f1239" },
-  battery: { label: "Battery", color: "#34d399" },
-  other: { label: "Other", color: "#64748b" },
-};
-
-const fuelMeta = (key: string) => FUEL_META[key] ?? { label: key, color: "#64748b" };
-
-// Live generation breakdown as a stacked share bar plus a top-fuel legend. Only
-// shown for zones whose source reports a real fuel mix.
-function PowerMix({ breakdown }: { breakdown: Record<string, number> }) {
-  const entries = Object.entries(breakdown)
-    .filter(([, mw]) => mw > 0)
-    .sort((a, b) => b[1] - a[1]);
-  const total = entries.reduce((sum, [, mw]) => sum + mw, 0);
-  if (!entries.length || total <= 0) return null;
-  const pct = (mw: number) => Math.round((mw / total) * 100);
-  return (
-    <div style={{ marginTop: 10 }}>
-      <div style={{ fontSize: "0.72rem", color: "#9ca3af", marginBottom: 4 }}>Generation mix</div>
-      <div style={{ display: "flex", height: 8, borderRadius: 4, overflow: "hidden" }}>
-        {entries.map(([fuel, mw]) => (
-          <div
-            key={fuel}
-            title={`${fuelMeta(fuel).label}: ${pct(mw)}%`}
-            style={{ width: `${(mw / total) * 100}%`, background: fuelMeta(fuel).color }}
-          />
-        ))}
-      </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "2px 10px", marginTop: 6 }}>
-        {entries.slice(0, 5).map(([fuel, mw]) => (
-          <span
-            key={fuel}
-            style={{
-              fontSize: "0.7rem",
-              color: "#cbd5e1",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 4,
-            }}
-          >
-            <span
-              style={{
-                width: 8,
-                height: 8,
-                borderRadius: 2,
-                background: fuelMeta(fuel).color,
-                display: "inline-block",
-              }}
-            />
-            {fuelMeta(fuel).label} {pct(mw)}%
-          </span>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// A compact carbon-intensity sparkline (coloured by the latest value), shared by
-// the history and forecast panels. `mark` dots the current reading: the last
-// point for history (most recent), the first for a forecast (now).
-function MiniSparkline({
-  values,
-  mark,
-  ariaLabel,
-}: {
-  values: number[];
-  mark?: "first" | "last";
-  ariaLabel: string;
-}) {
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const span = max - min || 1;
-  const w = 224;
-  const h = 44;
-  const n = values.length - 1;
-  const x = (i: number) => (i / n) * w;
-  const y = (v: number) => h - 4 - ((v - min) / span) * (h - 8);
-  const points = values.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
-  const markIdx = mark === "first" ? 0 : values.length - 1;
-  return (
-    <svg
-      width={w}
-      height={h}
-      viewBox={`0 0 ${w} ${h}`}
-      role="img"
-      aria-label={ariaLabel}
-      style={{ display: "block" }}
-    >
-      <polyline
-        points={points}
-        fill="none"
-        stroke={intensityColor(values[values.length - 1])}
-        strokeWidth={1.5}
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
-      {mark && <circle cx={x(markIdx)} cy={y(values[markIdx])} r={2.2} fill="#fff" />}
-    </svg>
-  );
-}
-
-function trendLabel(first: number, last: number): string {
-  const pct = first > 0 ? Math.round(((last - first) / first) * 100) : 0;
-  if (pct <= -5) return `cleaner (${pct}%)`;
-  if (pct >= 5) return `dirtier (+${pct}%)`;
-  return "steady";
 }
 
 // Past-7-days carbon intensity for the selected region, from /carbon/history.
@@ -269,29 +152,6 @@ function RegionForecast({ provider, region }: { provider: string; region: string
       </div>
     </div>
   );
-}
-
-function intensityRGB(v: number): [number, number, number] {
-  if (v <= 50) return [34, 197, 94]; // green
-  if (v <= 150) return [132, 204, 22]; // lime
-  if (v <= 300) return [234, 179, 8]; // amber
-  if (v <= 500) return [249, 115, 22]; // orange
-  return [239, 68, 68]; // red
-}
-
-function intensityColor(v: number): string {
-  const [r, g, b] = intensityRGB(v);
-  return `rgb(${r},${g},${b})`;
-}
-
-// Renewable share: high % is greener, so the scale runs the opposite way from
-// carbon intensity (high = green, low = red).
-function renewableRGB(pct: number): [number, number, number] {
-  if (pct >= 80) return [34, 197, 94]; // green
-  if (pct >= 60) return [132, 204, 22]; // lime
-  if (pct >= 40) return [234, 179, 8]; // amber
-  if (pct >= 20) return [249, 115, 22]; // orange
-  return [239, 68, 68]; // red
 }
 
 type Metric = "renewable" | "intensity";
