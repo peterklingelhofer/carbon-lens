@@ -1,4 +1,4 @@
-from typing import AsyncGenerator
+from typing import TYPE_CHECKING, AsyncGenerator
 
 from carbon_mesh.accounting.tracker import CarbonTracker, DBCarbonTracker
 from carbon_mesh.carbon_sources.base import CarbonDataSource
@@ -12,6 +12,9 @@ from carbon_mesh.config import settings
 from carbon_mesh.engine.cache import IntensityCache
 from carbon_mesh.engine.router import RoutingEngine
 from carbon_mesh.grid.mapper import GridMapper
+
+if TYPE_CHECKING:
+    from carbon_mesh.scheduler.engine import SchedulingEngine
 
 # Singletons — initialized once at import time
 _grid_mapper = GridMapper(settings.region_map_path)
@@ -94,6 +97,25 @@ def get_grid_mapper() -> GridMapper:
 
 def get_carbon_source() -> CarbonDataSource:
     return _cached_source
+
+
+def get_scheduling_engine() -> "SchedulingEngine":
+    """Build a scheduling engine wired to the cached source (snapshot-backed for
+    current intensity when configured) and the ENTSO-E day-ahead forecast. Shared
+    by the scheduler routes and the public /carbon/forecast endpoint."""
+    from carbon_mesh.carbon_sources.entsoe_forecast import ENTSOEForecastSource
+    from carbon_mesh.carbon_sources.snapshot_source import SnapshotBackedSource
+    from carbon_mesh.scheduler.engine import SchedulingEngine
+
+    source: CarbonDataSource = _cached_source
+    if settings.snapshot_url and settings.carbon_source != "mock":
+        source = SnapshotBackedSource(settings.snapshot_url, source)
+
+    return SchedulingEngine(
+        carbon_source=source,
+        grid_mapper=_grid_mapper,
+        forecast_source=ENTSOEForecastSource(settings.entsoe_token),
+    )
 
 
 def get_tracker() -> CarbonTracker:

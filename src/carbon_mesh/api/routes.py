@@ -1,7 +1,8 @@
 import hashlib
 import json as _json
+from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,6 +12,7 @@ from carbon_mesh.api.deps import (
     get_db_tracker,
     get_engine,
     get_grid_mapper,
+    get_scheduling_engine,
     get_session,
     get_tracker,
 )
@@ -21,9 +23,10 @@ from carbon_mesh.db.models import ApiKeyRecord
 from carbon_mesh.engine.router import RoutingEngine
 from carbon_mesh.grid.mapper import GridMapper
 from carbon_mesh.models.accounting import CarbonSavingsReport
-from carbon_mesh.models.carbon import CarbonIntensity
+from carbon_mesh.models.carbon import CarbonForecast, CarbonIntensity
 from carbon_mesh.models.region import CloudRegion
 from carbon_mesh.models.routing import RouteRequest, RouteResponse
+from carbon_mesh.scheduler.engine import SchedulingEngine
 
 router = APIRouter()
 
@@ -117,6 +120,40 @@ async def get_carbon_intensity_batch(
         if zone in zone_to_keys
         for key in zone_to_keys[zone]
     }
+
+
+@router.get(
+    "/carbon/forecast/{provider}/{region}",
+    response_model=CarbonForecast,
+    tags=["Carbon Data"],
+)
+async def get_carbon_forecast(
+    provider: str,
+    region: str,
+    hours: int = Query(24, ge=1, le=168, description="Forecast horizon in hours (1-168)."),
+    mapper: GridMapper = Depends(get_grid_mapper),
+    engine: SchedulingEngine = Depends(get_scheduling_engine),
+) -> CarbonForecast:
+    """Hour-by-hour carbon-intensity forecast for a cloud region.
+
+    EU zones use ENTSO-E's real day-ahead wind/solar/load forecast; elsewhere a
+    local time-of-day model is used (named in ``method``). The first point is the
+    current reading.
+    """
+    zone = mapper.get_grid_zone(provider, region)
+    if zone is None:
+        raise HTTPException(status_code=404, detail=f"Unknown region: {provider}/{region}")
+    info = mapper.get_region(provider, region)
+    longitude = info.longitude if info else 0.0
+    method, points = await engine.forecast_zone(zone, longitude, hours)
+    return CarbonForecast(
+        grid_zone=zone,
+        provider=provider,
+        region=region,
+        generated_at=datetime.now(timezone.utc),
+        method=method,
+        points=points,
+    )
 
 
 @router.get("/carbon/zones", tags=["Carbon Data"])
