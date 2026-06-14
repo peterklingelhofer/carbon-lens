@@ -26,6 +26,7 @@ dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.25",
     "pytest-httpx>=0.35",
+    "aiosqlite>=0.20",
     "ruff>=0.9",
     "pyright>=1.1.390",
     "pre-commit>=4.0",
