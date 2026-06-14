@@ -30,3 +30,19 @@ class CarbonIntensity(BaseModel):
         "actually generating are listed. None for sources without a real fuel mix "
         "(heuristic and weather-based estimates).",
     )
+
+
+class CarbonForecast(BaseModel):
+    grid_zone: str
+    provider: str
+    region: str
+    generated_at: datetime
+    method: str = Field(
+        description="How the curve was produced: 'entsoe_day_ahead' (real EU "
+        "day-ahead wind/solar/load forecast) or 'time_of_day_model' (a local "
+        "time-of-day heuristic, not a measured forecast).",
+    )
+    points: list[CarbonIntensity] = Field(
+        description="Hour-by-hour projection over the horizon; the first point is "
+        "the current reading.",
+    )

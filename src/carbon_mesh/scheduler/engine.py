@@ -272,6 +272,44 @@ class SchedulingEngine:
             evaluated_slots=len(slots),
         )
 
+    async def forecast_zone(
+        self,
+        grid_zone: str,
+        longitude: float = 0.0,
+        hours: int = 24,
+    ) -> tuple[str, list[CarbonIntensity]]:
+        """Project one zone's carbon intensity hour-by-hour over the horizon.
+
+        Point 0 is the current reading. EU zones with an ENTSO-E day-ahead forecast
+        are scaled by the forecast VRE share; elsewhere the local time-of-day model
+        is used. Returns ``(method, points)`` so callers can label provenance.
+        """
+        current = await self._carbon_source.get_carbon_intensity(grid_zone)
+
+        curve: dict[int, float] = {}
+        method = "time_of_day_model"
+        if self._forecast_source and self._forecast_source.can_forecast(grid_zone):
+            try:
+                fetched = await self._forecast_source.vre_fraction_curve(grid_zone, hours)
+            except Exception:
+                fetched = {}
+            if fetched:
+                curve = fetched
+                method = "entsoe_day_ahead"
+
+        points: list[CarbonIntensity] = [current]
+        for hour_offset in range(1, hours + 1):
+            projected: CarbonIntensity | None = None
+            if curve and hour_offset in curve and 0 in curve:
+                projected = self._project_with_forecast(
+                    current, curve[0], curve[hour_offset], hour_offset
+                )
+            if projected is None:
+                projected = self._project_intensity(current, hour_offset, longitude)
+            points.append(projected)
+
+        return method, points
+
     def _project_with_forecast(
         self,
         current: CarbonIntensity,
