@@ -1,4 +1,4 @@
-.PHONY: help dev test lint fix hooks migrate docker up down clean
+.PHONY: help dev test lint fix hooks openapi migrate docker up down clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
@@ -38,6 +38,9 @@ fix: ## Auto-fix lint errors (ruff + biome)
 
 hooks: ## Install git hooks (pre-commit + commit-msg)
 	uv run pre-commit install --install-hooks
+
+openapi: ## Regenerate the checked-in OpenAPI spec from the live app
+	CARBON_LENS_CARBON_SOURCE=mock uv run python scripts/export_openapi.py --out openapi.json
 
 # ── Database ───────────────────────────────────────────────────
 
