@@ -166,6 +166,32 @@ CARBON_LENS_EIA_API_KEY=... CARBON_LENS_ENTSOE_TOKEN=... \
 > Cloudflare R2 public bucket (free egress) — the workflow's publish step is the
 > only thing to change.
 
+### 6. Durable SLA monitoring (optional)
+
+The public demo is stateless, so SLAs live in memory and reset on restart. To make
+SLA definitions, checks, and reports survive restarts, point the API at a Postgres
+database — everything else is automatic:
+
+```bash
+CARBON_LENS_USE_DATABASE=true
+CARBON_LENS_DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/dbname
+```
+
+Run `uv run alembic upgrade head` once (or on deploy) to create the tables.
+
+**Keep it permanently free:** Render's bundled free Postgres is time-limited
+(deleted after ~30 days), so for a lasting free DB point `CARBON_LENS_DATABASE_URL`
+at a free **Neon** or **Supabase** instance instead — no code change, just the URL.
+
+**Scheduled checks on a scale-to-zero host:** the in-process monitor only runs
+while the API is awake, so a free instance that spins down won't check on schedule.
+The [`sla-monitor.yml`](../.github/workflows/sla-monitor.yml) GitHub Actions cron
+solves this — it POSTs hourly to the admin-only `/api/v1/sla/monitor/run`, which
+runs any due checks and persists them (and wakes the instance). Configure two
+repo settings: variable `SLA_API_URL` (your API origin) and secret
+`CARBON_LENS_ADMIN_SECRET` (matching the API's admin secret). Unset → the job
+no-ops, so it's safe in forks.
+
 ---
 
 ## Quick Start (any platform)

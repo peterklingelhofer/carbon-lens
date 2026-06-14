@@ -87,7 +87,7 @@ You supply the usage data (it isn't auto-detected); CarbonLens maps service+regi
 Route workloads to the greenest cloud region in real-time, or shift them in time to the cleanest upcoming window. Works with AWS, GCP, and Azure region sets. For European zones the scheduler projects the renewable share from ENTSO-E's real day-ahead wind/solar/load forecast; elsewhere it falls back to a labeled time-of-day model.
 
 ### 4. Green SLA Monitoring (Beta)
-Define carbon targets, run on-demand and background compliance checks against live grid data, and generate attestation-style summary reports. Note: the background monitor and all SLA/check/report state are currently **in-memory** (reset on restart, single-worker); the "attestation" format is a self-defined summary, not an assured third-party standard.
+Define carbon targets, run on-demand and scheduled compliance checks against live grid data, and generate attestation-style summary reports. SLA definitions, checks, and reports **persist to Postgres** when a database is configured (`CARBON_LENS_USE_DATABASE=true`), so they survive restarts; without one they fall back to in-memory (the keyless demo). Durable *scheduled* checking uses a GitHub Actions cron that POSTs to an admin-only `/sla/monitor/run` endpoint (see [`sla-monitor.yml`](.github/workflows/sla-monitor.yml)) — that works even on a scale-to-zero host, unlike the in-process loop which only runs while the API is awake. Note: the "attestation" format is a self-defined summary, not an assured third-party standard.
 
 ---
 
@@ -311,17 +311,18 @@ The carbon data layer for carbon-aware infrastructure: one cascading API over mu
 - Consumption-based (flow-traced) intensity for the European grid and an estimated marginal intensity, alongside the production-based headline
 - Carbon-aware routing and scheduling (real ENTSO-E day-ahead forecast in the EU) with stale-while-revalidate caching
 - GHG-Protocol Scope 2 + Scope 3 (Cat 1) compliance reporting (location-based)
-- Green SLA check engine, on-demand + background monitoring (in-memory)
+- Green SLA check engine, on-demand + scheduled monitoring; Postgres-backed (survives restarts) with a GitHub Actions cron for durable scale-to-zero checking
+- Carbon intensity history (`/carbon/history`) and forecast (`/carbon/forecast`) endpoints
 - Cloud-billing ingestion adapters (AWS/GCP/Azure) — coded-to-spec + mock-tested, not live-verified
 - Free, open, keyless API (per-IP rate limiting); React 19 dashboard with live WebSocket feed
-- 182 tests, multi-stage Docker build, Alembic migrations
+- Checked-in OpenAPI spec + generated TypeScript client, both drift-checked in CI
+- 219 backend + 36 frontend tests, multi-stage Docker build, Alembic migrations
 
 ### What's next
 - Market-based Scope 2 accounting (RECs/PPAs) and supplier-specific Scope 3 factors
 - Utilization-aware energy modeling (current model assumes flat draw per vCPU-hour)
 - Signed PDF reports and a recognized attestation standard
-- Durable (Postgres-backed) SLA monitoring across restarts
-- Live-account validation of the billing adapters; historical/forecast carbon endpoints
+- Live-account validation of the billing adapters; global consumption-based intensity (needs paid cross-border flow data)
 
 ## Companion project
 
