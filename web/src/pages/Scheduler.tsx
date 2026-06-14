@@ -647,11 +647,11 @@ export function Scheduler() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "1fr 1fr",
+            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
             gap: "1rem",
           }}
         >
-          <div>
+          <div style={{ minWidth: 0 }}>
             <h3 style={{ fontSize: "0.85rem", marginBottom: "0.5rem" }}>GitHub Actions</h3>
             <pre style={codeBlock}>{`# .github/workflows/green-ci.yml
 - name: Find green window
@@ -661,7 +661,7 @@ export function Scheduler() {
       -d '{"job_duration_minutes": 30,
            "strategy": "lowest_carbon"}'`}</pre>
           </div>
-          <div>
+          <div style={{ minWidth: 0 }}>
             <h3 style={{ fontSize: "0.85rem", marginBottom: "0.5rem" }}>Python SDK</h3>
             <pre style={codeBlock}>{`import httpx
 
@@ -765,6 +765,7 @@ const codeBlock: React.CSSProperties = {
   padding: "0.75rem",
   fontSize: "0.75rem",
   overflow: "auto",
+  maxWidth: "100%",
   border: "1px solid var(--gray-200)",
   lineHeight: 1.6,
   margin: 0,
