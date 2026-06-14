@@ -9,7 +9,8 @@
     "lint": "biome check .",
     "format": "biome check --write .",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "gen:api": "openapi-typescript ../openapi.json -o src/api/schema.ts"
   },
   "dependencies": {
     "@fontsource-variable/plus-jakarta-sans": "^5.2.8",
@@ -27,6 +28,7 @@
     "@types/react-dom": "^19.2.3",
     "@types/three": "^0.184.1",
     "@vitejs/plugin-react": "^6.0.0",
+    "openapi-typescript": "^7.13.0",
     "typescript": "~5.9.3",
     "vite": "^8.0.0",
     "vitest": "^4.1.8"
