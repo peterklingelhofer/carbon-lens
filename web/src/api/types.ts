@@ -80,6 +80,21 @@ export interface CarbonForecast {
   points: CarbonIntensity[];
 }
 
+export interface CarbonHistoryPoint {
+  timestamp: string;
+  carbon_intensity_gco2_kwh: number;
+  renewable_percentage: number;
+}
+
+export interface CarbonHistory {
+  grid_zone: string;
+  provider: string;
+  region: string;
+  // Past readings, oldest first, from the published rolling archive. Empty until
+  // the archive accumulates for this region.
+  points: CarbonHistoryPoint[];
+}
+
 export interface EmissionsRecord {
   request_id: string;
   timestamp: string;
