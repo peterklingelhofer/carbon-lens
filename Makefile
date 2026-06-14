@@ -39,8 +39,9 @@ fix: ## Auto-fix lint errors (ruff + biome)
 hooks: ## Install git hooks (pre-commit + commit-msg)
 	uv run pre-commit install --install-hooks
 
-openapi: ## Regenerate the checked-in OpenAPI spec from the live app
+openapi: ## Regenerate the checked-in OpenAPI spec + TypeScript client
 	CARBON_LENS_CARBON_SOURCE=mock uv run python scripts/export_openapi.py --out openapi.json
+	cd web && npm run gen:api
 
 # ── Database ───────────────────────────────────────────────────
 
