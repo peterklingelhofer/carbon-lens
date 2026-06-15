@@ -201,6 +201,28 @@ def test_region_badge_svg(client: TestClient):
     assert "<svg" in resp.text and "gCO₂/kWh" in resp.text
 
 
+def test_region_embed_widget(client: TestClient):
+    resp = client.get("/embed/aws/us-west-2")
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("text/html")
+    # Framing must be allowed for the widget (no X-Frame-Options DENY here).
+    assert resp.headers.get("x-frame-options") != "DENY"
+    assert "frame-ancestors" in resp.headers.get("content-security-policy", "")
+    assert "gCO₂/kWh" in resp.text and "aws/us-west-2" in resp.text
+
+
+def test_zone_embed_not_shadowed(client: TestClient):
+    resp = client.get("/embed/zone/DE")
+    assert resp.status_code == 200
+    assert "carbon intensity" in resp.text
+
+
+def test_embed_unknown_region_is_graceful(client: TestClient):
+    resp = client.get("/embed/aws/nope")
+    assert resp.status_code == 200
+    assert "region not found" in resp.text
+
+
 def test_zone_badge_not_shadowed(client: TestClient):
     # /badge/zone/DE.svg must hit the zone route, not /badge/{provider}/{region}.svg.
     resp = client.get("/badge/zone/DE.svg")
