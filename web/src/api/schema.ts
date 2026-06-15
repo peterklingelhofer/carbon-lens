@@ -94,6 +94,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/carbon/signal/{provider}/{region}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Carbon Signal
+         * @description One-call traffic-light decision: run a flexible job here now, or wait?
+         *
+         *     Returns a green/yellow/red state plus, when meaningfully cleaner power is
+         *     coming, how many hours until that window. The minimal primitive for the
+         *     carbon-aware-dispatcher or any script — loosely coupled via a stable contract.
+         */
+        get: operations["get_carbon_signal_api_v1_carbon_signal__provider___region__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/carbon/zone/{grid_zone}": {
         parameters: {
             query?: never;
@@ -1031,6 +1055,40 @@ export interface components {
             total_carbon_saved_gco2_kwh: number;
             /** Total Requests */
             total_requests: number;
+        };
+        /**
+         * CarbonSignal
+         * @description A one-call decision primitive: should a flexible job run here now, or wait?
+         *
+         *     Designed for the carbon-aware-dispatcher and any script/status page that just
+         *     wants a traffic-light answer plus the next cleaner window.
+         */
+        CarbonSignal: {
+            /**
+             * Advice
+             * @description run_now | wait_for_cleaner
+             */
+            advice: string;
+            /**
+             * Cleaner Window In Hours
+             * @description Hours until a notably cleaner upcoming window, or null if now is fine
+             */
+            cleaner_window_in_hours?: number | null;
+            /** Cleaner Window Intensity Gco2 Kwh */
+            cleaner_window_intensity_gco2_kwh?: number | null;
+            /** Grid Zone */
+            grid_zone: string;
+            /** Intensity Gco2 Kwh */
+            intensity_gco2_kwh: number;
+            /** Provider */
+            provider: string;
+            /** Region */
+            region: string;
+            /**
+             * State
+             * @description green | yellow | red, by absolute intensity thresholds
+             */
+            state: string;
         };
         /** CloudRegion */
         CloudRegion: {
@@ -2064,6 +2122,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CarbonHistory"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_carbon_signal_api_v1_carbon_signal__provider___region__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: string;
+                region: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CarbonSignal"];
                 };
             };
             /** @description Validation Error */

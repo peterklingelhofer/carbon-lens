@@ -346,6 +346,70 @@
         "title": "CarbonSavingsReport",
         "type": "object"
       },
+      "CarbonSignal": {
+        "description": "A one-call decision primitive: should a flexible job run here now, or wait?\n\nDesigned for the carbon-aware-dispatcher and any script/status page that just\nwants a traffic-light answer plus the next cleaner window.",
+        "properties": {
+          "advice": {
+            "description": "run_now | wait_for_cleaner",
+            "title": "Advice",
+            "type": "string"
+          },
+          "cleaner_window_in_hours": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Hours until a notably cleaner upcoming window, or null if now is fine",
+            "title": "Cleaner Window In Hours"
+          },
+          "cleaner_window_intensity_gco2_kwh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cleaner Window Intensity Gco2 Kwh"
+          },
+          "grid_zone": {
+            "title": "Grid Zone",
+            "type": "string"
+          },
+          "intensity_gco2_kwh": {
+            "title": "Intensity Gco2 Kwh",
+            "type": "number"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "region": {
+            "title": "Region",
+            "type": "string"
+          },
+          "state": {
+            "description": "green | yellow | red, by absolute intensity thresholds",
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "region",
+          "grid_zone",
+          "intensity_gco2_kwh",
+          "state",
+          "advice"
+        ],
+        "title": "CarbonSignal",
+        "type": "object"
+      },
       "CloudRegion": {
         "properties": {
           "eia_respondent": {
@@ -2374,6 +2438,59 @@
           }
         },
         "summary": "Get Carbon History",
+        "tags": [
+          "Carbon Routing",
+          "Carbon Data"
+        ]
+      }
+    },
+    "/api/v1/carbon/signal/{provider}/{region}": {
+      "get": {
+        "description": "One-call traffic-light decision: run a flexible job here now, or wait?\n\nReturns a green/yellow/red state plus, when meaningfully cleaner power is\ncoming, how many hours until that window. The minimal primitive for the\ncarbon-aware-dispatcher or any script \u2014 loosely coupled via a stable contract.",
+        "operationId": "get_carbon_signal_api_v1_carbon_signal__provider___region__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "title": "Provider",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "region",
+            "required": true,
+            "schema": {
+              "title": "Region",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CarbonSignal"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Carbon Signal",
         "tags": [
           "Carbon Routing",
           "Carbon Data"
