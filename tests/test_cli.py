@@ -8,6 +8,7 @@ from unittest.mock import patch
 from typer.testing import CliRunner
 
 from carbon_mesh.cli import client
+from carbon_mesh.cli.green_run import choose_run_index
 from carbon_mesh.cli.main import app
 
 
@@ -156,3 +157,64 @@ class TestCliApp:
         # Typer with no_args_is_help=True exits with code 0 or 2 depending on version
         assert result.exit_code in (0, 2)
         assert "Usage" in result.stdout or "usage" in result.stdout.lower()
+
+
+def _forecast(intensities: list[float]) -> dict:
+    return {
+        "method": "time_of_day_model",
+        "points": [
+            {"timestamp": f"2026-06-15T{h:02d}:00:00+00:00", "carbon_intensity_gco2_kwh": v}
+            for h, v in enumerate(intensities)
+        ],
+    }
+
+
+class TestChooseRunIndex:
+    def test_runs_now_when_already_clean(self):
+        assert choose_run_index([40, 300], 100, 24) == (0, "threshold")
+
+    def test_defers_to_first_hour_under_threshold(self):
+        assert choose_run_index([300, 300, 50, 400], 100, 24) == (2, "threshold")
+
+    def test_cleanest_when_no_threshold_given(self):
+        assert choose_run_index([300, 200, 250], None, 24) == (1, "cleanest")
+
+    def test_falls_back_to_cleanest_when_threshold_unreachable(self):
+        assert choose_run_index([300, 250, 280], 100, 24) == (1, "cleanest_fallback")
+
+    def test_window_respects_max_wait(self):
+        # The 10 at index 3 is cleanest overall but outside a 2-hour window.
+        assert choose_run_index([300, 290, 280, 10], None, 2) == (2, "cleanest")
+
+
+class TestRunCommand:
+    def test_dry_run_reports_a_deferral(self):
+        with patch("carbon_mesh.cli.client.forecast", return_value=_forecast([300, 300, 50])):
+            result = runner.invoke(
+                app,
+                [
+                    "run",
+                    "--region",
+                    "aws/us-east-1",
+                    "--max-intensity",
+                    "100",
+                    "--dry-run",
+                    "--",
+                    "echo",
+                    "hi",
+                ],
+            )
+        assert result.exit_code == 0
+        assert "Deferring" in result.output
+
+    def test_dry_run_runs_now_when_clean(self):
+        with patch("carbon_mesh.cli.client.forecast", return_value=_forecast([40, 300])):
+            result = runner.invoke(
+                app, ["run", "--region", "aws/us-east-1", "--dry-run", "--", "echo", "hi"]
+            )
+        assert result.exit_code == 0
+        assert "green now" in result.output
+
+    def test_rejects_malformed_region(self):
+        result = runner.invoke(app, ["run", "--region", "bogus", "--dry-run", "--", "echo", "hi"])
+        assert result.exit_code == 1
