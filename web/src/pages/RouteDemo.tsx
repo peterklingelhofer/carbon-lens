@@ -121,8 +121,8 @@ export function RouteDemo() {
           >
             Cloud Providers
           </span>
-          <div style={{ display: "flex", gap: "0.5rem" }}>
-            {["aws", "gcp", "azure"].map((p) => (
+          <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+            {["aws", "gcp", "azure", "scaleway", "ovh", "hetzner"].map((p) => (
               <button
                 type="button"
                 key={p}

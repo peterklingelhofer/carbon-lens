@@ -26,7 +26,17 @@ def test_list_regions_by_provider(grid_mapper: GridMapper):
 
 def test_list_providers(grid_mapper: GridMapper):
     providers = grid_mapper.list_providers()
-    assert set(providers) == {"aws", "gcp", "azure"}
+    assert set(providers) == {"aws", "gcp", "azure", "scaleway", "ovh", "hetzner"}
+
+
+def test_independent_providers_map_to_known_zones(grid_mapper: GridMapper):
+    # New EU-heavy / global providers reuse existing grid zones (already covered
+    # by the carbon cascade), so they get real data with no new integration.
+    assert grid_mapper.get_grid_zone("scaleway", "fr-par") == "FR"
+    assert grid_mapper.get_grid_zone("ovh", "bhs") == "CA-QC"  # Quebec hydro
+    assert grid_mapper.get_grid_zone("ovh", "vin") == "US-MIDA-PJM"
+    assert grid_mapper.get_grid_zone("hetzner", "hel1") == "FI"
+    assert grid_mapper.get_grid_zone("hetzner", "hil") == "US-NW-BPAT"
 
 
 def test_get_grid_zone(grid_mapper: GridMapper):

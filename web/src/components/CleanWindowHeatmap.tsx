@@ -5,11 +5,14 @@ import { intensityColor } from "../lib/intensity";
 import { card } from "../styles";
 import { InfoTip } from "./InfoTip";
 
-const PROVIDERS = ["aws", "gcp", "azure"];
+const PROVIDERS = ["aws", "gcp", "azure", "scaleway", "ovh", "hetzner"];
 const DEFAULT_REGION: Record<string, string> = {
   aws: "us-east-1",
   gcp: "us-central1",
   azure: "eastus",
+  scaleway: "fr-par",
+  ovh: "gra",
+  hetzner: "fsn1",
 };
 
 const muted: React.CSSProperties = { color: "var(--gray-500)", fontSize: "0.78rem" };
