@@ -228,6 +228,15 @@ def test_carbon_history_unknown_region(client: TestClient):
     assert resp.status_code == 404
 
 
+def test_metrics_exposes_carbon_gauges(client: TestClient):
+    resp = client.get("/metrics")
+    assert resp.status_code == 200
+    body = resp.text
+    # Carbon gauges refreshed on scrape, alongside the default HTTP metrics.
+    assert "carbon_intensity_gco2_kwh" in body
+    assert "carbon_renewable_percentage" in body
+
+
 def test_sla_crud_and_check_flow(client: TestClient):
     """Create -> get -> check -> status -> list -> delete through the repository."""
     created = client.post(
