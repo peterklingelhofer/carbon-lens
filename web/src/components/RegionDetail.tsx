@@ -76,13 +76,22 @@ export function RegionForecast({ provider, region }: { provider: string; region:
     new Date(p.timestamp).toLocaleTimeString(undefined, { hour: "numeric" }),
   );
   const trend = trendLabel(vals[0], vals[vals.length - 1]);
-  const isReal = data.method === "entsoe_day_ahead";
-  const methodLabel = isReal ? "ENTSO-E day-ahead" : "time-of-day model";
+  const methodLabel =
+    data.method === "entsoe_day_ahead"
+      ? "ENTSO-E day-ahead"
+      : data.method === "open_meteo_forecast"
+        ? "weather forecast (Open-Meteo)"
+        : "time-of-day model";
 
-  // Illustrative uncertainty that widens with the horizon (and is wider for the
-  // heuristic model than the real day-ahead forecast). Not a measured error band.
-  const base = isReal ? 0.04 : 0.08;
-  const perHour = isReal ? 0.004 : 0.01;
+  // Illustrative uncertainty that widens with the horizon, narrowest for the real
+  // day-ahead forecast and widest for the bare time-of-day model. Not a measured
+  // error band.
+  const [base, perHour] =
+    data.method === "entsoe_day_ahead"
+      ? [0.04, 0.004]
+      : data.method === "open_meteo_forecast"
+        ? [0.06, 0.007]
+        : [0.08, 0.01];
   const band = vals.map((v, i): [number, number] => {
     const u = Math.min(0.4, base + perHour * i);
     return [v * (1 - u), v * (1 + u)];

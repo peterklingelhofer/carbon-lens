@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field
 
 from carbon_mesh.carbon_sources.base import CarbonDataSource
 from carbon_mesh.carbon_sources.entsoe_forecast import ENTSOEForecastSource
+from carbon_mesh.carbon_sources.open_meteo import OpenMeteoForecastSource
 from carbon_mesh.grid.mapper import GridMapper
 from carbon_mesh.models.carbon import CarbonIntensity
 
@@ -96,10 +97,12 @@ class SchedulingEngine:
         carbon_source: CarbonDataSource,
         grid_mapper: GridMapper,
         forecast_source: ENTSOEForecastSource | None = None,
+        weather_forecast_source: OpenMeteoForecastSource | None = None,
     ) -> None:
         self._carbon_source = carbon_source
         self._grid_mapper = grid_mapper
         self._forecast_source = forecast_source
+        self._weather_forecast_source = weather_forecast_source
 
     async def find_optimal_window(
         self,
@@ -286,16 +289,22 @@ class SchedulingEngine:
         """
         current = await self._carbon_source.get_carbon_intensity(grid_zone)
 
+        # Prefer ENTSO-E's real day-ahead forecast (EU); fall back to Open-Meteo's
+        # weather forecast for the weather-estimated zones; else a time-of-day model.
         curve: dict[int, float] = {}
         method = "time_of_day_model"
-        if self._forecast_source and self._forecast_source.can_forecast(grid_zone):
-            try:
-                fetched = await self._forecast_source.vre_fraction_curve(grid_zone, hours)
-            except Exception:
-                fetched = {}
-            if fetched:
-                curve = fetched
-                method = "entsoe_day_ahead"
+        for source, label in (
+            (self._forecast_source, "entsoe_day_ahead"),
+            (self._weather_forecast_source, "open_meteo_forecast"),
+        ):
+            if source and source.can_forecast(grid_zone):
+                try:
+                    fetched = await source.vre_fraction_curve(grid_zone, hours)
+                except Exception:
+                    fetched = {}
+                if fetched:
+                    curve, method = fetched, label
+                    break
 
         points: list[CarbonIntensity] = [current]
         for hour_offset in range(1, hours + 1):
