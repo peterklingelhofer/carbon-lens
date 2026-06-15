@@ -24,6 +24,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/carbon/anomaly/{provider}/{region}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Carbon Anomaly
+         * @description How this region's intensity compares to its own recent baseline — a
+         *     'cleaner/dirtier than usual right now' read from the published history archive.
+         *     Returns ``insufficient_history`` until enough has accumulated.
+         */
+        get: operations["get_carbon_anomaly_api_v1_carbon_anomaly__provider___region__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/carbon/batch": {
         parameters: {
             query?: never;
@@ -958,6 +980,39 @@ export interface components {
             scope3_kgco2e: number;
             /** Total Emissions Kgco2E */
             total_emissions_kgco2e: number;
+        };
+        /**
+         * CarbonAnomaly
+         * @description Whether a zone is cleaner or dirtier than its own historical baseline now.
+         */
+        CarbonAnomaly: {
+            /** Baseline Gco2 Kwh */
+            baseline_gco2_kwh?: number | null;
+            /**
+             * Basis
+             * @description hour_of_day | recent | insufficient
+             */
+            basis: string;
+            /** Current Gco2 Kwh */
+            current_gco2_kwh: number;
+            /**
+             * Delta Pct
+             * @description Signed; negative = cleaner than usual
+             */
+            delta_pct?: number | null;
+            /** Grid Zone */
+            grid_zone: string;
+            /** Provider */
+            provider: string;
+            /** Region */
+            region: string;
+            /** Sample Size */
+            sample_size: number;
+            /**
+             * Status
+             * @description cleaner_than_usual | typical | dirtier_than_usual | insufficient_history
+             */
+            status: string;
         };
         /** CarbonForecast */
         CarbonForecast: {
@@ -2024,6 +2079,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CarbonSavingsReport"];
+                };
+            };
+        };
+    };
+    get_carbon_anomaly_api_v1_carbon_anomaly__provider___region__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: string;
+                region: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CarbonAnomaly"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

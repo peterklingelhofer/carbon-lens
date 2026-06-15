@@ -133,6 +133,75 @@
         "title": "CalculationResponse",
         "type": "object"
       },
+      "CarbonAnomaly": {
+        "description": "Whether a zone is cleaner or dirtier than its own historical baseline now.",
+        "properties": {
+          "baseline_gco2_kwh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Baseline Gco2 Kwh"
+          },
+          "basis": {
+            "description": "hour_of_day | recent | insufficient",
+            "title": "Basis",
+            "type": "string"
+          },
+          "current_gco2_kwh": {
+            "title": "Current Gco2 Kwh",
+            "type": "number"
+          },
+          "delta_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Signed; negative = cleaner than usual",
+            "title": "Delta Pct"
+          },
+          "grid_zone": {
+            "title": "Grid Zone",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "region": {
+            "title": "Region",
+            "type": "string"
+          },
+          "sample_size": {
+            "title": "Sample Size",
+            "type": "integer"
+          },
+          "status": {
+            "description": "cleaner_than_usual | typical | dirtier_than_usual | insufficient_history",
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "region",
+          "grid_zone",
+          "current_gco2_kwh",
+          "status",
+          "basis",
+          "sample_size"
+        ],
+        "title": "CarbonAnomaly",
+        "type": "object"
+      },
       "CarbonForecast": {
         "properties": {
           "generated_at": {
@@ -2253,6 +2322,59 @@
         "tags": [
           "Carbon Routing",
           "Accounting"
+        ]
+      }
+    },
+    "/api/v1/carbon/anomaly/{provider}/{region}": {
+      "get": {
+        "description": "How this region's intensity compares to its own recent baseline \u2014 a\n'cleaner/dirtier than usual right now' read from the published history archive.\nReturns ``insufficient_history`` until enough has accumulated.",
+        "operationId": "get_carbon_anomaly_api_v1_carbon_anomaly__provider___region__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "title": "Provider",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "region",
+            "required": true,
+            "schema": {
+              "title": "Region",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CarbonAnomaly"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Carbon Anomaly",
+        "tags": [
+          "Carbon Routing",
+          "Carbon Data"
         ]
       }
     },
