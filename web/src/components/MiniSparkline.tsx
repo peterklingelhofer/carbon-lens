@@ -11,21 +11,28 @@ import { intensityColor } from "../lib/intensity";
 export function MiniSparkline({
   values,
   labels,
+  band,
   mark,
   ariaLabel,
   unit = "gCO₂/kWh",
 }: {
   values: number[];
   labels?: string[];
+  // Optional per-point [low, high] envelope drawn as a shaded area behind the line.
+  band?: [number, number][];
   mark?: "first" | "last";
   ariaLabel: string;
   unit?: string;
 }) {
   const [active, setActive] = useState<number | null>(null);
 
+  // Tick labels / readout use the value range; the plot domain also includes the
+  // band so a wide envelope doesn't clip.
   const min = Math.min(...values);
   const max = Math.max(...values);
-  const span = max - min || 1;
+  const domainMin = band ? Math.min(min, ...band.map((b) => b[0])) : min;
+  const domainMax = band ? Math.max(max, ...band.map((b) => b[1])) : max;
+  const span = domainMax - domainMin || 1;
   const w = 224;
   const h = 52;
   const padL = 30; // room for y-axis tick labels
@@ -37,9 +44,18 @@ export function MiniSparkline({
   const n = values.length - 1;
 
   const x = (i: number) => padL + (n === 0 ? 0 : (i / n) * plotW);
-  const y = (v: number) => padT + plotH - ((v - min) / span) * plotH;
+  const y = (v: number) => padT + plotH - ((v - domainMin) / span) * plotH;
   const points = values.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(" ");
+  const lineColor = intensityColor(values[values.length - 1]);
   const markIdx = mark === "first" ? 0 : values.length - 1;
+
+  // Band polygon: high edge left→right, then low edge right→left, closed.
+  const bandPath = band
+    ? `M ${[
+        ...band.map(([, hi], i) => `${x(i).toFixed(1)},${y(hi).toFixed(1)}`),
+        ...band.map(([lo], i) => `${x(i).toFixed(1)},${y(lo).toFixed(1)}`).reverse(),
+      ].join(" L ")} Z`
+    : null;
 
   const locate = (e: PointerEvent<SVGSVGElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -71,10 +87,11 @@ export function MiniSparkline({
         <text x={0} y={padT + plotH} style={tick}>
           {Math.round(min)}
         </text>
+        {bandPath && <path d={bandPath} fill={lineColor} fillOpacity={0.15} stroke="none" />}
         <polyline
           points={points}
           fill="none"
-          stroke={intensityColor(values[values.length - 1])}
+          stroke={lineColor}
           strokeWidth={1.5}
           strokeLinejoin="round"
           strokeLinecap="round"
