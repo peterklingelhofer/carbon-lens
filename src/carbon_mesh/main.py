@@ -59,6 +59,13 @@ async def _warmup_cache() -> None:
         logger.warning("Cache warmup failed (non-fatal): %s", e)
 
 
+async def _seed_demo_sla() -> None:
+    """Self-healing demo SLA so the SLA page shows real data (see sla/seed.py)."""
+    from carbon_mesh.sla.seed import seed_demo_sla
+
+    await seed_demo_sla()
+
+
 def _log_provider_status() -> None:
     """Log which carbon data providers are configured at startup."""
     providers = settings.configured_providers
@@ -144,12 +151,14 @@ async def lifespan(app: FastAPI):
                 await asyncio.sleep(attempt * 2)
 
         await _warmup_cache()
+        await _seed_demo_sla()
         yield
         await async_engine.dispose()
         logger.info("Database connection closed.")
     else:
         logger.info("Running without database (in-memory mode).")
         await _warmup_cache()
+        await _seed_demo_sla()
         yield
 
 
