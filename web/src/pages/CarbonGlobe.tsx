@@ -11,6 +11,7 @@ import { RegionForecast, RegionHistory } from "../components/RegionDetail";
 import { DATA_QUALITY_TIP_RICH } from "../copy";
 import { niceKm, timeAgo } from "../lib/format";
 import { intensityColor, intensityRGB, renewableRGB } from "../lib/intensity";
+import { circleAround, subsolarPoint, terminatorPath } from "../lib/sun";
 
 // Some browsers/machines can't create a WebGL context (hardware acceleration
 // off, GPU blocklisted, headless). Detect it up front so we can show a graceful
@@ -425,6 +426,30 @@ export default function CarbonGlobe() {
 
     globeRef.current = globe;
 
+    // Day/night terminator + a marker where the sun is overhead, from the clock
+    // alone. A separate paths layer -- additive, doesn't touch the beams/points/
+    // rings. Refreshed each minute as the sun moves (~15°/h).
+    type SunPath = [number, number][] & { color: string; width: number };
+    const refreshSun = () => {
+      const now = new Date();
+      const terminator = terminatorPath(now) as SunPath;
+      terminator.color = "rgba(251, 191, 36, 0.4)"; // soft amber day/night line
+      terminator.width = 1.1;
+      const sun = circleAround(subsolarPoint(now), 4) as SunPath;
+      sun.color = "rgba(253, 224, 71, 0.95)"; // bright yellow "sun overhead" marker
+      sun.width = 2.4;
+      globe
+        .pathsData([terminator, sun])
+        .pathPointLat((p) => (p as [number, number])[0])
+        .pathPointLng((p) => (p as [number, number])[1])
+        .pathColor((d: object) => (d as SunPath).color)
+        .pathStroke((d: object) => (d as SunPath).width)
+        .pathPointAlt(0.01)
+        .pathTransitionDuration(0);
+    };
+    refreshSun();
+    const sunTimer = setInterval(refreshSun, 60_000);
+
     // Map scale bar: measure how many km a screen pixel covers near the view
     // centre (1° of latitude ≈ 111.32 km), then pick a nice round distance.
     const computeScale = () => {
@@ -466,6 +491,7 @@ export default function CarbonGlobe() {
       el.removeEventListener("pointerdown", pause);
       clearTimeout(resumeTimer);
       clearTimeout(scaleTimer);
+      clearInterval(sunTimer);
       globe._destructor?.();
       el.replaceChildren();
     };
@@ -664,7 +690,9 @@ export default function CarbonGlobe() {
           }}
         >
           {points.length} cloud regions by live grid carbon intensity and renewable share. Drag to
-          spin, scroll to zoom, hover a node for detail.
+          spin, scroll to zoom, hover a node for detail. The{" "}
+          <span style={{ color: "#fde047" }}>☀</span> marks where the sun is overhead now; the amber
+          arc is the day/night line — solar-heavy grids clean up on the lit side.
         </p>
         {points.length > 0 && (
           <p
