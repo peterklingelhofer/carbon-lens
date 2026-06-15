@@ -48,7 +48,9 @@ function Heatmap({ provider, region }: { provider: string; region: string }) {
   const method =
     data.method === "entsoe_day_ahead"
       ? "ENTSO-E day-ahead for the first ~48h, then a time-of-day model"
-      : "a time-of-day model";
+      : data.method === "open_meteo_forecast"
+        ? "an Open-Meteo weather forecast"
+        : "a time-of-day model";
 
   return (
     <div>
