@@ -1075,7 +1075,11 @@ export default function CarbonGlobe() {
             </div>
           )}
           {selected.powerBreakdown && <PowerMix breakdown={selected.powerBreakdown} />}
-          <RegionHistory provider={selected.provider} region={selected.region} />
+          <RegionHistory
+            provider={selected.provider}
+            region={selected.region}
+            current={selected.intensity}
+          />
           <RegionForecast provider={selected.provider} region={selected.region} />
           <div
             style={{
