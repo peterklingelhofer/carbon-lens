@@ -25,7 +25,9 @@ from carbon_mesh.db.models import ApiKeyRecord
 from carbon_mesh.engine.router import RoutingEngine
 from carbon_mesh.grid.mapper import GridMapper
 from carbon_mesh.models.accounting import CarbonSavingsReport
+from carbon_mesh.engine.anomaly import compute_anomaly
 from carbon_mesh.models.carbon import (
+    CarbonAnomaly,
     CarbonForecast,
     CarbonHistory,
     CarbonHistoryPoint,
@@ -238,6 +240,35 @@ async def get_carbon_signal(
         advice=advice,
         cleaner_window_in_hours=window_h,
         cleaner_window_intensity_gco2_kwh=window_v,
+    )
+
+
+@router.get(
+    "/carbon/anomaly/{provider}/{region}", response_model=CarbonAnomaly, tags=["Carbon Data"]
+)
+async def get_carbon_anomaly(
+    provider: str,
+    region: str,
+    mapper: GridMapper = Depends(get_grid_mapper),
+    source: CarbonDataSource = Depends(get_carbon_source),
+    store: HistoryStore = Depends(get_history_store),
+) -> CarbonAnomaly:
+    """How this region's intensity compares to its own recent baseline — a
+    'cleaner/dirtier than usual right now' read from the published history archive.
+    Returns ``insufficient_history`` until enough has accumulated."""
+    zone = mapper.get_grid_zone(provider, region)
+    if zone is None:
+        raise HTTPException(status_code=404, detail=f"Unknown region: {provider}/{region}")
+    current = await source.get_carbon_intensity(zone)
+    now = datetime.now(timezone.utc)
+    points = await store.series_for(f"{provider}/{region}", now - timedelta(days=14))
+    result = compute_anomaly(current.carbon_intensity_gco2_kwh, points, now)
+    return CarbonAnomaly(
+        provider=provider,
+        region=region,
+        grid_zone=zone,
+        current_gco2_kwh=round(current.carbon_intensity_gco2_kwh, 1),
+        **result,
     )
 
 

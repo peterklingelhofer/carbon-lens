@@ -68,6 +68,24 @@ class CarbonSignal(BaseModel):
     cleaner_window_intensity_gco2_kwh: float | None = None
 
 
+class CarbonAnomaly(BaseModel):
+    """Whether a zone is cleaner or dirtier than its own historical baseline now."""
+
+    provider: str
+    region: str
+    grid_zone: str
+    current_gco2_kwh: float
+    baseline_gco2_kwh: float | None = None
+    delta_pct: float | None = Field(
+        default=None, description="Signed; negative = cleaner than usual"
+    )
+    status: str = Field(
+        description="cleaner_than_usual | typical | dirtier_than_usual | insufficient_history"
+    )
+    basis: str = Field(description="hour_of_day | recent | insufficient")
+    sample_size: int
+
+
 class CarbonHistoryPoint(BaseModel):
     timestamp: datetime
     carbon_intensity_gco2_kwh: float = Field(ge=0)

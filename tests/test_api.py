@@ -251,6 +251,43 @@ def test_carbon_signal_unknown_region(client: TestClient):
     assert client.get("/api/v1/carbon/signal/aws/nope").status_code == 404
 
 
+def test_carbon_anomaly_insufficient_without_history(client: TestClient):
+    # No history archive in the test env -> honest "insufficient_history".
+    resp = client.get("/api/v1/carbon/anomaly/aws/us-west-2")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["grid_zone"] == "US-NW-BPAT"
+    assert body["status"] == "insufficient_history"
+
+
+def test_carbon_anomaly_with_seeded_history(client: TestClient):
+    from datetime import datetime, timedelta, timezone
+
+    from carbon_mesh.api.deps import get_history_store
+    from carbon_mesh.carbon_sources.history_store import HistoryStore
+    from carbon_mesh.main import app
+
+    now = datetime.now(timezone.utc)
+    # Five same-UTC-hour readings (one per prior day) -> hour-of-day baseline of 400.
+    data = {
+        "series": {
+            "aws/us-west-2": [
+                {"t": (now - timedelta(days=d)).isoformat(), "c": 400.0, "r": 30.0}
+                for d in range(1, 6)
+            ]
+        }
+    }
+    app.dependency_overrides[get_history_store] = lambda: HistoryStore("", data=data)
+    try:
+        body = client.get("/api/v1/carbon/anomaly/aws/us-west-2").json()
+        assert body["basis"] == "hour_of_day"
+        assert body["baseline_gco2_kwh"] == 400.0
+        assert body["sample_size"] == 5
+        assert isinstance(body["delta_pct"], (int, float))
+    finally:
+        app.dependency_overrides.pop(get_history_store, None)
+
+
 def test_carbon_history(client: TestClient):
     from datetime import datetime, timedelta, timezone
 
