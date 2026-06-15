@@ -547,3 +547,107 @@ azure:
     location: Tel Aviv
     latitude: 32.1
     longitude: 34.8
+
+# --- Additional providers (EU-heavy independents + global edge) ---
+
+scaleway:
+  fr-par:
+    grid_zone: FR
+    location: Paris
+    latitude: 48.86
+    longitude: 2.35
+  nl-ams:
+    grid_zone: NL
+    location: Amsterdam
+    latitude: 52.37
+    longitude: 4.90
+  pl-waw:
+    grid_zone: PL
+    location: Warsaw
+    latitude: 52.23
+    longitude: 21.01
+
+ovh:
+  gra:
+    grid_zone: FR
+    location: Gravelines
+    latitude: 50.99
+    longitude: 2.13
+  sbg:
+    grid_zone: FR
+    location: Strasbourg
+    latitude: 48.58
+    longitude: 7.75
+  rbx:
+    grid_zone: FR
+    location: Roubaix
+    latitude: 50.69
+    longitude: 3.18
+  fra:
+    grid_zone: DE
+    location: Frankfurt
+    latitude: 50.11
+    longitude: 8.68
+  lon:
+    grid_zone: GB
+    location: London
+    latitude: 51.51
+    longitude: -0.13
+  waw:
+    grid_zone: PL
+    location: Warsaw
+    latitude: 52.23
+    longitude: 21.01
+  bhs:
+    grid_zone: CA-QC
+    location: Beauharnois, Quebec
+    latitude: 45.31
+    longitude: -73.87
+  syd:
+    grid_zone: AU-NSW
+    location: Sydney
+    latitude: -33.87
+    longitude: 151.21
+  sgp:
+    grid_zone: SG
+    location: Singapore
+    latitude: 1.35
+    longitude: 103.82
+  vin:
+    grid_zone: US-MIDA-PJM
+    eia_respondent: PJM
+    gridstatus_iso: pjm
+    location: Vint Hill, Virginia
+    latitude: 38.76
+    longitude: -77.66
+
+hetzner:
+  fsn1:
+    grid_zone: DE
+    location: Falkenstein
+    latitude: 50.48
+    longitude: 12.34
+  nbg1:
+    grid_zone: DE
+    location: Nuremberg
+    latitude: 49.45
+    longitude: 11.08
+  hel1:
+    grid_zone: FI
+    location: Helsinki
+    latitude: 60.17
+    longitude: 24.94
+  ash:
+    grid_zone: US-MIDA-PJM
+    eia_respondent: PJM
+    gridstatus_iso: pjm
+    location: Ashburn, Virginia
+    latitude: 39.04
+    longitude: -77.49
+  hil:
+    grid_zone: US-NW-BPAT
+    eia_respondent: BPAT
+    gridstatus_iso: bpat
+    location: Hillsboro, Oregon
+    latitude: 45.52
+    longitude: -122.99
