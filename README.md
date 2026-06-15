@@ -173,6 +173,18 @@ Interactive docs at `/docs` (Swagger) or `/redoc` (ReDoc) when the server is run
 
 `/metrics` exposes `carbon_intensity_gco2_kwh`, `carbon_renewable_percentage`, `carbon_marginal_intensity_gco2_kwh`, and `carbon_grid_load_mw` (labelled by `provider`/`region`/`grid_zone`), refreshed per scrape from the cached snapshot — so you can graph grid carbon next to your CPU and latency. A ready-to-import Grafana dashboard is at [`grafana/carbonlens-dashboard.json`](grafana/carbonlens-dashboard.json).
 
+### CLI
+
+```bash
+carbonlens route -p aws,gcp,azure        # greenest region right now
+carbonlens intensity aws/us-east-1       # current intensity for a region
+# Defer a flexible job to a low-carbon window, then run it:
+carbonlens run --region aws/us-east-1 --max-intensity 150 -- python train.py
+carbonlens run --region eu-west-3 --dry-run -- ./batch.sh   # just show the plan
+```
+
+`run` reads the forecast and either runs immediately (grid already under your `--max-intensity`), waits for the first hour that drops under it (within `--max-wait-hours`), or — with no threshold — waits for the cleanest hour in the window, then execs your command.
+
 ---
 
 ## Adding Credentials
