@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { MiniSparkline, trendLabel } from "./MiniSparkline";
 
@@ -26,5 +26,26 @@ describe("MiniSparkline", () => {
   it("omits the marker dot when mark is unset", () => {
     const { container } = render(<MiniSparkline values={[1, 2]} ariaLabel="x" />);
     expect(container.querySelector("circle")).toBeNull();
+  });
+
+  it("shows the value range when not hovering", () => {
+    render(<MiniSparkline values={[100, 200, 50]} ariaLabel="spark" />);
+    expect(screen.getByText(/range 50–200 gCO₂\/kWh/)).toBeTruthy();
+  });
+
+  it("reads out a point's label and value on hover", () => {
+    const { container } = render(
+      <MiniSparkline
+        values={[100, 200, 50]}
+        labels={["9 AM", "10 AM", "11 AM"]}
+        ariaLabel="spark"
+      />,
+    );
+    const svg = container.querySelector("svg") as SVGSVGElement;
+    // jsdom has no layout, so stub the rect the pointer math reads.
+    svg.getBoundingClientRect = () =>
+      ({ left: 0, top: 0, width: 224, height: 52, right: 224, bottom: 52, x: 0, y: 0 }) as DOMRect;
+    fireEvent.pointerMove(svg, { clientX: 224 }); // far right -> last point
+    expect(screen.getByText("11 AM: 50 gCO₂/kWh")).toBeTruthy();
   });
 });
