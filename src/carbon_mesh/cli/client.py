@@ -89,3 +89,14 @@ def savings() -> dict:
     )
     resp.raise_for_status()
     return resp.json()
+
+
+def forecast(provider: str, region: str, hours: int = 24) -> dict:
+    resp = httpx.get(
+        f"{get_api_url()}/api/v1/carbon/forecast/{provider}/{region}",
+        params={"hours": hours},
+        headers=_headers(),
+        timeout=30,
+    )
+    resp.raise_for_status()
+    return resp.json()
