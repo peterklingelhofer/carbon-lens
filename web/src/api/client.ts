@@ -10,6 +10,7 @@ import type {
   ComplianceReportSummary,
   CronSchedule,
   GreenSLA,
+  GridZoneSummary,
   HealthResponse,
   RegionLookup,
   RouteRequest,
@@ -219,8 +220,11 @@ export const api = {
       request<ScheduleRecommendation>(`/api/v1/scheduler/schedules/${id}/next`, { method: "POST" }),
   },
 
-  // Carbon zones
-  carbonZones: () => request<Array<Record<string, unknown>>>("/api/v1/carbon/zones"),
+  // Carbon zones (on-prem / non-cloud lookups by grid zone)
+  carbonZones: () => request<GridZoneSummary[]>("/api/v1/carbon/zones"),
+
+  carbonZone: (gridZone: string) =>
+    request<CarbonIntensity>(`/api/v1/carbon/zone/${encodeURIComponent(gridZone)}`),
 
   // Source health
   sourceHealth: () => request<Record<string, unknown>>("/api/v1/status/sources"),
