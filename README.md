@@ -125,6 +125,16 @@ XML feeds (ENTSO-E, IESO) are parsed with `defusedxml`, so a malicious or malfor
 
 The published demo **snapshot** is rebuilt on a schedule from these feeds. When a feed has a brief gap, the snapshot **carries forward** that zone's last live reading (while it's still recent) rather than dropping it to an estimate, so a transient blip doesn't downgrade a zone we normally measure.
 
+### Open data
+
+The scheduled builder also publishes a rolling history archive you can download and analyse freely — no key, no scraping:
+
+- `…/data/snapshot.json` — current intensity for every region
+- `…/data/history.json` — accumulating per-region time series (compact JSON)
+- `…/data/history.csv` — the same series as a tidy CSV (`provider,region,timestamp,carbon_intensity_gco2_kwh,renewable_percentage`)
+
+(Served from the repo's `data` branch via `raw.githubusercontent.com`.) It's a small carbon data commons others can build on.
+
 ---
 
 ## API Reference
