@@ -86,6 +86,18 @@ _BASELINE_INTENSITY: dict[str, float] = {
 }
 
 
+def weather_renewable_fraction(radiation: float, wind_speed: float) -> float:
+    """Estimate the renewable share (0-1) of generation from weather alone.
+
+    Solar: 0-1000 W/m² → up to 40% penetration. Wind: cut-in ~12 km/h, rated ~45 →
+    up to 30%. A rough proxy (a single point can't represent a whole grid zone), but
+    enough to drive a directional forecast. Shared by the live estimate and the
+    forecast curve so they stay consistent."""
+    solar_pct = min(40.0, (radiation / 1000) * 40)
+    wind_pct = min(30.0, ((wind_speed - 12) / 33) * 30) if wind_speed > 12 else 0.0
+    return min(100.0, solar_pct + wind_pct) / 100.0
+
+
 class OpenMeteoCarbonSource:
     def __init__(self) -> None:
         self._client = shared_client(timeout=10.0)
@@ -127,15 +139,8 @@ class OpenMeteoCarbonSource:
                 solar_radiation = radiations[i] or 0
                 break
 
-        # Estimate renewable contribution from weather
-        # Solar: 0-1000 W/m² → 0-40% grid penetration
-        solar_pct = min(40, (solar_radiation / 1000) * 40)
-        # Wind: 0-50 km/h → 0-30% grid penetration (cut-in ~12 km/h, rated ~45 km/h)
-        wind_pct = 0
-        if wind_speed > 12:
-            wind_pct = min(30, ((wind_speed - 12) / 33) * 30)
-
-        renewable_pct = min(100, solar_pct + wind_pct)
+        # Estimate renewable contribution from current weather (shared formula).
+        renewable_pct = weather_renewable_fraction(solar_radiation, wind_speed) * 100
 
         # Use baseline if known, otherwise estimate from weather
         baseline = _BASELINE_INTENSITY.get(grid_zone, 350)
@@ -160,3 +165,53 @@ class OpenMeteoCarbonSource:
                 except (httpx.HTTPError, ValueError):
                     pass
         return results
+
+
+class OpenMeteoForecastSource:
+    """Hour-by-hour renewable-share forecast from Open-Meteo's free solar/wind
+    forecast. Same interface as the ENTSO-E forecast source, so the scheduler can
+    use it as a second tier: a real weather-driven projection for the
+    weather-estimated zones, replacing the bare time-of-day model. Free, no key."""
+
+    def __init__(self) -> None:
+        self._client = shared_client(timeout=10.0)
+
+    def can_forecast(self, grid_zone: str) -> bool:
+        return grid_zone in ZONE_COORDINATES
+
+    async def vre_fraction_curve(self, grid_zone: str, max_hours: int) -> dict[int, float]:
+        coords = ZONE_COORDINATES.get(grid_zone)
+        if not coords:
+            return {}
+        lat, lon = coords
+        days = max(1, min(7, max_hours // 24 + 2))
+        resp = await self._client.get(
+            API_URL,
+            params={
+                "latitude": lat,
+                "longitude": lon,
+                "hourly": "shortwave_radiation,windspeed_10m",
+                "forecast_days": days,
+            },
+        )
+        resp.raise_for_status()
+        hourly = resp.json().get("hourly", {})
+        times = hourly.get("time", [])
+        radiation = hourly.get("shortwave_radiation", [])
+        wind = hourly.get("windspeed_10m", [])
+
+        now = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
+        curve: dict[int, float] = {}
+        for i, t in enumerate(times):
+            try:
+                ts = datetime.fromisoformat(t)
+            except (TypeError, ValueError):
+                continue
+            if ts.tzinfo is None:
+                ts = ts.replace(tzinfo=timezone.utc)
+            offset = round((ts - now).total_seconds() / 3600)
+            if 0 <= offset <= max_hours:
+                r = radiation[i] if i < len(radiation) else 0
+                w = wind[i] if i < len(wind) else 0
+                curve[offset] = weather_renewable_fraction(r or 0, w or 0)
+        return curve

@@ -124,6 +124,36 @@ def test_project_with_forecast_scales_by_vre_change():
     assert engine._project_with_forecast(current, 0.999, 0.5, 6) is None
 
 
+def test_weather_renewable_fraction_from_irradiance_and_wind():
+    from carbon_mesh.carbon_sources.open_meteo import weather_renewable_fraction
+
+    assert weather_renewable_fraction(0, 0) == 0.0
+    assert weather_renewable_fraction(0, 5) == 0.0  # below wind cut-in
+    assert weather_renewable_fraction(1000, 0) == 0.4  # full solar -> 40%
+    # Full solar (40%) + strong wind (capped 30%) = 70%.
+    assert weather_renewable_fraction(1000, 45) == 0.7
+
+
+async def test_forecast_zone_uses_weather_source_for_non_eu(monkeypatch):
+    class _StubWeather:
+        def can_forecast(self, zone: str) -> bool:
+            return zone == "SG"
+
+        async def vre_fraction_curve(self, zone: str, hours: int) -> dict[int, float]:
+            return {0: 0.1, 3: 0.5}  # cleaner in 3h
+
+    engine = SchedulingEngine(
+        carbon_source=_FakeSource({"SG": _ci("SG", 400.0, renew=10.0)}),
+        grid_mapper=None,
+        forecast_source=None,
+        weather_forecast_source=_StubWeather(),
+    )
+    method, points = await engine.forecast_zone("SG", longitude=103.8, hours=6)
+    assert method == "open_meteo_forecast"
+    # Hour 3 scaled by the weather VRE rise (0.1 -> 0.5): cleaner than now.
+    assert points[3].carbon_intensity_gco2_kwh < points[0].carbon_intensity_gco2_kwh
+
+
 # --- Snapshot carry-forward ---
 
 
