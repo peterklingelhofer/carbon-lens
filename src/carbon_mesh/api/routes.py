@@ -30,6 +30,7 @@ from carbon_mesh.models.carbon import (
     CarbonHistory,
     CarbonHistoryPoint,
     CarbonIntensity,
+    CarbonSignal,
 )
 from carbon_mesh.models.region import CloudRegion
 from carbon_mesh.models.routing import RouteRequest, RouteResponse
@@ -181,6 +182,62 @@ async def get_carbon_forecast(
         generated_at=datetime.now(timezone.utc),
         method=method,
         points=points,
+    )
+
+
+def _signal_state(intensity: float) -> str:
+    if intensity <= 150:
+        return "green"
+    if intensity <= 400:
+        return "yellow"
+    return "red"
+
+
+@router.get("/carbon/signal/{provider}/{region}", response_model=CarbonSignal, tags=["Carbon Data"])
+async def get_carbon_signal(
+    provider: str,
+    region: str,
+    mapper: GridMapper = Depends(get_grid_mapper),
+    engine: SchedulingEngine = Depends(get_scheduling_engine),
+) -> CarbonSignal:
+    """One-call traffic-light decision: run a flexible job here now, or wait?
+
+    Returns a green/yellow/red state plus, when meaningfully cleaner power is
+    coming, how many hours until that window. The minimal primitive for the
+    carbon-aware-dispatcher or any script — loosely coupled via a stable contract.
+    """
+    zone = mapper.get_grid_zone(provider, region)
+    if zone is None:
+        raise HTTPException(status_code=404, detail=f"Unknown region: {provider}/{region}")
+    info = mapper.get_region(provider, region)
+    longitude = info.longitude if info else 0.0
+
+    _, points = await engine.forecast_zone(zone, longitude, 24)
+    intensities = [p.carbon_intensity_gco2_kwh for p in points]
+    now_v = intensities[0]
+    state = _signal_state(now_v)
+
+    # Soonest upcoming hour that's notably cleaner (>= 15% lower) than now.
+    best_i, best_v = 0, now_v
+    for i in range(1, len(intensities)):
+        if intensities[i] < best_v:
+            best_i, best_v = i, intensities[i]
+    notably_cleaner = best_i >= 1 and best_v <= now_v * 0.85
+
+    if state == "green" or not notably_cleaner:
+        advice, window_h, window_v = "run_now", None, None
+    else:
+        advice, window_h, window_v = "wait_for_cleaner", best_i, round(best_v)
+
+    return CarbonSignal(
+        provider=provider,
+        region=region,
+        grid_zone=zone,
+        intensity_gco2_kwh=round(now_v),
+        state=state,
+        advice=advice,
+        cleaner_window_in_hours=window_h,
+        cleaner_window_intensity_gco2_kwh=window_v,
     )
 
 
