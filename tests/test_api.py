@@ -235,6 +235,22 @@ def test_carbon_zone_unknown_returns_404(client: TestClient):
     assert resp.status_code == 404
 
 
+def test_carbon_signal(client: TestClient):
+    resp = client.get("/api/v1/carbon/signal/aws/us-west-2")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["state"] in ("green", "yellow", "red")
+    assert body["advice"] in ("run_now", "wait_for_cleaner")
+    assert body["grid_zone"] == "US-NW-BPAT"
+    assert isinstance(body["intensity_gco2_kwh"], (int, float))
+    if body["advice"] == "wait_for_cleaner":
+        assert body["cleaner_window_in_hours"] >= 1
+
+
+def test_carbon_signal_unknown_region(client: TestClient):
+    assert client.get("/api/v1/carbon/signal/aws/nope").status_code == 404
+
+
 def test_carbon_history(client: TestClient):
     from datetime import datetime, timedelta, timezone
 

@@ -48,6 +48,26 @@ class CarbonForecast(BaseModel):
     )
 
 
+class CarbonSignal(BaseModel):
+    """A one-call decision primitive: should a flexible job run here now, or wait?
+
+    Designed for the carbon-aware-dispatcher and any script/status page that just
+    wants a traffic-light answer plus the next cleaner window.
+    """
+
+    provider: str
+    region: str
+    grid_zone: str
+    intensity_gco2_kwh: float
+    state: str = Field(description="green | yellow | red, by absolute intensity thresholds")
+    advice: str = Field(description="run_now | wait_for_cleaner")
+    cleaner_window_in_hours: int | None = Field(
+        default=None,
+        description="Hours until a notably cleaner upcoming window, or null if now is fine",
+    )
+    cleaner_window_intensity_gco2_kwh: float | None = None
+
+
 class CarbonHistoryPoint(BaseModel):
     timestamp: datetime
     carbon_intensity_gco2_kwh: float = Field(ge=0)
