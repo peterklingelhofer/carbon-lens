@@ -1,5 +1,7 @@
 """CarbonLens CLI — Find the greenest cloud region for your workload."""
 
+import subprocess
+import time
 from typing import Optional
 
 import typer
@@ -7,6 +9,7 @@ from rich.console import Console
 from rich.table import Table
 
 from carbon_mesh.cli import client
+from carbon_mesh.cli.green_run import choose_run_index
 
 app = typer.Typer(
     name="carbonlens",
@@ -198,6 +201,77 @@ def report(
             )
         console.print(table)
     console.print()
+
+
+@app.command()
+def run(
+    command: list[str] = typer.Argument(
+        ..., help="Command to run when the grid is green, e.g. -- python train.py"
+    ),
+    region: str = typer.Option(
+        ..., "--region", help="Target region as provider/region, e.g. aws/us-east-1"
+    ),
+    max_intensity: Optional[float] = typer.Option(
+        None,
+        "--max-intensity",
+        help="Run as soon as forecast intensity is at/under this (gCO2/kWh); "
+        "omit to wait for the cleanest hour in the window",
+    ),
+    max_wait_hours: int = typer.Option(
+        24, "--max-wait-hours", help="Most hours to defer before running anyway"
+    ),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Show the plan; don't wait or run"),
+):
+    """Run a command when the grid is green -- defer a flexible job to a low-carbon window."""
+    provider, _, reg = region.partition("/")
+    if not provider or not reg:
+        console.print("[red]Error:[/red] --region must be provider/region, e.g. aws/us-east-1")
+        raise typer.Exit(1)
+
+    try:
+        forecast = client.forecast(provider, reg, max_wait_hours)
+    except Exception as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+
+    intensities = [p["carbon_intensity_gco2_kwh"] for p in forecast.get("points", [])]
+    if not intensities:
+        console.print("[yellow]No forecast available; running now.[/yellow]")
+        idx, reason = 0, "now"
+    else:
+        idx, reason = choose_run_index(intensities, max_intensity, max_wait_hours)
+
+    now_v = intensities[0] if intensities else None
+    chosen_v = intensities[idx] if intensities else None
+
+    if idx == 0:
+        if now_v is not None:
+            console.print(
+                f"[green]Grid is green now[/green] (~{now_v:.0f} gCO2/kWh) — running immediately."
+            )
+    elif now_v is not None and chosen_v is not None:
+        saved = (now_v - chosen_v) / now_v * 100 if now_v else 0.0
+        when = forecast["points"][idx]["timestamp"][:16].replace("T", " ")
+        note = (
+            "no hour under the threshold in the window, picking the cleanest"
+            if reason == "cleanest_fallback"
+            else "cleanest upcoming hour"
+        )
+        console.print(
+            f"[cyan]Deferring {idx}h[/cyan] to {when} UTC "
+            f"(~{chosen_v:.0f} vs ~{now_v:.0f} gCO2/kWh now, {saved:.0f}% cleaner) — {note}."
+        )
+
+    if dry_run:
+        console.print("[dim](dry run — not waiting or executing)[/dim]")
+        return
+
+    if idx > 0:
+        console.print(f"Waiting {idx}h before running… (Ctrl-C to cancel)")
+        time.sleep(idx * 3600)
+
+    result = subprocess.run(command)
+    raise typer.Exit(result.returncode)
 
 
 @config_app.command("set")
