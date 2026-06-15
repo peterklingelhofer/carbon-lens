@@ -76,8 +76,17 @@ export function RegionForecast({ provider, region }: { provider: string; region:
     new Date(p.timestamp).toLocaleTimeString(undefined, { hour: "numeric" }),
   );
   const trend = trendLabel(vals[0], vals[vals.length - 1]);
-  const methodLabel =
-    data.method === "entsoe_day_ahead" ? "ENTSO-E day-ahead" : "time-of-day model";
+  const isReal = data.method === "entsoe_day_ahead";
+  const methodLabel = isReal ? "ENTSO-E day-ahead" : "time-of-day model";
+
+  // Illustrative uncertainty that widens with the horizon (and is wider for the
+  // heuristic model than the real day-ahead forecast). Not a measured error band.
+  const base = isReal ? 0.04 : 0.08;
+  const perHour = isReal ? 0.004 : 0.01;
+  const band = vals.map((v, i): [number, number] => {
+    const u = Math.min(0.4, base + perHour * i);
+    return [v * (1 - u), v * (1 + u)];
+  });
 
   return (
     <div style={{ marginTop: 10 }}>
@@ -85,11 +94,12 @@ export function RegionForecast({ provider, region }: { provider: string; region:
       <MiniSparkline
         values={vals}
         labels={labels}
+        band={band}
         mark="first"
         ariaLabel={`24-hour carbon intensity forecast, trending ${trend}`}
       />
       <div style={{ fontSize: "0.65rem", color: "#6b7280", marginTop: 2 }}>
-        {trend} · {methodLabel}
+        {trend} · {methodLabel} · shaded = rough uncertainty
       </div>
     </div>
   );
