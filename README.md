@@ -187,6 +187,17 @@ carbonlens run --region eu-west-3 --dry-run -- ./batch.sh   # just show the plan
 
 `run` reads the forecast and either runs immediately (grid already under your `--max-intensity`), waits for the first hour that drops under it (within `--max-wait-hours`), or — with no threshold — waits for the cleanest hour in the window, then execs your command.
 
+### Status badge
+
+Embed a live, color-coded carbon-intensity badge (green → red) in any README:
+
+```markdown
+![carbon](https://carbonlens-gssa.onrender.com/badge/aws/us-east-1.svg)
+![carbon](https://carbonlens-gssa.onrender.com/badge/zone/FR.svg)
+```
+
+`/badge/{provider}/{region}.svg` for a cloud region, `/badge/zone/{grid_zone}.svg` for an on-prem grid zone. An unknown region renders a gray "unknown" badge rather than a broken image. (GitHub proxies README images through its camo cache, so the badge refreshes within that cache window — same as any shields-style badge.)
+
 ---
 
 ## Adding Credentials
