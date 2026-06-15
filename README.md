@@ -251,7 +251,7 @@ Each region is mapped to a physical electricity grid zone in `data/region_grid_m
 
 ## Architecture
 
-For the full design — the cascade, snapshot/forecast/history flow, scoring, the SLA repository, and the data-quality philosophy — see **[ARCHITECTURE.md](ARCHITECTURE.md)**. To build and contribute, see **[CONTRIBUTING.md](CONTRIBUTING.md)**.
+For the full design — the cascade, snapshot/forecast/history flow, scoring, the SLA repository, and the data-quality philosophy — see **[ARCHITECTURE.md](ARCHITECTURE.md)**. For the engineering story and the decisions behind it, see **[docs/CASE_STUDY.md](docs/CASE_STUDY.md)**. To build and contribute, see **[CONTRIBUTING.md](CONTRIBUTING.md)**.
 
 ```
 src/carbon_mesh/
