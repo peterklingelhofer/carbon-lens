@@ -27,18 +27,20 @@ export function RegionHistory({ provider, region }: { provider: string; region: 
   }
 
   const vals = data.points.map((p) => p.carbon_intensity_gco2_kwh);
-  const min = Math.min(...vals);
-  const max = Math.max(...vals);
+  const labels = data.points.map((p) =>
+    new Date(p.timestamp).toLocaleString(undefined, { weekday: "short", hour: "numeric" }),
+  );
   return (
     <div style={{ marginTop: 10 }}>
       {label}
       <MiniSparkline
         values={vals}
+        labels={labels}
         mark="last"
         ariaLabel={`Carbon intensity over the past 7 days, trending ${trendLabel(vals[0], vals[vals.length - 1])}`}
       />
       <div style={{ fontSize: "0.65rem", color: "#6b7280", marginTop: 2 }}>
-        {min}–{max} gCO₂/kWh · {data.points.length} readings
+        {data.points.length} readings · hover to inspect
       </div>
     </div>
   );
@@ -70,8 +72,9 @@ export function RegionForecast({ provider, region }: { provider: string; region:
   if (isError || !data || data.points.length < 2) return null;
 
   const vals = data.points.map((p) => p.carbon_intensity_gco2_kwh);
-  const min = Math.min(...vals);
-  const max = Math.max(...vals);
+  const labels = data.points.map((p) =>
+    new Date(p.timestamp).toLocaleTimeString(undefined, { hour: "numeric" }),
+  );
   const trend = trendLabel(vals[0], vals[vals.length - 1]);
   const methodLabel =
     data.method === "entsoe_day_ahead" ? "ENTSO-E day-ahead" : "time-of-day model";
@@ -81,11 +84,12 @@ export function RegionForecast({ provider, region }: { provider: string; region:
       {label}
       <MiniSparkline
         values={vals}
+        labels={labels}
         mark="first"
         ariaLabel={`24-hour carbon intensity forecast, trending ${trend}`}
       />
       <div style={{ fontSize: "0.65rem", color: "#6b7280", marginTop: 2 }}>
-        {min}–{max} gCO₂/kWh · {trend} · {methodLabel}
+        {trend} · {methodLabel}
       </div>
     </div>
   );
