@@ -195,6 +195,22 @@ def test_append_history_accumulates_and_dedupes():
     assert len(h3["series"]["aws/x"]) == 2
 
 
+def test_history_to_csv_emits_tidy_rows():
+    history = {
+        "series": {
+            "aws/us-east-1": [
+                {"t": "2026-06-14T00:00:00+00:00", "c": 300.0, "r": 40.0},
+                {"t": "2026-06-14T01:00:00+00:00", "c": 250.0, "r": 55.0},
+            ]
+        }
+    }
+    csv_text = build_snapshot.history_to_csv(history)
+    lines = csv_text.strip().splitlines()
+    assert lines[0] == "provider,region,timestamp,carbon_intensity_gco2_kwh,renewable_percentage"
+    assert lines[1] == "aws,us-east-1,2026-06-14T00:00:00+00:00,300.0,40.0"
+    assert len(lines) == 3  # header + 2 points
+
+
 def test_append_history_caps_to_max_points():
     history = None
     for i in range(10):
