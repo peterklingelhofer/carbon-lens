@@ -2,6 +2,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { type ReactNode, useState } from "react";
 import { api } from "../api/client";
 import type { TimeSlot } from "../api/types";
+import { CleanWindowHeatmap } from "../components/CleanWindowHeatmap";
 import { InfoTip } from "../components/InfoTip";
 import { RENEWABLE_TIP } from "../copy";
 import { card, section as sectionFn } from "../styles";
@@ -679,6 +680,8 @@ print(f"in {window['recommended']['region']}")`}</pre>
           </div>
         </div>
       </div>
+
+      <CleanWindowHeatmap />
     </div>
   );
 }
