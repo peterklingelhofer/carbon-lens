@@ -274,12 +274,22 @@ def test_carbon_signal_unknown_region(client: TestClient):
 
 
 def test_carbon_anomaly_insufficient_without_history(client: TestClient):
-    # No history archive in the test env -> honest "insufficient_history".
-    resp = client.get("/api/v1/carbon/anomaly/aws/us-west-2")
-    assert resp.status_code == 200
-    body = resp.json()
-    assert body["grid_zone"] == "US-NW-BPAT"
-    assert body["status"] == "insufficient_history"
+    # With an empty archive -> honest "insufficient_history". Override the store so
+    # the test is hermetic (the real history_url has live data CI would otherwise
+    # fetch, making the absent-history case impossible to assert).
+    from carbon_mesh.api.deps import get_history_store
+    from carbon_mesh.carbon_sources.history_store import HistoryStore
+    from carbon_mesh.main import app
+
+    app.dependency_overrides[get_history_store] = lambda: HistoryStore("", data={"series": {}})
+    try:
+        resp = client.get("/api/v1/carbon/anomaly/aws/us-west-2")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["grid_zone"] == "US-NW-BPAT"
+        assert body["status"] == "insufficient_history"
+    finally:
+        app.dependency_overrides.pop(get_history_store, None)
 
 
 def test_carbon_anomaly_with_seeded_history(client: TestClient):
