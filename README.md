@@ -208,6 +208,17 @@ Embed a live, color-coded carbon-intensity badge (green → red) in any README:
 
 `/badge/{provider}/{region}.svg` for a cloud region, `/badge/zone/{grid_zone}.svg` for an on-prem grid zone. An unknown region renders a gray "unknown" badge rather than a broken image. (GitHub proxies README images through its camo cache, so the badge refreshes within that cache window — same as any shields-style badge.)
 
+### Embeddable widget
+
+For a richer live card on a blog or dashboard, drop in an iframe — it shows the current intensity (color-coded), renewable share, and a "good time to run?" read, rendered server-side (no CORS, no JS):
+
+```html
+<iframe src="https://carbonlens-gssa.onrender.com/embed/aws/us-east-1"
+        width="320" height="150" style="border:0" title="CarbonLens"></iframe>
+```
+
+Also `/embed/zone/{grid_zone}` for on-prem zones.
+
 ---
 
 ## Adding Credentials
