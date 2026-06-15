@@ -2,6 +2,7 @@ import { useState } from "react";
 import { api } from "../api/client";
 import type { RouteResponse } from "../api/types";
 import { InfoTip } from "../components/InfoTip";
+import { RegionComparison } from "../components/RegionComparison";
 import { card, section as sectionFn } from "../styles";
 
 const section = sectionFn();
@@ -105,6 +106,8 @@ export function RouteDemo() {
         Choose providers and how much to favour clean energy over cost, and see which region comes
         out greenest right now.
       </p>
+
+      <RegionComparison />
 
       {/* Form */}
       <div style={card}>
