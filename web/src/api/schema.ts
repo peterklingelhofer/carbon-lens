@@ -94,6 +94,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/carbon/zone/{grid_zone}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Zone Carbon Intensity
+         * @description Carbon intensity for a grid zone directly (no cloud region needed) -- for
+         *     on-prem / colocation workloads. Use the zone IDs from /carbon/zones.
+         */
+        get: operations["get_zone_carbon_intensity_api_v1_carbon_zone__grid_zone__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/carbon/zones": {
         parameters: {
             query?: never;
@@ -2043,6 +2064,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CarbonHistory"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_zone_carbon_intensity_api_v1_carbon_zone__grid_zone__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                grid_zone: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CarbonIntensity"];
                 };
             };
             /** @description Validation Error */

@@ -2380,6 +2380,50 @@
         ]
       }
     },
+    "/api/v1/carbon/zone/{grid_zone}": {
+      "get": {
+        "description": "Carbon intensity for a grid zone directly (no cloud region needed) -- for\non-prem / colocation workloads. Use the zone IDs from /carbon/zones.",
+        "operationId": "get_zone_carbon_intensity_api_v1_carbon_zone__grid_zone__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "grid_zone",
+            "required": true,
+            "schema": {
+              "title": "Grid Zone",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CarbonIntensity"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Zone Carbon Intensity",
+        "tags": [
+          "Carbon Routing",
+          "Carbon Data"
+        ]
+      }
+    },
     "/api/v1/carbon/zones": {
       "get": {
         "description": "List all supported electricity grid zones and the cloud regions mapped to each.\n\nReturns an array of objects with ``grid_zone``, ``regions`` (list of\n``provider/region`` strings), and ``location`` for the first mapped region.",

@@ -83,6 +83,27 @@ async def list_regions(
     return response
 
 
+# On-prem / non-cloud zone lookup. Declared BEFORE /carbon/{provider}/{region} so
+# "/carbon/zone/DE" isn't captured by that same-arity route (provider="zone").
+# (The zone *list* lives at /carbon/zones, defined further below -- 2 segments, no
+# clash with the 3-segment region route.)
+@router.get("/carbon/zone/{grid_zone}", response_model=CarbonIntensity, tags=["Carbon Data"])
+async def get_zone_carbon_intensity(
+    grid_zone: str,
+    mapper: GridMapper = Depends(get_grid_mapper),
+    source: CarbonDataSource = Depends(get_carbon_source),
+) -> CarbonIntensity:
+    """Carbon intensity for a grid zone directly (no cloud region needed) -- for
+    on-prem / colocation workloads. Use the zone IDs from /carbon/zones."""
+    known = {r.grid_zone for r in mapper.grid_zones()}
+    if grid_zone not in known:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Unknown grid zone: {grid_zone}. See /api/v1/carbon/zones for valid IDs.",
+        )
+    return await source.get_carbon_intensity(grid_zone)
+
+
 @router.get("/carbon/{provider}/{region}", response_model=CarbonIntensity, tags=["Carbon Data"])
 async def get_carbon_intensity(
     provider: str,

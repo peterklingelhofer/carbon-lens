@@ -194,6 +194,27 @@ def test_carbon_forecast_unknown_region(client: TestClient):
     assert resp.status_code == 404
 
 
+def test_carbon_zones_list(client: TestClient):
+    resp = client.get("/api/v1/carbon/zones")
+    assert resp.status_code == 200
+    zones = resp.json()
+    ids = {z["grid_zone"] for z in zones}
+    assert "DE" in ids and "US-NW-BPAT" in ids
+    assert len(ids) == len(zones)  # one entry per distinct zone
+
+
+def test_carbon_zone_lookup_not_shadowed(client: TestClient):
+    # /carbon/zone/DE must hit the zone route, not /carbon/{provider}/{region}.
+    resp = client.get("/api/v1/carbon/zone/DE")
+    assert resp.status_code == 200
+    assert resp.json()["grid_zone"] == "DE"
+
+
+def test_carbon_zone_unknown_returns_404(client: TestClient):
+    resp = client.get("/api/v1/carbon/zone/NOPE")
+    assert resp.status_code == 404
+
+
 def test_carbon_history(client: TestClient):
     from datetime import datetime, timedelta, timezone
 

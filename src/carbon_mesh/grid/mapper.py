@@ -41,6 +41,17 @@ class GridMapper:
     def list_providers(self) -> list[str]:
         return list(self._data.keys())
 
+    def grid_zones(self) -> list[CloudRegion]:
+        """One representative region per distinct grid zone, sorted by zone. Used
+        for zone-level lookups (e.g. on-prem datacenters that aren't a cloud region
+        but sit on a grid zone we already cover)."""
+        seen: dict[str, CloudRegion] = {}
+        for provider in self._data:
+            for region_name, region_data in self._data[provider].items():
+                region = _parse_region(provider, region_name, region_data)
+                seen.setdefault(region.grid_zone, region)
+        return sorted(seen.values(), key=lambda r: r.grid_zone)
+
     def get_grid_zone(self, provider: str, region: str) -> str | None:
         region_obj = self.get_region(provider, region)
         return region_obj.grid_zone if region_obj else None
