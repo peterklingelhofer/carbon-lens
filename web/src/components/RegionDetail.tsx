@@ -1,11 +1,48 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
+import { relativeToUsual } from "../lib/anomaly";
 import { MiniSparkline, trendLabel } from "./MiniSparkline";
+
+// "Cleaner / dirtier than usual" badge from the history baseline, when available.
+function UsualBadge({
+  current,
+  points,
+}: {
+  current: number;
+  points: { timestamp: string; carbon_intensity_gco2_kwh: number }[];
+}) {
+  const cmp = relativeToUsual(current, points, new Date());
+  if (!cmp) return null;
+  const forHour = cmp.basis === "hour" ? " for this hour" : "";
+  if (cmp.status === "typical") {
+    return (
+      <div style={{ fontSize: "0.65rem", color: "#9ca3af", marginTop: 2 }}>
+        About typical{forHour}.
+      </div>
+    );
+  }
+  const cleaner = cmp.status === "cleaner";
+  return (
+    <div style={{ fontSize: "0.68rem", marginTop: 2, color: cleaner ? "#4ade80" : "#fbbf24" }}>
+      {cleaner ? "🟢" : "🟡"} ~{Math.abs(cmp.deltaPct)}% {cleaner ? "cleaner" : "dirtier"} than
+      usual
+      {forHour}.
+    </div>
+  );
+}
 
 // Past-7-days carbon intensity for the selected region, from /carbon/history.
 // The archive accumulates over time, so a region shows nothing until it has been
 // observed -- handled with an honest "still accumulating" note rather than a gap.
-export function RegionHistory({ provider, region }: { provider: string; region: string }) {
+export function RegionHistory({
+  provider,
+  region,
+  current,
+}: {
+  provider: string;
+  region: string;
+  current?: number;
+}) {
   const { data, isLoading } = useQuery({
     queryKey: ["history", provider, region],
     queryFn: () => api.carbonHistory(provider, region, 168),
@@ -42,6 +79,7 @@ export function RegionHistory({ provider, region }: { provider: string; region: 
       <div style={{ fontSize: "0.65rem", color: "#6b7280", marginTop: 2 }}>
         {data.points.length} readings · hover to inspect
       </div>
+      {current != null && <UsualBadge current={current} points={data.points} />}
     </div>
   );
 }
