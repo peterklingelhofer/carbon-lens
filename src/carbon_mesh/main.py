@@ -17,6 +17,7 @@ from slowapi.util import get_remote_address
 
 from prometheus_fastapi_instrumentator import Instrumentator
 
+from carbon_mesh.api.badge import badge_router
 from carbon_mesh.api.routes import router
 from carbon_mesh.api.ws import ws_router
 from carbon_mesh.config import settings
@@ -337,6 +338,7 @@ app.include_router(compliance_router)
 app.include_router(scheduler_router)
 app.include_router(sla_router)
 app.include_router(ws_router)
+app.include_router(badge_router)  # root-level /badge/*.svg (no /api/v1 prefix)
 
 # Prometheus metrics at /metrics. Keep the instrumentator's HTTP middleware, but
 # serve /metrics ourselves so we can refresh the carbon gauges on each scrape

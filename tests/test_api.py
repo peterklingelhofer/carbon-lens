@@ -194,6 +194,26 @@ def test_carbon_forecast_unknown_region(client: TestClient):
     assert resp.status_code == 404
 
 
+def test_region_badge_svg(client: TestClient):
+    resp = client.get("/badge/aws/us-west-2.svg")
+    assert resp.status_code == 200
+    assert resp.headers["content-type"].startswith("image/svg+xml")
+    assert "<svg" in resp.text and "gCO₂/kWh" in resp.text
+
+
+def test_zone_badge_not_shadowed(client: TestClient):
+    # /badge/zone/DE.svg must hit the zone route, not /badge/{provider}/{region}.svg.
+    resp = client.get("/badge/zone/DE.svg")
+    assert resp.status_code == 200
+    assert "gCO₂/kWh" in resp.text
+
+
+def test_badge_unknown_region_renders_gray_not_404(client: TestClient):
+    resp = client.get("/badge/aws/nope.svg")
+    assert resp.status_code == 200  # a broken image in a README is worse than "unknown"
+    assert "unknown region" in resp.text
+
+
 def test_carbon_zones_list(client: TestClient):
     resp = client.get("/api/v1/carbon/zones")
     assert resp.status_code == 200
