@@ -146,7 +146,7 @@ const STRATEGIES: { value: Strategy; label: string; desc: string }[] = [
   { value: "balanced", label: "Balanced", desc: "60% carbon + 40% renewable" },
 ];
 
-const PROVIDERS = ["aws", "gcp", "azure"];
+const PROVIDERS = ["aws", "gcp", "azure", "scaleway", "ovh", "hetzner"];
 
 // Window times are shown in the viewer's local timezone; label it explicitly
 // (e.g. "EDT", "GMT+1") so the recommended date is never ambiguous.

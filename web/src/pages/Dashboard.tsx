@@ -509,7 +509,7 @@ export function Dashboard() {
           alignItems: "center",
         }}
       >
-        {["", "aws", "gcp", "azure"].map((p) => (
+        {["", "aws", "gcp", "azure", "scaleway", "ovh", "hetzner"].map((p) => (
           <button
             type="button"
             key={p}
