@@ -228,6 +228,24 @@ def append_history(
     return {"generated_at": generated_at, "series": series}
 
 
+def history_to_csv(history: dict) -> str:
+    """Flatten the rolling history archive into a tidy CSV open dataset -- one row
+    per (region, hour), so anyone can download and analyse it without our JSON shape."""
+    import csv
+    import io
+
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(
+        ["provider", "region", "timestamp", "carbon_intensity_gco2_kwh", "renewable_percentage"]
+    )
+    for key, points in sorted(history.get("series", {}).items()):
+        provider, _, region = key.partition("/")
+        for p in points:
+            writer.writerow([provider, region, p.get("t", ""), p.get("c", ""), p.get("r", "")])
+    return buf.getvalue()
+
+
 async def _main() -> int:
     parser = argparse.ArgumentParser(description="Build the public carbon snapshot")
     parser.add_argument("--out", default="snapshot.json", help="Output path")
@@ -270,7 +288,16 @@ async def _main() -> int:
         history = append_history(prev_history, snapshot)
         with open(args.history_out, "w") as f:
             json.dump(history, f, separators=(",", ":"))
-        print(f"Wrote {args.history_out}: {len(history['series'])} regions tracked")
+        # Publish the same data as a tidy CSV open dataset (history.csv) for anyone
+        # to download and analyse.
+        csv_out = (
+            args.history_out[:-5] + ".csv"
+            if args.history_out.endswith(".json")
+            else args.history_out + ".csv"
+        )
+        with open(csv_out, "w", newline="") as f:
+            f.write(history_to_csv(history))
+        print(f"Wrote {args.history_out} + {csv_out}: {len(history['series'])} regions tracked")
 
     s = snapshot["summary"]
     print(
