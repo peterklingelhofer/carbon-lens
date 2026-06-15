@@ -18,6 +18,7 @@ from slowapi.util import get_remote_address
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from carbon_mesh.api.badge import badge_router
+from carbon_mesh.api.embed import embed_router
 from carbon_mesh.api.routes import router
 from carbon_mesh.api.ws import ws_router
 from carbon_mesh.config import settings
@@ -273,7 +274,11 @@ async def request_id_and_logging(request: Request, call_next):
 
     # Security headers
     response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "DENY"
+    if request.url.path.startswith("/embed/"):
+        # The embed widget is meant to be iframed on other sites.
+        response.headers["Content-Security-Policy"] = "frame-ancestors *"
+    else:
+        response.headers["X-Frame-Options"] = "DENY"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
 
     return response
@@ -339,6 +344,7 @@ app.include_router(scheduler_router)
 app.include_router(sla_router)
 app.include_router(ws_router)
 app.include_router(badge_router)  # root-level /badge/*.svg (no /api/v1 prefix)
+app.include_router(embed_router)  # root-level /embed/* iframe widget
 
 # Prometheus metrics at /metrics. Keep the instrumentator's HTTP middleware, but
 # serve /metrics ourselves so we can refresh the carbon gauges on each scrape
