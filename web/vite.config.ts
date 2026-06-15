@@ -4,6 +4,13 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [react()],
+  build: {
+    // The globe's three.js + globe.gl is unavoidably large but is lazy-loaded into
+    // its own CarbonGlobe-*.js chunk (only fetched on /globe), so it doesn't touch
+    // initial load. Raise the warning above that known chunk so the build stays
+    // clean while still flagging anything genuinely oversized.
+    chunkSizeWarningLimit: 2000,
+  },
   test: {
     // jsdom so component tests can render React; setup file wires RTL cleanup.
     environment: "jsdom",
