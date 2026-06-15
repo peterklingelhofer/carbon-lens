@@ -80,6 +80,12 @@ export interface CarbonForecast {
   points: CarbonIntensity[];
 }
 
+export interface GridZoneSummary {
+  grid_zone: string;
+  location: string;
+  regions: string[];
+}
+
 export interface CarbonHistoryPoint {
   timestamp: string;
   carbon_intensity_gco2_kwh: number;

@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
 import { type CarbonSnapshot, snapshotEnabled, useSnapshot } from "../api/snapshot";
 import type { CarbonIntensity, CarbonUpdate, CloudRegion } from "../api/types";
+import { CustomZoneLookup } from "../components/CustomZoneLookup";
 import { InfoTip } from "../components/InfoTip";
 import { DATA_QUALITY_TIP, DATA_QUALITY_TIP_RICH } from "../copy";
 import { timeAgo } from "../lib/format";
@@ -498,6 +499,8 @@ export function Dashboard() {
 
       {/* Live WebSocket feed - only when a live API backs it (not in static snapshot mode) */}
       {!snapshotEnabled && <LivePanel />}
+
+      <CustomZoneLookup />
 
       {/* Filter */}
       <div

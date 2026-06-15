@@ -139,6 +139,8 @@ Interactive docs at `/docs` (Swagger) or `/redoc` (ReDoc) when the server is run
 | `/api/v1/carbon/forecast/{provider}/{region}` | GET | Hour-by-hour intensity forecast (real EU day-ahead, heuristic elsewhere) |
 | `/api/v1/carbon/history/{provider}/{region}` | GET | Past intensity time-series from the rolling published archive |
 | `/api/v1/carbon/batch` | POST | Batch query multiple regions in one call |
+| `/api/v1/carbon/zones` | GET | List covered grid zones (for on-prem / non-cloud lookups) |
+| `/api/v1/carbon/zone/{grid_zone}` | GET | Carbon intensity for a grid zone directly (no cloud region) |
 | `/api/v1/regions` | GET | List all 75+ supported cloud regions |
 | `/api/v1/regions?provider=aws` | GET | Filter regions by cloud provider |
 
