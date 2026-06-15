@@ -115,6 +115,7 @@ def get_scheduling_engine() -> "SchedulingEngine":
     current intensity when configured) and the ENTSO-E day-ahead forecast. Shared
     by the scheduler routes and the public /carbon/forecast endpoint."""
     from carbon_mesh.carbon_sources.entsoe_forecast import ENTSOEForecastSource
+    from carbon_mesh.carbon_sources.open_meteo import OpenMeteoForecastSource
     from carbon_mesh.carbon_sources.snapshot_source import SnapshotBackedSource
     from carbon_mesh.scheduler.engine import SchedulingEngine
 
@@ -126,6 +127,7 @@ def get_scheduling_engine() -> "SchedulingEngine":
         carbon_source=source,
         grid_mapper=_grid_mapper,
         forecast_source=ENTSOEForecastSource(settings.entsoe_token),
+        weather_forecast_source=OpenMeteoForecastSource(),
     )
 
 
