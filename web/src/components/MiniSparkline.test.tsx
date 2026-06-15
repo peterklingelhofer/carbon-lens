@@ -33,6 +33,22 @@ describe("MiniSparkline", () => {
     expect(screen.getByText(/range 50–200 gCO₂\/kWh/)).toBeTruthy();
   });
 
+  it("draws a shaded band area when an envelope is given", () => {
+    const { container } = render(
+      <MiniSparkline
+        values={[100, 120]}
+        band={[
+          [90, 110],
+          [100, 140],
+        ]}
+        ariaLabel="spark"
+      />,
+    );
+    const path = container.querySelector("path");
+    expect(path).not.toBeNull();
+    expect(path?.getAttribute("d")?.startsWith("M ")).toBe(true);
+  });
+
   it("reads out a point's label and value on hover", () => {
     const { container } = render(
       <MiniSparkline
