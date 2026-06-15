@@ -8,7 +8,7 @@ import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from pydantic import ValidationError
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
@@ -338,8 +338,20 @@ app.include_router(scheduler_router)
 app.include_router(sla_router)
 app.include_router(ws_router)
 
-# Prometheus metrics at /metrics
-Instrumentator().instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
+# Prometheus metrics at /metrics. Keep the instrumentator's HTTP middleware, but
+# serve /metrics ourselves so we can refresh the carbon gauges on each scrape
+# (cheap: cached/snapshot source) alongside the default HTTP metrics.
+Instrumentator().instrument(app)
+
+
+@app.get("/metrics", include_in_schema=False)
+async def metrics() -> Response:
+    from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+
+    from carbon_mesh.api.metrics import refresh_carbon_metrics
+
+    await refresh_carbon_metrics()
+    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
 async def _check_db() -> str | None:

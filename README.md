@@ -167,9 +167,11 @@ Interactive docs at `/docs` (Swagger) or `/redoc` (ReDoc) when the server is run
 | `/health` | GET | Liveness probe |
 | `/ready` | GET | Readiness probe |
 | `/health/providers` | GET | Data source configuration status |
-| `/metrics` | GET | Prometheus metrics |
+| `/metrics` | GET | Prometheus metrics — HTTP stats **plus live carbon gauges** per grid zone |
 | `/ws/carbon` | WS | Real-time carbon intensity WebSocket stream |
 | `/docs` | GET | Swagger UI |
+
+`/metrics` exposes `carbon_intensity_gco2_kwh`, `carbon_renewable_percentage`, `carbon_marginal_intensity_gco2_kwh`, and `carbon_grid_load_mw` (labelled by `provider`/`region`/`grid_zone`), refreshed per scrape from the cached snapshot — so you can graph grid carbon next to your CPU and latency. A ready-to-import Grafana dashboard is at [`grafana/carbonlens-dashboard.json`](grafana/carbonlens-dashboard.json).
 
 ---
 
