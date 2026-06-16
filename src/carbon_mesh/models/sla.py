@@ -146,7 +146,7 @@ class SLAReport(BaseModel):
     # Attestation
     methodology: str = "Real-time grid carbon intensity from government-verified sources"
     data_sources: list[str] = Field(default_factory=list)
-    reporting_standard: str = "CarbonLens Green SLA Attestation v1"
+    reporting_standard: str = "Carbon Lens Green SLA Attestation v1"
 
 
 class SLASummary(BaseModel):
