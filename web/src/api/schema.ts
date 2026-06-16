@@ -140,6 +140,28 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/carbon/weather/{provider}/{region}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Region Weather
+         * @description Current wind speed and solar irradiance at a region's coordinates -- the
+         *     weather *driving* its renewable output, so a viewer can see why a grid is clean
+         *     or dirty right now. A single-point proxy for the whole zone, from Open-Meteo.
+         */
+        get: operations["get_region_weather_api_v1_carbon_weather__provider___region__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/carbon/zone/{grid_zone}": {
         parameters: {
             query?: never;
@@ -2028,6 +2050,40 @@ export interface components {
             /** Error Type */
             type: string;
         };
+        /**
+         * WeatherConditions
+         * @description Current weather at a region's coordinates -- the physical drivers behind its
+         *     renewable output. Wind turns turbines; sunlight drives solar. A single-point
+         *     proxy for a whole grid zone, from Open-Meteo (free, no key).
+         */
+        WeatherConditions: {
+            /** Grid Zone */
+            grid_zone: string;
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /** Provider */
+            provider: string;
+            /** Region */
+            region: string;
+            /**
+             * Solar Irradiance W M2
+             * @description Shortwave solar irradiance at the surface, in W/m2 (drives solar generation)
+             */
+            solar_irradiance_w_m2: number;
+            /**
+             * Source
+             * @default open_meteo
+             */
+            source: string;
+            /**
+             * Wind Speed Kmh
+             * @description Surface wind speed at 10 m, in km/h (drives wind generation)
+             */
+            wind_speed_kmh: number;
+        };
         /** GenerateReportRequest */
         carbon_mesh__compliance__routes__GenerateReportRequest: {
             /** Org Id */
@@ -2241,6 +2297,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CarbonSignal"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_region_weather_api_v1_carbon_weather__provider___region__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: string;
+                region: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeatherConditions"];
                 };
             };
             /** @description Validation Error */

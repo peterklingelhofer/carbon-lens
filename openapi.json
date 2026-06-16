@@ -2214,6 +2214,55 @@
         "title": "ValidationError",
         "type": "object"
       },
+      "WeatherConditions": {
+        "description": "Current weather at a region's coordinates -- the physical drivers behind its\nrenewable output. Wind turns turbines; sunlight drives solar. A single-point\nproxy for a whole grid zone, from Open-Meteo (free, no key).",
+        "properties": {
+          "grid_zone": {
+            "title": "Grid Zone",
+            "type": "string"
+          },
+          "observed_at": {
+            "format": "date-time",
+            "title": "Observed At",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "region": {
+            "title": "Region",
+            "type": "string"
+          },
+          "solar_irradiance_w_m2": {
+            "description": "Shortwave solar irradiance at the surface, in W/m2 (drives solar generation)",
+            "minimum": 0.0,
+            "title": "Solar Irradiance W M2",
+            "type": "number"
+          },
+          "source": {
+            "default": "open_meteo",
+            "title": "Source",
+            "type": "string"
+          },
+          "wind_speed_kmh": {
+            "description": "Surface wind speed at 10 m, in km/h (drives wind generation)",
+            "minimum": 0.0,
+            "title": "Wind Speed Kmh",
+            "type": "number"
+          }
+        },
+        "required": [
+          "grid_zone",
+          "provider",
+          "region",
+          "wind_speed_kmh",
+          "solar_irradiance_w_m2",
+          "observed_at"
+        ],
+        "title": "WeatherConditions",
+        "type": "object"
+      },
       "carbon_mesh__compliance__routes__GenerateReportRequest": {
         "properties": {
           "org_id": {
@@ -2613,6 +2662,59 @@
           }
         },
         "summary": "Get Carbon Signal",
+        "tags": [
+          "Carbon Routing",
+          "Carbon Data"
+        ]
+      }
+    },
+    "/api/v1/carbon/weather/{provider}/{region}": {
+      "get": {
+        "description": "Current wind speed and solar irradiance at a region's coordinates -- the\nweather *driving* its renewable output, so a viewer can see why a grid is clean\nor dirty right now. A single-point proxy for the whole zone, from Open-Meteo.",
+        "operationId": "get_region_weather_api_v1_carbon_weather__provider___region__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "title": "Provider",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "region",
+            "required": true,
+            "schema": {
+              "title": "Region",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WeatherConditions"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Region Weather",
         "tags": [
           "Carbon Routing",
           "Carbon Data"

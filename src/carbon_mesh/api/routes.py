@@ -2,6 +2,8 @@ import hashlib
 import json as _json
 from datetime import datetime, timedelta, timezone
 
+import httpx
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,6 +22,7 @@ from carbon_mesh.api.deps import (
 from carbon_mesh.auth.dependencies import require_api_key
 from carbon_mesh.carbon_sources.base import CarbonDataSource
 from carbon_mesh.carbon_sources.history_store import HistoryStore
+from carbon_mesh.carbon_sources.open_meteo import fetch_weather
 from carbon_mesh.config import settings
 from carbon_mesh.db.models import ApiKeyRecord
 from carbon_mesh.engine.router import RoutingEngine
@@ -33,6 +36,7 @@ from carbon_mesh.models.carbon import (
     CarbonHistoryPoint,
     CarbonIntensity,
     CarbonSignal,
+    WeatherConditions,
 )
 from carbon_mesh.models.region import CloudRegion
 from carbon_mesh.models.routing import RouteRequest, RouteResponse
@@ -303,6 +307,35 @@ async def get_carbon_history(
         for p in raw
     ]
     return CarbonHistory(grid_zone=zone, provider=provider, region=region, points=points)
+
+
+@router.get(
+    "/carbon/weather/{provider}/{region}", response_model=WeatherConditions, tags=["Carbon Data"]
+)
+async def get_region_weather(
+    provider: str,
+    region: str,
+    mapper: GridMapper = Depends(get_grid_mapper),
+) -> WeatherConditions:
+    """Current wind speed and solar irradiance at a region's coordinates -- the
+    weather *driving* its renewable output, so a viewer can see why a grid is clean
+    or dirty right now. A single-point proxy for the whole zone, from Open-Meteo."""
+    zone = mapper.get_grid_zone(provider, region)
+    info = mapper.get_region(provider, region)
+    if zone is None or info is None:
+        raise HTTPException(status_code=404, detail=f"Unknown region: {provider}/{region}")
+    try:
+        wind, solar = await fetch_weather(info.latitude, info.longitude)
+    except httpx.HTTPError:
+        raise HTTPException(status_code=503, detail="Weather data is unavailable right now")
+    return WeatherConditions(
+        grid_zone=zone,
+        provider=provider,
+        region=region,
+        wind_speed_kmh=round(wind, 1),
+        solar_irradiance_w_m2=round(solar),
+        observed_at=datetime.now(timezone.utc),
+    )
 
 
 @router.get("/carbon/zones", tags=["Carbon Data"])

@@ -22,6 +22,7 @@ import type {
   SLASummary,
   UsageIngestionRequest,
   UsageIngestionResponse,
+  WeatherConditions,
 } from "./types";
 
 // Empty by default → requests are SAME-ORIGIN relative paths (e.g. "/health").
@@ -117,6 +118,9 @@ export const api = {
 
   carbonHistory: (provider: string, region: string, hours = 168) =>
     request<CarbonHistory>(`/api/v1/carbon/history/${provider}/${region}?hours=${hours}`),
+
+  regionWeather: (provider: string, region: string) =>
+    request<WeatherConditions>(`/api/v1/carbon/weather/${provider}/${region}`),
 
   // Accounting
   savings: () => request<CarbonSavingsReport>("/api/v1/accounting/savings"),

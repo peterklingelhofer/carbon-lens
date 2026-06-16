@@ -84,6 +84,54 @@ export function RegionHistory({
   );
 }
 
+// Wind speed + solar irradiance at the region's coordinates, from /carbon/weather
+// (Open-Meteo). These are the physical drivers behind a grid's renewable output,
+// so they explain *why* the intensity is what it is. A single-point proxy, fetched
+// only when a region is opened (so it's free and on-demand, not a globe-wide layer).
+export function RegionWeather({ provider, region }: { provider: string; region: string }) {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["weather", provider, region],
+    queryFn: () => api.regionWeather(provider, region),
+    staleTime: 10 * 60_000,
+    retry: 1,
+  });
+
+  // Stay quiet on load/error: weather is a nice-to-have driver, not core data.
+  if (isLoading || isError || !data) return null;
+
+  const wind = Math.round(data.wind_speed_kmh);
+  const solar = Math.round(data.solar_irradiance_w_m2);
+  // Wind turbines cut in around 12 km/h; solar is meaningful above ~250 W/m2.
+  const windOn = wind >= 18;
+  const sunOn = solar >= 250;
+  const read =
+    windOn && sunOn
+      ? "Brisk wind and strong sun: renewables likely producing well right now."
+      : windOn
+        ? "Brisk wind, little sun: wind is the renewable likely carrying the grid."
+        : sunOn
+          ? "Strong sun, light wind: solar is the renewable likely carrying the grid."
+          : "Calm and dim: little wind or sun, so the grid likely leans on baseload.";
+
+  return (
+    <div style={{ marginTop: 10 }}>
+      <div style={{ fontSize: "0.72rem", color: "#9ca3af", marginBottom: 4 }}>Weather now</div>
+      <div style={{ display: "flex", gap: 14, fontSize: "0.8rem" }}>
+        <span title="Surface wind speed at 10 m (drives wind generation)">
+          💨 {wind} <span style={{ color: "#9ca3af", fontSize: "0.7rem" }}>km/h wind</span>
+        </span>
+        <span title="Shortwave solar irradiance at the surface (drives solar generation)">
+          ☀️ {solar} <span style={{ color: "#9ca3af", fontSize: "0.7rem" }}>W/m² sun</span>
+        </span>
+      </div>
+      <div style={{ fontSize: "0.65rem", color: "#9ca3af", marginTop: 3 }}>{read}</div>
+      <div style={{ fontSize: "0.58rem", color: "#6b7280", marginTop: 2 }}>
+        Single-point estimate · Open-Meteo
+      </div>
+    </div>
+  );
+}
+
 // Next-24h carbon-intensity forecast for the selected region, fetched live from
 // the API's /carbon/forecast endpoint and drawn as a sparkline. EU zones get a
 // real ENTSO-E day-ahead curve; elsewhere it's the labelled time-of-day model.
