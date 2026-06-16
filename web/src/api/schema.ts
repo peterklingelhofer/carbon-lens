@@ -1157,6 +1157,16 @@ export interface components {
             grid_zone: string;
             /** Intensity Gco2 Kwh */
             intensity_gco2_kwh: number;
+            /**
+             * Marginal Intensity Gco2 Kwh
+             * @description Estimated emissions of an extra kWh of demand now -- the number that actually responds to shifting load. Heuristic from the fuel mix; null when no live fuel mix is available.
+             */
+            marginal_intensity_gco2_kwh?: number | null;
+            /**
+             * Marginal Note
+             * @description Plain-English caveat when the marginal picture changes the decision (e.g. clean on average but fossil on the margin), or null when nothing notable.
+             */
+            marginal_note?: string | null;
             /** Provider */
             provider: string;
             /** Region */

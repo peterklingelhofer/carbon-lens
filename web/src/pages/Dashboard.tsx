@@ -5,7 +5,7 @@ import { type CarbonSnapshot, snapshotEnabled, useSnapshot } from "../api/snapsh
 import type { CarbonIntensity, CarbonUpdate, CloudRegion } from "../api/types";
 import { CustomZoneLookup } from "../components/CustomZoneLookup";
 import { InfoTip } from "../components/InfoTip";
-import { DATA_QUALITY_TIP, DATA_QUALITY_TIP_RICH } from "../copy";
+import { DATA_QUALITY_TIP, DATA_QUALITY_TIP_RICH, MARGINAL_TIP } from "../copy";
 import { timeAgo } from "../lib/format";
 import { card, providerChip, section as sectionFn } from "../styles";
 
@@ -170,10 +170,7 @@ function RegionRow({ region, intensity }: { region: CloudRegion; intensity?: Car
             {intensity.marginal_intensity_gco2_kwh != null && (
               <span style={{ display: "block", fontSize: "0.7rem", color: "var(--gray-400)" }}>
                 marginal ~{intensity.marginal_intensity_gco2_kwh} gCO₂
-                <InfoTip
-                  label="marginal intensity"
-                  text="Estimated emissions of an extra kWh of demand right now, set by the price-setting generator (usually the flexible gas peaker). That's what actually changes when you shift load, not the average. A heuristic from the fuel mix, not measured marginal data."
-                />
+                <InfoTip label="marginal intensity" text={MARGINAL_TIP} />
               </span>
             )}
             {formatLoad(intensity.grid_load_mw) && (

@@ -12,6 +12,15 @@ export const RENEWABLE_TIP =
   "nuclear, so a clean nuclear grid (e.g. France, Ontario) can show a modest renewable % yet " +
   "very low carbon. For how clean a region is, carbon intensity (gCO₂/kWh) is the better measure.";
 
+// Why marginal intensity is the number that matters for shifting load. Shown
+// wherever marginal sits next to the average (dashboard, globe) so the gap is
+// explained consistently.
+export const MARGINAL_TIP =
+  "Estimated emissions of an extra kWh of demand right now, set by the price-setting generator " +
+  "(usually the flexible gas peaker). That's what actually changes when you shift load - not the " +
+  "average. So a grid can look clean on average yet still meet extra demand with fossil fuel. A " +
+  "heuristic from the fuel mix, not measured marginal data.";
+
 // Plain-string form - for native attributes that need a string (e.g. title=).
 export const DATA_QUALITY_TIP =
   "Live = measured from the grid operator's real-time feed (EIA, ENTSO-E, UK, AEMO). " +
