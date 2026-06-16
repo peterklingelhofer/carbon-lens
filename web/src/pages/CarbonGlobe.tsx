@@ -609,10 +609,21 @@ export default function CarbonGlobe() {
                 float a = smoothstep(0.5, 0.85, white) * uOpacity;
                 // The daily true-color mosaic is daytime only, so a winter pole is
                 // black no-data ending in a ragged, scalloped terminator. Rather than
-                // fake-fill it, fade the clouds out toward the poles so the data edge
-                // dissolves into transparency instead of cutting off in a hard line.
+                // fade at a fixed latitude (which leaves a hard step wherever the
+                // ragged edge actually falls), sample poleward and dissolve the cloud
+                // INTO the void: the more no-data sits just toward the pole, the more
+                // this pixel fades. Gated to high latitude so the gap-free rest of the
+                // globe is untouched.
                 float lat = (vUv.y - 0.5) * 180.0;
-                a *= 1.0 - smoothstep(52.0, 72.0, abs(lat));
+                float poleDir = sign(lat);
+                float voidNear = 0.0;
+                for (int k = 1; k <= 5; k++) {
+                  vec2 suv = vec2(vUv.x, vUv.y + poleDir * float(k) * 0.010);
+                  vec3 sc = texture2D(uClouds, suv).rgb;
+                  voidNear += 1.0 - step(0.04, min(sc.r, min(sc.g, sc.b)));
+                }
+                voidNear = (voidNear / 5.0) * smoothstep(38.0, 55.0, abs(lat));
+                a *= 1.0 - voidNear;
                 gl_FragColor = vec4(vec3(1.0), a);
               }`,
             transparent: true,
@@ -1334,13 +1345,13 @@ export default function CarbonGlobe() {
             </div>
           )}
           {selected.powerBreakdown && <PowerMix breakdown={selected.powerBreakdown} />}
-          <RegionWeather provider={selected.provider} region={selected.region} />
           <RegionHistory
             provider={selected.provider}
             region={selected.region}
             current={selected.intensity}
           />
           <RegionForecast provider={selected.provider} region={selected.region} />
+          <RegionWeather provider={selected.provider} region={selected.region} />
           <div
             style={{
               marginTop: 12,
