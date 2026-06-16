@@ -1720,7 +1720,7 @@
             "type": "string"
           },
           "reporting_standard": {
-            "default": "CarbonLens Green SLA Attestation v1",
+            "default": "Carbon Lens Green SLA Attestation v1",
             "title": "Reporting Standard",
             "type": "string"
           },

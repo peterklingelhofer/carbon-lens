@@ -1839,7 +1839,7 @@ export interface components {
             period_start: string;
             /**
              * Reporting Standard
-             * @default CarbonLens Green SLA Attestation v1
+             * @default Carbon Lens Green SLA Attestation v1
              */
             reporting_standard: string;
             /** Sla Id */
