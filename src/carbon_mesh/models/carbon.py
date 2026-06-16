@@ -100,3 +100,22 @@ class CarbonHistory(BaseModel):
         description="Past readings for this region, oldest first, from the "
         "published rolling history archive. Empty until the archive accumulates.",
     )
+
+
+class WeatherConditions(BaseModel):
+    """Current weather at a region's coordinates -- the physical drivers behind its
+    renewable output. Wind turns turbines; sunlight drives solar. A single-point
+    proxy for a whole grid zone, from Open-Meteo (free, no key)."""
+
+    grid_zone: str
+    provider: str
+    region: str
+    wind_speed_kmh: float = Field(
+        ge=0, description="Surface wind speed at 10 m, in km/h (drives wind generation)"
+    )
+    solar_irradiance_w_m2: float = Field(
+        ge=0,
+        description="Shortwave solar irradiance at the surface, in W/m2 (drives solar generation)",
+    )
+    observed_at: datetime
+    source: str = "open_meteo"

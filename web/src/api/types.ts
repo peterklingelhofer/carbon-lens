@@ -101,6 +101,18 @@ export interface CarbonHistory {
   points: CarbonHistoryPoint[];
 }
 
+export interface WeatherConditions {
+  grid_zone: string;
+  provider: string;
+  region: string;
+  // Surface wind speed at 10 m (km/h) and shortwave solar irradiance (W/m2) -- the
+  // weather driving the zone's wind and solar generation. A single-point proxy.
+  wind_speed_kmh: number;
+  solar_irradiance_w_m2: number;
+  observed_at: string;
+  source: string;
+}
+
 export interface EmissionsRecord {
   request_id: string;
   timestamp: string;
