@@ -426,6 +426,16 @@ export default function CarbonGlobe() {
 
     globeRef.current = globe;
 
+    // Kill the globe's specular highlight: the default Phong material throws a
+    // camera-relative glare on the surface, which now reads as wrong next to the
+    // physically-placed daylight. Matte the surface so only our daylight lights it.
+    const globeMat = globe.globeMaterial() as THREE.MeshPhongMaterial;
+    if (globeMat && "shininess" in globeMat) {
+      globeMat.specular = new THREE.Color(0x000000);
+      globeMat.shininess = 0;
+      globeMat.needsUpdate = true;
+    }
+
     // Soft daylight: a thin transparent overlay sphere whose warmth follows the
     // real irradiance falloff -- brightest where the sun is overhead and fading by
     // cos(solar zenith) to nothing at the day/night edge. dot(surfaceNormal, sunDir)
