@@ -9,6 +9,8 @@ dev: ## Start API + frontend in dev mode (hot reload)
 	@echo "API -> http://localhost:8000   |   App -> http://localhost:5173/dashboard"
 	@set -a; [ -f .env ] && . ./.env; set +a; \
 		lsof -ti:8000 | xargs kill 2>/dev/null || true; \
+		for i in $$(seq 1 30); do lsof -ti:8000 >/dev/null 2>&1 || break; sleep 0.2; done; \
+		lsof -ti:8000 | xargs kill -9 2>/dev/null || true; \
 		uv run serve & \
 		trap 'lsof -ti:8000 | xargs kill 2>/dev/null || true' EXIT INT TERM; \
 		cd web && npm run dev
