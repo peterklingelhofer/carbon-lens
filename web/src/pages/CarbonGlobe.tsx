@@ -8,7 +8,7 @@ import { qualityFromSource, snapshotEnabled, useSnapshot } from "../api/snapshot
 import { InfoTip } from "../components/InfoTip";
 import { PowerMix } from "../components/PowerMix";
 import { RegionForecast, RegionHistory, RegionWeather } from "../components/RegionDetail";
-import { DATA_QUALITY_TIP_RICH } from "../copy";
+import { DATA_QUALITY_TIP_RICH, MARGINAL_TIP } from "../copy";
 import { niceKm, timeAgo } from "../lib/format";
 import { intensityColor, intensityRGB, renewableRGB } from "../lib/intensity";
 import { subsolarPoint } from "../lib/sun";
@@ -103,6 +103,7 @@ interface GlobePoint {
   quality?: "live" | "estimated" | "mock";
   gridLoadMw?: number | null;
   consumptionIntensity?: number;
+  marginalIntensity?: number;
   powerBreakdown?: Record<string, number>;
 }
 
@@ -219,6 +220,7 @@ function useGlobePoints() {
             quality: i.quality ?? qualityFromSource(i.source),
             gridLoadMw: i.grid_load_mw,
             consumptionIntensity: i.consumption_intensity_gco2_kwh,
+            marginalIntensity: i.marginal_intensity_gco2_kwh ?? undefined,
             powerBreakdown: i.power_breakdown_mw,
           };
         })
@@ -242,6 +244,7 @@ function useGlobePoints() {
             quality: i.quality ?? qualityFromSource(i.source),
             gridLoadMw: i.grid_load_mw,
             consumptionIntensity: i.consumption_intensity_gco2_kwh,
+            marginalIntensity: i.marginal_intensity_gco2_kwh ?? undefined,
             powerBreakdown: i.power_breakdown_mw,
           };
         })
@@ -453,6 +456,7 @@ export default function CarbonGlobe() {
             <div style="margin:2px 0 6px;color:#d1d5db">${p.location} <span style="color:#6b7280">(${p.grid_zone})</span></div>
             <div style="font-size:18px;font-weight:700;color:${intensityColor(p.intensity)}">${p.intensity} <span style="font-size:11px;font-weight:400;color:#9ca3af">gCO₂/kWh</span></div>
             <div style="color:#86efac">${p.renewable}% renewable</div>
+            ${p.marginalIntensity != null ? `<div style="color:#cbd5e1">Marginal ~${p.marginalIntensity} <span style="font-size:11px;color:#9ca3af">gCO₂/kWh · extra kWh now</span></div>` : ""}
             ${formatLoad(p.gridLoadMw) ? `<div style="color:#93c5fd">Grid load: ${formatLoad(p.gridLoadMw)} <span style="color:#6b7280">(whole grid)</span></div>` : ""}
             <div style="margin-top:4px;font-size:10px">${tag}</div>
           </div>`;
@@ -1336,6 +1340,21 @@ export default function CarbonGlobe() {
             >
               Consumed: ~{selected.consumptionIntensity}
               <span style={{ color: "#6b7280" }}> gCO₂/kWh · flow-traced</span>
+            </div>
+          )}
+          {selected.marginalIntensity != null && (
+            <div
+              style={{
+                color: "#cbd5e1",
+                marginTop: 6,
+                fontSize: "0.85rem",
+                display: "inline-flex",
+                alignItems: "center",
+              }}
+            >
+              Marginal: ~{selected.marginalIntensity}
+              <span style={{ color: "#6b7280" }}> gCO₂/kWh · extra kWh now</span>
+              <InfoTip label="marginal intensity" text={MARGINAL_TIP} placement="top" />
             </div>
           )}
           {formatLoad(selected.gridLoadMw) && (
