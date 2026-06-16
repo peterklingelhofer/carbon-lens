@@ -47,7 +47,7 @@ export function Landing() {
             opacity: 0.92,
           }}
         >
-          Every cloud region runs on a local power grid. CarbonLens measures how much CO₂ that grid
+          Every cloud region runs on a local power grid. Carbon Lens measures how much CO₂ that grid
           emits per kilowatt-hour right now - its <strong>carbon intensity</strong> - from live
           grid-operator data. Lower means greener.
         </p>
@@ -132,7 +132,7 @@ export function Landing() {
           }}
         >
           Providers match their annual electricity use with renewable certificates. That doesn't
-          tell you whether your 2 a.m. job actually ran on wind or on gas. CarbonLens reports the
+          tell you whether your 2 a.m. job actually ran on wind or on gas. Carbon Lens reports the
           grid's real carbon intensity, hour by hour.
         </p>
 
@@ -152,7 +152,7 @@ export function Landing() {
               annual report
             </div>
             <div style={{ color: "var(--green-text)", fontWeight: 600 }}>
-              CarbonLens: &nbsp;Query real-time grid data &rarr; Know actual gCO₂/kWh right now
+              Carbon Lens: &nbsp;Query real-time grid data &rarr; Know actual gCO₂/kWh right now
               &rarr; Make informed decisions
             </div>
           </div>
@@ -207,7 +207,7 @@ export function Landing() {
             </li>
           </ul>
           <p style={{ color: "var(--gray-600)", fontSize: "0.95rem", margin: 0 }}>
-            CarbonLens turns live grid data into a first draft of those reports - emissions
+            Carbon Lens turns live grid data into a first draft of those reports - emissions
             measured, not matched.
           </p>
         </div>
@@ -277,9 +277,9 @@ export function Landing() {
           Electricity comes from a mix of sources - wind, solar, hydro, nuclear, gas, coal. When
           more of a region's power is coming from clean sources, each kilowatt-hour emits less CO₂,
           so it's greener. That mix shifts hour to hour with the weather and demand: a sunny, windy
-          afternoon is far cleaner than a still night running on gas. CarbonLens reads that live mix
-          from each grid operator and turns it into one number - <strong>carbon intensity</strong>,
-          in grams of CO₂ per kWh.
+          afternoon is far cleaner than a still night running on gas. Carbon Lens reads that live
+          mix from each grid operator and turns it into one number -{" "}
+          <strong>carbon intensity</strong>, in grams of CO₂ per kWh.
         </p>
 
         {/* How It Works */}
