@@ -165,7 +165,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="CarbonLens",
+    title="Carbon Lens",
     description=(
         "A free, open API for the real-time carbon intensity of cloud regions. "
         "No account or API key required; usage is rate-limited so it stays "

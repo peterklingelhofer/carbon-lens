@@ -57,7 +57,7 @@ def render_embed(label: str, intensity: float, renewable: float, *, unknown: boo
     return (
         '<!doctype html><html lang="en"><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
-        f"<title>CarbonLens — {safe}</title><style>"
+        f"<title>Carbon Lens — {safe}</title><style>"
         ":root{color-scheme:dark light}*{box-sizing:border-box}"
         "body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:transparent}"
         "a.card{display:block;text-decoration:none;background:#0b1220;color:#e5e7eb;"
@@ -73,7 +73,7 @@ def render_embed(label: str, intensity: float, renewable: float, *, unknown: boo
         f'<div class="big" style="color:{color}">{big}</div>'
         f'<div class="meta">{meta}</div>'
         f'<div class="state" style="color:{color}">{state}</div>'
-        '<div class="ft">⚡ CarbonLens — live grid carbon</div>'
+        '<div class="ft">⚡ Carbon Lens — live grid carbon</div>'
         "</a></body></html>"
     )
 

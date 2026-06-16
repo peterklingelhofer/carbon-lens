@@ -106,7 +106,7 @@ function OregonGridLive() {
 export function About() {
   return (
     <div style={section}>
-      <h1 style={{ marginBottom: "0.5rem", textAlign: "center" }}>About CarbonLens</h1>
+      <h1 style={{ marginBottom: "0.5rem", textAlign: "center" }}>About Carbon Lens</h1>
       <p
         style={{
           color: "var(--gray-500)",
@@ -117,7 +117,7 @@ export function About() {
           marginRight: "auto",
         }}
       >
-        CarbonLens reads live grid-operator data and turns it into one comparable number per cloud
+        Carbon Lens reads live grid-operator data and turns it into one comparable number per cloud
         region, so the real carbon cost of where you run is easy to see and act on. Free to use, no
         account required.
       </p>
@@ -125,10 +125,10 @@ export function About() {
       <div style={card}>
         <h2 style={{ marginTop: 0, fontSize: "1.2rem" }}>Why it's free</h2>
         <p style={{ color: "var(--gray-600)", fontSize: "0.95rem" }}>
-          Most of what CarbonLens needs already exists: grid operators publish what they're
-          generating, and the readings are public. CarbonLens just reads those official feeds, turns
-          them into one comparable number per region, and shows it. Keeping that open felt more
-          useful than locking it behind a sign-up - the whole point is to make the grid's real
+          Most of what Carbon Lens needs already exists: grid operators publish what they're
+          generating, and the readings are public. Carbon Lens just reads those official feeds,
+          turns them into one comparable number per region, and shows it. Keeping that open felt
+          more useful than locking it behind a sign-up - the whole point is to make the grid's real
           carbon cost easy to see.
         </p>
         <ul
@@ -155,7 +155,7 @@ export function About() {
       <div style={{ ...card, marginTop: "1.5rem" }}>
         <h2 style={{ marginTop: 0, fontSize: "1.2rem" }}>Our own footprint</h2>
         <p style={{ color: "var(--gray-600)", fontSize: "0.95rem" }}>
-          CarbonLens tries to practise what it measures. It's a deliberately lightweight service: a
+          Carbon Lens tries to practise what it measures. It's a deliberately lightweight service: a
           small API that reads public grid feeds and caches the results, plus a static site served
           from a CDN. There's no heavy compute behind it - no model training, no crypto, no
           sprawling data pipeline - so it draws very little power to run, and it sleeps after a
