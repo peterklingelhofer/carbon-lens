@@ -2,8 +2,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { CarbonForecast, CarbonHistory } from "../api/types";
-import { RegionForecast, RegionHistory } from "./RegionDetail";
+import type { CarbonForecast, CarbonHistory, WeatherConditions } from "../api/types";
+import { RegionForecast, RegionHistory, RegionWeather } from "./RegionDetail";
 
 // Mock the HTTP client so the container components resolve from fixtures, not a
 // real fetch. vi.mock is hoisted, so the import below receives the mock.
@@ -11,6 +11,7 @@ vi.mock("../api/client", () => ({
   api: {
     carbonHistory: vi.fn(),
     carbonForecast: vi.fn(),
+    regionWeather: vi.fn(),
   },
 }));
 
@@ -18,6 +19,7 @@ import { api } from "../api/client";
 
 const mockHistory = vi.mocked(api.carbonHistory);
 const mockForecast = vi.mocked(api.carbonForecast);
+const mockWeather = vi.mocked(api.regionWeather);
 
 afterEach(() => {
   vi.clearAllMocks();
@@ -74,6 +76,37 @@ describe("RegionHistory", () => {
     renderWithClient(<RegionHistory provider="aws" region="us-west-2" />);
 
     expect(await screen.findByText("History is still accumulating.")).toBeTruthy();
+  });
+});
+
+function weather(wind: number, solar: number): WeatherConditions {
+  return {
+    grid_zone: "US-NW-BPAT",
+    provider: "aws",
+    region: "us-west-2",
+    wind_speed_kmh: wind,
+    solar_irradiance_w_m2: solar,
+    observed_at: "2026-06-14T00:00:00+00:00",
+    source: "open_meteo",
+  };
+}
+
+describe("RegionWeather", () => {
+  it("renders wind and solar with the driver read", async () => {
+    mockWeather.mockResolvedValue(weather(24, 480));
+    renderWithClient(<RegionWeather provider="aws" region="us-west-2" />);
+
+    expect(await screen.findByText("Weather now")).toBeTruthy();
+    expect(screen.getByText(/24/)).toBeTruthy();
+    expect(screen.getByText(/480/)).toBeTruthy();
+    expect(mockWeather).toHaveBeenCalledWith("aws", "us-west-2");
+  });
+
+  it("renders nothing when the weather fetch fails", async () => {
+    mockWeather.mockRejectedValue(new Error("503"));
+    const { container } = renderWithClient(<RegionWeather provider="aws" region="us-west-2" />);
+
+    await waitFor(() => expect(container.querySelector("div")).toBeNull());
   });
 });
 
