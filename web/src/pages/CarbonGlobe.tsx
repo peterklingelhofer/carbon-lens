@@ -11,7 +11,7 @@ import { RegionForecast, RegionHistory } from "../components/RegionDetail";
 import { DATA_QUALITY_TIP_RICH } from "../copy";
 import { niceKm, timeAgo } from "../lib/format";
 import { intensityColor, intensityRGB, renewableRGB } from "../lib/intensity";
-import { circleAround, subsolarPoint, terminatorPath } from "../lib/sun";
+import { subsolarPoint } from "../lib/sun";
 
 // Some browsers/machines can't create a WebGL context (hardware acceleration
 // off, GPU blocklisted, headless). Detect it up front so we can show a graceful
@@ -426,26 +426,46 @@ export default function CarbonGlobe() {
 
     globeRef.current = globe;
 
-    // Day/night terminator + a marker where the sun is overhead, from the clock
-    // alone. A separate paths layer -- additive, doesn't touch the beams/points/
-    // rings. Refreshed each minute as the sun moves (~15°/h).
-    type SunPath = [number, number][] & { color: string; width: number };
+    // Soft daylight: a thin transparent overlay sphere whose warmth follows the
+    // real irradiance falloff -- brightest where the sun is overhead and fading by
+    // cos(solar zenith) to nothing at the day/night edge. dot(surfaceNormal, sunDir)
+    // IS that cosine, so the shader is just that, additively blended and subtle.
+    const sunMat = new THREE.ShaderMaterial({
+      uniforms: {
+        uSunDir: { value: new THREE.Vector3(1, 0, 0) },
+        uColor: { value: new THREE.Color(0xffe7a0) },
+        uMaxAlpha: { value: 0.18 },
+        uFalloff: { value: 1.4 },
+      },
+      vertexShader: `
+        varying vec3 vNormalW;
+        void main() {
+          vNormalW = normalize(mat3(modelMatrix) * normal);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }`,
+      fragmentShader: `
+        uniform vec3 uSunDir; uniform vec3 uColor; uniform float uMaxAlpha; uniform float uFalloff;
+        varying vec3 vNormalW;
+        void main() {
+          float c = max(0.0, dot(normalize(vNormalW), normalize(uSunDir)));
+          gl_FragColor = vec4(uColor, pow(c, uFalloff) * uMaxAlpha);
+        }`,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      side: THREE.FrontSide,
+    });
+    const sunMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(globe.getGlobeRadius() * 1.002, 64, 48),
+      sunMat,
+    );
+    globe.scene().add(sunMesh);
+
+    // Point the daylight at the subsolar point; refresh each minute (~15°/h).
     const refreshSun = () => {
-      const now = new Date();
-      const terminator = terminatorPath(now) as SunPath;
-      terminator.color = "rgba(251, 191, 36, 0.4)"; // soft amber day/night line
-      terminator.width = 1.1;
-      const sun = circleAround(subsolarPoint(now), 4) as SunPath;
-      sun.color = "rgba(253, 224, 71, 0.95)"; // bright yellow "sun overhead" marker
-      sun.width = 2.4;
-      globe
-        .pathsData([terminator, sun])
-        .pathPointLat((p) => (p as [number, number])[0])
-        .pathPointLng((p) => (p as [number, number])[1])
-        .pathColor((d: object) => (d as SunPath).color)
-        .pathStroke((d: object) => (d as SunPath).width)
-        .pathPointAlt(0.01)
-        .pathTransitionDuration(0);
+      const s = subsolarPoint(new Date());
+      const c = globe.getCoords(s.lat, s.lng, 0);
+      sunMat.uniforms.uSunDir.value.set(c.x, c.y, c.z).normalize();
     };
     refreshSun();
     const sunTimer = setInterval(refreshSun, 60_000);
@@ -492,6 +512,9 @@ export default function CarbonGlobe() {
       clearTimeout(resumeTimer);
       clearTimeout(scaleTimer);
       clearInterval(sunTimer);
+      globe.scene().remove(sunMesh);
+      sunMesh.geometry.dispose();
+      sunMat.dispose();
       globe._destructor?.();
       el.replaceChildren();
     };
@@ -690,9 +713,7 @@ export default function CarbonGlobe() {
           }}
         >
           {points.length} cloud regions by live grid carbon intensity and renewable share. Drag to
-          spin, scroll to zoom, hover a node for detail. The{" "}
-          <span style={{ color: "#fde047" }}>☀</span> marks where the sun is overhead now; the amber
-          arc is the day/night line — solar-heavy grids clean up on the lit side.
+          spin, scroll to zoom, hover a node for detail.
         </p>
         {points.length > 0 && (
           <p
