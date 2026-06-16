@@ -44,6 +44,52 @@ const EARTH_NIGHT = "/textures/earth-night.jpg";
 const EARTH_TOPOLOGY = "/textures/earth-topology.png";
 const NIGHT_SKY = "/textures/night-sky.png";
 
+// A recent global true-color mosaic from NASA GIBS (free, public domain, CORS-open),
+// as one equirectangular image. We don't draw it as-is -- a shader keeps only its
+// near-white pixels (clouds and ice) and drops everything else, so it reads as a
+// faint cloud veil over the night Earth rather than a second opaque globe. We use
+// VIIRS rather than MODIS on purpose: VIIRS's ~3000 km swath overlaps pass-to-pass,
+// so its daily mosaic is gap-free, where MODIS leaves triangular inter-orbit gaps
+// that would show through as bands of missing cloud. A date a couple of days back
+// gives the mosaic time to fill in.
+function gibsCloudUrl(): string {
+  const day = new Date(Date.now() - 2 * 86_400_000).toISOString().slice(0, 10);
+  const params = new URLSearchParams({
+    SERVICE: "WMS",
+    VERSION: "1.3.0",
+    REQUEST: "GetMap",
+    FORMAT: "image/jpeg",
+    LAYERS: "VIIRS_SNPP_CorrectedReflectance_TrueColor",
+    CRS: "EPSG:4326",
+    BBOX: "-90,-180,90,180",
+    WIDTH: "2048",
+    HEIGHT: "1024",
+    TIME: day,
+  });
+  return `https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?${params}`;
+}
+
+// The globe's own Earth mesh, found by matching its radius (it carries the night
+// texture). We hang the cloud sphere off this mesh and reuse ITS geometry, so the
+// clouds inherit the exact same UVs and world transform -- guaranteeing the cloud
+// image lines up with the continents without re-deriving any rotation.
+function findEarthMesh(globe: GlobeInstance): THREE.Mesh | null {
+  const radius = globe.getGlobeRadius();
+  let found: THREE.Mesh | null = null;
+  globe.scene().traverse((obj) => {
+    const mesh = obj as THREE.Mesh;
+    if (!mesh.isMesh) return;
+    const mat = mesh.material as THREE.Material & { map?: unknown };
+    if (!mat || !("map" in mat) || !mat.map) return;
+    const geom = mesh.geometry as THREE.BufferGeometry;
+    if (!geom.boundingSphere) geom.computeBoundingSphere();
+    const r = (geom.boundingSphere?.radius ?? 0) * mesh.scale.x;
+    // Skip the far larger background-sky sphere; keep the one sized like the globe.
+    if (Math.abs(r - radius) < radius * 0.1) found = mesh;
+  });
+  return found;
+}
+
 interface GlobePoint {
   provider: string;
   region: string;
@@ -277,6 +323,47 @@ function MetricToggle({
   );
 }
 
+// A minimal one-line layer switch (icon + label), struck through and dimmed when
+// off. Used for the cloud and daylight overlays in the legend.
+function LayerToggle({
+  on,
+  onToggle,
+  icon,
+  label,
+  title,
+}: {
+  on: boolean;
+  onToggle: () => void;
+  icon: string;
+  label: string;
+  title: string;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      onClick={onToggle}
+      title={title}
+      style={{
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        padding: 0,
+        whiteSpace: "nowrap",
+        fontSize: "0.62rem",
+        lineHeight: 1.1,
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        color: on ? "#cbd5e1" : "#64748b",
+        textDecoration: on ? "none" : "line-through",
+      }}
+    >
+      <span aria-hidden>{icon}</span> {label}
+    </button>
+  );
+}
+
 export default function CarbonGlobe() {
   const containerRef = useRef<HTMLDivElement>(null);
   const globeRef = useRef<GlobeInstance | null>(null);
@@ -309,6 +396,16 @@ export default function CarbonGlobe() {
   // Read inside globe.gl accessors so a toggle takes effect without re-init.
   const heightMetricRef = useRef<Metric>(heightMetric);
   const colorMetricRef = useRef<Metric>(colorMetric);
+
+  // Layer toggles. Both meshes come up asynchronously (clouds load over the network;
+  // daylight is revealed on globe-ready), so each toggle drives a ref the reveal path
+  // reads for its initial state, plus a live effect that flips visibility after.
+  const [showClouds, setShowClouds] = useState(true);
+  const showCloudsRef = useRef(true);
+  const cloudMeshRef = useRef<THREE.Mesh | null>(null);
+  const [showSolar, setShowSolar] = useState(true);
+  const showSolarRef = useRef(true);
+  const sunMeshRef = useRef<THREE.Mesh | null>(null);
 
   // Instantiate the globe once.
   useEffect(() => {
@@ -473,8 +570,75 @@ export default function CarbonGlobe() {
     // the Earth it's meant to be lighting (no cart before the horse on spawn).
     sunMesh.visible = false;
     globe.scene().add(sunMesh);
+
+    // Faint cloud veil: a near-real-time NASA mosaic kept only where it's white
+    // (clouds and ice), drawn on a thin concentric shell over the Earth. Built once
+    // the globe is ready (so the Earth mesh exists to hang it off and reuse its UVs)
+    // and only after the image loads -- if NASA is unreachable, the globe is fine
+    // without it. `disposed` guards the async load against an unmount mid-flight.
+    let disposed = false;
+    let cloudMesh: THREE.Mesh | null = null;
+    let cloudMat: THREE.ShaderMaterial | null = null;
+    let cloudTex: THREE.Texture | null = null;
+    const addClouds = () => {
+      new THREE.TextureLoader().load(
+        gibsCloudUrl(),
+        (tex) => {
+          const earth = findEarthMesh(globe);
+          if (disposed || !earth) {
+            tex.dispose();
+            return;
+          }
+          cloudTex = tex;
+          cloudMat = new THREE.ShaderMaterial({
+            uniforms: { uClouds: { value: tex }, uOpacity: { value: 0.08 } },
+            vertexShader: `
+              varying vec2 vUv;
+              void main() {
+                vUv = uv;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+              }`,
+            fragmentShader: `
+              uniform sampler2D uClouds; uniform float uOpacity;
+              varying vec2 vUv;
+              void main() {
+                vec3 c = texture2D(uClouds, vUv).rgb;
+                // The achromatic floor: high only for white/grey (clouds, ice),
+                // low for coloured land and dark ocean / no-data gaps.
+                float white = min(c.r, min(c.g, c.b));
+                float a = smoothstep(0.5, 0.85, white) * uOpacity;
+                // The daily true-color mosaic is daytime only, so a winter pole is
+                // black no-data ending in a ragged, scalloped terminator. Rather than
+                // fake-fill it, fade the clouds out toward the poles so the data edge
+                // dissolves into transparency instead of cutting off in a hard line.
+                float lat = (vUv.y - 0.5) * 180.0;
+                a *= 1.0 - smoothstep(52.0, 72.0, abs(lat));
+                gl_FragColor = vec4(vec3(1.0), a);
+              }`,
+            transparent: true,
+            depthWrite: false,
+            side: THREE.FrontSide,
+          });
+          // Reuse the Earth's geometry/UVs; a hair larger so it sits just above the
+          // surface. As a child of the Earth mesh it inherits the same transform.
+          cloudMesh = new THREE.Mesh(earth.geometry, cloudMat);
+          cloudMesh.scale.setScalar(1.003);
+          cloudMesh.renderOrder = 1;
+          cloudMesh.visible = showCloudsRef.current;
+          cloudMeshRef.current = cloudMesh;
+          earth.add(cloudMesh);
+        },
+        undefined,
+        () => {
+          // NASA unreachable / blocked -- skip clouds silently, keep the globe.
+        },
+      );
+    };
+
     globe.onGlobeReady(() => {
-      sunMesh.visible = true;
+      sunMesh.visible = showSolarRef.current;
+      sunMeshRef.current = sunMesh;
+      addClouds();
     });
 
     // Point the daylight at the subsolar point; refresh each minute (~15°/h).
@@ -531,6 +695,14 @@ export default function CarbonGlobe() {
       globe.scene().remove(sunMesh);
       sunMesh.geometry.dispose();
       sunMat.dispose();
+      // Tear down the cloud shell if it loaded; guard the in-flight load too. Do
+      // NOT dispose its geometry -- it's the Earth mesh's, shared and still in use.
+      disposed = true;
+      cloudMeshRef.current = null;
+      sunMeshRef.current = null;
+      if (cloudMesh) cloudMesh.removeFromParent();
+      cloudMat?.dispose();
+      cloudTex?.dispose();
       globe._destructor?.();
       el.replaceChildren();
     };
@@ -554,6 +726,20 @@ export default function CarbonGlobe() {
       .ringsData([...(points as object[])])
       .customLayerData([...(points as object[])]);
   }, [points, heightMetric, colorMetric]);
+
+  // Toggle the cloud veil. The mesh may not have loaded yet, so also stash the
+  // desired state in a ref the loader reads when it finishes.
+  useEffect(() => {
+    showCloudsRef.current = showClouds;
+    if (cloudMeshRef.current) cloudMeshRef.current.visible = showClouds;
+  }, [showClouds]);
+
+  // Toggle the daylight glow. sunMeshRef is set only on globe-ready, so flipping it
+  // here can't reveal the daylight before the globe (the ref is null until then).
+  useEffect(() => {
+    showSolarRef.current = showSolar;
+    if (sunMeshRef.current) sunMeshRef.current.visible = showSolar;
+  }, [showSolar]);
 
   const liveCount = points.filter((p) => p.quality === "live").length;
   const estCount = points.filter((p) => p.quality === "estimated").length;
@@ -975,26 +1161,62 @@ export default function CarbonGlobe() {
 
         {/* Map scale bar - real surface distance at the current zoom. Part of the
             legend, so it collapses with everything else when the legend is hidden. */}
-        {scale && (
+        {/* One row: distance ruler on the left, the two layer toggles side by side on
+            the right. Centre-aligned so the toggles sit against the ruler's middle. */}
+        <div
+          style={{
+            marginTop: 14,
+            width: PANEL_W,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          {scale ? (
+            <div title="Approximate surface distance at this zoom (near the centre of view)">
+              <div
+                style={{
+                  width: Math.min(scale.px, PANEL_W),
+                  height: 6,
+                  borderBottom: "2px solid #94a3b8",
+                  borderLeft: "2px solid #94a3b8",
+                  borderRight: "2px solid #94a3b8",
+                  boxSizing: "border-box",
+                }}
+              />
+              <span style={{ fontSize: "0.62rem", color: "#94a3b8" }}>
+                ≈ {scale.km.toLocaleString("en-US")} km
+              </span>
+            </div>
+          ) : (
+            <span />
+          )}
           <div
-            style={{ marginTop: 14 }}
-            title="Approximate surface distance at this zoom (near the centre of view)"
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              gap: 10,
+              alignItems: "center",
+              marginRight: 10,
+            }}
           >
-            <div
-              style={{
-                width: Math.min(scale.px, PANEL_W),
-                height: 6,
-                borderBottom: "2px solid #94a3b8",
-                borderLeft: "2px solid #94a3b8",
-                borderRight: "2px solid #94a3b8",
-                boxSizing: "border-box",
-              }}
+            <LayerToggle
+              on={showClouds}
+              onToggle={() => setShowClouds((v) => !v)}
+              icon="☁"
+              label="Clouds"
+              title="Cloud cover -- NASA VIIRS true-color reflectance, daily mosaic"
             />
-            <span style={{ fontSize: "0.62rem", color: "#94a3b8" }}>
-              ≈ {scale.km.toLocaleString("en-US")} km
-            </span>
+            <LayerToggle
+              on={showSolar}
+              onToggle={() => setShowSolar((v) => !v)}
+              icon="☀"
+              label="Daylight"
+              title="Daylight -- solar irradiance by cosine of the solar zenith angle"
+            />
           </div>
-        )}
+        </div>
       </div>
 
       {/* Empty / loading / error state - distinguish a failed fetch from loading */}
