@@ -469,7 +469,13 @@ export default function CarbonGlobe() {
       new THREE.SphereGeometry(globe.getGlobeRadius() * 1.002, 64, 48),
       sunMat,
     );
+    // Hidden until the globe texture is ready, so the daylight never shows before
+    // the Earth it's meant to be lighting (no cart before the horse on spawn).
+    sunMesh.visible = false;
     globe.scene().add(sunMesh);
+    globe.onGlobeReady(() => {
+      sunMesh.visible = true;
+    });
 
     // Point the daylight at the subsolar point; refresh each minute (~15°/h).
     const refreshSun = () => {
