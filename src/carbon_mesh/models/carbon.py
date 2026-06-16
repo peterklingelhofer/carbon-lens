@@ -66,6 +66,17 @@ class CarbonSignal(BaseModel):
         description="Hours until a notably cleaner upcoming window, or null if now is fine",
     )
     cleaner_window_intensity_gco2_kwh: float | None = None
+    marginal_intensity_gco2_kwh: float | None = Field(
+        default=None,
+        description="Estimated emissions of an extra kWh of demand now -- the number that "
+        "actually responds to shifting load. Heuristic from the fuel mix; null when no live "
+        "fuel mix is available.",
+    )
+    marginal_note: str | None = Field(
+        default=None,
+        description="Plain-English caveat when the marginal picture changes the decision "
+        "(e.g. clean on average but fossil on the margin), or null when nothing notable.",
+    )
 
 
 class CarbonAnomaly(BaseModel):

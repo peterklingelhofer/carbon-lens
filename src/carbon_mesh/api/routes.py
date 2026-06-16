@@ -199,12 +199,33 @@ def _signal_state(intensity: float) -> str:
     return "red"
 
 
+def _marginal_note(avg: float, marginal: float | None) -> str | None:
+    """An honest caveat when the marginal picture changes the run-now/wait call.
+
+    Marginal -- what an extra kWh emits right now -- is what actually responds to
+    shifting load, not the average. When a grid is clean on average but fossil on the
+    margin, shifting helps more than the average implies; when the margin is already
+    clean, it helps little. Returns None when nothing notable applies."""
+    if marginal is None:
+        return None
+    if marginal >= 300 and marginal >= avg * 1.3:
+        return (
+            f"Clean on average, but extra load here is met mostly by fossil generation "
+            f"(~{round(marginal)} gCO₂/kWh on the margin), so shifting time or region cuts "
+            f"more than the average suggests."
+        )
+    if marginal <= 100:
+        return "Clean even on the margin: extra demand is largely served by low-carbon power."
+    return None
+
+
 @router.get("/carbon/signal/{provider}/{region}", response_model=CarbonSignal, tags=["Carbon Data"])
 async def get_carbon_signal(
     provider: str,
     region: str,
     mapper: GridMapper = Depends(get_grid_mapper),
     engine: SchedulingEngine = Depends(get_scheduling_engine),
+    source: CarbonDataSource = Depends(get_carbon_source),
 ) -> CarbonSignal:
     """One-call traffic-light decision: run a flexible job here now, or wait?
 
@@ -235,6 +256,11 @@ async def get_carbon_signal(
     else:
         advice, window_h, window_v = "wait_for_cleaner", best_i, round(best_v)
 
+    # Marginal is what actually responds to shifting load, so surface it (and an
+    # honest caveat) alongside the average-based traffic light.
+    current = await source.get_carbon_intensity(zone)
+    marginal = current.marginal_intensity_gco2_kwh
+
     return CarbonSignal(
         provider=provider,
         region=region,
@@ -242,6 +268,8 @@ async def get_carbon_signal(
         intensity_gco2_kwh=round(now_v),
         state=state,
         advice=advice,
+        marginal_intensity_gco2_kwh=marginal,
+        marginal_note=_marginal_note(now_v, marginal),
         cleaner_window_in_hours=window_h,
         cleaner_window_intensity_gco2_kwh=window_v,
     )

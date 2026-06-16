@@ -273,6 +273,19 @@ def test_carbon_signal_unknown_region(client: TestClient):
     assert client.get("/api/v1/carbon/signal/aws/nope").status_code == 404
 
 
+def test_marginal_note_honesty():
+    from carbon_mesh.api.routes import _marginal_note
+
+    # Clean on average (120) but fossil on the margin (380): shifting helps more.
+    note = _marginal_note(120, 380)
+    assert note is not None and "margin" in note.lower()
+    # Clean on the margin too: extra demand is low-carbon, so shifting helps little.
+    assert "low-carbon" in _marginal_note(120, 80).lower()
+    # Unremarkable / no fuel mix: no note.
+    assert _marginal_note(250, 260) is None
+    assert _marginal_note(250, None) is None
+
+
 def test_carbon_anomaly_insufficient_without_history(client: TestClient):
     # With an empty archive -> honest "insufficient_history". Override the store so
     # the test is hermetic (the real history_url has live data CI would otherwise
