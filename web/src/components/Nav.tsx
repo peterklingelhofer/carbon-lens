@@ -107,7 +107,7 @@ export function Nav() {
       `}</style>
       <nav className="nav-bar">
         <NavLink to="/" className="nav-brand" onClick={close}>
-          CarbonLens
+          Carbon Lens
         </NavLink>
         <button
           type="button"
