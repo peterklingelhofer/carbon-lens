@@ -86,6 +86,41 @@ _BASELINE_INTENSITY: dict[str, float] = {
 }
 
 
+async def fetch_weather(lat: float, lon: float) -> tuple[float, float]:
+    """Current wind speed (km/h) and shortwave solar irradiance (W/m2) at a point.
+
+    Returns ``(wind_speed_kmh, solar_irradiance_w_m2)``. These are the physical
+    drivers behind a grid's renewable output, surfaced directly so a region can
+    show *why* its intensity is what it is. Free Open-Meteo, no key."""
+    client = shared_client(timeout=10.0)
+    resp = await client.get(
+        API_URL,
+        params={
+            "latitude": lat,
+            "longitude": lon,
+            "current_weather": "true",
+            "hourly": "shortwave_radiation,windspeed_10m",
+            "forecast_days": 1,
+        },
+    )
+    resp.raise_for_status()
+    data = resp.json()
+
+    wind_speed = data.get("current_weather", {}).get("windspeed", 0) or 0
+
+    hourly = data.get("hourly", {})
+    times = hourly.get("time", [])
+    radiations = hourly.get("shortwave_radiation", [])
+    now_str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:00")
+    solar_radiation = 0.0
+    for i, t in enumerate(times):
+        if t == now_str and i < len(radiations):
+            solar_radiation = radiations[i] or 0
+            break
+
+    return float(wind_speed), float(solar_radiation)
+
+
 def weather_renewable_fraction(radiation: float, wind_speed: float) -> float:
     """Estimate the renewable share (0-1) of generation from weather alone.
 
@@ -99,9 +134,6 @@ def weather_renewable_fraction(radiation: float, wind_speed: float) -> float:
 
 
 class OpenMeteoCarbonSource:
-    def __init__(self) -> None:
-        self._client = shared_client(timeout=10.0)
-
     def can_handle(self, grid_zone: str) -> bool:
         return grid_zone in ZONE_COORDINATES
 
@@ -111,33 +143,7 @@ class OpenMeteoCarbonSource:
             raise ValueError(f"No coordinates for zone: {grid_zone}")
 
         lat, lon = coords
-        resp = await self._client.get(
-            API_URL,
-            params={
-                "latitude": lat,
-                "longitude": lon,
-                "current_weather": "true",
-                "hourly": "shortwave_radiation,windspeed_10m",
-                "forecast_days": 1,
-            },
-        )
-        resp.raise_for_status()
-        data = resp.json()
-
-        # Get current weather
-        current = data.get("current_weather", {})
-        wind_speed = current.get("windspeed", 0)
-
-        # Get current hour's solar radiation
-        hourly = data.get("hourly", {})
-        solar_radiation = 0
-        times = hourly.get("time", [])
-        radiations = hourly.get("shortwave_radiation", [])
-        now_str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:00")
-        for i, t in enumerate(times):
-            if t == now_str and i < len(radiations):
-                solar_radiation = radiations[i] or 0
-                break
+        wind_speed, solar_radiation = await fetch_weather(lat, lon)
 
         # Estimate renewable contribution from current weather (shared formula).
         renewable_pct = weather_renewable_fraction(solar_radiation, wind_speed) * 100
