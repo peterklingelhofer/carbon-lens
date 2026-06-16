@@ -7,7 +7,7 @@ import { api } from "../api/client";
 import { qualityFromSource, snapshotEnabled, useSnapshot } from "../api/snapshot";
 import { InfoTip } from "../components/InfoTip";
 import { PowerMix } from "../components/PowerMix";
-import { RegionForecast, RegionHistory } from "../components/RegionDetail";
+import { RegionForecast, RegionHistory, RegionWeather } from "../components/RegionDetail";
 import { DATA_QUALITY_TIP_RICH } from "../copy";
 import { niceKm, timeAgo } from "../lib/format";
 import { intensityColor, intensityRGB, renewableRGB } from "../lib/intensity";
@@ -1112,6 +1112,7 @@ export default function CarbonGlobe() {
             </div>
           )}
           {selected.powerBreakdown && <PowerMix breakdown={selected.powerBreakdown} />}
+          <RegionWeather provider={selected.provider} region={selected.region} />
           <RegionHistory
             provider={selected.provider}
             region={selected.region}

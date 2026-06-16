@@ -354,6 +354,26 @@ def test_carbon_history_unknown_region(client: TestClient):
     assert resp.status_code == 404
 
 
+def test_region_weather(client: TestClient, monkeypatch):
+    # Stub the live Open-Meteo fetch so the test is hermetic (no network).
+    async def fake_weather(lat: float, lon: float) -> tuple[float, float]:
+        return 24.0, 480.0
+
+    monkeypatch.setattr("carbon_mesh.api.routes.fetch_weather", fake_weather)
+    resp = client.get("/api/v1/carbon/weather/aws/us-west-2")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["grid_zone"] == "US-NW-BPAT"
+    assert body["wind_speed_kmh"] == 24.0
+    assert body["solar_irradiance_w_m2"] == 480.0
+    assert body["source"] == "open_meteo"
+
+
+def test_region_weather_unknown_region(client: TestClient):
+    resp = client.get("/api/v1/carbon/weather/aws/nonexistent")
+    assert resp.status_code == 404
+
+
 def test_metrics_exposes_carbon_gauges(client: TestClient):
     resp = client.get("/metrics")
     assert resp.status_code == 200
