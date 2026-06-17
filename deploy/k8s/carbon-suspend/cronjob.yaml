@@ -1,0 +1,35 @@
+# The carbon-suspend controller itself, as a CronJob. Every 20 minutes it reads
+# annotated CronJobs in this namespace and toggles their .spec.suspend by the live
+# grid. Replace `image:` with one that has carbon_mesh installed (the API image works).
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: carbon-suspend
+  namespace: default
+spec:
+  schedule: "*/20 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 120
+      template:
+        spec:
+          serviceAccountName: carbon-suspend
+          restartPolicy: Never
+          containers:
+            - name: carbon-suspend
+              image: ghcr.io/peterklingelhofer/carbonlens:latest # replace as needed
+              command: ["python", "-m", "carbon_mesh.k8s.carbon_suspend"]
+              env:
+                # Public instance by default; point at your own deployment if you run one.
+                - name: CARBONLENS_API_URL
+                  value: "https://carbonlens-gssa.onrender.com"
+              resources:
+                requests:
+                  cpu: "10m"
+                  memory: "64Mi"
+                limits:
+                  memory: "128Mi"
