@@ -232,6 +232,32 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/carbon/siting": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Siting
+         * @description Greenest region to permanently host a 24/7 workload, by *typical* intensity.
+         *
+         *     Region choice is a permanent, high-leverage decision -- a region can be many
+         *     times cleaner forever. Ranks candidates by their history-mean carbon intensity
+         *     (falling back to the current reading where history is thin), and -- given a
+         *     continuous load -- the annual kg of CO2 each would emit. Distinct from
+         *     ``/route``, which optimises the *instantaneous* value for a single request.
+         */
+        get: operations["get_siting_api_v1_carbon_siting_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/carbon/weather/{provider}/{region}": {
         parameters: {
             query?: never;
@@ -2158,6 +2184,56 @@ export interface components {
              */
             zones?: components["schemas"]["ZoneShiftability"][];
         };
+        /** SitingOption */
+        SitingOption: {
+            /**
+             * Annual Kg
+             * @description Estimated kg CO2/year at the given continuous load
+             */
+            annual_kg?: number | null;
+            /**
+             * Basis
+             * @description history (mean over the window) or current (no history yet)
+             */
+            basis: string;
+            /** Grid Zone */
+            grid_zone: string;
+            /** Location */
+            location: string;
+            /** Provider */
+            provider: string;
+            /** Region */
+            region: string;
+            /**
+             * Typical Gco2 Kwh
+             * @description Typical (history-mean) carbon intensity -- the basis for a 24/7 deployment
+             */
+            typical_gco2_kwh: number;
+        };
+        /**
+         * SitingRecommendation
+         * @description Greenest region to permanently host a 24/7 workload, by typical intensity.
+         *
+         *     Distinct from per-request routing, which optimises the instantaneous value. Region
+         *     choice is a permanent, high-leverage decision -- a region can be many times cleaner.
+         */
+        SitingRecommendation: {
+            /**
+             * Annual Kg Saved Vs Worst
+             * @description Annual kg CO2 saved vs the worst candidate, at the given load
+             */
+            annual_kg_saved_vs_worst?: number | null;
+            /** Days Analyzed */
+            days_analyzed: number;
+            /**
+             * Options
+             * @description All candidates, greenest first
+             */
+            options: components["schemas"]["SitingOption"][];
+            /** Power Watts */
+            power_watts?: number | null;
+            recommended: components["schemas"]["SitingOption"];
+        };
         /**
          * TimeSlot
          * @description A candidate time window for scheduling.
@@ -2663,6 +2739,45 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CarbonSignal"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_siting_api_v1_carbon_siting_get: {
+        parameters: {
+            query?: {
+                /** @description Comma-separated providers to consider. */
+                providers?: string;
+                /** @description Restrict to these region names (comma-separated). */
+                candidate_regions?: string | null;
+                /** @description Continuous load (W) for an annual kg estimate, e.g. one server. */
+                power_watts?: number | null;
+                /** @description History window for the typical mean (days). */
+                days?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SitingRecommendation"];
                 };
             };
             /** @description Validation Error */

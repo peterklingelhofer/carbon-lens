@@ -2137,6 +2137,108 @@
         "title": "ShiftabilityRanking",
         "type": "object"
       },
+      "SitingOption": {
+        "properties": {
+          "annual_kg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Estimated kg CO2/year at the given continuous load",
+            "title": "Annual Kg"
+          },
+          "basis": {
+            "description": "history (mean over the window) or current (no history yet)",
+            "title": "Basis",
+            "type": "string"
+          },
+          "grid_zone": {
+            "title": "Grid Zone",
+            "type": "string"
+          },
+          "location": {
+            "title": "Location",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "region": {
+            "title": "Region",
+            "type": "string"
+          },
+          "typical_gco2_kwh": {
+            "description": "Typical (history-mean) carbon intensity -- the basis for a 24/7 deployment",
+            "title": "Typical Gco2 Kwh",
+            "type": "number"
+          }
+        },
+        "required": [
+          "provider",
+          "region",
+          "grid_zone",
+          "location",
+          "typical_gco2_kwh",
+          "basis"
+        ],
+        "title": "SitingOption",
+        "type": "object"
+      },
+      "SitingRecommendation": {
+        "description": "Greenest region to permanently host a 24/7 workload, by typical intensity.\n\nDistinct from per-request routing, which optimises the instantaneous value. Region\nchoice is a permanent, high-leverage decision -- a region can be many times cleaner.",
+        "properties": {
+          "annual_kg_saved_vs_worst": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Annual kg CO2 saved vs the worst candidate, at the given load",
+            "title": "Annual Kg Saved Vs Worst"
+          },
+          "days_analyzed": {
+            "title": "Days Analyzed",
+            "type": "integer"
+          },
+          "options": {
+            "description": "All candidates, greenest first",
+            "items": {
+              "$ref": "#/components/schemas/SitingOption"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "power_watts": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Power Watts"
+          },
+          "recommended": {
+            "$ref": "#/components/schemas/SitingOption"
+          }
+        },
+        "required": [
+          "recommended",
+          "options",
+          "days_analyzed"
+        ],
+        "title": "SitingRecommendation",
+        "type": "object"
+      },
       "TimeSlot": {
         "description": "A candidate time window for scheduling.",
         "properties": {
@@ -3186,6 +3288,116 @@
           }
         },
         "summary": "Get Carbon Signal",
+        "tags": [
+          "Carbon Routing",
+          "Carbon Data"
+        ]
+      }
+    },
+    "/api/v1/carbon/siting": {
+      "get": {
+        "description": "Greenest region to permanently host a 24/7 workload, by *typical* intensity.\n\nRegion choice is a permanent, high-leverage decision -- a region can be many\ntimes cleaner forever. Ranks candidates by their history-mean carbon intensity\n(falling back to the current reading where history is thin), and -- given a\ncontinuous load -- the annual kg of CO2 each would emit. Distinct from\n``/route``, which optimises the *instantaneous* value for a single request.",
+        "operationId": "get_siting_api_v1_carbon_siting_get",
+        "parameters": [
+          {
+            "description": "Comma-separated providers to consider.",
+            "in": "query",
+            "name": "providers",
+            "required": false,
+            "schema": {
+              "default": "aws,gcp,azure",
+              "description": "Comma-separated providers to consider.",
+              "title": "Providers",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Restrict to these region names (comma-separated).",
+            "in": "query",
+            "name": "candidate_regions",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Restrict to these region names (comma-separated).",
+              "title": "Candidate Regions"
+            }
+          },
+          {
+            "description": "Continuous load (W) for an annual kg estimate, e.g. one server.",
+            "in": "query",
+            "name": "power_watts",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Continuous load (W) for an annual kg estimate, e.g. one server.",
+              "title": "Power Watts"
+            }
+          },
+          {
+            "description": "History window for the typical mean (days).",
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 30,
+              "description": "History window for the typical mean (days).",
+              "maximum": 90,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SitingRecommendation"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Siting",
         "tags": [
           "Carbon Routing",
           "Carbon Data"

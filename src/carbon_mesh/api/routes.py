@@ -29,7 +29,7 @@ from carbon_mesh.engine.router import RoutingEngine
 from carbon_mesh.grid.mapper import GridMapper
 from carbon_mesh.models.accounting import CarbonSavingsReport
 from carbon_mesh.engine.anomaly import compute_anomaly
-from carbon_mesh.engine.recurring import rank_hours_utc, shiftability_pct
+from carbon_mesh.engine.recurring import mean_intensity, rank_hours_utc, shiftability_pct
 from carbon_mesh.engine.surplus import is_clean_surplus, surplus_offsets
 from carbon_mesh.models.carbon import (
     BestTime,
@@ -41,6 +41,8 @@ from carbon_mesh.models.carbon import (
     CarbonSignal,
     HourRank,
     ShiftabilityRanking,
+    SitingOption,
+    SitingRecommendation,
     WeatherConditions,
     ZoneShiftability,
 )
@@ -553,6 +555,82 @@ async def get_best_time(
     longitude = info.longitude if info else 0.0
     return await _build_best_time(
         provider, region, zone, longitude, f"{provider}/{region}", days, energy_kwh, store, engine
+    )
+
+
+@router.get("/carbon/siting", response_model=SitingRecommendation, tags=["Carbon Data"])
+async def get_siting(
+    providers: str = Query("aws,gcp,azure", description="Comma-separated providers to consider."),
+    candidate_regions: str | None = Query(
+        None, description="Restrict to these region names (comma-separated)."
+    ),
+    power_watts: float | None = Query(
+        None, ge=0, description="Continuous load (W) for an annual kg estimate, e.g. one server."
+    ),
+    days: int = Query(30, ge=1, le=90, description="History window for the typical mean (days)."),
+    limit: int = Query(20, ge=1, le=200),
+    mapper: GridMapper = Depends(get_grid_mapper),
+    store: HistoryStore = Depends(get_history_store),
+    source: CarbonDataSource = Depends(get_carbon_source),
+) -> SitingRecommendation:
+    """Greenest region to permanently host a 24/7 workload, by *typical* intensity.
+
+    Region choice is a permanent, high-leverage decision -- a region can be many
+    times cleaner forever. Ranks candidates by their history-mean carbon intensity
+    (falling back to the current reading where history is thin), and -- given a
+    continuous load -- the annual kg of CO2 each would emit. Distinct from
+    ``/route``, which optimises the *instantaneous* value for a single request.
+    """
+    provider_set = {p.strip() for p in providers.split(",") if p.strip()}
+    regions = [r for r in mapper.list_regions() if r.provider in provider_set]
+    if candidate_regions:
+        wanted = {c.strip() for c in candidate_regions.split(",") if c.strip()}
+        regions = [r for r in regions if r.region in wanted]
+    if not regions:
+        raise HTTPException(status_code=400, detail="No candidate regions for those providers")
+
+    since = datetime.now(timezone.utc) - timedelta(days=days)
+    current = await source.get_carbon_intensity_batch(list({r.grid_zone for r in regions}))
+    power_kw = (power_watts / 1000) if power_watts else None
+
+    options: list[SitingOption] = []
+    for r in regions:
+        raw = await store.series_for(f"{r.provider}/{r.region}", since)
+        typical = mean_intensity(raw) if len(raw) >= 8 else None
+        basis = "history"
+        if typical is None:
+            ci = current.get(r.grid_zone)
+            if ci is None:
+                continue
+            typical, basis = ci.carbon_intensity_gco2_kwh, "current"
+        options.append(
+            SitingOption(
+                provider=r.provider,
+                region=r.region,
+                grid_zone=r.grid_zone,
+                location=r.location,
+                typical_gco2_kwh=round(typical, 1),
+                basis=basis,
+                annual_kg=round(typical * power_kw * 8760 / 1000, 1) if power_kw else None,
+            )
+        )
+    if not options:
+        raise HTTPException(
+            status_code=503, detail="No intensity data for the candidates right now"
+        )
+
+    options.sort(key=lambda o: o.typical_gco2_kwh)
+    saved = None
+    if power_kw and len(options) > 1:
+        delta = options[-1].typical_gco2_kwh - options[0].typical_gco2_kwh
+        saved = round(delta * power_kw * 8760 / 1000, 1)
+
+    return SitingRecommendation(
+        recommended=options[0],
+        options=options[:limit],
+        annual_kg_saved_vs_worst=saved,
+        power_watts=power_watts,
+        days_analyzed=days,
     )
 
 

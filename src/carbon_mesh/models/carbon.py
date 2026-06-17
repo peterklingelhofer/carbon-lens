@@ -195,6 +195,35 @@ class ShiftabilityRanking(BaseModel):
     )
 
 
+class SitingOption(BaseModel):
+    provider: str
+    region: str
+    grid_zone: str
+    location: str
+    typical_gco2_kwh: float = Field(
+        description="Typical (history-mean) carbon intensity -- the basis for a 24/7 deployment"
+    )
+    basis: str = Field(description="history (mean over the window) or current (no history yet)")
+    annual_kg: float | None = Field(
+        default=None, description="Estimated kg CO2/year at the given continuous load"
+    )
+
+
+class SitingRecommendation(BaseModel):
+    """Greenest region to permanently host a 24/7 workload, by typical intensity.
+
+    Distinct from per-request routing, which optimises the instantaneous value. Region
+    choice is a permanent, high-leverage decision -- a region can be many times cleaner."""
+
+    recommended: SitingOption
+    options: list[SitingOption] = Field(description="All candidates, greenest first")
+    annual_kg_saved_vs_worst: float | None = Field(
+        default=None, description="Annual kg CO2 saved vs the worst candidate, at the given load"
+    )
+    power_watts: float | None = None
+    days_analyzed: int
+
+
 class WeatherConditions(BaseModel):
     """Current weather at a region's coordinates -- the physical drivers behind its
     renewable output. Wind turns turbines; sunlight drives solar. A single-point

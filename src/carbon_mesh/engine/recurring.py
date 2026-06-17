@@ -38,6 +38,16 @@ def rank_hours_utc(points: list[dict]) -> list[dict]:
     return ranked
 
 
+def mean_intensity(points: list[dict]) -> float | None:
+    """Mean carbon intensity across history points (each ``{"c": gco2_kwh, ...}``).
+
+    The 'typical' intensity of a grid -- the honest basis for a permanent 24/7
+    siting decision, unlike the instantaneous value used for per-request routing.
+    """
+    vals = [float(p["c"]) for p in points if p.get("c") is not None]
+    return round(sum(vals) / len(vals), 1) if vals else None
+
+
 def shiftability_pct(ranked: list[dict]) -> float | None:
     """How much a daily job would save by moving from the worst to the best hour (%).
 
