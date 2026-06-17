@@ -8,10 +8,11 @@ import { qualityFromSource, snapshotEnabled, useSnapshot } from "../api/snapshot
 import { InfoTip } from "../components/InfoTip";
 import { PowerMix } from "../components/PowerMix";
 import { RegionForecast, RegionHistory, RegionWeather } from "../components/RegionDetail";
-import { DATA_QUALITY_TIP_RICH, MARGINAL_TIP } from "../copy";
+import { DATA_QUALITY_TIP_RICH, MARGINAL_TIP, SURPLUS_TIP } from "../copy";
 import { niceKm, timeAgo } from "../lib/format";
 import { intensityColor, intensityRGB, renewableRGB } from "../lib/intensity";
 import { subsolarPoint } from "../lib/sun";
+import { isCleanSurplus } from "../lib/surplus";
 
 // Some browsers/machines can't create a WebGL context (hardware acceleration
 // off, GPU blocklisted, headless). Detect it up front so we can show a graceful
@@ -1355,6 +1356,21 @@ export default function CarbonGlobe() {
               Marginal: ~{selected.marginalIntensity}
               <span style={{ color: "#6b7280" }}> gCO₂/kWh · extra kWh now</span>
               <InfoTip label="marginal intensity" text={MARGINAL_TIP} placement="top" />
+            </div>
+          )}
+          {isCleanSurplus(selected.renewable, selected.intensity, selected.marginalIntensity) && (
+            <div
+              style={{
+                marginTop: 8,
+                fontSize: "0.72rem",
+                fontWeight: 600,
+                color: "#4ade80",
+                display: "inline-flex",
+                alignItems: "center",
+              }}
+            >
+              ⚡ Clean surplus · ideal time to run
+              <InfoTip label="clean surplus" text={SURPLUS_TIP} placement="top" />
             </div>
           )}
           {formatLoad(selected.gridLoadMw) && (

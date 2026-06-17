@@ -430,6 +430,12 @@
             "title": "Advice",
             "type": "string"
           },
+          "clean_surplus": {
+            "default": false,
+            "description": "True when the grid looks like clean oversupply now -- renewables dominant, very low carbon, clean margin -- so extra load likely soaks up power that would otherwise be curtailed. The highest-value moment to run flexible jobs. A heuristic, not measured curtailment.",
+            "title": "Clean Surplus",
+            "type": "boolean"
+          },
           "cleaner_window_in_hours": {
             "anyOf": [
               {
