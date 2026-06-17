@@ -205,6 +205,25 @@ carbonlens best-time aws/us-west-2,gcp/europe-west1
 
 `run` reads the forecast and picks the highest-value moment to execute: a **clean-surplus** window (renewables abundant, near-zero marginal) if one is coming, else the first hour under your `--max-intensity`, else the cleanest hour in `--max-wait-hours`. It won't idle for a trivial gain (waiting has its own cost), and with several comma-separated regions it co-optimizes place *and* time. Pass `--energy-kwh` and `carbonlens impact` reports honest avoided emissions (real grams only where energy is given; an average rate otherwise).
 
+### Python SDK (for data pipelines)
+
+Add carbon-awareness to any Python pipeline — Airflow, Prefect, Dagster, Celery, or a plain script — in one import. Reuses the same marginal/clean-surplus decision as everything else; httpx is the only dependency.
+
+```python
+from carbon_mesh.sdk import CarbonClient
+
+cl = CarbonClient()  # public instance by default; pass api_url= for your own
+
+if cl.is_good_time("aws/us-east-1", max_intensity=150):
+    run_batch()
+
+@cl.run_when_clean("aws/us-east-1", max_wait_hours=6)   # defer until the grid is green
+def nightly_etl():
+    ...
+```
+
+Works with on-prem grids too (`zone/FR`). `wait_for_clean_window` blocks the calling thread, so for a worker that holds a slot (e.g. an Airflow task) prefer a short poll or your framework's deferrable/reschedule mechanism over blocking for hours.
+
 ### Carbon-aware GitHub Action
 
 Gate or annotate a workflow by the live grid — run flexible CI/CD when it's cleanest:
