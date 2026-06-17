@@ -44,13 +44,14 @@ function history(points: number[]): CarbonHistory {
   };
 }
 
-function forecast(points: number[], method: string): CarbonForecast {
+function forecast(points: number[], method: string, surplusHours: number[] = []): CarbonForecast {
   return {
     grid_zone: "US-NW-BPAT",
     provider: "aws",
     region: "us-west-2",
     generated_at: "2026-06-14T00:00:00+00:00",
     method,
+    clean_surplus_hours: surplusHours,
     points: points.map((c) => ({
       grid_zone: "US-NW-BPAT",
       carbon_intensity_gco2_kwh: c,
@@ -125,6 +126,13 @@ describe("RegionForecast", () => {
     renderWithClient(<RegionForecast provider="aws" region="us-west-2" />);
 
     expect(await screen.findByText(/time-of-day model/)).toBeTruthy();
+  });
+
+  it("flags the soonest upcoming clean-surplus window", async () => {
+    mockForecast.mockResolvedValue(forecast([300, 280, 40, 35], "entsoe_day_ahead", [2, 3]));
+    renderWithClient(<RegionForecast provider="aws" region="us-west-2" />);
+
+    expect(await screen.findByText(/Clean-surplus window in ~2h/)).toBeTruthy();
   });
 
   it("renders nothing once a too-short forecast settles", async () => {

@@ -28,3 +28,21 @@ def is_clean_surplus(
     if marginal_gco2_kwh is not None and marginal_gco2_kwh > 100:
         return False
     return True
+
+
+def surplus_offsets(points) -> list[int]:
+    """Indices of the forecast points that look like clean surplus.
+
+    Duck-typed on CarbonIntensity (renewable_percentage, carbon_intensity_gco2_kwh,
+    marginal_intensity_gco2_kwh) so it works for both the live reading and projected
+    points (whose marginal is unknown -> treated as clean if share and carbon qualify).
+    """
+    return [
+        i
+        for i, p in enumerate(points)
+        if is_clean_surplus(
+            p.renewable_percentage,
+            p.carbon_intensity_gco2_kwh,
+            p.marginal_intensity_gco2_kwh,
+        )
+    ]
