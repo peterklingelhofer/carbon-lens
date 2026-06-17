@@ -370,40 +370,20 @@ def impact(
         )
 
 
-@app.command(name="best-time")
-def best_time(
-    region: str = typer.Argument(help="Region in provider/region format, e.g. aws/us-east-1"),
-    days: int = typer.Option(14, "--days", help="History window to analyze"),
-    energy_kwh: Optional[float] = typer.Option(
-        None, "--energy-kwh", help="Daily job energy (kWh) for an annual kg-saved estimate"
-    ),
-    json_output: bool = typer.Option(False, "--json", help="Output raw JSON"),
-):
-    """Find the greenest hour-of-day to schedule a recurring job (and a cron line)."""
-    provider, _, reg = region.partition("/")
-    if not provider or not reg:
-        console.print("[red]Error:[/red] region must be provider/region, e.g. aws/us-east-1")
-        raise typer.Exit(1)
-    try:
-        data = client.best_time(provider, reg, days, energy_kwh)
-    except Exception as e:
-        console.print(f"[red]Error:[/red] {e}")
-        raise typer.Exit(1)
+def _cleanest_mean(data: dict) -> float:
+    """Mean intensity at a best-time result's cleanest hour (inf if none)."""
+    hours = data.get("ranked_hours") or []
+    return hours[0]["mean_gco2_kwh"] if hours else float("inf")
 
-    if json_output:
-        import json
 
-        console.print_json(json.dumps(data))
-        return
-
+def _print_best_time(label: str, data: dict) -> None:
     basis = {
         "history": f"observed over the last {data['days_analyzed']} days",
         "forecast": "estimated from the next-48h forecast (history still accumulating)",
         "insufficient": "no data yet",
     }.get(data["basis"], data["basis"])
 
-    console.print()
-    console.print(f"[bold green]Greenest time to run[/bold green] — {region}")
+    console.print(f"[bold green]Greenest time to run[/bold green] — {label}")
     console.print(f"  Basis: {basis}")
     if data.get("cleanest_hour_utc") is not None:
         console.print(
@@ -427,6 +407,53 @@ def best_time(
             console.print(f"  Other clean hours: {tail}")
     else:
         console.print("  Not enough data yet to recommend an hour.")
+
+
+@app.command(name="best-time")
+def best_time(
+    region: str = typer.Argument(
+        help="provider/region (e.g. aws/us-east-1). Comma-separate several to also pick "
+        "the greenest place for a recurring job."
+    ),
+    days: int = typer.Option(14, "--days", help="History window to analyze"),
+    energy_kwh: Optional[float] = typer.Option(
+        None, "--energy-kwh", help="Daily job energy (kWh) for an annual kg-saved estimate"
+    ),
+    json_output: bool = typer.Option(False, "--json", help="Output raw JSON"),
+):
+    """Find the greenest hour-of-day (and, with several regions, the greenest place)."""
+    labels = [r.strip() for r in region.split(",") if r.strip()]
+    results: dict[str, dict] = {}
+    for lbl in labels:
+        provider, _, reg = lbl.partition("/")
+        if not provider or not reg:
+            console.print(f"[red]Error:[/red] region must be provider/region (got '{lbl}')")
+            raise typer.Exit(1)
+        try:
+            results[lbl] = client.best_time(provider, reg, days, energy_kwh)
+        except Exception as e:
+            console.print(f"[red]Error:[/red] {e}")
+            raise typer.Exit(1)
+
+    if json_output:
+        import json
+
+        console.print_json(json.dumps(results if len(labels) > 1 else results[labels[0]]))
+        return
+
+    console.print()
+    if len(labels) > 1:
+        winner = min(labels, key=lambda lbl: _cleanest_mean(results[lbl]))
+        console.print(f"[bold]Greenest place + time:[/bold] {winner}\n")
+        _print_best_time(winner, results[winner])
+        others = ", ".join(
+            f"{lbl} ({_cleanest_mean(results[lbl]):.0f} gCO2/kWh)"
+            for lbl in labels
+            if lbl != winner
+        )
+        console.print(f"  Compared with: {others}")
+    else:
+        _print_best_time(labels[0], results[labels[0]])
     console.print()
 
 

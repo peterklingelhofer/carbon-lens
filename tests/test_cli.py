@@ -346,3 +346,28 @@ class TestBestTimeCommand:
     def test_rejects_malformed_region(self):
         result = runner.invoke(app, ["best-time", "bogus"])
         assert result.exit_code == 1
+
+    def test_multi_region_picks_greenest_place(self):
+        def payload(hour, mean):
+            return {
+                "provider": "x",
+                "region": "y",
+                "grid_zone": "Z",
+                "basis": "history",
+                "days_analyzed": 14,
+                "cleanest_hour_utc": hour,
+                "dirtiest_hour_utc": 18,
+                "shift_savings_pct": 50.0,
+                "annual_kg_saved": None,
+                "suggested_cron": f"0 {hour} * * *",
+                "ranked_hours": [{"hour_utc": hour, "mean_gco2_kwh": mean, "samples": 12}],
+            }
+
+        def fake(provider, reg, days, energy):
+            return {"aws": payload(3, 200.0), "gcp": payload(5, 40.0)}[provider]
+
+        with patch("carbon_mesh.cli.client.best_time", side_effect=fake):
+            result = runner.invoke(app, ["best-time", "aws/us-east-1,gcp/europe-west1"])
+        assert result.exit_code == 0
+        # gcp is cleaner (40 < 200) -> it's the greenest place.
+        assert "Greenest place + time: gcp/europe-west1" in result.output
