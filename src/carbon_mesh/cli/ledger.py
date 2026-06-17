@@ -66,10 +66,14 @@ def summarize(entries: list[dict], now: datetime, days: int) -> dict:
         (e.get("reduction_gco2_kwh", 0.0) or 0.0) * (e.get("energy_kwh") or 0.0)
         for e in with_energy
     )
+    # How many shifted jobs have a verified (re-measured at run time) reduction
+    # rather than a forecast estimate.
+    measured = sum(1 for e in shifted if e.get("basis") == "measured")
 
     return {
         "jobs": len(recent),
         "shifted": len(shifted),
+        "measured": measured,
         "jobs_with_energy": len(with_energy),
         "avg_reduction_gco2_kwh": avg_reduction,
         "grams_avoided": round(grams, 1),
