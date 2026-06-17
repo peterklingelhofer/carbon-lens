@@ -1,5 +1,6 @@
 """CarbonLens CLI — Find the greenest cloud region for your workload."""
 
+import os
 import subprocess
 import time
 from datetime import datetime, timezone
@@ -10,7 +11,7 @@ from rich.console import Console
 from rich.table import Table
 
 from carbon_mesh.cli import client, ledger
-from carbon_mesh.cli.green_run import choose_run_index
+from carbon_mesh.cli.green_run import choose_run_index, choose_run_plan
 
 app = typer.Typer(
     name="carbonlens",
@@ -213,7 +214,10 @@ def run(
         ..., help="Command to run when the grid is green, e.g. -- python train.py"
     ),
     region: str = typer.Option(
-        ..., "--region", help="Target region as provider/region, e.g. aws/us-east-1"
+        ...,
+        "--region",
+        help="Target region provider/region (e.g. aws/us-east-1). Comma-separate several "
+        "movable candidates to co-optimise region AND time, e.g. aws/us-west-2,gcp/europe-west1",
     ),
     max_intensity: Optional[float] = typer.Option(
         None,
@@ -231,43 +235,63 @@ def run(
     ),
     dry_run: bool = typer.Option(False, "--dry-run", help="Show the plan; don't wait or run"),
 ):
-    """Run a command when the grid is green -- defer a flexible job to a low-carbon window."""
-    provider, _, reg = region.partition("/")
-    if not provider or not reg:
-        console.print("[red]Error:[/red] --region must be provider/region, e.g. aws/us-east-1")
-        raise typer.Exit(1)
+    """Run a command at the cleanest time (and, with several regions, the cleanest place)."""
+    labels = [r.strip() for r in region.split(",") if r.strip()]
+    fetched: dict[str, dict] = {}
+    for lbl in labels:
+        provider, _, reg = lbl.partition("/")
+        if not provider or not reg:
+            console.print(f"[red]Error:[/red] --region must be provider/region (got '{lbl}')")
+            raise typer.Exit(1)
+        try:
+            fetched[lbl] = client.forecast(provider, reg, max_wait_hours)
+        except Exception as e:
+            console.print(f"[red]Error:[/red] {e}")
+            raise typer.Exit(1)
 
-    try:
-        forecast = client.forecast(provider, reg, max_wait_hours)
-    except Exception as e:
-        console.print(f"[red]Error:[/red] {e}")
-        raise typer.Exit(1)
-
-    intensities = [p["carbon_intensity_gco2_kwh"] for p in forecast.get("points", [])]
-    surplus_hours = forecast.get("clean_surplus_hours", [])
-    if not intensities:
-        console.print("[yellow]No forecast available; running now.[/yellow]")
-        idx, reason = 0, "now"
+    multi = len(labels) > 1
+    if not multi:
+        chosen_label = labels[0]
+        forecast = fetched[chosen_label]
+        intensities = [p["carbon_intensity_gco2_kwh"] for p in forecast.get("points", [])]
+        if not intensities:
+            console.print("[yellow]No forecast available; running now.[/yellow]")
+            idx, reason = 0, "now"
+        else:
+            idx, reason = choose_run_index(
+                intensities, max_intensity, max_wait_hours, forecast.get("clean_surplus_hours", [])
+            )
     else:
-        idx, reason = choose_run_index(intensities, max_intensity, max_wait_hours, surplus_hours)
+        regions_data = [
+            (
+                lbl,
+                [p["carbon_intensity_gco2_kwh"] for p in fetched[lbl].get("points", [])],
+                fetched[lbl].get("clean_surplus_hours", []),
+            )
+            for lbl in labels
+        ]
+        chosen_label, idx, reason = choose_run_plan(regions_data, max_intensity, max_wait_hours)
+        forecast = fetched[chosen_label]
+        intensities = [p["carbon_intensity_gco2_kwh"] for p in forecast.get("points", [])]
 
     now_v = intensities[0] if intensities else None
     chosen_v = intensities[idx] if intensities else None
+    where = f" in [bold]{chosen_label}[/bold]" if multi else ""
 
     if idx == 0:
         if reason == "surplus_now":
             console.print(
-                f"[green]Clean surplus now[/green] (~{now_v:.0f} gCO2/kWh, renewables abundant) "
-                "— the highest-value time to run. Running immediately."
+                f"[green]Clean surplus now[/green]{where} (~{now_v:.0f} gCO2/kWh, renewables "
+                "abundant) — the highest-value time to run. Running immediately."
             )
         elif reason == "now_no_benefit" and now_v is not None:
             console.print(
-                f"[green]Now is about as clean as it gets[/green] (~{now_v:.0f} gCO2/kWh); waiting "
-                "would save little, so running now (delay has its own cost)."
+                f"[green]Now is about as clean as it gets[/green]{where} (~{now_v:.0f} gCO2/kWh); "
+                "waiting would save little, so running now (delay has its own cost)."
             )
         elif now_v is not None:
             console.print(
-                f"[green]Grid is green now[/green] (~{now_v:.0f} gCO2/kWh) — running immediately."
+                f"[green]Grid is green now[/green]{where} (~{now_v:.0f} gCO2/kWh) — running now."
             )
     elif now_v is not None and chosen_v is not None:
         saved = (now_v - chosen_v) / now_v * 100 if now_v else 0.0
@@ -277,7 +301,7 @@ def run(
             "cleanest_fallback": "no hour under the threshold in the window, picking the cleanest",
         }.get(reason, "cleanest upcoming hour")
         console.print(
-            f"[cyan]Deferring {idx}h[/cyan] to {when} UTC "
+            f"[cyan]Deferring {idx}h[/cyan] to {when} UTC{where} "
             f"(~{chosen_v:.0f} vs ~{now_v:.0f} gCO2/kWh now, {saved:.0f}% cleaner) — {note}."
         )
 
@@ -299,7 +323,7 @@ def run(
     ledger.append(
         {
             "ts": datetime.now(timezone.utc).isoformat(),
-            "region": region,
+            "region": chosen_label,
             "reason": reason,
             "deferred_hours": idx,
             "now_gco2_kwh": now_v,
@@ -309,7 +333,9 @@ def run(
         }
     )
 
-    result = subprocess.run(command)
+    # Tell the command which region was chosen, so it can target it.
+    env = {**os.environ, "CARBONLENS_REGION": chosen_label} if multi else None
+    result = subprocess.run(command, env=env)
     raise typer.Exit(result.returncode)
 
 

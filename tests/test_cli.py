@@ -8,7 +8,7 @@ from unittest.mock import patch
 from typer.testing import CliRunner
 
 from carbon_mesh.cli import client
-from carbon_mesh.cli.green_run import choose_run_index
+from carbon_mesh.cli.green_run import choose_run_index, choose_run_plan
 from carbon_mesh.cli.main import app
 
 
@@ -241,7 +241,59 @@ class TestImpactLedger:
         assert summarize(entries, now, days=30)["jobs"] == 0
 
 
+class TestChooseRunPlan:
+    def test_picks_cleanest_region_and_hour(self):
+        regions = [
+            ("aws/a", [300, 280, 260], []),
+            ("gcp/b", [200, 150, 100], []),  # gcp hour 2 is globally cleanest
+        ]
+        assert choose_run_plan(regions, None, 24) == ("gcp/b", 2, "cleanest")
+
+    def test_surplus_region_wins_over_lower_average(self):
+        regions = [
+            ("aws/a", [90, 90, 90], [1]),  # surplus window at +1h
+            ("gcp/b", [40, 40, 40], []),  # cleaner on average, no surplus
+        ]
+        # Soonest surplus is the highest-value place+time to add load.
+        assert choose_run_plan(regions, None, 24) == ("aws/a", 1, "surplus")
+
+    def test_runs_now_in_cleanest_region_when_no_real_gain(self):
+        regions = [
+            ("aws/a", [300, 298, 297], []),
+            ("gcp/b", [120, 119, 118], []),  # cleanest now; future barely better
+        ]
+        assert choose_run_plan(regions, None, 24) == ("gcp/b", 0, "now_no_benefit")
+
+
 class TestRunCommand:
+    def test_multi_region_dry_run_picks_a_place(self):
+        def fake_forecast(provider, reg, hours):
+            pts = {"aws": [300, 290, 280], "gcp": [120, 50, 40]}[provider]
+            return {
+                "method": "time_of_day_model",
+                "clean_surplus_hours": [],
+                "points": [
+                    {"timestamp": f"2026-06-15T{h:02d}:00:00+00:00", "carbon_intensity_gco2_kwh": v}
+                    for h, v in enumerate(pts)
+                ],
+            }
+
+        with patch("carbon_mesh.cli.client.forecast", side_effect=fake_forecast):
+            result = runner.invoke(
+                app,
+                [
+                    "run",
+                    "--region",
+                    "aws/us-east-1,gcp/europe-west1",
+                    "--dry-run",
+                    "--",
+                    "echo",
+                    "hi",
+                ],
+            )
+        assert result.exit_code == 0
+        assert "gcp/europe-west1" in result.output
+
     def test_dry_run_reports_a_deferral(self):
         with patch("carbon_mesh.cli.client.forecast", return_value=_forecast([300, 300, 50])):
             result = runner.invoke(
