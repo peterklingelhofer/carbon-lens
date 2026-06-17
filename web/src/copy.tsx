@@ -21,6 +21,14 @@ export const MARGINAL_TIP =
   "average alone. So a grid can look clean on average yet still meet extra demand with fossil fuel. A " +
   "heuristic from the fuel mix; marginal data isn't measured directly.";
 
+// What a "clean surplus" badge means. Shown wherever the oversupply heuristic
+// surfaces (globe), so the claim says plainly that it's inferred.
+export const SURPLUS_TIP =
+  "Renewables dominate generation, carbon is low, and little or no fossil sits on the " +
+  "margin - so extra demand is largely served by clean power that might otherwise be curtailed " +
+  "(spilled). That makes it one of the best moments to run flexible jobs. Inferred from the live " +
+  "mix; curtailment and price data aren't measured.";
+
 // Plain-string form - for native attributes that need a string (e.g. title=).
 export const DATA_QUALITY_TIP =
   "Live = measured from the grid operator's real-time feed (EIA, ENTSO-E, UK, AEMO). " +

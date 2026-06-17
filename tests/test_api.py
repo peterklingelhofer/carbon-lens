@@ -287,6 +287,20 @@ def test_marginal_note_honesty():
     assert _marginal_note(250, None) is None
 
 
+def test_clean_surplus_detection():
+    from carbon_mesh.engine.surplus import is_clean_surplus
+
+    # Renewables dominant, very low carbon, clean margin -> surplus.
+    assert is_clean_surplus(95, 30, 20) is True
+    # High renewable but unknown margin still qualifies if carbon is very low.
+    assert is_clean_surplus(90, 40, None) is True
+    # Fossil on the margin disqualifies even with high renewable share.
+    assert is_clean_surplus(90, 40, 400) is False
+    # Modest renewable share or not-low-enough carbon: not surplus.
+    assert is_clean_surplus(60, 200, 50) is False
+    assert is_clean_surplus(90, 150, 20) is False
+
+
 def test_carbon_anomaly_insufficient_without_history(client: TestClient):
     # With an empty archive -> honest "insufficient_history". Override the store so
     # the test is hermetic (the real history_url has live data CI would otherwise

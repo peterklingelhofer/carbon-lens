@@ -29,6 +29,7 @@ from carbon_mesh.engine.router import RoutingEngine
 from carbon_mesh.grid.mapper import GridMapper
 from carbon_mesh.models.accounting import CarbonSavingsReport
 from carbon_mesh.engine.anomaly import compute_anomaly
+from carbon_mesh.engine.surplus import is_clean_surplus
 from carbon_mesh.models.carbon import (
     CarbonAnomaly,
     CarbonForecast,
@@ -251,15 +252,26 @@ async def get_carbon_signal(
             best_i, best_v = i, intensities[i]
     notably_cleaner = best_i >= 1 and best_v <= now_v * 0.85
 
-    if state == "green" or not notably_cleaner:
-        advice, window_h, window_v = "run_now", None, None
-    else:
-        advice, window_h, window_v = "wait_for_cleaner", best_i, round(best_v)
-
     # Marginal is what actually responds to shifting load, so surface it (and an
-    # honest caveat) alongside the average-based traffic light.
+    # honest caveat) alongside the average-based traffic light. Clean surplus is the
+    # strongest run-now case: renewables abundant, so extra load soaks up would-be
+    # curtailed power.
     current = await source.get_carbon_intensity(zone)
     marginal = current.marginal_intensity_gco2_kwh
+    surplus = is_clean_surplus(current.renewable_percentage, now_v, marginal)
+
+    if surplus:
+        advice, window_h, window_v = "run_now", None, None
+        note = (
+            "Renewables are abundant right now (likely surplus): extra load is largely served "
+            "by clean power that might otherwise be curtailed. Ideal time to run flexible jobs."
+        )
+    elif state == "green" or not notably_cleaner:
+        advice, window_h, window_v = "run_now", None, None
+        note = _marginal_note(now_v, marginal)
+    else:
+        advice, window_h, window_v = "wait_for_cleaner", best_i, round(best_v)
+        note = _marginal_note(now_v, marginal)
 
     return CarbonSignal(
         provider=provider,
@@ -269,7 +281,8 @@ async def get_carbon_signal(
         state=state,
         advice=advice,
         marginal_intensity_gco2_kwh=marginal,
-        marginal_note=_marginal_note(now_v, marginal),
+        marginal_note=note,
+        clean_surplus=surplus,
         cleaner_window_in_hours=window_h,
         cleaner_window_intensity_gco2_kwh=window_v,
     )
