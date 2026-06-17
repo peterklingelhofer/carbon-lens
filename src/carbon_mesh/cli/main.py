@@ -2,13 +2,14 @@
 
 import subprocess
 import time
+from datetime import datetime, timezone
 from typing import Optional
 
 import typer
 from rich.console import Console
 from rich.table import Table
 
-from carbon_mesh.cli import client
+from carbon_mesh.cli import client, ledger
 from carbon_mesh.cli.green_run import choose_run_index
 
 app = typer.Typer(
@@ -223,6 +224,11 @@ def run(
     max_wait_hours: int = typer.Option(
         24, "--max-wait-hours", help="Most hours to defer before running anyway"
     ),
+    energy_kwh: Optional[float] = typer.Option(
+        None,
+        "--energy-kwh",
+        help="Job energy in kWh; enables a real grams-avoided estimate in `carbonlens impact`",
+    ),
     dry_run: bool = typer.Option(False, "--dry-run", help="Show the plan; don't wait or run"),
 ):
     """Run a command when the grid is green -- defer a flexible job to a low-carbon window."""
@@ -283,8 +289,59 @@ def run(
         console.print(f"Waiting {idx}h before running… (Ctrl-C to cancel)")
         time.sleep(idx * 3600)
 
+    # Record what this run did, for an honest impact tally (`carbonlens impact`).
+    # Counterfactual is running now, so reduction is 0 unless we deferred.
+    reduction = (
+        max(0.0, now_v - chosen_v)
+        if (idx > 0 and now_v is not None and chosen_v is not None)
+        else 0.0
+    )
+    ledger.append(
+        {
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "region": region,
+            "reason": reason,
+            "deferred_hours": idx,
+            "now_gco2_kwh": now_v,
+            "chosen_gco2_kwh": chosen_v,
+            "reduction_gco2_kwh": round(reduction, 1),
+            "energy_kwh": energy_kwh,
+        }
+    )
+
     result = subprocess.run(command)
     raise typer.Exit(result.returncode)
+
+
+@app.command()
+def impact(
+    days: int = typer.Option(30, "--days", help="Look back this many days"),
+):
+    """Show the honest carbon impact of your `carbonlens run` jobs (local ledger)."""
+    summary = ledger.summarize(ledger.read(), datetime.now(timezone.utc), days)
+    if summary["jobs"] == 0:
+        console.print(f"No carbon-aware runs recorded in the last {days} days.")
+        console.print(
+            "[dim]Use `carbonlens run --region … -- <cmd>` to start logging impact.[/dim]"
+        )
+        return
+    console.print(f"[bold green]Carbon impact — last {days} days[/bold green]")
+    console.print(f"  Jobs run:           {summary['jobs']}")
+    console.print(f"  Shifted to cleaner: {summary['shifted']}")
+    console.print(
+        f"  Avg intensity cut:  {summary['avg_reduction_gco2_kwh']} gCO2/kWh "
+        "(deferred jobs, vs running now)"
+    )
+    if summary["jobs_with_energy"]:
+        console.print(
+            f"  CO2 avoided:        ~{summary['kg_avoided']} kg (estimated, from "
+            f"{summary['jobs_with_energy']} job(s) with --energy-kwh)"
+        )
+    else:
+        console.print(
+            "  CO2 avoided:        pass --energy-kwh on runs for a real grams estimate "
+            "(intensities alone aren't additive)"
+        )
 
 
 @config_app.command("set")

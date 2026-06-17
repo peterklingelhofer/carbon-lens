@@ -202,6 +202,45 @@ class TestChooseRunIndex:
         assert choose_run_index([40, 300, 30], 100, 24, surplus_hours=[2]) == (0, "threshold")
 
 
+class TestImpactLedger:
+    def test_real_grams_only_from_jobs_with_energy(self):
+        from datetime import datetime, timezone
+
+        from carbon_mesh.cli.ledger import summarize
+
+        now = datetime(2026, 6, 16, tzinfo=timezone.utc)
+        entries = [
+            # Deferred, 200 gCO2/kWh avoided, 10 kWh -> 2000 g avoided.
+            {
+                "ts": now.isoformat(),
+                "deferred_hours": 3,
+                "reduction_gco2_kwh": 200,
+                "energy_kwh": 10,
+            },
+            # Deferred but no energy -> counts toward avg, not grams.
+            {"ts": now.isoformat(), "deferred_hours": 2, "reduction_gco2_kwh": 100},
+            # Ran now -> not shifted, avoids nothing.
+            {"ts": now.isoformat(), "deferred_hours": 0, "reduction_gco2_kwh": 0},
+        ]
+        s = summarize(entries, now, days=30)
+        assert s["jobs"] == 3
+        assert s["shifted"] == 2
+        assert s["jobs_with_energy"] == 1
+        assert s["avg_reduction_gco2_kwh"] == 150.0  # (200 + 100) / 2
+        assert s["grams_avoided"] == 2000.0
+        assert s["kg_avoided"] == 2.0
+
+    def test_old_entries_drop_out_of_window(self):
+        from datetime import datetime, timedelta, timezone
+
+        from carbon_mesh.cli.ledger import summarize
+
+        now = datetime(2026, 6, 16, tzinfo=timezone.utc)
+        old = (now - timedelta(days=40)).isoformat()
+        entries = [{"ts": old, "deferred_hours": 3, "reduction_gco2_kwh": 100, "energy_kwh": 5}]
+        assert summarize(entries, now, days=30)["jobs"] == 0
+
+
 class TestRunCommand:
     def test_dry_run_reports_a_deferral(self):
         with patch("carbon_mesh.cli.client.forecast", return_value=_forecast([300, 300, 50])):
