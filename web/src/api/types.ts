@@ -104,6 +104,21 @@ export interface CarbonHistory {
   points: CarbonHistoryPoint[];
 }
 
+export interface ZoneShiftability {
+  grid_zone: string;
+  location: string;
+  shift_savings_pct: number;
+  cleanest_hour_utc: number;
+  dirtiest_hour_utc: number;
+  samples: number;
+}
+
+export interface ShiftabilityRanking {
+  days_analyzed: number;
+  // Most shiftable first; zones without enough history omitted.
+  zones: ZoneShiftability[];
+}
+
 export interface BestTime {
   provider: string;
   region: string;
