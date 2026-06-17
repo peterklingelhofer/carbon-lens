@@ -196,6 +196,15 @@ async def get_carbon_forecast(
     )
 
 
+def _zone_representative(mapper: GridMapper, grid_zone: str) -> CloudRegion | None:
+    """One representative cloud region for a grid zone -- for its coordinates and a
+    history key when looking up a zone directly (on-prem / colo, not a cloud region)."""
+    for r in mapper.grid_zones():
+        if r.grid_zone == grid_zone:
+            return r
+    return None
+
+
 def _signal_state(intensity: float) -> str:
     if intensity <= 150:
         return "green"
@@ -224,26 +233,16 @@ def _marginal_note(avg: float, marginal: float | None) -> str | None:
     return None
 
 
-@router.get("/carbon/signal/{provider}/{region}", response_model=CarbonSignal, tags=["Carbon Data"])
-async def get_carbon_signal(
+async def _build_signal(
     provider: str,
     region: str,
-    mapper: GridMapper = Depends(get_grid_mapper),
-    engine: SchedulingEngine = Depends(get_scheduling_engine),
-    source: CarbonDataSource = Depends(get_carbon_source),
+    zone: str,
+    longitude: float,
+    engine: SchedulingEngine,
+    source: CarbonDataSource,
 ) -> CarbonSignal:
-    """One-call traffic-light decision: run a flexible job here now, or wait?
-
-    Returns a green/yellow/red state plus, when meaningfully cleaner power is
-    coming, how many hours until that window. The minimal primitive for the
-    carbon-aware-dispatcher or any script — loosely coupled via a stable contract.
-    """
-    zone = mapper.get_grid_zone(provider, region)
-    if zone is None:
-        raise HTTPException(status_code=404, detail=f"Unknown region: {provider}/{region}")
-    info = mapper.get_region(provider, region)
-    longitude = info.longitude if info else 0.0
-
+    """Core run-now/wait decision for a grid zone. Shared by the cloud-region and
+    on-prem (zone) endpoints so both make the exact same marginal/surplus-aware call."""
     _, points = await engine.forecast_zone(zone, longitude, 24)
     intensities = [p.carbon_intensity_gco2_kwh for p in points]
     now_v = intensities[0]
@@ -304,6 +303,48 @@ async def get_carbon_signal(
         cleaner_window_in_hours=window_h,
         cleaner_window_intensity_gco2_kwh=window_v,
     )
+
+
+# Zone-first route, declared BEFORE /carbon/signal/{provider}/{region} so
+# "/carbon/signal/zone/FR" isn't captured as provider="zone".
+@router.get("/carbon/signal/zone/{grid_zone}", response_model=CarbonSignal, tags=["Carbon Data"])
+async def get_zone_signal(
+    grid_zone: str,
+    mapper: GridMapper = Depends(get_grid_mapper),
+    engine: SchedulingEngine = Depends(get_scheduling_engine),
+    source: CarbonDataSource = Depends(get_carbon_source),
+) -> CarbonSignal:
+    """Run-now/wait decision for a grid zone directly -- for on-prem / colo workloads
+    that sit on a grid we cover but aren't a cloud region. Use IDs from /carbon/zones."""
+    rep = _zone_representative(mapper, grid_zone)
+    if rep is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Unknown grid zone: {grid_zone}. See /api/v1/carbon/zones for valid IDs.",
+        )
+    return await _build_signal("zone", grid_zone, grid_zone, rep.longitude, engine, source)
+
+
+@router.get("/carbon/signal/{provider}/{region}", response_model=CarbonSignal, tags=["Carbon Data"])
+async def get_carbon_signal(
+    provider: str,
+    region: str,
+    mapper: GridMapper = Depends(get_grid_mapper),
+    engine: SchedulingEngine = Depends(get_scheduling_engine),
+    source: CarbonDataSource = Depends(get_carbon_source),
+) -> CarbonSignal:
+    """One-call traffic-light decision: run a flexible job here now, or wait?
+
+    Returns a green/yellow/red state plus, when meaningfully cleaner power is
+    coming, how many hours until that window. The minimal primitive for the
+    carbon-aware-dispatcher or any script — loosely coupled via a stable contract.
+    """
+    zone = mapper.get_grid_zone(provider, region)
+    if zone is None:
+        raise HTTPException(status_code=404, detail=f"Unknown region: {provider}/{region}")
+    info = mapper.get_region(provider, region)
+    longitude = info.longitude if info else 0.0
+    return await _build_signal(provider, region, zone, longitude, engine, source)
 
 
 @router.get(
@@ -397,38 +438,26 @@ async def get_region_weather(
     )
 
 
-@router.get("/carbon/best-time/{provider}/{region}", response_model=BestTime, tags=["Carbon Data"])
-async def get_best_time(
+async def _build_best_time(
     provider: str,
     region: str,
-    days: int = Query(14, ge=1, le=90, description="History window to analyze (days)."),
-    energy_kwh: float | None = Query(
-        None, ge=0, description="Daily job energy (kWh) for an annualized kg-saved estimate."
-    ),
-    mapper: GridMapper = Depends(get_grid_mapper),
-    store: HistoryStore = Depends(get_history_store),
-    engine: SchedulingEngine = Depends(get_scheduling_engine),
+    zone: str,
+    longitude: float,
+    history_key: str,
+    days: int,
+    energy_kwh: float | None,
+    store: HistoryStore,
+    engine: SchedulingEngine,
 ) -> BestTime:
-    """The greenest hour-of-day to run a recurring job here -- pick a cron schedule once.
-
-    Ranks UTC hours by mean carbon intensity from the published history archive; if
-    too little has accumulated, it falls back to the next-48h forecast curve as a
-    proxy (labelled in ``basis``). Moving a fixed daily job to ``cleanest_hour_utc``
-    is a one-time change with permanent savings.
-    """
-    zone = mapper.get_grid_zone(provider, region)
-    if zone is None:
-        raise HTTPException(status_code=404, detail=f"Unknown region: {provider}/{region}")
-
+    """Core greenest-hour ranking for a grid zone. Shared by the cloud-region and
+    on-prem (zone) endpoints. ``history_key`` is the archive key to read."""
     since = datetime.now(timezone.utc) - timedelta(days=days)
-    raw = await store.series_for(f"{provider}/{region}", since)
+    raw = await store.series_for(history_key, since)
     ranked = rank_hours_utc(raw)
     basis = "history"
 
     # Too few observations to be useful -> use the forecast curve as a proxy.
     if sum(r["samples"] for r in ranked) < 8:
-        info = mapper.get_region(provider, region)
-        longitude = info.longitude if info else 0.0
         _, points = await engine.forecast_zone(zone, longitude, 48)
         forecast_points = [
             {"t": p.timestamp.isoformat(), "c": p.carbon_intensity_gco2_kwh} for p in points
@@ -467,6 +496,61 @@ async def get_best_time(
             HourRank(hour_utc=r["hour"], mean_gco2_kwh=r["mean_gco2_kwh"], samples=r["samples"])
             for r in ranked[:6]
         ],
+    )
+
+
+# Zone-first route, before /carbon/best-time/{provider}/{region}.
+@router.get("/carbon/best-time/zone/{grid_zone}", response_model=BestTime, tags=["Carbon Data"])
+async def get_zone_best_time(
+    grid_zone: str,
+    days: int = Query(14, ge=1, le=90, description="History window to analyze (days)."),
+    energy_kwh: float | None = Query(
+        None, ge=0, description="Daily job energy (kWh) for an annualized kg-saved estimate."
+    ),
+    mapper: GridMapper = Depends(get_grid_mapper),
+    store: HistoryStore = Depends(get_history_store),
+    engine: SchedulingEngine = Depends(get_scheduling_engine),
+) -> BestTime:
+    """Greenest hour-of-day to schedule a recurring job on a grid zone directly -- for
+    on-prem / colo workloads. History is read from a representative region on the zone."""
+    rep = _zone_representative(mapper, grid_zone)
+    if rep is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Unknown grid zone: {grid_zone}. See /api/v1/carbon/zones for valid IDs.",
+        )
+    history_key = f"{rep.provider}/{rep.region}"
+    return await _build_best_time(
+        "zone", grid_zone, grid_zone, rep.longitude, history_key, days, energy_kwh, store, engine
+    )
+
+
+@router.get("/carbon/best-time/{provider}/{region}", response_model=BestTime, tags=["Carbon Data"])
+async def get_best_time(
+    provider: str,
+    region: str,
+    days: int = Query(14, ge=1, le=90, description="History window to analyze (days)."),
+    energy_kwh: float | None = Query(
+        None, ge=0, description="Daily job energy (kWh) for an annualized kg-saved estimate."
+    ),
+    mapper: GridMapper = Depends(get_grid_mapper),
+    store: HistoryStore = Depends(get_history_store),
+    engine: SchedulingEngine = Depends(get_scheduling_engine),
+) -> BestTime:
+    """The greenest hour-of-day to run a recurring job here -- pick a cron schedule once.
+
+    Ranks UTC hours by mean carbon intensity from the published history archive; if
+    too little has accumulated, it falls back to the next-48h forecast curve as a
+    proxy (labelled in ``basis``). Moving a fixed daily job to ``cleanest_hour_utc``
+    is a one-time change with permanent savings.
+    """
+    zone = mapper.get_grid_zone(provider, region)
+    if zone is None:
+        raise HTTPException(status_code=404, detail=f"Unknown region: {provider}/{region}")
+    info = mapper.get_region(provider, region)
+    longitude = info.longitude if info else 0.0
+    return await _build_best_time(
+        provider, region, zone, longitude, f"{provider}/{region}", days, energy_kwh, store, engine
     )
 
 
