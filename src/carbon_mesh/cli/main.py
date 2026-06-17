@@ -238,28 +238,38 @@ def run(
         raise typer.Exit(1)
 
     intensities = [p["carbon_intensity_gco2_kwh"] for p in forecast.get("points", [])]
+    surplus_hours = forecast.get("clean_surplus_hours", [])
     if not intensities:
         console.print("[yellow]No forecast available; running now.[/yellow]")
         idx, reason = 0, "now"
     else:
-        idx, reason = choose_run_index(intensities, max_intensity, max_wait_hours)
+        idx, reason = choose_run_index(intensities, max_intensity, max_wait_hours, surplus_hours)
 
     now_v = intensities[0] if intensities else None
     chosen_v = intensities[idx] if intensities else None
 
     if idx == 0:
-        if now_v is not None:
+        if reason == "surplus_now":
+            console.print(
+                f"[green]Clean surplus now[/green] (~{now_v:.0f} gCO2/kWh, renewables abundant) "
+                "— the highest-value time to run. Running immediately."
+            )
+        elif reason == "now_no_benefit" and now_v is not None:
+            console.print(
+                f"[green]Now is about as clean as it gets[/green] (~{now_v:.0f} gCO2/kWh); waiting "
+                "would save little, so running now (delay has its own cost)."
+            )
+        elif now_v is not None:
             console.print(
                 f"[green]Grid is green now[/green] (~{now_v:.0f} gCO2/kWh) — running immediately."
             )
     elif now_v is not None and chosen_v is not None:
         saved = (now_v - chosen_v) / now_v * 100 if now_v else 0.0
         when = forecast["points"][idx]["timestamp"][:16].replace("T", " ")
-        note = (
-            "no hour under the threshold in the window, picking the cleanest"
-            if reason == "cleanest_fallback"
-            else "cleanest upcoming hour"
-        )
+        note = {
+            "surplus": "clean-surplus window (renewables abundant), the highest-value time to run",
+            "cleanest_fallback": "no hour under the threshold in the window, picking the cleanest",
+        }.get(reason, "cleanest upcoming hour")
         console.print(
             f"[cyan]Deferring {idx}h[/cyan] to {when} UTC "
             f"(~{chosen_v:.0f} vs ~{now_v:.0f} gCO2/kWh now, {saved:.0f}% cleaner) — {note}."
