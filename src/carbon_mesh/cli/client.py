@@ -102,6 +102,17 @@ def forecast(provider: str, region: str, hours: int = 24) -> dict:
     return resp.json()
 
 
+def shiftability(days: int = 14, limit: int = 25) -> dict:
+    resp = httpx.get(
+        f"{get_api_url()}/api/v1/carbon/shiftability",
+        params={"days": days, "limit": limit},
+        headers=_headers(),
+        timeout=30,
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+
 def best_time(provider: str, region: str, days: int = 14, energy_kwh: float | None = None) -> dict:
     params: dict = {"days": days}
     if energy_kwh is not None:

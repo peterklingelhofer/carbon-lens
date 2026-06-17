@@ -347,6 +347,25 @@ class TestBestTimeCommand:
         result = runner.invoke(app, ["best-time", "bogus"])
         assert result.exit_code == 1
 
+    def test_shiftability_renders_ranking(self):
+        payload = {
+            "days_analyzed": 14,
+            "zones": [
+                {
+                    "grid_zone": "US-CAL-CISO",
+                    "location": "California",
+                    "shift_savings_pct": 62.0,
+                    "cleanest_hour_utc": 13,
+                    "dirtiest_hour_utc": 2,
+                    "samples": 120,
+                }
+            ],
+        }
+        with patch("carbon_mesh.cli.client.shiftability", return_value=payload):
+            result = runner.invoke(app, ["shiftability"])
+        assert result.exit_code == 0
+        assert "US-CAL-CISO" in result.output
+
     def test_multi_region_picks_greenest_place(self):
         def payload(hour, mean):
             return {
