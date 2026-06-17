@@ -132,6 +132,59 @@ export function RegionWeather({ provider, region }: { provider: string; region: 
   );
 }
 
+// The greenest hour-of-day to schedule a recurring job here -- a one-time cron
+// change with permanent savings. From /carbon/best-time (history, or the forecast
+// curve as a fallback). Hidden when there's no usable signal yet.
+export function RegionBestTime({ provider, region }: { provider: string; region: string }) {
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["best-time", provider, region],
+    queryFn: () => api.bestTime(provider, region),
+    staleTime: 30 * 60_000,
+    retry: 1,
+  });
+
+  if (isLoading || isError || !data || data.cleanest_hour_utc == null) return null;
+  const hh = String(data.cleanest_hour_utc).padStart(2, "0");
+  const savings = data.shift_savings_pct;
+
+  return (
+    <div style={{ marginTop: 10 }}>
+      <div style={{ fontSize: "0.72rem", color: "#9ca3af", marginBottom: 4 }}>
+        Greenest hour to schedule
+      </div>
+      <div style={{ fontSize: "0.8rem", color: "#4ade80", fontWeight: 600 }}>
+        {hh}:00 UTC
+        {savings != null && savings > 0 && (
+          <span style={{ color: "#86efac", fontWeight: 400 }}>
+            {" "}
+            · ~{Math.round(savings)}% cleaner
+          </span>
+        )}
+      </div>
+      {data.suggested_cron && (
+        <code
+          style={{
+            display: "inline-block",
+            marginTop: 3,
+            fontSize: "0.66rem",
+            color: "#cbd5e1",
+            background: "rgba(255,255,255,0.06)",
+            padding: "1px 6px",
+            borderRadius: 4,
+          }}
+        >
+          {data.suggested_cron}
+        </code>
+      )}
+      <div style={{ fontSize: "0.58rem", color: "#6b7280", marginTop: 2 }}>
+        {data.basis === "history"
+          ? `from ${data.days_analyzed}-day history · for recurring jobs`
+          : "from forecast (history still accumulating)"}
+      </div>
+    </div>
+  );
+}
+
 // Next-24h carbon-intensity forecast for the selected region, fetched live from
 // the API's /carbon/forecast endpoint and drawn as a sparkline. EU zones get a
 // real ENTSO-E day-ahead curve; elsewhere it's the labelled time-of-day model.

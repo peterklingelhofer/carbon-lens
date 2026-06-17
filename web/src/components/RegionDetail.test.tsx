@@ -2,8 +2,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { CarbonForecast, CarbonHistory, WeatherConditions } from "../api/types";
-import { RegionForecast, RegionHistory, RegionWeather } from "./RegionDetail";
+import type { BestTime, CarbonForecast, CarbonHistory, WeatherConditions } from "../api/types";
+import { RegionBestTime, RegionForecast, RegionHistory, RegionWeather } from "./RegionDetail";
 
 // Mock the HTTP client so the container components resolve from fixtures, not a
 // real fetch. vi.mock is hoisted, so the import below receives the mock.
@@ -12,6 +12,7 @@ vi.mock("../api/client", () => ({
     carbonHistory: vi.fn(),
     carbonForecast: vi.fn(),
     regionWeather: vi.fn(),
+    bestTime: vi.fn(),
   },
 }));
 
@@ -20,6 +21,7 @@ import { api } from "../api/client";
 const mockHistory = vi.mocked(api.carbonHistory);
 const mockForecast = vi.mocked(api.carbonForecast);
 const mockWeather = vi.mocked(api.regionWeather);
+const mockBestTime = vi.mocked(api.bestTime);
 
 afterEach(() => {
   vi.clearAllMocks();
@@ -107,6 +109,39 @@ describe("RegionWeather", () => {
     mockWeather.mockRejectedValue(new Error("503"));
     const { container } = renderWithClient(<RegionWeather provider="aws" region="us-west-2" />);
 
+    await waitFor(() => expect(container.querySelector("div")).toBeNull());
+  });
+});
+
+function bestTime(hour: number | null, savings: number | null): BestTime {
+  return {
+    provider: "aws",
+    region: "us-west-2",
+    grid_zone: "US-NW-BPAT",
+    basis: hour == null ? "insufficient" : "history",
+    days_analyzed: 14,
+    cleanest_hour_utc: hour,
+    dirtiest_hour_utc: hour == null ? null : 18,
+    shift_savings_pct: savings,
+    annual_kg_saved: null,
+    suggested_cron: hour == null ? null : `0 ${hour} * * *`,
+    ranked_hours: hour == null ? [] : [{ hour_utc: hour, mean_gco2_kwh: 40, samples: 12 }],
+  };
+}
+
+describe("RegionBestTime", () => {
+  it("shows the greenest hour and a cron line", async () => {
+    mockBestTime.mockResolvedValue(bestTime(3, 91));
+    renderWithClient(<RegionBestTime provider="aws" region="us-west-2" />);
+
+    expect(await screen.findByText("03:00 UTC", { exact: false })).toBeTruthy();
+    expect(screen.getByText("0 3 * * *")).toBeTruthy();
+    expect(screen.getByText(/91% cleaner/)).toBeTruthy();
+  });
+
+  it("renders nothing when there's no usable signal", async () => {
+    mockBestTime.mockResolvedValue(bestTime(null, null));
+    const { container } = renderWithClient(<RegionBestTime provider="aws" region="us-west-2" />);
     await waitFor(() => expect(container.querySelector("div")).toBeNull());
   });
 });

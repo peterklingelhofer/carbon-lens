@@ -1,5 +1,6 @@
 import type {
   AlertEvent,
+  BestTime,
   CalculationResponse,
   CarbonForecast,
   CarbonHistory,
@@ -121,6 +122,9 @@ export const api = {
 
   regionWeather: (provider: string, region: string) =>
     request<WeatherConditions>(`/api/v1/carbon/weather/${provider}/${region}`),
+
+  bestTime: (provider: string, region: string) =>
+    request<BestTime>(`/api/v1/carbon/best-time/${provider}/${region}`),
 
   // Accounting
   savings: () => request<CarbonSavingsReport>("/api/v1/accounting/savings"),
