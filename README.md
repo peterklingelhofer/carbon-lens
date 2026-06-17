@@ -222,6 +222,15 @@ Gate or annotate a workflow by the live grid — run flexible CI/CD when it's cl
 
 Surfaces the marginal/surplus read (not just the average) and is honest about what it can't do — see [`.github/actions/carbon-signal`](.github/actions/carbon-signal/README.md). Best for cron-triggered / non-urgent workflows and self-hosted runners, since hosted runners' region is fixed.
 
+### Kubernetes
+
+Run flexible workloads when the grid is cleanest, with no app changes:
+
+- **CronJob suspend controller** — annotate any `CronJob` with `carbonlens.dev/region` and a tiny controller toggles its `.spec.suspend` by the live grid (suspended when dirty, resumed on `run_now`/clean surplus). In-cluster via the service-account token, no extra dependencies. See [`deploy/k8s/carbon-suspend`](deploy/k8s/carbon-suspend/README.md).
+- **KEDA autoscaling** — scale an interruptible `Deployment` (queue consumers, batch workers) to zero except during clean surplus, off the `carbon_clean_surplus` Prometheus gauge. See [`deploy/k8s/keda`](deploy/k8s/keda/README.md).
+
+Both support **on-prem grid zones** too: use `carbonlens.dev/region: zone/FR` (the `/carbon/signal/zone/{grid_zone}` and `/carbon/best-time/zone/{grid_zone}` endpoints back the decision for data centers / colo that sit on a grid we cover but aren't a cloud region).
+
 ### Status badge
 
 Embed a live, color-coded carbon-intensity badge (green → red) in any README:
