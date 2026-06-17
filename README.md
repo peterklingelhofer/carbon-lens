@@ -192,10 +192,29 @@ carbonlens route -p aws,gcp,azure        # greenest region right now
 carbonlens intensity aws/us-east-1       # current intensity for a region
 # Defer a flexible job to a low-carbon window, then run it:
 carbonlens run --region aws/us-east-1 --max-intensity 150 -- python train.py
-carbonlens run --region eu-west-3 --dry-run -- ./batch.sh   # just show the plan
+# Co-optimize WHERE and WHEN across movable regions (sets $CARBONLENS_REGION):
+carbonlens run --region aws/us-west-2,gcp/europe-west1 --energy-kwh 8 -- ./train.sh
+carbonlens impact --days 30              # honest tally of what your runs avoided
 ```
 
-`run` reads the forecast and either runs immediately (grid already under your `--max-intensity`), waits for the first hour that drops under it (within `--max-wait-hours`), or — with no threshold — waits for the cleanest hour in the window, then execs your command.
+`run` reads the forecast and picks the highest-value moment to execute: a **clean-surplus** window (renewables abundant, near-zero marginal) if one is coming, else the first hour under your `--max-intensity`, else the cleanest hour in `--max-wait-hours`. It won't idle for a trivial gain (waiting has its own cost), and with several comma-separated regions it co-optimizes place *and* time. Pass `--energy-kwh` and `carbonlens impact` reports honest avoided emissions (real grams only where energy is given; an average rate otherwise).
+
+### Carbon-aware GitHub Action
+
+Gate or annotate a workflow by the live grid — run flexible CI/CD when it's cleanest:
+
+```yaml
+- id: carbon
+  uses: peterklingelhofer/carbonlens/.github/actions/carbon-signal@main
+  with:
+    region: aws/us-east-1
+    max-intensity: "150"
+    fail-if-dirty: "true"   # on a `schedule:` workflow, skip-and-rerun until clean
+- if: steps.carbon.outputs.clean-now == 'true'
+  run: ./deploy.sh
+```
+
+Surfaces the marginal/surplus read (not just the average) and is honest about what it can't do — see [`.github/actions/carbon-signal`](.github/actions/carbon-signal/README.md). Best for cron-triggered / non-urgent workflows and self-hosted runners, since hosted runners' region is fixed.
 
 ### Status badge
 
