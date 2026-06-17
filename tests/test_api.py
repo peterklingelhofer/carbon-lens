@@ -435,13 +435,18 @@ def test_best_time_from_history(client: TestClient):
     data = {"series": {"aws/us-west-2": series}}
     app.dependency_overrides[get_history_store] = lambda: HistoryStore("", data=data)
     try:
-        resp = client.get("/api/v1/carbon/best-time/aws/us-west-2?days=14")
+        resp = client.get("/api/v1/carbon/best-time/aws/us-west-2?days=14&energy_kwh=10")
         assert resp.status_code == 200
         body = resp.json()
         assert body["grid_zone"] == "US-NW-BPAT"
         assert body["basis"] == "history"
         assert body["cleanest_hour_utc"] == 2
+        assert body["dirtiest_hour_utc"] == 18
         assert body["suggested_cron"] == "0 2 * * *"
+        # (450 - 40) / 450 = 91.1% cleaner at the best hour.
+        assert body["shift_savings_pct"] == 91.1
+        # (450 - 40) gCO2/kWh * 10 kWh/day * 365 / 1000 = 1496.5 kg/yr.
+        assert body["annual_kg_saved"] == 1496.5
     finally:
         app.dependency_overrides.pop(get_history_store, None)
 

@@ -69,6 +69,18 @@
       "BestTime": {
         "description": "The greenest hour-of-day to run a recurring job, for picking a cron schedule.",
         "properties": {
+          "annual_kg_saved": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "If a daily job of the given --energy-kwh moved from the worst to the best hour: estimated kg CO2 avoided per year (assumes the pattern holds). Null without energy.",
+            "title": "Annual Kg Saved"
+          },
           "basis": {
             "description": "history (observed hour-of-day means), forecast (next-48h curve as a proxy), or insufficient (no data yet)",
             "title": "Basis",
@@ -90,6 +102,18 @@
             "title": "Days Analyzed",
             "type": "integer"
           },
+          "dirtiest_hour_utc": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The highest-mean-intensity UTC hour, for contrast",
+            "title": "Dirtiest Hour Utc"
+          },
           "grid_zone": {
             "title": "Grid Zone",
             "type": "string"
@@ -109,6 +133,18 @@
           "region": {
             "title": "Region",
             "type": "string"
+          },
+          "shift_savings_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How much cleaner the best hour is than the worst observed hour (%). The value of scheduling well vs scheduling badly.",
+            "title": "Shift Savings Pct"
           },
           "suggested_cron": {
             "anyOf": [
@@ -2673,6 +2709,25 @@
               "minimum": 1,
               "title": "Days",
               "type": "integer"
+            }
+          },
+          {
+            "description": "Daily job energy (kWh) for an annualized kg-saved estimate.",
+            "in": "query",
+            "name": "energy_kwh",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Daily job energy (kWh) for an annualized kg-saved estimate.",
+              "title": "Energy Kwh"
             }
           }
         ],
