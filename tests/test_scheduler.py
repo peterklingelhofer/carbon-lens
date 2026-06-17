@@ -392,3 +392,25 @@ def test_score_slot_balanced():
     # carbon_score = 250/500 = 0.5, renewable_score = 1 - 50/100 = 0.5
     # balanced = 0.5 * 0.6 + 0.5 * 0.4 = 0.5
     assert score == pytest.approx(0.5)
+
+
+def test_score_slot_surplus_gets_bounded_edge():
+    """A clean-surplus slot ranks ahead of a close non-surplus one, but a much
+    cleaner non-surplus slot still wins -- the edge is bounded."""
+
+    def slot(carbon, renewable):
+        return CarbonIntensity(
+            grid_zone="test",
+            carbon_intensity_gco2_kwh=carbon,
+            renewable_percentage=renewable,
+            timestamp=datetime.now(timezone.utc),
+            source="test",
+        )
+
+    # Surplus slot at 80 scores as if ~48 (40% off) -> beats a non-surplus 60...
+    surplus_80 = SchedulingEngine._score_slot(slot(80, 95), ScheduleStrategy.LOWEST_CARBON, True)
+    non_surplus_60 = SchedulingEngine._score_slot(slot(60, 50), ScheduleStrategy.LOWEST_CARBON)
+    assert surplus_80 < non_surplus_60
+    # ...but does NOT beat a genuinely much cleaner non-surplus slot at 30.
+    non_surplus_30 = SchedulingEngine._score_slot(slot(30, 70), ScheduleStrategy.LOWEST_CARBON)
+    assert surplus_80 > non_surplus_30
