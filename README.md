@@ -222,7 +222,7 @@ def nightly_etl():
     ...
 ```
 
-Works with on-prem grids too (`zone/FR`). `wait_for_clean_window` blocks the calling thread, so for a worker that holds a slot (e.g. an Airflow task) prefer a short poll or your framework's deferrable/reschedule mechanism over blocking for hours.
+Works with on-prem grids too (`zone/FR`). `wait_for_clean_window` blocks the calling thread, so for **Airflow** use the deferrable [`CarbonAwareSensor`](src/carbon_mesh/integrations/README.md) instead — it frees the worker slot while waiting for a clean window.
 
 ### Carbon-aware GitHub Action
 
