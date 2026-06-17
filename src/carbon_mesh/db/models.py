@@ -71,8 +71,8 @@ class EmissionsRecordDB(Base):
     chosen_region: Mapped[str] = mapped_column(String(50), nullable=False)
     chosen_grid_zone: Mapped[str] = mapped_column(String(20), nullable=False)
     chosen_carbon_intensity: Mapped[float] = mapped_column(Float, nullable=False)
-    worst_carbon_intensity: Mapped[float] = mapped_column(Float, nullable=False)
-    carbon_saved_gco2_kwh: Mapped[float] = mapped_column(Float, nullable=False)
+    baseline_carbon_intensity: Mapped[float] = mapped_column(Float, nullable=False)
+    intensity_reduction_gco2_kwh: Mapped[float] = mapped_column(Float, nullable=False)
     chosen_renewable_pct: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
 
 
