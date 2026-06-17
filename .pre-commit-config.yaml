@@ -13,6 +13,26 @@ repos:
         args: [--fix]
       - id: ruff-format
 
+  # Backend type check + spec sync -- mirror what CI enforces so a type error or a
+  # stale openapi.json / schema.ts is caught here, never in CI.
+  - repo: local
+    hooks:
+      - id: pyright
+        name: pyright (backend type check)
+        language: system
+        entry: bash -c 'uv run pyright src'
+        files: ^src/.*\.py$
+        pass_filenames: false
+      # Regenerate the OpenAPI spec AND the TS client whenever the backend changes.
+      # If either drifts, the files are rewritten and the commit stops so they get
+      # re-staged -- the same self-healing behaviour as ruff-format.
+      - id: api-sync
+        name: openapi + api client up to date
+        language: system
+        entry: bash -c 'CARBON_LENS_CARBON_SOURCE=mock uv run python scripts/export_openapi.py --out openapi.json && cd web && npm run gen:api'
+        files: ^(src/carbon_mesh/.*\.py|openapi\.json)$
+        pass_filenames: false
+
   # Frontend (web/): typecheck + lint on any staged web source. These call the
   # project scripts, so they track whatever the web toolchain uses.
   - repo: local
