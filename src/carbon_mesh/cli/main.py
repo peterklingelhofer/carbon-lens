@@ -313,13 +313,22 @@ def run(
         console.print(f"Waiting {idx}h before running… (Ctrl-C to cancel)")
         time.sleep(idx * 3600)
 
-    # Record what this run did, for an honest impact tally (`carbonlens impact`).
-    # Counterfactual is running now, so reduction is 0 unless we deferred.
-    reduction = (
-        max(0.0, now_v - chosen_v)
-        if (idx > 0 and now_v is not None and chosen_v is not None)
-        else 0.0
-    )
+    # Measured impact: re-read the ACTUAL intensity now, at execution time, and
+    # compare to the real reading when we started (now_v). That's a verified avoided
+    # intensity, not the forecast we used to pick the window. Fall back to the
+    # forecast if the live read fails.
+    run_v = now_v
+    basis = "now" if idx == 0 else "forecast"
+    if idx > 0:
+        cprov, _, creg = chosen_label.partition("/")
+        try:
+            run_v = client.intensity(cprov, creg)["carbon_intensity_gco2_kwh"]
+            basis = "measured"
+        except Exception:
+            run_v = chosen_v
+    have_shift = idx > 0 and now_v is not None
+    predicted = max(0.0, now_v - chosen_v) if (have_shift and chosen_v is not None) else 0.0
+    measured = max(0.0, now_v - run_v) if (have_shift and run_v is not None) else 0.0
     ledger.append(
         {
             "ts": datetime.now(timezone.utc).isoformat(),
@@ -328,7 +337,10 @@ def run(
             "deferred_hours": idx,
             "now_gco2_kwh": now_v,
             "chosen_gco2_kwh": chosen_v,
-            "reduction_gco2_kwh": round(reduction, 1),
+            "run_gco2_kwh": run_v,
+            "basis": basis,
+            "predicted_reduction_gco2_kwh": round(predicted, 1),
+            "reduction_gco2_kwh": round(measured, 1),
             "energy_kwh": energy_kwh,
         }
     )
@@ -354,9 +366,10 @@ def impact(
     console.print(f"[bold green]Carbon impact — last {days} days[/bold green]")
     console.print(f"  Jobs run:           {summary['jobs']}")
     console.print(f"  Shifted to cleaner: {summary['shifted']}")
+    verified = f" ({summary['measured']} verified at run time)" if summary.get("measured") else ""
     console.print(
         f"  Avg intensity cut:  {summary['avg_reduction_gco2_kwh']} gCO2/kWh "
-        "(deferred jobs, vs running now)"
+        f"(deferred jobs, vs running now){verified}"
     )
     if summary["jobs_with_energy"]:
         console.print(
