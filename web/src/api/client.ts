@@ -18,6 +18,7 @@ import type {
   RouteResponse,
   ScheduleRecommendation,
   ShiftabilityRanking,
+  SitingRecommendation,
   SLACheck,
   SLAMonitorStatus,
   SLAReport,
@@ -129,6 +130,12 @@ export const api = {
 
   shiftability: (days = 14, limit = 12) =>
     request<ShiftabilityRanking>(`/api/v1/carbon/shiftability?days=${days}&limit=${limit}`),
+
+  siting: (providers: string, powerWatts?: number) => {
+    const params = new URLSearchParams({ providers, limit: "12" });
+    if (powerWatts != null) params.set("power_watts", String(powerWatts));
+    return request<SitingRecommendation>(`/api/v1/carbon/siting?${params}`);
+  },
 
   // Accounting
   savings: () => request<CarbonSavingsReport>("/api/v1/accounting/savings"),
