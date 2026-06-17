@@ -17,6 +17,7 @@ import type {
   RouteRequest,
   RouteResponse,
   ScheduleRecommendation,
+  ShiftabilityRanking,
   SLACheck,
   SLAMonitorStatus,
   SLAReport,
@@ -125,6 +126,9 @@ export const api = {
 
   bestTime: (provider: string, region: string) =>
     request<BestTime>(`/api/v1/carbon/best-time/${provider}/${region}`),
+
+  shiftability: (days = 14, limit = 12) =>
+    request<ShiftabilityRanking>(`/api/v1/carbon/shiftability?days=${days}&limit=${limit}`),
 
   // Accounting
   savings: () => request<CarbonSavingsReport>("/api/v1/accounting/savings"),
