@@ -391,6 +391,37 @@ class TestBestTimeCommand:
         result = runner.invoke(app, ["best-time", "bogus"])
         assert result.exit_code == 1
 
+    def test_siting_renders_recommendation(self):
+        payload = {
+            "recommended": {
+                "provider": "gcp",
+                "region": "europe-north1",
+                "grid_zone": "FI",
+                "location": "Finland",
+                "typical_gco2_kwh": 70.0,
+                "basis": "history",
+                "annual_kg": 306.0,
+            },
+            "options": [
+                {
+                    "provider": "gcp",
+                    "region": "europe-north1",
+                    "grid_zone": "FI",
+                    "location": "Finland",
+                    "typical_gco2_kwh": 70.0,
+                    "basis": "history",
+                    "annual_kg": 306.0,
+                }
+            ],
+            "annual_kg_saved_vs_worst": 1200.0,
+            "power_watts": 500.0,
+            "days_analyzed": 30,
+        }
+        with patch("carbon_mesh.cli.client.siting", return_value=payload):
+            result = runner.invoke(app, ["siting", "-p", "gcp", "--power-watts", "500"])
+        assert result.exit_code == 0
+        assert "europe-north1" in result.output
+
     def test_shiftability_renders_ranking(self):
         payload = {
             "days_analyzed": 14,

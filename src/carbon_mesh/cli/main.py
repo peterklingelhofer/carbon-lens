@@ -471,6 +471,61 @@ def best_time(
 
 
 @app.command()
+def siting(
+    providers: str = typer.Option(
+        "aws,gcp,azure", "--providers", "-p", help="Comma-separated providers to consider"
+    ),
+    power_watts: Optional[float] = typer.Option(
+        None, "--power-watts", help="Continuous load (W) for an annual kg estimate"
+    ),
+    days: int = typer.Option(30, "--days", help="History window for the typical mean"),
+    limit: int = typer.Option(15, "--limit", help="How many candidates to show"),
+    json_output: bool = typer.Option(False, "--json", help="Output raw JSON"),
+):
+    """Pick the greenest region to permanently host a 24/7 workload (typical intensity)."""
+    try:
+        data = client.siting(providers, power_watts, days, limit)
+    except Exception as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+
+    if json_output:
+        import json
+
+        console.print_json(json.dumps(data))
+        return
+
+    rec = data["recommended"]
+    console.print()
+    console.print(
+        f"[bold green]Greenest region to host[/bold green]: "
+        f"{rec['provider']}/{rec['region']} ({rec['location']})"
+    )
+    console.print(f"  Typical: {rec['typical_gco2_kwh']:.0f} gCO2/kWh ({rec['basis']})")
+    if data.get("annual_kg_saved_vs_worst") is not None:
+        console.print(
+            f"  vs worst candidate: ~{data['annual_kg_saved_vs_worst']:.0f} kg CO2/yr saved "
+            "at this load"
+        )
+    table = Table(title=f"Candidates by typical intensity ({data['days_analyzed']}d)")
+    table.add_column("#", style="dim")
+    table.add_column("Region")
+    table.add_column("Location")
+    table.add_column("Typical gCO2/kWh", justify="right")
+    table.add_column("kg/yr", justify="right")
+    for i, o in enumerate(data["options"], start=1):
+        table.add_row(
+            str(i),
+            f"{o['provider']}/{o['region']}",
+            o["location"],
+            f"{o['typical_gco2_kwh']:.0f}",
+            f"{o['annual_kg']:.0f}" if o.get("annual_kg") is not None else "-",
+        )
+    console.print(table)
+    console.print()
+
+
+@app.command()
 def shiftability(
     days: int = typer.Option(14, "--days", help="History window to analyze"),
     limit: int = typer.Option(20, "--limit", help="How many zones to show"),
