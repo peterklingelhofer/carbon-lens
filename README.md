@@ -250,6 +250,22 @@ Run flexible workloads when the grid is cleanest, with no app changes:
 
 Both support **on-prem grid zones** too: use `carbonlens.dev/region: zone/FR` (the `/carbon/signal/zone/{grid_zone}` and `/carbon/best-time/zone/{grid_zone}` endpoints back the decision for data centers / colo that sit on a grid we cover but aren't a cloud region).
 
+### Terraform — pick the greenest region at deploy time
+
+Region choice is the highest-leverage carbon decision (a region can be many times cleaner, permanently). A tiny module sets a provider's `region` from `/carbon/siting` at `apply` time:
+
+```hcl
+module "greenest" {
+  source          = "github.com/peterklingelhofer/carbonlens//deploy/terraform/greenest-region"
+  cloud_providers = "aws"
+}
+provider "aws" {
+  region = module.greenest.region # deploy to the greenest AWS region
+}
+```
+
+See [`deploy/terraform/greenest-region`](deploy/terraform/greenest-region/README.md). Ranks by *typical* (history-mean) intensity — the honest basis for an always-on deployment.
+
 ### Status badge
 
 Embed a live, color-coded carbon-intensity badge (green → red) in any README:
