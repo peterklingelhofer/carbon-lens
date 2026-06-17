@@ -146,7 +146,10 @@ Interactive docs at `/docs` (Swagger) or `/redoc` (ReDoc) when the server is run
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/v1/carbon/{provider}/{region}` | GET | Real-time carbon intensity for a cloud region |
-| `/api/v1/carbon/forecast/{provider}/{region}` | GET | Hour-by-hour intensity forecast (real EU day-ahead, heuristic elsewhere) |
+| `/api/v1/carbon/forecast/{provider}/{region}` | GET | Hour-by-hour intensity forecast (real EU day-ahead, heuristic elsewhere) + projected clean-surplus hours |
+| `/api/v1/carbon/signal/{provider}/{region}` | GET | One-call run-now/wait decision with marginal read, an honest caveat, and clean-surplus flags |
+| `/api/v1/carbon/best-time/{provider}/{region}` | GET | Greenest hour-of-day to schedule a recurring job, with a cron line and the savings of shifting |
+| `/api/v1/carbon/weather/{provider}/{region}` | GET | Wind speed + solar irradiance driving the zone's renewables (Open-Meteo) |
 | `/api/v1/carbon/history/{provider}/{region}` | GET | Past intensity time-series from the rolling published archive |
 | `/api/v1/carbon/batch` | POST | Batch query multiple regions in one call |
 | `/api/v1/carbon/zones` | GET | List covered grid zones (for on-prem / non-cloud lookups) |
@@ -183,7 +186,7 @@ Interactive docs at `/docs` (Swagger) or `/redoc` (ReDoc) when the server is run
 | `/ws/carbon` | WS | Real-time carbon intensity WebSocket stream |
 | `/docs` | GET | Swagger UI |
 
-`/metrics` exposes `carbon_intensity_gco2_kwh`, `carbon_renewable_percentage`, `carbon_marginal_intensity_gco2_kwh`, and `carbon_grid_load_mw` (labelled by `provider`/`region`/`grid_zone`), refreshed per scrape from the cached snapshot — so you can graph grid carbon next to your CPU and latency. A ready-to-import Grafana dashboard is at [`grafana/carbonlens-dashboard.json`](grafana/carbonlens-dashboard.json).
+`/metrics` exposes `carbon_intensity_gco2_kwh`, `carbon_renewable_percentage`, `carbon_marginal_intensity_gco2_kwh`, `carbon_grid_load_mw`, and `carbon_clean_surplus` (labelled by `provider`/`region`/`grid_zone`), refreshed per scrape from the cached snapshot — so you can graph grid carbon next to your CPU and latency. `carbon_clean_surplus` is `1` when a zone looks like clean oversupply (renewables abundant, near-zero marginal); **alert on it in your existing Alertmanager to kick off carbon-aware batch scaling** — no new infrastructure. A ready-to-import Grafana dashboard is at [`grafana/carbonlens-dashboard.json`](grafana/carbonlens-dashboard.json).
 
 ### CLI
 
@@ -195,6 +198,9 @@ carbonlens run --region aws/us-east-1 --max-intensity 150 -- python train.py
 # Co-optimize WHERE and WHEN across movable regions (sets $CARBONLENS_REGION):
 carbonlens run --region aws/us-west-2,gcp/europe-west1 --energy-kwh 8 -- ./train.sh
 carbonlens impact --days 30              # honest tally of what your runs avoided
+# Pick a permanent cron schedule at the greenest hour (compare places too):
+carbonlens best-time aws/us-east-1 --energy-kwh 5
+carbonlens best-time aws/us-west-2,gcp/europe-west1
 ```
 
 `run` reads the forecast and picks the highest-value moment to execute: a **clean-surplus** window (renewables abundant, near-zero marginal) if one is coming, else the first hour under your `--max-intensity`, else the cleanest hour in `--max-wait-hours`. It won't idle for a trivial gain (waiting has its own cost), and with several comma-separated regions it co-optimizes place *and* time. Pass `--energy-kwh` and `carbonlens impact` reports honest avoided emissions (real grams only where energy is given; an average rate otherwise).
