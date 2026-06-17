@@ -482,6 +482,8 @@ def test_metrics_exposes_carbon_gauges(client: TestClient):
     # Carbon gauges refreshed on scrape, alongside the default HTTP metrics.
     assert "carbon_intensity_gco2_kwh" in body
     assert "carbon_renewable_percentage" in body
+    # Clean-surplus gauge -- ops can alert on it to trigger carbon-aware batch scaling.
+    assert "carbon_clean_surplus" in body
 
 
 def test_sla_crud_and_check_flow(client: TestClient):

@@ -13,6 +13,7 @@ import logging
 from prometheus_client import Gauge
 
 from carbon_mesh.config import settings
+from carbon_mesh.engine.surplus import is_clean_surplus
 
 logger = logging.getLogger(__name__)
 
@@ -36,6 +37,13 @@ MARGINAL_INTENSITY = Gauge(
 GRID_LOAD_MW = Gauge(
     "carbon_grid_load_mw",
     "Total grid load for the balancing authority (MW)",
+    _LABELS,
+)
+CLEAN_SURPLUS = Gauge(
+    "carbon_clean_surplus",
+    "1 when the zone looks like clean oversupply now (renewables abundant, near-zero "
+    "marginal) -- the highest-value time to run flexible load; else 0. Heuristic. Alert on "
+    "this to trigger carbon-aware batch scaling with your existing Prometheus/Alertmanager.",
     _LABELS,
 )
 
@@ -69,5 +77,11 @@ async def refresh_carbon_metrics() -> None:
                 MARGINAL_INTENSITY.labels(**labels).set(ci.marginal_intensity_gco2_kwh)
             if ci.grid_load_mw is not None:
                 GRID_LOAD_MW.labels(**labels).set(ci.grid_load_mw)
+            surplus = is_clean_surplus(
+                ci.renewable_percentage,
+                ci.carbon_intensity_gco2_kwh,
+                ci.marginal_intensity_gco2_kwh,
+            )
+            CLEAN_SURPLUS.labels(**labels).set(1 if surplus else 0)
     except Exception as e:
         logger.warning("Carbon metrics refresh failed (non-fatal): %s", e)
