@@ -1994,6 +1994,12 @@
             "title": "Carbon Intensity Gco2 Kwh",
             "type": "number"
           },
+          "clean_surplus": {
+            "default": false,
+            "description": "True when this slot looks like clean oversupply -- renewables dominant, very low carbon -- so it's the highest-value time to run (near-zero marginal). Given a bounded ranking edge. A heuristic, not measured curtailment.",
+            "title": "Clean Surplus",
+            "type": "boolean"
+          },
           "end": {
             "format": "date-time",
             "title": "End",

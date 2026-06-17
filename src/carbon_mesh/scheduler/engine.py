@@ -17,12 +17,19 @@ from carbon_mesh.carbon_sources.base import CarbonDataSource
 from carbon_mesh.carbon_sources.entsoe_forecast import ENTSOEForecastSource
 from carbon_mesh.carbon_sources.open_meteo import OpenMeteoForecastSource
 from carbon_mesh.grid.mapper import GridMapper
+from carbon_mesh.engine.surplus import is_clean_surplus
 from carbon_mesh.models.carbon import CarbonIntensity
 
 # Fetch real day-ahead forecasts only for the cleanest-right-now EU zones (the
 # recommendation almost always comes from these). Bounds the per-request API
 # fan-out; other zones use the local-time heuristic.
 _FORECAST_TOP_K = 4
+
+# A clean-surplus slot ranks as if it were this much cleaner: extra load then has
+# near-zero marginal emissions (it soaks up would-be-curtailed renewables), which
+# is the right thing to optimise for. Bounded so a substantially cleaner non-surplus
+# slot still wins -- the edge breaks ties and close calls, it doesn't override big gaps.
+_SURPLUS_DISCOUNT = 0.4
 
 
 class ScheduleStrategy(str, Enum):
@@ -44,6 +51,12 @@ class TimeSlot(BaseModel):
     carbon_intensity_gco2_kwh: float
     renewable_percentage: float
     score: float = Field(description="Lower is better for carbon, higher for renewable")
+    clean_surplus: bool = Field(
+        default=False,
+        description="True when this slot looks like clean oversupply -- renewables dominant, "
+        "very low carbon -- so it's the highest-value time to run (near-zero marginal). "
+        "Given a bounded ranking edge. A heuristic, not measured curtailment.",
+    )
 
 
 class ScheduleRecommendation(BaseModel):
@@ -187,7 +200,12 @@ class SchedulingEngine:
                         current, hour_offset, zone_lng.get(zone, 0.0)
                     )
 
-                score = self._score_slot(projected, strategy)
+                surplus = is_clean_surplus(
+                    projected.renewable_percentage,
+                    projected.carbon_intensity_gco2_kwh,
+                    projected.marginal_intensity_gco2_kwh,
+                )
+                score = self._score_slot(projected, strategy, surplus)
 
                 slots.append(
                     TimeSlot(
@@ -199,6 +217,7 @@ class SchedulingEngine:
                         carbon_intensity_gco2_kwh=projected.carbon_intensity_gco2_kwh,
                         renewable_percentage=projected.renewable_percentage,
                         score=score,
+                        clean_surplus=surplus,
                     )
                 )
 
@@ -409,17 +428,27 @@ class SchedulingEngine:
         return 0.2  # Overnight low
 
     @staticmethod
-    def _score_slot(intensity: CarbonIntensity, strategy: ScheduleStrategy) -> float:
-        """Score a time slot. Lower = better for carbon strategies."""
+    def _score_slot(
+        intensity: CarbonIntensity, strategy: ScheduleStrategy, surplus: bool = False
+    ) -> float:
+        """Score a time slot. Lower = better for carbon strategies, higher for renewable.
+
+        Clean-surplus slots get a bounded edge (see _SURPLUS_DISCOUNT): they're the
+        highest-value time to add load, so they should win ties and close calls.
+        """
         if strategy == ScheduleStrategy.LOWEST_CARBON:
-            return intensity.carbon_intensity_gco2_kwh
+            score = intensity.carbon_intensity_gco2_kwh
+            return score * (1 - _SURPLUS_DISCOUNT) if surplus else score
         elif strategy == ScheduleStrategy.HIGHEST_RENEWABLE:
-            return intensity.renewable_percentage  # Higher = better, sorted descending
+            # Higher = better, sorted descending; nudge surplus slots above equals.
+            score = intensity.renewable_percentage
+            return score + 5 if surplus else score
         else:
             # Balanced: weighted combination
             carbon_score = intensity.carbon_intensity_gco2_kwh / 500  # Normalize to 0-1
             renewable_score = 1 - (intensity.renewable_percentage / 100)  # Lower = more renewable
-            return carbon_score * 0.6 + renewable_score * 0.4
+            score = carbon_score * 0.6 + renewable_score * 0.4
+            return score * (1 - _SURPLUS_DISCOUNT) if surplus else score
 
     def _resolve_regions(
         self,

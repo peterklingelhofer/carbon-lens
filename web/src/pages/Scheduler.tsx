@@ -4,7 +4,7 @@ import { api } from "../api/client";
 import type { TimeSlot } from "../api/types";
 import { CleanWindowHeatmap } from "../components/CleanWindowHeatmap";
 import { InfoTip } from "../components/InfoTip";
-import { RENEWABLE_TIP } from "../copy";
+import { RENEWABLE_TIP, SURPLUS_TIP } from "../copy";
 import { card, section as sectionFn } from "../styles";
 
 // Carbon-intensity colour ramp (green clean -> red dirty), matching the globe.
@@ -479,6 +479,24 @@ export function Scheduler() {
                 }}
               >
                 {recommendation.carbon_saved_vs_now_pct}% carbon saved
+              </span>
+            )}
+            {recommended.clean_surplus && (
+              <span
+                style={{
+                  marginLeft: 8,
+                  fontSize: "0.8rem",
+                  fontWeight: 600,
+                  color: "var(--green-text)",
+                  background: "var(--green-100)",
+                  padding: "2px 8px",
+                  borderRadius: 4,
+                  display: "inline-flex",
+                  alignItems: "center",
+                }}
+              >
+                ⚡ Clean surplus
+                <InfoTip label="clean surplus" text={SURPLUS_TIP} />
               </span>
             )}
           </h2>
