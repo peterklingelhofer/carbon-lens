@@ -78,6 +78,9 @@ export interface CarbonForecast {
   method: string;
   // Hour-by-hour projection; the first point is the current reading.
   points: CarbonIntensity[];
+  // Hour offsets (0 = now) projected to be clean surplus - the highest-value
+  // windows to shift flexible load into.
+  clean_surplus_hours: number[];
 }
 
 export interface GridZoneSummary {

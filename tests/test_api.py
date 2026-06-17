@@ -301,6 +301,24 @@ def test_clean_surplus_detection():
     assert is_clean_surplus(90, 150, 20) is False
 
 
+def test_surplus_offsets_over_forecast():
+    from types import SimpleNamespace
+
+    from carbon_mesh.engine.surplus import surplus_offsets
+
+    def pt(renewable, intensity, marginal=None):
+        return SimpleNamespace(
+            renewable_percentage=renewable,
+            carbon_intensity_gco2_kwh=intensity,
+            marginal_intensity_gco2_kwh=marginal,
+        )
+
+    # Dirty now, surplus at +2h and +3h (projected points carry no marginal).
+    points = [pt(40, 400, 450), pt(60, 200), pt(95, 30), pt(92, 45)]
+    assert surplus_offsets(points) == [2, 3]
+    assert surplus_offsets([pt(50, 300), pt(55, 250)]) == []
+
+
 def test_carbon_anomaly_insufficient_without_history(client: TestClient):
     # With an empty archive -> honest "insufficient_history". Override the store so
     # the test is hermetic (the real history_url has live data CI would otherwise

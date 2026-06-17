@@ -204,6 +204,14 @@
       },
       "CarbonForecast": {
         "properties": {
+          "clean_surplus_hours": {
+            "description": "Hour offsets (0 = now) projected to be clean surplus -- renewables dominant and very low carbon, so extra load likely soaks up power that would otherwise be curtailed. The highest-value windows to shift flexible load into. A heuristic from the projected mix, not measured curtailment.",
+            "items": {
+              "type": "integer"
+            },
+            "title": "Clean Surplus Hours",
+            "type": "array"
+          },
           "generated_at": {
             "format": "date-time",
             "title": "Generated At",
@@ -503,6 +511,18 @@
             "description": "green | yellow | red, by absolute intensity thresholds",
             "title": "State",
             "type": "string"
+          },
+          "surplus_window_in_hours": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Hours until the soonest upcoming clean-surplus window in the forecast (null if none ahead, or if now is already surplus). The best time to shift a flexible job to, even when now is merely 'cleaner'.",
+            "title": "Surplus Window In Hours"
           }
         },
         "required": [
