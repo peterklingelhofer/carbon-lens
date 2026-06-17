@@ -104,6 +104,21 @@ export interface CarbonHistory {
   points: CarbonHistoryPoint[];
 }
 
+export interface BestTime {
+  provider: string;
+  region: string;
+  grid_zone: string;
+  // history | forecast | insufficient
+  basis: string;
+  days_analyzed: number;
+  cleanest_hour_utc: number | null;
+  dirtiest_hour_utc: number | null;
+  shift_savings_pct: number | null;
+  annual_kg_saved: number | null;
+  suggested_cron: string | null;
+  ranked_hours: { hour_utc: number; mean_gco2_kwh: number; samples: number }[];
+}
+
 export interface WeatherConditions {
   grid_zone: string;
   provider: string;

@@ -7,7 +7,12 @@ import { api } from "../api/client";
 import { qualityFromSource, snapshotEnabled, useSnapshot } from "../api/snapshot";
 import { InfoTip } from "../components/InfoTip";
 import { PowerMix } from "../components/PowerMix";
-import { RegionForecast, RegionHistory, RegionWeather } from "../components/RegionDetail";
+import {
+  RegionBestTime,
+  RegionForecast,
+  RegionHistory,
+  RegionWeather,
+} from "../components/RegionDetail";
 import { DATA_QUALITY_TIP_RICH, MARGINAL_TIP, SURPLUS_TIP } from "../copy";
 import { niceKm, timeAgo } from "../lib/format";
 import { intensityColor, intensityRGB, renewableRGB } from "../lib/intensity";
@@ -1386,6 +1391,7 @@ export default function CarbonGlobe() {
             current={selected.intensity}
           />
           <RegionForecast provider={selected.provider} region={selected.region} />
+          <RegionBestTime provider={selected.provider} region={selected.region} />
           <RegionWeather provider={selected.provider} region={selected.region} />
           <div
             style={{
