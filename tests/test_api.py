@@ -509,6 +509,30 @@ def test_zone_best_time_unknown_zone(client: TestClient):
     assert client.get("/api/v1/carbon/best-time/zone/NOPE").status_code == 404
 
 
+def test_mean_intensity():
+    from carbon_mesh.engine.recurring import mean_intensity
+
+    assert mean_intensity([{"c": 100.0}, {"c": 200.0}]) == 150.0
+    assert mean_intensity([]) is None
+
+
+def test_siting_recommends_greenest_region(client: TestClient):
+    # Pick the region with the lowest typical (history-mean) intensity.
+    resp = client.get("/api/v1/carbon/siting?providers=aws&power_watts=500")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["options"], "expected at least one candidate"
+    typicals = [o["typical_gco2_kwh"] for o in body["options"]]
+    assert typicals == sorted(typicals)  # greenest first
+    assert body["recommended"]["typical_gco2_kwh"] == typicals[0]
+    # Annual kg is computed for the given continuous load.
+    assert body["recommended"]["annual_kg"] is not None
+
+
+def test_siting_no_candidates(client: TestClient):
+    assert client.get("/api/v1/carbon/siting?providers=nope").status_code == 400
+
+
 def test_shiftability_pct():
     from carbon_mesh.engine.recurring import shiftability_pct
 
