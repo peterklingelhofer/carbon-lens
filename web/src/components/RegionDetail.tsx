@@ -196,6 +196,16 @@ export function RegionForecast({ provider, region }: { provider: string; region:
       <div style={{ fontSize: "0.65rem", color: "#6b7280", marginTop: 2 }}>
         {trend} · {methodLabel} · shaded = rough uncertainty
       </div>
+      {(() => {
+        // Soonest upcoming clean-surplus hour (renewables abundant): the
+        // highest-value window to shift a flexible job into.
+        const soonest = data.clean_surplus_hours?.find((h) => h >= 1);
+        return soonest != null ? (
+          <div style={{ fontSize: "0.66rem", color: "#4ade80", marginTop: 3 }}>
+            ⚡ Clean-surplus window in ~{soonest}h · highest-value time to run
+          </div>
+        ) : null;
+      })()}
     </div>
   );
 }

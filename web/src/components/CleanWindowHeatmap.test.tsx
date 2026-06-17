@@ -32,6 +32,7 @@ function forecast(hours: number): CarbonForecast {
     region: "us-east-1",
     generated_at: "2026-06-15T00:00:00Z",
     method: "time_of_day_model",
+    clean_surplus_hours: [],
     points: Array.from({ length: hours }, (_, i) => ({
       grid_zone: "US-MIDA-PJM",
       carbon_intensity_gco2_kwh: 100 + (i % 24) * 5,

@@ -46,6 +46,13 @@ class CarbonForecast(BaseModel):
         description="Hour-by-hour projection over the horizon; the first point is "
         "the current reading.",
     )
+    clean_surplus_hours: list[int] = Field(
+        default_factory=list,
+        description="Hour offsets (0 = now) projected to be clean surplus -- renewables "
+        "dominant and very low carbon, so extra load likely soaks up power that would "
+        "otherwise be curtailed. The highest-value windows to shift flexible load into. "
+        "A heuristic from the projected mix, not measured curtailment.",
+    )
 
 
 class CarbonSignal(BaseModel):
@@ -83,6 +90,12 @@ class CarbonSignal(BaseModel):
         "dominant, very low carbon, clean margin -- so extra load likely soaks up power "
         "that would otherwise be curtailed. The highest-value moment to run flexible jobs. "
         "A heuristic, not measured curtailment.",
+    )
+    surplus_window_in_hours: int | None = Field(
+        default=None,
+        description="Hours until the soonest upcoming clean-surplus window in the forecast "
+        "(null if none ahead, or if now is already surplus). The best time to shift a "
+        "flexible job to, even when now is merely 'cleaner'.",
     )
 
 

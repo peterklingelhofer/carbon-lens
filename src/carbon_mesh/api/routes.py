@@ -29,7 +29,7 @@ from carbon_mesh.engine.router import RoutingEngine
 from carbon_mesh.grid.mapper import GridMapper
 from carbon_mesh.models.accounting import CarbonSavingsReport
 from carbon_mesh.engine.anomaly import compute_anomaly
-from carbon_mesh.engine.surplus import is_clean_surplus
+from carbon_mesh.engine.surplus import is_clean_surplus, surplus_offsets
 from carbon_mesh.models.carbon import (
     CarbonAnomaly,
     CarbonForecast,
@@ -189,6 +189,7 @@ async def get_carbon_forecast(
         generated_at=datetime.now(timezone.utc),
         method=method,
         points=points,
+        clean_surplus_hours=surplus_offsets(points),
     )
 
 
@@ -260,11 +261,24 @@ async def get_carbon_signal(
     marginal = current.marginal_intensity_gco2_kwh
     surplus = is_clean_surplus(current.renewable_percentage, now_v, marginal)
 
+    # Soonest upcoming clean-surplus window (the highest-value time to shift into).
+    surplus_window = next((h for h in surplus_offsets(points) if h >= 1), None)
+
     if surplus:
         advice, window_h, window_v = "run_now", None, None
         note = (
             "Renewables are abundant right now (likely surplus): extra load is largely served "
             "by clean power that might otherwise be curtailed. Ideal time to run flexible jobs."
+        )
+    elif surplus_window is not None:
+        advice, window_h, window_v = (
+            "wait_for_cleaner",
+            surplus_window,
+            round(intensities[surplus_window]),
+        )
+        note = (
+            f"A clean-surplus window (renewables abundant) is expected in ~{surplus_window}h -- "
+            f"the highest-value time to run a flexible job."
         )
     elif state == "green" or not notably_cleaner:
         advice, window_h, window_v = "run_now", None, None
@@ -283,6 +297,7 @@ async def get_carbon_signal(
         marginal_intensity_gco2_kwh=marginal,
         marginal_note=note,
         clean_surplus=surplus,
+        surplus_window_in_hours=surplus_window,
         cleaner_window_in_hours=window_h,
         cleaner_window_intensity_gco2_kwh=window_v,
     )
