@@ -102,10 +102,13 @@ def forecast(provider: str, region: str, hours: int = 24) -> dict:
     return resp.json()
 
 
-def best_time(provider: str, region: str, days: int = 14) -> dict:
+def best_time(provider: str, region: str, days: int = 14, energy_kwh: float | None = None) -> dict:
+    params: dict = {"days": days}
+    if energy_kwh is not None:
+        params["energy_kwh"] = energy_kwh
     resp = httpx.get(
         f"{get_api_url()}/api/v1/carbon/best-time/{provider}/{region}",
-        params={"days": days},
+        params=params,
         headers=_headers(),
         timeout=30,
     )
