@@ -457,6 +457,46 @@ def best_time(
     console.print()
 
 
+@app.command()
+def shiftability(
+    days: int = typer.Option(14, "--days", help="History window to analyze"),
+    limit: int = typer.Option(20, "--limit", help="How many zones to show"),
+    json_output: bool = typer.Option(False, "--json", help="Output raw JSON"),
+):
+    """Rank grid zones by how much carbon-aware scheduling helps (intra-day swing)."""
+    try:
+        data = client.shiftability(days, limit)
+    except Exception as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+
+    if json_output:
+        import json
+
+        console.print_json(json.dumps(data))
+        return
+
+    zones = data.get("zones", [])
+    if not zones:
+        console.print("Not enough history yet to rank zones.")
+        return
+    table = Table(title=f"Where carbon-aware scheduling helps most ({data['days_analyzed']}d)")
+    table.add_column("#", style="dim")
+    table.add_column("Grid Zone")
+    table.add_column("Location")
+    table.add_column("Shift savings", justify="right", style="green")
+    table.add_column("Best→worst hr", justify="right")
+    for i, z in enumerate(zones, start=1):
+        table.add_row(
+            str(i),
+            z["grid_zone"],
+            z["location"],
+            f"{z['shift_savings_pct']:.0f}%",
+            f"{z['cleanest_hour_utc']:02d}→{z['dirtiest_hour_utc']:02d} UTC",
+        )
+    console.print(table)
+
+
 @config_app.command("set")
 def config_set(
     key: str = typer.Argument(help="Config key: api-url or api-key"),

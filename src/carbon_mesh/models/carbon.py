@@ -174,6 +174,27 @@ class BestTime(BaseModel):
     )
 
 
+class ZoneShiftability(BaseModel):
+    grid_zone: str
+    location: str
+    shift_savings_pct: float = Field(
+        description="How much a daily job would save moving from the worst to the best hour (%)"
+    )
+    cleanest_hour_utc: int
+    dirtiest_hour_utc: int
+    samples: int
+
+
+class ShiftabilityRanking(BaseModel):
+    """Which grids reward carbon-aware scheduling, ranked. High shiftability = a big
+    intra-day swing, so picking the right hour matters; near zero = it barely helps."""
+
+    days_analyzed: int
+    zones: list[ZoneShiftability] = Field(
+        default_factory=list, description="Most shiftable first; zones without enough data omitted"
+    )
+
+
 class WeatherConditions(BaseModel):
     """Current weather at a region's coordinates -- the physical drivers behind its
     renewable output. Wind turns turbines; sunlight drives solar. A single-point

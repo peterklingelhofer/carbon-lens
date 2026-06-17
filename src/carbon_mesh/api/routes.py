@@ -29,7 +29,7 @@ from carbon_mesh.engine.router import RoutingEngine
 from carbon_mesh.grid.mapper import GridMapper
 from carbon_mesh.models.accounting import CarbonSavingsReport
 from carbon_mesh.engine.anomaly import compute_anomaly
-from carbon_mesh.engine.recurring import rank_hours_utc
+from carbon_mesh.engine.recurring import rank_hours_utc, shiftability_pct
 from carbon_mesh.engine.surplus import is_clean_surplus, surplus_offsets
 from carbon_mesh.models.carbon import (
     BestTime,
@@ -40,7 +40,9 @@ from carbon_mesh.models.carbon import (
     CarbonIntensity,
     CarbonSignal,
     HourRank,
+    ShiftabilityRanking,
     WeatherConditions,
+    ZoneShiftability,
 )
 from carbon_mesh.models.region import CloudRegion
 from carbon_mesh.models.routing import RouteRequest, RouteResponse
@@ -552,6 +554,44 @@ async def get_best_time(
     return await _build_best_time(
         provider, region, zone, longitude, f"{provider}/{region}", days, energy_kwh, store, engine
     )
+
+
+@router.get("/carbon/shiftability", response_model=ShiftabilityRanking, tags=["Carbon Data"])
+async def get_shiftability(
+    days: int = Query(14, ge=1, le=90, description="History window to analyze (days)."),
+    limit: int = Query(25, ge=1, le=200, description="How many zones to return."),
+    mapper: GridMapper = Depends(get_grid_mapper),
+    store: HistoryStore = Depends(get_history_store),
+) -> ShiftabilityRanking:
+    """Which grids reward carbon-aware scheduling, ranked by intra-day swing.
+
+    For each covered grid zone, how much a daily job would save by running at its
+    cleanest hour vs its dirtiest, from the published history. High = shifting pays
+    off (variable wind/solar grids); near zero = it barely helps (flat grids). Tells
+    you where to spend the effort. Zones without enough history are omitted.
+    """
+    since = datetime.now(timezone.utc) - timedelta(days=days)
+    rows: list[ZoneShiftability] = []
+    for rep in mapper.grid_zones():
+        raw = await store.series_for(f"{rep.provider}/{rep.region}", since)
+        ranked = rank_hours_utc(raw)
+        if sum(r["samples"] for r in ranked) < 8:
+            continue
+        pct = shiftability_pct(ranked)
+        if pct is None:
+            continue
+        rows.append(
+            ZoneShiftability(
+                grid_zone=rep.grid_zone,
+                location=rep.location,
+                shift_savings_pct=pct,
+                cleanest_hour_utc=ranked[0]["hour"],
+                dirtiest_hour_utc=ranked[-1]["hour"],
+                samples=sum(r["samples"] for r in ranked),
+            )
+        )
+    rows.sort(key=lambda z: z.shift_savings_pct, reverse=True)
+    return ShiftabilityRanking(days_analyzed=days, zones=rows[:limit])
 
 
 @router.get("/carbon/zones", tags=["Carbon Data"])
