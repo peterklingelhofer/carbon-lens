@@ -36,3 +36,19 @@ def rank_hours_utc(points: list[dict]) -> list[dict]:
     ]
     ranked.sort(key=lambda r: (r["mean_gco2_kwh"], r["hour"]))
     return ranked
+
+
+def shiftability_pct(ranked: list[dict]) -> float | None:
+    """How much a daily job would save by moving from the worst to the best hour (%).
+
+    A grid's 'shiftability': high where intensity swings a lot through the day (so
+    carbon-aware scheduling pays off), near zero on flat grids (always-clean hydro/
+    nuclear, or always-dirty) where it barely helps. ``ranked`` is rank_hours_utc output.
+    """
+    if not ranked:
+        return None
+    best = ranked[0]["mean_gco2_kwh"]
+    worst = ranked[-1]["mean_gco2_kwh"]
+    if worst <= 0:
+        return None
+    return round((worst - best) / worst * 100, 1)
