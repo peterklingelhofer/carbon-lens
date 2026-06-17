@@ -58,6 +58,9 @@ line-length = 100
 
 [tool.pyright]
 include = ["src"]
+# Optional framework integrations import third-party packages (e.g. Airflow) that
+# aren't project dependencies; skip type-checking them so the gate stays clean.
+exclude = ["src/carbon_mesh/integrations"]
 pythonVersion = "3.12"
 
 [tool.pytest.ini_options]
