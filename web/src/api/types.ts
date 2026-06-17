@@ -120,13 +120,18 @@ export interface EmissionsRecord {
   chosen_region: string;
   chosen_grid_zone: string;
   chosen_carbon_intensity: number;
-  worst_carbon_intensity: number;
-  carbon_saved_gco2_kwh: number;
+  // Mean intensity of the candidates considered (a carbon-blind pick), and the
+  // signed reduction the chosen region achieved against it.
+  baseline_carbon_intensity: number;
+  intensity_reduction_gco2_kwh: number;
 }
 
 export interface CarbonSavingsReport {
   total_requests: number;
-  total_carbon_saved_gco2_kwh: number;
+  // Average per-recommendation intensity reduction vs the baseline. A rate
+  // (gCO₂/kWh), not an additive total.
+  avg_intensity_reduction_gco2_kwh: number;
+  baseline: string;
   avg_renewable_percentage: number;
   records: EmissionsRecord[];
 }

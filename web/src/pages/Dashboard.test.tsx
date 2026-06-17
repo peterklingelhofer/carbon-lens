@@ -57,7 +57,8 @@ vi.mock("../api/client", () => ({
   api: {
     savings: vi.fn().mockResolvedValue({
       total_requests: 0,
-      total_carbon_saved_gco2_kwh: 0,
+      avg_intensity_reduction_gco2_kwh: 0,
+      baseline: "mean carbon intensity of the candidate regions considered",
       avg_renewable_percentage: 0,
       records: [],
     }),
