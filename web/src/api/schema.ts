@@ -162,6 +162,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/carbon/shiftability": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Shiftability
+         * @description Which grids reward carbon-aware scheduling, ranked by intra-day swing.
+         *
+         *     For each covered grid zone, how much a daily job would save by running at its
+         *     cleanest hour vs its dirtiest, from the published history. High = shifting pays
+         *     off (variable wind/solar grids); near zero = it barely helps (flat grids). Tells
+         *     you where to spend the effort. Zones without enough history are omitted.
+         */
+        get: operations["get_shiftability_api_v1_carbon_shiftability_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/carbon/signal/zone/{grid_zone}": {
         parameters: {
             query?: never;
@@ -2120,6 +2145,20 @@ export interface components {
          */
         ScheduleStrategy: "lowest_carbon" | "highest_renewable" | "balanced";
         /**
+         * ShiftabilityRanking
+         * @description Which grids reward carbon-aware scheduling, ranked. High shiftability = a big
+         *     intra-day swing, so picking the right hour matters; near zero = it barely helps.
+         */
+        ShiftabilityRanking: {
+            /** Days Analyzed */
+            days_analyzed: number;
+            /**
+             * Zones
+             * @description Most shiftable first; zones without enough data omitted
+             */
+            zones?: components["schemas"]["ZoneShiftability"][];
+        };
+        /**
          * TimeSlot
          * @description A candidate time window for scheduling.
          */
@@ -2254,6 +2293,24 @@ export interface components {
              * @description Surface wind speed at 10 m, in km/h (drives wind generation)
              */
             wind_speed_kmh: number;
+        };
+        /** ZoneShiftability */
+        ZoneShiftability: {
+            /** Cleanest Hour Utc */
+            cleanest_hour_utc: number;
+            /** Dirtiest Hour Utc */
+            dirtiest_hour_utc: number;
+            /** Grid Zone */
+            grid_zone: string;
+            /** Location */
+            location: string;
+            /** Samples */
+            samples: number;
+            /**
+             * Shift Savings Pct
+             * @description How much a daily job would save moving from the worst to the best hour (%)
+             */
+            shift_savings_pct: number;
         };
         /** GenerateReportRequest */
         carbon_mesh__compliance__routes__GenerateReportRequest: {
@@ -2509,6 +2566,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CarbonHistory"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_shiftability_api_v1_carbon_shiftability_get: {
+        parameters: {
+            query?: {
+                /** @description History window to analyze (days). */
+                days?: number;
+                /** @description How many zones to return. */
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ShiftabilityRanking"];
                 };
             };
             /** @description Validation Error */

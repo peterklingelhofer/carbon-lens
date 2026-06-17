@@ -2115,6 +2115,28 @@
         "title": "ScheduleStrategy",
         "type": "string"
       },
+      "ShiftabilityRanking": {
+        "description": "Which grids reward carbon-aware scheduling, ranked. High shiftability = a big\nintra-day swing, so picking the right hour matters; near zero = it barely helps.",
+        "properties": {
+          "days_analyzed": {
+            "title": "Days Analyzed",
+            "type": "integer"
+          },
+          "zones": {
+            "description": "Most shiftable first; zones without enough data omitted",
+            "items": {
+              "$ref": "#/components/schemas/ZoneShiftability"
+            },
+            "title": "Zones",
+            "type": "array"
+          }
+        },
+        "required": [
+          "days_analyzed"
+        ],
+        "title": "ShiftabilityRanking",
+        "type": "object"
+      },
       "TimeSlot": {
         "description": "A candidate time window for scheduling.",
         "properties": {
@@ -2454,6 +2476,45 @@
           "observed_at"
         ],
         "title": "WeatherConditions",
+        "type": "object"
+      },
+      "ZoneShiftability": {
+        "properties": {
+          "cleanest_hour_utc": {
+            "title": "Cleanest Hour Utc",
+            "type": "integer"
+          },
+          "dirtiest_hour_utc": {
+            "title": "Dirtiest Hour Utc",
+            "type": "integer"
+          },
+          "grid_zone": {
+            "title": "Grid Zone",
+            "type": "string"
+          },
+          "location": {
+            "title": "Location",
+            "type": "string"
+          },
+          "samples": {
+            "title": "Samples",
+            "type": "integer"
+          },
+          "shift_savings_pct": {
+            "description": "How much a daily job would save moving from the worst to the best hour (%)",
+            "title": "Shift Savings Pct",
+            "type": "number"
+          }
+        },
+        "required": [
+          "grid_zone",
+          "location",
+          "shift_savings_pct",
+          "cleanest_hour_utc",
+          "dirtiest_hour_utc",
+          "samples"
+        ],
+        "title": "ZoneShiftability",
         "type": "object"
       },
       "carbon_mesh__compliance__routes__GenerateReportRequest": {
@@ -2965,6 +3026,69 @@
           }
         },
         "summary": "Get Carbon History",
+        "tags": [
+          "Carbon Routing",
+          "Carbon Data"
+        ]
+      }
+    },
+    "/api/v1/carbon/shiftability": {
+      "get": {
+        "description": "Which grids reward carbon-aware scheduling, ranked by intra-day swing.\n\nFor each covered grid zone, how much a daily job would save by running at its\ncleanest hour vs its dirtiest, from the published history. High = shifting pays\noff (variable wind/solar grids); near zero = it barely helps (flat grids). Tells\nyou where to spend the effort. Zones without enough history are omitted.",
+        "operationId": "get_shiftability_api_v1_carbon_shiftability_get",
+        "parameters": [
+          {
+            "description": "History window to analyze (days).",
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 14,
+              "description": "History window to analyze (days).",
+              "maximum": 90,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "How many zones to return.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 25,
+              "description": "How many zones to return.",
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShiftabilityRanking"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Shiftability",
         "tags": [
           "Carbon Routing",
           "Carbon Data"

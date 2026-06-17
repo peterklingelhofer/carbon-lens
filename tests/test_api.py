@@ -509,6 +509,53 @@ def test_zone_best_time_unknown_zone(client: TestClient):
     assert client.get("/api/v1/carbon/best-time/zone/NOPE").status_code == 404
 
 
+def test_shiftability_pct():
+    from carbon_mesh.engine.recurring import shiftability_pct
+
+    ranked = [
+        {"hour": 2, "mean_gco2_kwh": 40.0, "samples": 7},
+        {"hour": 18, "mean_gco2_kwh": 400.0, "samples": 7},
+    ]
+    assert shiftability_pct(ranked) == 90.0  # (400 - 40) / 400
+    assert shiftability_pct([]) is None
+
+
+def test_shiftability_ranking(client: TestClient):
+    from datetime import datetime, timedelta, timezone
+
+    from carbon_mesh.api.deps import get_grid_mapper, get_history_store
+    from carbon_mesh.carbon_sources.history_store import HistoryStore
+    from carbon_mesh.main import app
+
+    zones = get_grid_mapper().grid_zones()[:2]
+    z_var, z_flat = zones[0], zones[1]
+    now = datetime.now(timezone.utc)
+
+    def series(clean_c, dirty_c):
+        out = []
+        for d in range(7):
+            day = now - timedelta(days=d)
+            out.append({"t": day.replace(hour=2).isoformat(), "c": clean_c, "r": 80.0})
+            out.append({"t": day.replace(hour=18).isoformat(), "c": dirty_c, "r": 10.0})
+        return out
+
+    data = {
+        "series": {
+            f"{z_var.provider}/{z_var.region}": series(40.0, 400.0),  # big intra-day swing
+            f"{z_flat.provider}/{z_flat.region}": series(90.0, 100.0),  # nearly flat
+        }
+    }
+    app.dependency_overrides[get_history_store] = lambda: HistoryStore("", data=data)
+    try:
+        resp = client.get("/api/v1/carbon/shiftability?days=14")
+        assert resp.status_code == 200
+        order = [z["grid_zone"] for z in resp.json()["zones"]]
+        # The variable grid is more shiftable, so it ranks ahead of the flat one.
+        assert order.index(z_var.grid_zone) < order.index(z_flat.grid_zone)
+    finally:
+        app.dependency_overrides.pop(get_history_store, None)
+
+
 def test_region_weather(client: TestClient, monkeypatch):
     # Stub the live Open-Meteo fetch so the test is hermetic (no network).
     async def fake_weather(lat: float, lon: float) -> tuple[float, float]:
