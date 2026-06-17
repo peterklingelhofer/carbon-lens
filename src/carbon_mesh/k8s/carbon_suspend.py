@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import logging
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 
 import httpx
@@ -32,7 +33,39 @@ logger = logging.getLogger("carbon_suspend")
 
 ANNOTATION_REGION = "carbonlens.dev/region"
 ANNOTATION_MAX_INTENSITY = "carbonlens.dev/max-intensity"
+# Deadline backstop: never let a job wait longer than this for a clean window.
+ANNOTATION_MAX_DEFER = "carbonlens.dev/max-defer-hours"
 _SA = "/var/run/secrets/kubernetes.io/serviceaccount"
+
+
+def _ann_float(annotations: dict, key: str) -> float | None:
+    raw = annotations.get(key)
+    try:
+        return float(raw) if raw is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _hours_since(ts_iso: str | None, now: datetime) -> float | None:
+    """Hours between an RFC3339 timestamp (e.g. a CronJob's lastScheduleTime) and now."""
+    if not ts_iso:
+        return None
+    try:
+        ts = datetime.fromisoformat(ts_iso.replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    if ts.tzinfo is None:
+        ts = ts.replace(tzinfo=timezone.utc)
+    return (now - ts).total_seconds() / 3600
+
+
+def overdue(hours_since_run: float | None, max_defer_hours: float | None) -> bool:
+    """True when a job hasn't run within its max-defer window -- run it despite the grid."""
+    return (
+        max_defer_hours is not None
+        and hours_since_run is not None
+        and hours_since_run >= max_defer_hours
+    )
 
 
 def should_suspend(signal: dict, max_intensity: float | None = None) -> bool:
@@ -48,19 +81,26 @@ def should_suspend(signal: dict, max_intensity: float | None = None) -> bool:
 
 
 def desired_suspend_change(
-    annotations: dict | None, current_suspend: bool | None, signal: dict
+    annotations: dict | None,
+    current_suspend: bool | None,
+    signal: dict,
+    hours_since_run: float | None = None,
 ) -> bool | None:
     """The ``.spec.suspend`` a CronJob should have, or None if it's unmanaged or
-    already correct (so we only patch when something actually changes)."""
+    already correct (so we only patch when something actually changes).
+
+    Honours a ``carbonlens.dev/max-defer-hours`` deadline: if the job hasn't run
+    within that window, it's force-resumed even on a dirty grid -- so carbon-aware
+    deferral never starves a job indefinitely.
+    """
     ann = annotations or {}
     if not ann.get(ANNOTATION_REGION):
         return None
-    raw_cap = ann.get(ANNOTATION_MAX_INTENSITY)
-    try:
-        cap = float(raw_cap) if raw_cap is not None else None
-    except (TypeError, ValueError):
-        cap = None
+    cap = _ann_float(ann, ANNOTATION_MAX_INTENSITY)
+    max_defer = _ann_float(ann, ANNOTATION_MAX_DEFER)
     want = should_suspend(signal, cap)
+    if want and overdue(hours_since_run, max_defer):
+        want = False  # deadline reached: run despite the grid
     return want if want != bool(current_suspend) else None
 
 
@@ -116,8 +156,15 @@ def reconcile() -> int:
                     continue
             signal = signals[region]
 
+            # How long since this CronJob last fired (or was created if never), so the
+            # deadline backstop can force it to run if it's been starved too long.
+            last_run = item.get("status", {}).get("lastScheduleTime") or meta.get(
+                "creationTimestamp"
+            )
+            hours_since = _hours_since(last_run, datetime.now(timezone.utc))
+
             current = item.get("spec", {}).get("suspend")
-            want = desired_suspend_change(ann, current, signal)
+            want = desired_suspend_change(ann, current, signal, hours_since)
             if want is None:
                 continue
 
