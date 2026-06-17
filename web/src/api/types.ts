@@ -104,6 +104,24 @@ export interface CarbonHistory {
   points: CarbonHistoryPoint[];
 }
 
+export interface SitingOption {
+  provider: string;
+  region: string;
+  grid_zone: string;
+  location: string;
+  typical_gco2_kwh: number;
+  basis: string;
+  annual_kg: number | null;
+}
+
+export interface SitingRecommendation {
+  recommended: SitingOption;
+  options: SitingOption[];
+  annual_kg_saved_vs_worst: number | null;
+  power_watts: number | null;
+  days_analyzed: number;
+}
+
 export interface ZoneShiftability {
   grid_zone: string;
   location: string;
