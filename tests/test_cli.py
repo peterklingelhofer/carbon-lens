@@ -230,6 +230,30 @@ class TestImpactLedger:
         assert s["grams_avoided"] == 2000.0
         assert s["kg_avoided"] == 2.0
 
+    def test_counts_verified_measured_jobs(self):
+        from datetime import datetime, timezone
+
+        from carbon_mesh.cli.ledger import summarize
+
+        now = datetime(2026, 6, 16, tzinfo=timezone.utc)
+        entries = [
+            {
+                "ts": now.isoformat(),
+                "deferred_hours": 3,
+                "reduction_gco2_kwh": 200,
+                "basis": "measured",
+            },
+            {
+                "ts": now.isoformat(),
+                "deferred_hours": 2,
+                "reduction_gco2_kwh": 100,
+                "basis": "forecast",
+            },
+        ]
+        s = summarize(entries, now, days=30)
+        assert s["shifted"] == 2
+        assert s["measured"] == 1
+
     def test_old_entries_drop_out_of_window(self):
         from datetime import datetime, timedelta, timezone
 
@@ -324,6 +348,26 @@ class TestRunCommand:
     def test_rejects_malformed_region(self):
         result = runner.invoke(app, ["run", "--region", "bogus", "--dry-run", "--", "echo", "hi"])
         assert result.exit_code == 1
+
+    def test_records_measured_reduction_at_run_time(self):
+        # Forecast says defer 2h to ~100; at run time the grid actually reads 90.
+        captured: list[dict] = []
+        with (
+            patch("carbon_mesh.cli.client.forecast", return_value=_forecast([300, 200, 100])),
+            patch(
+                "carbon_mesh.cli.client.intensity",
+                return_value={"carbon_intensity_gco2_kwh": 90},
+            ),
+            patch("time.sleep", lambda _s: None),
+            patch("carbon_mesh.cli.ledger.append", side_effect=captured.append),
+        ):
+            result = runner.invoke(app, ["run", "--region", "aws/us-east-1", "--", "echo", "hi"])
+        assert result.exit_code == 0
+        assert len(captured) == 1
+        entry = captured[0]
+        assert entry["basis"] == "measured"
+        assert entry["reduction_gco2_kwh"] == 210.0  # measured: start 300 - actual 90
+        assert entry["predicted_reduction_gco2_kwh"] == 200.0  # forecast: start 300 - 100
 
 
 class TestBestTimeCommand:
