@@ -374,6 +374,9 @@ def impact(
 def best_time(
     region: str = typer.Argument(help="Region in provider/region format, e.g. aws/us-east-1"),
     days: int = typer.Option(14, "--days", help="History window to analyze"),
+    energy_kwh: Optional[float] = typer.Option(
+        None, "--energy-kwh", help="Daily job energy (kWh) for an annual kg-saved estimate"
+    ),
     json_output: bool = typer.Option(False, "--json", help="Output raw JSON"),
 ):
     """Find the greenest hour-of-day to schedule a recurring job (and a cron line)."""
@@ -382,7 +385,7 @@ def best_time(
         console.print("[red]Error:[/red] region must be provider/region, e.g. aws/us-east-1")
         raise typer.Exit(1)
     try:
-        data = client.best_time(provider, reg, days)
+        data = client.best_time(provider, reg, days, energy_kwh)
     except Exception as e:
         console.print(f"[red]Error:[/red] {e}")
         raise typer.Exit(1)
@@ -407,6 +410,14 @@ def best_time(
             f"  Cleanest hour: [bold]{data['cleanest_hour_utc']:02d}:00 UTC[/bold] "
             f"(~{data['ranked_hours'][0]['mean_gco2_kwh']:.0f} gCO2/kWh)"
         )
+        if data.get("shift_savings_pct") is not None:
+            line = (
+                f"  vs worst hour ({data['dirtiest_hour_utc']:02d}:00 UTC): "
+                f"~{data['shift_savings_pct']:.0f}% cleaner"
+            )
+            if data.get("annual_kg_saved") is not None:
+                line += f", ~{data['annual_kg_saved']:.0f} kg CO2/yr for this job"
+            console.print(line)
         console.print(f"  Suggested cron: [cyan]{data['suggested_cron']}[/cyan]  # daily, UTC")
         if len(data.get("ranked_hours", [])) > 1:
             tail = ", ".join(
