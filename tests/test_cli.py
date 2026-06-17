@@ -186,6 +186,21 @@ class TestChooseRunIndex:
         # The 10 at index 3 is cleanest overall but outside a 2-hour window.
         assert choose_run_index([300, 290, 280, 10], None, 2) == (2, "cleanest")
 
+    def test_now_surplus_runs_immediately(self):
+        assert choose_run_index([30, 300], None, 24, surplus_hours=[0]) == (0, "surplus_now")
+
+    def test_defers_to_soonest_surplus_window(self):
+        # Cleanest is hour 1 (50), but hour 3 is a clean-surplus window -> prefer it.
+        assert choose_run_index([300, 50, 200, 40], None, 24, surplus_hours=[3]) == (3, "surplus")
+
+    def test_does_not_idle_for_a_trivial_gain(self):
+        # Cleanest (hour 2) is only ~3% under now -> not worth deferring.
+        assert choose_run_index([300, 295, 291], None, 24) == (0, "now_no_benefit")
+
+    def test_threshold_still_wins_when_now_is_acceptable(self):
+        # Even with a later surplus window, an acceptable now runs immediately.
+        assert choose_run_index([40, 300, 30], 100, 24, surplus_hours=[2]) == (0, "threshold")
+
 
 class TestRunCommand:
     def test_dry_run_reports_a_deferral(self):
