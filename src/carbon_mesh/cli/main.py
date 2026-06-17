@@ -179,7 +179,10 @@ def report(
     console.print()
     console.print("[bold green]Carbon Savings Report[/bold green]")
     console.print(f"  Total Requests:   {data['total_requests']}")
-    console.print(f"  Carbon Saved:     {data['total_carbon_saved_gco2_kwh']} gCO2/kWh")
+    console.print(
+        f"  Avg Intensity Cut: {data['avg_intensity_reduction_gco2_kwh']} gCO2/kWh "
+        f"vs {data['baseline']}"
+    )
     console.print(f"  Avg Renewable:    {data['avg_renewable_percentage']}%")
 
     if data.get("records"):
@@ -196,7 +199,7 @@ def report(
                 r["request_id"][:8],
                 f"{r['chosen_provider']}/{r['chosen_region']}",
                 f"{r['chosen_carbon_intensity']}",
-                f"{r['carbon_saved_gco2_kwh']:.1f}",
+                f"{r['intensity_reduction_gco2_kwh']:.1f}",
                 r["timestamp"][:19],
             )
         console.print(table)

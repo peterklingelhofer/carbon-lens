@@ -1124,12 +1124,20 @@ export interface components {
         };
         /** CarbonSavingsReport */
         CarbonSavingsReport: {
+            /**
+             * Avg Intensity Reduction Gco2 Kwh
+             * @description Average per-recommendation carbon-intensity reduction vs the baseline. A rate (gCO2/kWh), not a total: per-kWh intensities aren't additive across workloads, and real grams also depend on each job's energy use.
+             */
+            avg_intensity_reduction_gco2_kwh: number;
             /** Avg Renewable Percentage */
             avg_renewable_percentage: number;
+            /**
+             * Baseline
+             * @description The counterfactual the reduction is measured against.
+             */
+            baseline: string;
             /** Records */
             records: components["schemas"]["EmissionsRecord"][];
-            /** Total Carbon Saved Gco2 Kwh */
-            total_carbon_saved_gco2_kwh: number;
             /** Total Requests */
             total_requests: number;
         };
@@ -1552,8 +1560,11 @@ export interface components {
         };
         /** EmissionsRecord */
         EmissionsRecord: {
-            /** Carbon Saved Gco2 Kwh */
-            carbon_saved_gco2_kwh: number;
+            /**
+             * Baseline Carbon Intensity
+             * @description Mean carbon intensity of the candidate regions considered -- the counterfactual of a carbon-blind pick among the same options.
+             */
+            baseline_carbon_intensity: number;
             /** Chosen Carbon Intensity */
             chosen_carbon_intensity: number;
             /** Chosen Grid Zone */
@@ -1567,6 +1578,11 @@ export interface components {
              * @default 0
              */
             chosen_renewable_pct: number;
+            /**
+             * Intensity Reduction Gco2 Kwh
+             * @description baseline_carbon_intensity - chosen_carbon_intensity (signed; negative means the chosen region was dirtier than the average candidate, e.g. cost-weighted).
+             */
+            intensity_reduction_gco2_kwh: number;
             /** Request Id */
             request_id: string;
             /**
@@ -1574,8 +1590,6 @@ export interface components {
              * Format: date-time
              */
             timestamp: string;
-            /** Worst Carbon Intensity */
-            worst_carbon_intensity: number;
         };
         /** FindWindowRequest */
         FindWindowRequest: {

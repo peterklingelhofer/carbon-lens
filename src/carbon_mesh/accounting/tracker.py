@@ -7,6 +7,19 @@ from carbon_mesh.db.models import EmissionsRecordDB
 from carbon_mesh.models.accounting import CarbonSavingsReport, EmissionsRecord
 from carbon_mesh.models.routing import RouteResponse
 
+# The counterfactual: what you'd emit picking among the SAME candidate regions
+# without carbon-awareness. Mean of the candidates -- not the single worst, which
+# would assume you'd otherwise deliberately choose the dirtiest option and so
+# overstate the benefit.
+_BASELINE = "mean carbon intensity of the candidate regions considered (a carbon-blind pick)"
+
+
+def _baseline_intensity(response: RouteResponse) -> float:
+    """Mean carbon intensity across all candidates (chosen + alternatives)."""
+    candidates = [response.recommended.carbon_intensity_gco2_kwh]
+    candidates += [a.carbon_intensity_gco2_kwh for a in response.alternatives]
+    return sum(candidates) / len(candidates)
+
 
 class CarbonTracker:
     """In-memory tracker — used when no DB is available (tests, dev mode)."""
@@ -16,12 +29,8 @@ class CarbonTracker:
 
     def record(self, response: RouteResponse) -> EmissionsRecord:
         chosen = response.recommended
-        worst_intensity = chosen.carbon_intensity_gco2_kwh
-        if response.alternatives:
-            worst_intensity = max(a.carbon_intensity_gco2_kwh for a in response.alternatives)
-            worst_intensity = max(worst_intensity, chosen.carbon_intensity_gco2_kwh)
-
-        saved = worst_intensity - chosen.carbon_intensity_gco2_kwh
+        baseline = _baseline_intensity(response)
+        reduction = baseline - chosen.carbon_intensity_gco2_kwh
 
         rec = EmissionsRecord(
             request_id=response.request_id,
@@ -30,23 +39,25 @@ class CarbonTracker:
             chosen_region=chosen.region,
             chosen_grid_zone=chosen.grid_zone,
             chosen_carbon_intensity=chosen.carbon_intensity_gco2_kwh,
-            worst_carbon_intensity=worst_intensity,
-            carbon_saved_gco2_kwh=saved,
+            baseline_carbon_intensity=round(baseline, 2),
+            intensity_reduction_gco2_kwh=round(reduction, 2),
             chosen_renewable_pct=chosen.renewable_percentage,
         )
         self._records.append(rec)
         return rec
 
     def report(self) -> CarbonSavingsReport:
-        total_saved = sum(r.carbon_saved_gco2_kwh for r in self._records)
-        avg_renewable = 0.0
-        if self._records:
-            avg_renewable = round(
-                sum(r.chosen_renewable_pct for r in self._records) / len(self._records), 1
-            )
+        n = len(self._records)
+        avg_reduction = (
+            round(sum(r.intensity_reduction_gco2_kwh for r in self._records) / n, 2) if n else 0.0
+        )
+        avg_renewable = (
+            round(sum(r.chosen_renewable_pct for r in self._records) / n, 1) if n else 0.0
+        )
         return CarbonSavingsReport(
-            total_requests=len(self._records),
-            total_carbon_saved_gco2_kwh=round(total_saved, 2),
+            total_requests=n,
+            avg_intensity_reduction_gco2_kwh=avg_reduction,
+            baseline=_BASELINE,
             avg_renewable_percentage=avg_renewable,
             records=list(self._records),
         )
@@ -59,12 +70,8 @@ class DBCarbonTracker:
         self, session: AsyncSession, response: RouteResponse, api_key_id: str | None = None
     ) -> EmissionsRecordDB:
         chosen = response.recommended
-        worst_intensity = chosen.carbon_intensity_gco2_kwh
-        if response.alternatives:
-            worst_intensity = max(a.carbon_intensity_gco2_kwh for a in response.alternatives)
-            worst_intensity = max(worst_intensity, chosen.carbon_intensity_gco2_kwh)
-
-        saved = worst_intensity - chosen.carbon_intensity_gco2_kwh
+        baseline = _baseline_intensity(response)
+        reduction = baseline - chosen.carbon_intensity_gco2_kwh
 
         db_record = EmissionsRecordDB(
             request_id=response.request_id,
@@ -73,8 +80,8 @@ class DBCarbonTracker:
             chosen_region=chosen.region,
             chosen_grid_zone=chosen.grid_zone,
             chosen_carbon_intensity=chosen.carbon_intensity_gco2_kwh,
-            worst_carbon_intensity=worst_intensity,
-            carbon_saved_gco2_kwh=saved,
+            baseline_carbon_intensity=round(baseline, 2),
+            intensity_reduction_gco2_kwh=round(reduction, 2),
             chosen_renewable_pct=chosen.renewable_percentage,
         )
         session.add(db_record)
@@ -100,23 +107,23 @@ class DBCarbonTracker:
                 chosen_region=r.chosen_region,
                 chosen_grid_zone=r.chosen_grid_zone,
                 chosen_carbon_intensity=r.chosen_carbon_intensity,
-                worst_carbon_intensity=r.worst_carbon_intensity,
-                carbon_saved_gco2_kwh=r.carbon_saved_gco2_kwh,
+                baseline_carbon_intensity=r.baseline_carbon_intensity,
+                intensity_reduction_gco2_kwh=r.intensity_reduction_gco2_kwh,
                 chosen_renewable_pct=r.chosen_renewable_pct,
             )
             for r in db_records
         ]
 
-        total_saved = sum(r.carbon_saved_gco2_kwh for r in records)
-        avg_renewable = 0.0
-        if db_records:
-            avg_renewable = round(
-                sum(r.chosen_renewable_pct for r in db_records) / len(db_records), 1
-            )
+        n = len(records)
+        avg_reduction = (
+            round(sum(r.intensity_reduction_gco2_kwh for r in records) / n, 2) if n else 0.0
+        )
+        avg_renewable = round(sum(r.chosen_renewable_pct for r in db_records) / n, 1) if n else 0.0
 
         return CarbonSavingsReport(
-            total_requests=len(records),
-            total_carbon_saved_gco2_kwh=round(total_saved, 2),
+            total_requests=n,
+            avg_intensity_reduction_gco2_kwh=avg_reduction,
+            baseline=_BASELINE,
             avg_renewable_percentage=avg_renewable,
             records=records,
         )

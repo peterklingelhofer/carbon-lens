@@ -449,10 +449,10 @@ export function Dashboard() {
                 alignItems: "center",
               }}
             >
-              Carbon-intensity gap (illustrative)
+              Avg intensity reduction
               <InfoTip
-                label="Carbon-intensity gap"
-                text="For each recommendation, the gap in carbon intensity (gCO₂/kWh) between the dirtiest candidate region and the greener one chosen, summed across recommendations. It's a rough indicator, not a real emissions total: per-kWh intensities aren't additive across workloads, and actual savings also depend on how much energy each job uses. In-memory for this server instance; resets on restart."
+                label="Average intensity reduction"
+                text="Per recommendation, how much cleaner (gCO₂/kWh) the chosen region was than the average of the candidates considered - i.e. versus picking among the same options without carbon-awareness - averaged across recommendations. It's a rate, not a total: per-kWh intensities aren't additive across workloads, and real grams also depend on each job's energy use. In-memory for this server instance; resets on restart."
               />
             </div>
             <div
@@ -462,8 +462,8 @@ export function Dashboard() {
                 color: "var(--green-text)",
               }}
             >
-              {savings.total_carbon_saved_gco2_kwh.toFixed(1)}{" "}
-              <span style={{ fontSize: "0.9rem", fontWeight: 400 }}>gCO₂/kWh</span>
+              {savings.avg_intensity_reduction_gco2_kwh.toFixed(1)}{" "}
+              <span style={{ fontSize: "0.9rem", fontWeight: 400 }}>gCO₂/kWh avg</span>
             </div>
           </div>
           <div style={card}>

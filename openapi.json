@@ -386,9 +386,19 @@
       },
       "CarbonSavingsReport": {
         "properties": {
+          "avg_intensity_reduction_gco2_kwh": {
+            "description": "Average per-recommendation carbon-intensity reduction vs the baseline. A rate (gCO2/kWh), not a total: per-kWh intensities aren't additive across workloads, and real grams also depend on each job's energy use.",
+            "title": "Avg Intensity Reduction Gco2 Kwh",
+            "type": "number"
+          },
           "avg_renewable_percentage": {
             "title": "Avg Renewable Percentage",
             "type": "number"
+          },
+          "baseline": {
+            "description": "The counterfactual the reduction is measured against.",
+            "title": "Baseline",
+            "type": "string"
           },
           "records": {
             "items": {
@@ -397,10 +407,6 @@
             "title": "Records",
             "type": "array"
           },
-          "total_carbon_saved_gco2_kwh": {
-            "title": "Total Carbon Saved Gco2 Kwh",
-            "type": "number"
-          },
           "total_requests": {
             "title": "Total Requests",
             "type": "integer"
@@ -408,7 +414,8 @@
         },
         "required": [
           "total_requests",
-          "total_carbon_saved_gco2_kwh",
+          "avg_intensity_reduction_gco2_kwh",
+          "baseline",
           "avg_renewable_percentage",
           "records"
         ],
@@ -1189,8 +1196,9 @@
       },
       "EmissionsRecord": {
         "properties": {
-          "carbon_saved_gco2_kwh": {
-            "title": "Carbon Saved Gco2 Kwh",
+          "baseline_carbon_intensity": {
+            "description": "Mean carbon intensity of the candidate regions considered -- the counterfactual of a carbon-blind pick among the same options.",
+            "title": "Baseline Carbon Intensity",
             "type": "number"
           },
           "chosen_carbon_intensity": {
@@ -1214,6 +1222,11 @@
             "title": "Chosen Renewable Pct",
             "type": "number"
           },
+          "intensity_reduction_gco2_kwh": {
+            "description": "baseline_carbon_intensity - chosen_carbon_intensity (signed; negative means the chosen region was dirtier than the average candidate, e.g. cost-weighted).",
+            "title": "Intensity Reduction Gco2 Kwh",
+            "type": "number"
+          },
           "request_id": {
             "title": "Request Id",
             "type": "string"
@@ -1222,10 +1235,6 @@
             "format": "date-time",
             "title": "Timestamp",
             "type": "string"
-          },
-          "worst_carbon_intensity": {
-            "title": "Worst Carbon Intensity",
-            "type": "number"
           }
         },
         "required": [
@@ -1235,8 +1244,8 @@
           "chosen_region",
           "chosen_grid_zone",
           "chosen_carbon_intensity",
-          "worst_carbon_intensity",
-          "carbon_saved_gco2_kwh"
+          "baseline_carbon_intensity",
+          "intensity_reduction_gco2_kwh"
         ],
         "title": "EmissionsRecord",
         "type": "object"
