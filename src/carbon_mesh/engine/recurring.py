@@ -1,0 +1,38 @@
+"""Recommend the greenest hour-of-day to run a *recurring* job.
+
+Most cron jobs (backups, nightly ETL, reports, CI) run at an arbitrary hour picked
+by habit. Moving that fixed schedule to the statistically-cleanest hour is a
+one-time change with permanent, zero-friction savings. This ranks hours by their
+mean carbon intensity, from the rolling history archive when we have it, or the
+forecast curve as a fallback -- a pure function so it's easy to test.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime
+
+
+def rank_hours_utc(points: list[dict]) -> list[dict]:
+    """Mean carbon intensity by UTC hour-of-day across history-style points.
+
+    Each point is ``{"t": iso8601, "c": gco2_kwh}``. Returns hours sorted
+    cleanest-first: ``[{"hour": 0-23, "mean_gco2_kwh": float, "samples": int}]``.
+    Hours with no data are simply absent.
+    """
+    buckets: dict[int, list[float]] = {}
+    for p in points:
+        t, c = p.get("t"), p.get("c")
+        if t is None or c is None:
+            continue
+        try:
+            hour = datetime.fromisoformat(t).hour
+        except (TypeError, ValueError):
+            continue
+        buckets.setdefault(hour, []).append(float(c))
+
+    ranked = [
+        {"hour": h, "mean_gco2_kwh": round(sum(vals) / len(vals), 1), "samples": len(vals)}
+        for h, vals in buckets.items()
+    ]
+    ranked.sort(key=lambda r: (r["mean_gco2_kwh"], r["hour"]))
+    return ranked

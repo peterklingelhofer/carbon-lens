@@ -69,6 +69,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/carbon/best-time/{provider}/{region}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Best Time
+         * @description The greenest hour-of-day to run a recurring job here -- pick a cron schedule once.
+         *
+         *     Ranks UTC hours by mean carbon intensity from the published history archive; if
+         *     too little has accumulated, it falls back to the next-48h forecast curve as a
+         *     proxy (labelled in ``basis``). Moving a fixed daily job to ``cleanest_hour_utc``
+         *     is a one-time change with permanent savings.
+         */
+        get: operations["get_best_time_api_v1_carbon_best_time__provider___region__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/carbon/forecast/{provider}/{region}": {
         parameters: {
             query?: never;
@@ -978,6 +1003,40 @@ export interface components {
             sla_name: string;
             status: components["schemas"]["SLAStatus"];
         };
+        /**
+         * BestTime
+         * @description The greenest hour-of-day to run a recurring job, for picking a cron schedule.
+         */
+        BestTime: {
+            /**
+             * Basis
+             * @description history (observed hour-of-day means), forecast (next-48h curve as a proxy), or insufficient (no data yet)
+             */
+            basis: string;
+            /**
+             * Cleanest Hour Utc
+             * @description The lowest-mean-intensity UTC hour, or null if no data
+             */
+            cleanest_hour_utc?: number | null;
+            /** Days Analyzed */
+            days_analyzed: number;
+            /** Grid Zone */
+            grid_zone: string;
+            /** Provider */
+            provider: string;
+            /**
+             * Ranked Hours
+             * @description Cleanest hours first (top few)
+             */
+            ranked_hours?: components["schemas"]["HourRank"][];
+            /** Region */
+            region: string;
+            /**
+             * Suggested Cron
+             * @description A daily crontab line for the cleanest hour (UTC), or null
+             */
+            suggested_cron?: string | null;
+        };
         /** Body_upload_csv_api_v1_compliance_usage_upload_csv_post */
         Body_upload_csv_api_v1_compliance_usage_upload_csv_post: {
             /** File */
@@ -1690,6 +1749,15 @@ export interface components {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
         };
+        /** HourRank */
+        HourRank: {
+            /** Hour Utc */
+            hour_utc: number;
+            /** Mean Gco2 Kwh */
+            mean_gco2_kwh: number;
+            /** Samples */
+            samples: number;
+        };
         /** JobConstraints */
         JobConstraints: {
             /**
@@ -2241,6 +2309,41 @@ export interface operations {
                     "application/json": {
                         [key: string]: components["schemas"]["CarbonIntensity"];
                     };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_best_time_api_v1_carbon_best_time__provider___region__get: {
+        parameters: {
+            query?: {
+                /** @description History window to analyze (days). */
+                days?: number;
+            };
+            header?: never;
+            path: {
+                provider: string;
+                region: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BestTime"];
                 };
             };
             /** @description Validation Error */

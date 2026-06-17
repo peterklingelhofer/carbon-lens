@@ -29,14 +29,17 @@ from carbon_mesh.engine.router import RoutingEngine
 from carbon_mesh.grid.mapper import GridMapper
 from carbon_mesh.models.accounting import CarbonSavingsReport
 from carbon_mesh.engine.anomaly import compute_anomaly
+from carbon_mesh.engine.recurring import rank_hours_utc
 from carbon_mesh.engine.surplus import is_clean_surplus, surplus_offsets
 from carbon_mesh.models.carbon import (
+    BestTime,
     CarbonAnomaly,
     CarbonForecast,
     CarbonHistory,
     CarbonHistoryPoint,
     CarbonIntensity,
     CarbonSignal,
+    HourRank,
     WeatherConditions,
 )
 from carbon_mesh.models.region import CloudRegion
@@ -391,6 +394,61 @@ async def get_region_weather(
         wind_speed_kmh=round(wind, 1),
         solar_irradiance_w_m2=round(solar),
         observed_at=datetime.now(timezone.utc),
+    )
+
+
+@router.get("/carbon/best-time/{provider}/{region}", response_model=BestTime, tags=["Carbon Data"])
+async def get_best_time(
+    provider: str,
+    region: str,
+    days: int = Query(14, ge=1, le=90, description="History window to analyze (days)."),
+    mapper: GridMapper = Depends(get_grid_mapper),
+    store: HistoryStore = Depends(get_history_store),
+    engine: SchedulingEngine = Depends(get_scheduling_engine),
+) -> BestTime:
+    """The greenest hour-of-day to run a recurring job here -- pick a cron schedule once.
+
+    Ranks UTC hours by mean carbon intensity from the published history archive; if
+    too little has accumulated, it falls back to the next-48h forecast curve as a
+    proxy (labelled in ``basis``). Moving a fixed daily job to ``cleanest_hour_utc``
+    is a one-time change with permanent savings.
+    """
+    zone = mapper.get_grid_zone(provider, region)
+    if zone is None:
+        raise HTTPException(status_code=404, detail=f"Unknown region: {provider}/{region}")
+
+    since = datetime.now(timezone.utc) - timedelta(days=days)
+    raw = await store.series_for(f"{provider}/{region}", since)
+    ranked = rank_hours_utc(raw)
+    basis = "history"
+
+    # Too few observations to be useful -> use the forecast curve as a proxy.
+    if sum(r["samples"] for r in ranked) < 8:
+        info = mapper.get_region(provider, region)
+        longitude = info.longitude if info else 0.0
+        _, points = await engine.forecast_zone(zone, longitude, 48)
+        forecast_points = [
+            {"t": p.timestamp.isoformat(), "c": p.carbon_intensity_gco2_kwh} for p in points
+        ]
+        forecast_ranked = rank_hours_utc(forecast_points)
+        if forecast_ranked:
+            ranked, basis = forecast_ranked, "forecast"
+        elif not ranked:
+            basis = "insufficient"
+
+    cleanest = ranked[0]["hour"] if ranked else None
+    return BestTime(
+        provider=provider,
+        region=region,
+        grid_zone=zone,
+        basis=basis,
+        days_analyzed=days,
+        cleanest_hour_utc=cleanest,
+        suggested_cron=f"0 {cleanest} * * *" if cleanest is not None else None,
+        ranked_hours=[
+            HourRank(hour_utc=r["hour"], mean_gco2_kwh=r["mean_gco2_kwh"], samples=r["samples"])
+            for r in ranked[:6]
+        ],
     )
 
 
