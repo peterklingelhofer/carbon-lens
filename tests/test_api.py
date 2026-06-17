@@ -400,6 +400,56 @@ def test_carbon_history_unknown_region(client: TestClient):
     assert resp.status_code == 404
 
 
+def test_rank_hours_utc():
+    from carbon_mesh.engine.recurring import rank_hours_utc
+
+    points = [
+        {"t": "2026-06-10T03:00:00+00:00", "c": 50.0},
+        {"t": "2026-06-11T03:00:00+00:00", "c": 70.0},  # hour 3 mean = 60
+        {"t": "2026-06-10T18:00:00+00:00", "c": 400.0},  # hour 18 mean = 400
+    ]
+    ranked = rank_hours_utc(points)
+    assert ranked[0]["hour"] == 3
+    assert ranked[0]["mean_gco2_kwh"] == 60.0
+    assert ranked[0]["samples"] == 2
+    assert ranked[-1]["hour"] == 18
+
+
+def test_best_time_from_history(client: TestClient):
+    from datetime import datetime, timedelta, timezone
+
+    from carbon_mesh.api.deps import get_history_store
+    from carbon_mesh.carbon_sources.history_store import HistoryStore
+    from carbon_mesh.main import app
+
+    now = datetime.now(timezone.utc)
+    # Build 7 days of two readings per day: a clean 02:00 UTC and a dirty 18:00 UTC.
+    series = []
+    for d in range(7):
+        day = now - timedelta(days=d)
+        clean = day.replace(hour=2, minute=0, second=0, microsecond=0)
+        dirty = day.replace(hour=18, minute=0, second=0, microsecond=0)
+        series.append({"t": clean.isoformat(), "c": 40.0, "r": 80.0})
+        series.append({"t": dirty.isoformat(), "c": 450.0, "r": 10.0})
+
+    data = {"series": {"aws/us-west-2": series}}
+    app.dependency_overrides[get_history_store] = lambda: HistoryStore("", data=data)
+    try:
+        resp = client.get("/api/v1/carbon/best-time/aws/us-west-2?days=14")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["grid_zone"] == "US-NW-BPAT"
+        assert body["basis"] == "history"
+        assert body["cleanest_hour_utc"] == 2
+        assert body["suggested_cron"] == "0 2 * * *"
+    finally:
+        app.dependency_overrides.pop(get_history_store, None)
+
+
+def test_best_time_unknown_region(client: TestClient):
+    assert client.get("/api/v1/carbon/best-time/aws/nope").status_code == 404
+
+
 def test_region_weather(client: TestClient, monkeypatch):
     # Stub the live Open-Meteo fetch so the test is hermetic (no network).
     async def fake_weather(lat: float, lon: float) -> tuple[float, float]:

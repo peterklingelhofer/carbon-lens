@@ -324,3 +324,25 @@ class TestRunCommand:
     def test_rejects_malformed_region(self):
         result = runner.invoke(app, ["run", "--region", "bogus", "--dry-run", "--", "echo", "hi"])
         assert result.exit_code == 1
+
+
+class TestBestTimeCommand:
+    def test_prints_cleanest_hour_and_cron(self):
+        payload = {
+            "provider": "aws",
+            "region": "us-east-1",
+            "grid_zone": "US-MIDA-PJM",
+            "basis": "history",
+            "days_analyzed": 14,
+            "cleanest_hour_utc": 3,
+            "suggested_cron": "0 3 * * *",
+            "ranked_hours": [{"hour_utc": 3, "mean_gco2_kwh": 60.0, "samples": 12}],
+        }
+        with patch("carbon_mesh.cli.client.best_time", return_value=payload):
+            result = runner.invoke(app, ["best-time", "aws/us-east-1"])
+        assert result.exit_code == 0
+        assert "0 3 * * *" in result.output
+
+    def test_rejects_malformed_region(self):
+        result = runner.invoke(app, ["best-time", "bogus"])
+        assert result.exit_code == 1

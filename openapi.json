@@ -66,6 +66,73 @@
         "title": "AlertEvent",
         "type": "object"
       },
+      "BestTime": {
+        "description": "The greenest hour-of-day to run a recurring job, for picking a cron schedule.",
+        "properties": {
+          "basis": {
+            "description": "history (observed hour-of-day means), forecast (next-48h curve as a proxy), or insufficient (no data yet)",
+            "title": "Basis",
+            "type": "string"
+          },
+          "cleanest_hour_utc": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The lowest-mean-intensity UTC hour, or null if no data",
+            "title": "Cleanest Hour Utc"
+          },
+          "days_analyzed": {
+            "title": "Days Analyzed",
+            "type": "integer"
+          },
+          "grid_zone": {
+            "title": "Grid Zone",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "ranked_hours": {
+            "description": "Cleanest hours first (top few)",
+            "items": {
+              "$ref": "#/components/schemas/HourRank"
+            },
+            "title": "Ranked Hours",
+            "type": "array"
+          },
+          "region": {
+            "title": "Region",
+            "type": "string"
+          },
+          "suggested_cron": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "A daily crontab line for the cleanest hour (UTC), or null",
+            "title": "Suggested Cron"
+          }
+        },
+        "required": [
+          "provider",
+          "region",
+          "grid_zone",
+          "basis",
+          "days_analyzed"
+        ],
+        "title": "BestTime",
+        "type": "object"
+      },
       "Body_upload_csv_api_v1_compliance_usage_upload_csv_post": {
         "properties": {
           "file": {
@@ -1416,6 +1483,31 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "HourRank": {
+        "properties": {
+          "hour_utc": {
+            "maximum": 23.0,
+            "minimum": 0.0,
+            "title": "Hour Utc",
+            "type": "integer"
+          },
+          "mean_gco2_kwh": {
+            "title": "Mean Gco2 Kwh",
+            "type": "number"
+          },
+          "samples": {
+            "title": "Samples",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "hour_utc",
+          "mean_gco2_kwh",
+          "samples"
+        ],
+        "title": "HourRank",
+        "type": "object"
+      },
       "JobConstraints": {
         "properties": {
           "candidate_regions": {
@@ -2540,6 +2632,73 @@
           }
         },
         "summary": "Get Carbon Intensity Batch",
+        "tags": [
+          "Carbon Routing",
+          "Carbon Data"
+        ]
+      }
+    },
+    "/api/v1/carbon/best-time/{provider}/{region}": {
+      "get": {
+        "description": "The greenest hour-of-day to run a recurring job here -- pick a cron schedule once.\n\nRanks UTC hours by mean carbon intensity from the published history archive; if\ntoo little has accumulated, it falls back to the next-48h forecast curve as a\nproxy (labelled in ``basis``). Moving a fixed daily job to ``cleanest_hour_utc``\nis a one-time change with permanent savings.",
+        "operationId": "get_best_time_api_v1_carbon_best_time__provider___region__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "title": "Provider",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "region",
+            "required": true,
+            "schema": {
+              "title": "Region",
+              "type": "string"
+            }
+          },
+          {
+            "description": "History window to analyze (days).",
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 14,
+              "description": "History window to analyze (days).",
+              "maximum": 90,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BestTime"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Best Time",
         "tags": [
           "Carbon Routing",
           "Carbon Data"

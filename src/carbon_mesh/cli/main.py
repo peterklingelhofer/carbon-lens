@@ -370,6 +370,55 @@ def impact(
         )
 
 
+@app.command(name="best-time")
+def best_time(
+    region: str = typer.Argument(help="Region in provider/region format, e.g. aws/us-east-1"),
+    days: int = typer.Option(14, "--days", help="History window to analyze"),
+    json_output: bool = typer.Option(False, "--json", help="Output raw JSON"),
+):
+    """Find the greenest hour-of-day to schedule a recurring job (and a cron line)."""
+    provider, _, reg = region.partition("/")
+    if not provider or not reg:
+        console.print("[red]Error:[/red] region must be provider/region, e.g. aws/us-east-1")
+        raise typer.Exit(1)
+    try:
+        data = client.best_time(provider, reg, days)
+    except Exception as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+
+    if json_output:
+        import json
+
+        console.print_json(json.dumps(data))
+        return
+
+    basis = {
+        "history": f"observed over the last {data['days_analyzed']} days",
+        "forecast": "estimated from the next-48h forecast (history still accumulating)",
+        "insufficient": "no data yet",
+    }.get(data["basis"], data["basis"])
+
+    console.print()
+    console.print(f"[bold green]Greenest time to run[/bold green] — {region}")
+    console.print(f"  Basis: {basis}")
+    if data.get("cleanest_hour_utc") is not None:
+        console.print(
+            f"  Cleanest hour: [bold]{data['cleanest_hour_utc']:02d}:00 UTC[/bold] "
+            f"(~{data['ranked_hours'][0]['mean_gco2_kwh']:.0f} gCO2/kWh)"
+        )
+        console.print(f"  Suggested cron: [cyan]{data['suggested_cron']}[/cyan]  # daily, UTC")
+        if len(data.get("ranked_hours", [])) > 1:
+            tail = ", ".join(
+                f"{h['hour_utc']:02d}:00 (~{h['mean_gco2_kwh']:.0f})"
+                for h in data["ranked_hours"][1:]
+            )
+            console.print(f"  Other clean hours: {tail}")
+    else:
+        console.print("  Not enough data yet to recommend an hour.")
+    console.print()
+
+
 @config_app.command("set")
 def config_set(
     key: str = typer.Argument(help="Config key: api-url or api-key"),

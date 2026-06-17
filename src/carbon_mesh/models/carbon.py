@@ -133,6 +133,34 @@ class CarbonHistory(BaseModel):
     )
 
 
+class HourRank(BaseModel):
+    hour_utc: int = Field(ge=0, le=23)
+    mean_gco2_kwh: float
+    samples: int
+
+
+class BestTime(BaseModel):
+    """The greenest hour-of-day to run a recurring job, for picking a cron schedule."""
+
+    provider: str
+    region: str
+    grid_zone: str
+    basis: str = Field(
+        description="history (observed hour-of-day means), forecast (next-48h curve as a "
+        "proxy), or insufficient (no data yet)"
+    )
+    days_analyzed: int
+    cleanest_hour_utc: int | None = Field(
+        default=None, description="The lowest-mean-intensity UTC hour, or null if no data"
+    )
+    suggested_cron: str | None = Field(
+        default=None, description="A daily crontab line for the cleanest hour (UTC), or null"
+    )
+    ranked_hours: list[HourRank] = Field(
+        default_factory=list, description="Cleanest hours first (top few)"
+    )
+
+
 class WeatherConditions(BaseModel):
     """Current weather at a region's coordinates -- the physical drivers behind its
     renewable output. Wind turns turbines; sunlight drives solar. A single-point

@@ -100,3 +100,14 @@ def forecast(provider: str, region: str, hours: int = 24) -> dict:
     )
     resp.raise_for_status()
     return resp.json()
+
+
+def best_time(provider: str, region: str, days: int = 14) -> dict:
+    resp = httpx.get(
+        f"{get_api_url()}/api/v1/carbon/best-time/{provider}/{region}",
+        params={"days": days},
+        headers=_headers(),
+        timeout=30,
+    )
+    resp.raise_for_status()
+    return resp.json()
