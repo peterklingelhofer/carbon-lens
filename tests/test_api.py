@@ -274,6 +274,20 @@ def test_carbon_signal_unknown_region(client: TestClient):
     assert client.get("/api/v1/carbon/signal/aws/nope").status_code == 404
 
 
+def test_zone_signal(client: TestClient):
+    # On-prem / colo: ask by grid zone directly, no cloud region needed.
+    resp = client.get("/api/v1/carbon/signal/zone/US-NW-BPAT")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["grid_zone"] == "US-NW-BPAT"
+    assert body["provider"] == "zone"
+    assert body["advice"] in ("run_now", "wait_for_cleaner")
+
+
+def test_zone_signal_unknown_zone(client: TestClient):
+    assert client.get("/api/v1/carbon/signal/zone/NOPE").status_code == 404
+
+
 def test_marginal_note_honesty():
     from carbon_mesh.api.routes import _marginal_note
 
@@ -453,6 +467,46 @@ def test_best_time_from_history(client: TestClient):
 
 def test_best_time_unknown_region(client: TestClient):
     assert client.get("/api/v1/carbon/best-time/aws/nope").status_code == 404
+
+
+def test_zone_best_time(client: TestClient):
+    from datetime import datetime, timedelta, timezone
+
+    from carbon_mesh.api.deps import get_history_store
+    from carbon_mesh.carbon_sources.history_store import HistoryStore
+    from carbon_mesh.main import app
+
+    from carbon_mesh.api.deps import get_grid_mapper
+    from carbon_mesh.api.routes import _zone_representative
+
+    # History is keyed by the zone's representative region -- compute it so the test
+    # doesn't depend on dict ordering.
+    rep = _zone_representative(get_grid_mapper(), "US-NW-BPAT")
+    assert rep is not None
+    key = f"{rep.provider}/{rep.region}"
+
+    now = datetime.now(timezone.utc)
+    series = []
+    for d in range(7):
+        day = now - timedelta(days=d)
+        series.append({"t": day.replace(hour=2).isoformat(), "c": 40.0, "r": 80.0})
+        series.append({"t": day.replace(hour=18).isoformat(), "c": 450.0, "r": 10.0})
+
+    data = {"series": {key: series}}
+    app.dependency_overrides[get_history_store] = lambda: HistoryStore("", data=data)
+    try:
+        resp = client.get("/api/v1/carbon/best-time/zone/US-NW-BPAT?days=14")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["grid_zone"] == "US-NW-BPAT"
+        assert body["provider"] == "zone"
+        assert body["cleanest_hour_utc"] == 2
+    finally:
+        app.dependency_overrides.pop(get_history_store, None)
+
+
+def test_zone_best_time_unknown_zone(client: TestClient):
+    assert client.get("/api/v1/carbon/best-time/zone/NOPE").status_code == 404
 
 
 def test_region_weather(client: TestClient, monkeypatch):

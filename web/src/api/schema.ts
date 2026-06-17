@@ -69,6 +69,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/carbon/best-time/zone/{grid_zone}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Zone Best Time
+         * @description Greenest hour-of-day to schedule a recurring job on a grid zone directly -- for
+         *     on-prem / colo workloads. History is read from a representative region on the zone.
+         */
+        get: operations["get_zone_best_time_api_v1_carbon_best_time_zone__grid_zone__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/carbon/best-time/{provider}/{region}": {
         parameters: {
             query?: never;
@@ -133,6 +154,27 @@ export interface paths {
          *     a region returns points only once it has been observed (empty until then).
          */
         get: operations["get_carbon_history_api_v1_carbon_history__provider___region__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/carbon/signal/zone/{grid_zone}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Zone Signal
+         * @description Run-now/wait decision for a grid zone directly -- for on-prem / colo workloads
+         *     that sit on a grid we cover but aren't a cloud region. Use IDs from /carbon/zones.
+         */
+        get: operations["get_zone_signal_api_v1_carbon_signal_zone__grid_zone__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2337,6 +2379,42 @@ export interface operations {
             };
         };
     };
+    get_zone_best_time_api_v1_carbon_best_time_zone__grid_zone__get: {
+        parameters: {
+            query?: {
+                /** @description History window to analyze (days). */
+                days?: number;
+                /** @description Daily job energy (kWh) for an annualized kg-saved estimate. */
+                energy_kwh?: number | null;
+            };
+            header?: never;
+            path: {
+                grid_zone: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BestTime"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_best_time_api_v1_carbon_best_time__provider___region__get: {
         parameters: {
             query?: {
@@ -2431,6 +2509,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CarbonHistory"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_zone_signal_api_v1_carbon_signal_zone__grid_zone__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                grid_zone: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CarbonSignal"];
                 };
             };
             /** @description Validation Error */

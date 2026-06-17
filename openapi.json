@@ -2674,6 +2674,83 @@
         ]
       }
     },
+    "/api/v1/carbon/best-time/zone/{grid_zone}": {
+      "get": {
+        "description": "Greenest hour-of-day to schedule a recurring job on a grid zone directly -- for\non-prem / colo workloads. History is read from a representative region on the zone.",
+        "operationId": "get_zone_best_time_api_v1_carbon_best_time_zone__grid_zone__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "grid_zone",
+            "required": true,
+            "schema": {
+              "title": "Grid Zone",
+              "type": "string"
+            }
+          },
+          {
+            "description": "History window to analyze (days).",
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 14,
+              "description": "History window to analyze (days).",
+              "maximum": 90,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Daily job energy (kWh) for an annualized kg-saved estimate.",
+            "in": "query",
+            "name": "energy_kwh",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 0,
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Daily job energy (kWh) for an annualized kg-saved estimate.",
+              "title": "Energy Kwh"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BestTime"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Zone Best Time",
+        "tags": [
+          "Carbon Routing",
+          "Carbon Data"
+        ]
+      }
+    },
     "/api/v1/carbon/best-time/{provider}/{region}": {
       "get": {
         "description": "The greenest hour-of-day to run a recurring job here -- pick a cron schedule once.\n\nRanks UTC hours by mean carbon intensity from the published history archive; if\ntoo little has accumulated, it falls back to the next-48h forecast curve as a\nproxy (labelled in ``basis``). Moving a fixed daily job to ``cleanest_hour_utc``\nis a one-time change with permanent savings.",
@@ -2888,6 +2965,50 @@
           }
         },
         "summary": "Get Carbon History",
+        "tags": [
+          "Carbon Routing",
+          "Carbon Data"
+        ]
+      }
+    },
+    "/api/v1/carbon/signal/zone/{grid_zone}": {
+      "get": {
+        "description": "Run-now/wait decision for a grid zone directly -- for on-prem / colo workloads\nthat sit on a grid we cover but aren't a cloud region. Use IDs from /carbon/zones.",
+        "operationId": "get_zone_signal_api_v1_carbon_signal_zone__grid_zone__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "grid_zone",
+            "required": true,
+            "schema": {
+              "title": "Grid Zone",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CarbonSignal"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Zone Signal",
         "tags": [
           "Carbon Routing",
           "Carbon Data"
