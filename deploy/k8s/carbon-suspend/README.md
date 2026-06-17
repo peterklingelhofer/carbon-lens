@@ -21,6 +21,7 @@ metadata:
   annotations:
     carbonlens.dev/region: aws/us-east-1      # or zone/FR for an on-prem grid zone
     carbonlens.dev/max-intensity: "150"       # optional gCO2/kWh cap
+    carbonlens.dev/max-defer-hours: "12"      # optional deadline: run anyway if starved this long
 spec:
   schedule: "0 * * * *"
   # ... your job ...
@@ -28,6 +29,9 @@ spec:
 
 A managed CronJob is **suspended** when its grid is a dirty time to run, and
 **resumed** when the signal says `run_now` or it's clean surplus (within your cap).
+With `carbonlens.dev/max-defer-hours`, a job that hasn't fired within that window is
+force-resumed even on a dirty grid — so carbon-aware deferral **never starves a job
+indefinitely** (the deadline measures from the CronJob's last schedule time).
 
 ## Install
 
