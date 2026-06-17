@@ -1155,6 +1155,12 @@ export interface components {
              */
             advice: string;
             /**
+             * Clean Surplus
+             * @description True when the grid looks like clean oversupply now -- renewables dominant, very low carbon, clean margin -- so extra load likely soaks up power that would otherwise be curtailed. The highest-value moment to run flexible jobs. A heuristic, not measured curtailment.
+             * @default false
+             */
+            clean_surplus: boolean;
+            /**
              * Cleaner Window In Hours
              * @description Hours until a notably cleaner upcoming window, or null if now is fine
              */

@@ -77,6 +77,13 @@ class CarbonSignal(BaseModel):
         description="Plain-English caveat when the marginal picture changes the decision "
         "(e.g. clean on average but fossil on the margin), or null when nothing notable.",
     )
+    clean_surplus: bool = Field(
+        default=False,
+        description="True when the grid looks like clean oversupply now -- renewables "
+        "dominant, very low carbon, clean margin -- so extra load likely soaks up power "
+        "that would otherwise be curtailed. The highest-value moment to run flexible jobs. "
+        "A heuristic, not measured curtailment.",
+    )
 
 
 class CarbonAnomaly(BaseModel):
