@@ -1,0 +1,32 @@
+# Carbon-aware autoscaling with KEDA: run a batch/worker Deployment only when the
+# grid is in clean surplus, scaling it to zero otherwise. Pairs with the
+# `carbon_clean_surplus` gauge that CarbonLens exposes on /metrics.
+#
+# Prerequisites:
+#   - KEDA installed (https://keda.sh)
+#   - Prometheus scraping CarbonLens /metrics (so carbon_clean_surplus exists)
+#   - A Deployment of flexible, interruptible workers (e.g. a queue consumer)
+#
+# The metric is 1 during clean surplus and 0 otherwise, so with threshold 1 and an
+# activationThreshold below 1, KEDA keeps the Deployment at 0 replicas until the
+# zone is in surplus, then scales it up to soak up the queue with clean power.
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: carbon-aware-batch
+  namespace: default
+spec:
+  scaleTargetRef:
+    name: batch-worker # your interruptible Deployment
+  minReplicaCount: 0 # scale to zero off-surplus
+  maxReplicaCount: 10 # cap when surplus is on
+  pollingInterval: 60
+  cooldownPeriod: 300 # don't thrash when surplus flickers
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://prometheus.monitoring.svc:9090
+        # Pick the grid zone your cluster runs in (see /api/v1/carbon/zones).
+        query: max(carbon_clean_surplus{grid_zone="US-NW-BPAT"})
+        threshold: "1"
+        activationThreshold: "0.5"
