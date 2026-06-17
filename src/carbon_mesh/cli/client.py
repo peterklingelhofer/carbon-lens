@@ -102,6 +102,22 @@ def forecast(provider: str, region: str, hours: int = 24) -> dict:
     return resp.json()
 
 
+def siting(
+    providers: str = "aws,gcp,azure",
+    power_watts: float | None = None,
+    days: int = 30,
+    limit: int = 20,
+) -> dict:
+    params: dict = {"providers": providers, "days": days, "limit": limit}
+    if power_watts is not None:
+        params["power_watts"] = power_watts
+    resp = httpx.get(
+        f"{get_api_url()}/api/v1/carbon/siting", params=params, headers=_headers(), timeout=30
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+
 def shiftability(days: int = 14, limit: int = 25) -> dict:
     resp = httpx.get(
         f"{get_api_url()}/api/v1/carbon/shiftability",
