@@ -1009,6 +1009,11 @@ export interface components {
          */
         BestTime: {
             /**
+             * Annual Kg Saved
+             * @description If a daily job of the given --energy-kwh moved from the worst to the best hour: estimated kg CO2 avoided per year (assumes the pattern holds). Null without energy.
+             */
+            annual_kg_saved?: number | null;
+            /**
              * Basis
              * @description history (observed hour-of-day means), forecast (next-48h curve as a proxy), or insufficient (no data yet)
              */
@@ -1020,6 +1025,11 @@ export interface components {
             cleanest_hour_utc?: number | null;
             /** Days Analyzed */
             days_analyzed: number;
+            /**
+             * Dirtiest Hour Utc
+             * @description The highest-mean-intensity UTC hour, for contrast
+             */
+            dirtiest_hour_utc?: number | null;
             /** Grid Zone */
             grid_zone: string;
             /** Provider */
@@ -1031,6 +1041,11 @@ export interface components {
             ranked_hours?: components["schemas"]["HourRank"][];
             /** Region */
             region: string;
+            /**
+             * Shift Savings Pct
+             * @description How much cleaner the best hour is than the worst observed hour (%). The value of scheduling well vs scheduling badly.
+             */
+            shift_savings_pct?: number | null;
             /**
              * Suggested Cron
              * @description A daily crontab line for the cleanest hour (UTC), or null
@@ -2327,6 +2342,8 @@ export interface operations {
             query?: {
                 /** @description History window to analyze (days). */
                 days?: number;
+                /** @description Daily job energy (kWh) for an annualized kg-saved estimate. */
+                energy_kwh?: number | null;
             };
             header?: never;
             path: {
