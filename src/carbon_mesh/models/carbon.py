@@ -153,6 +153,19 @@ class BestTime(BaseModel):
     cleanest_hour_utc: int | None = Field(
         default=None, description="The lowest-mean-intensity UTC hour, or null if no data"
     )
+    dirtiest_hour_utc: int | None = Field(
+        default=None, description="The highest-mean-intensity UTC hour, for contrast"
+    )
+    shift_savings_pct: float | None = Field(
+        default=None,
+        description="How much cleaner the best hour is than the worst observed hour (%). The "
+        "value of scheduling well vs scheduling badly.",
+    )
+    annual_kg_saved: float | None = Field(
+        default=None,
+        description="If a daily job of the given --energy-kwh moved from the worst to the best "
+        "hour: estimated kg CO2 avoided per year (assumes the pattern holds). Null without energy.",
+    )
     suggested_cron: str | None = Field(
         default=None, description="A daily crontab line for the cleanest hour (UTC), or null"
     )

@@ -402,6 +402,9 @@ async def get_best_time(
     provider: str,
     region: str,
     days: int = Query(14, ge=1, le=90, description="History window to analyze (days)."),
+    energy_kwh: float | None = Query(
+        None, ge=0, description="Daily job energy (kWh) for an annualized kg-saved estimate."
+    ),
     mapper: GridMapper = Depends(get_grid_mapper),
     store: HistoryStore = Depends(get_history_store),
     engine: SchedulingEngine = Depends(get_scheduling_engine),
@@ -437,6 +440,18 @@ async def get_best_time(
             basis = "insufficient"
 
     cleanest = ranked[0]["hour"] if ranked else None
+    dirtiest = ranked[-1]["hour"] if ranked else None
+    shift_savings_pct = None
+    annual_kg_saved = None
+    if ranked:
+        best_mean = ranked[0]["mean_gco2_kwh"]
+        worst_mean = ranked[-1]["mean_gco2_kwh"]
+        if worst_mean > 0:
+            shift_savings_pct = round((worst_mean - best_mean) / worst_mean * 100, 1)
+        if energy_kwh:
+            # gCO2/kWh delta x kWh/day x 365 days, to kg.
+            annual_kg_saved = round((worst_mean - best_mean) * energy_kwh * 365 / 1000, 1)
+
     return BestTime(
         provider=provider,
         region=region,
@@ -444,6 +459,9 @@ async def get_best_time(
         basis=basis,
         days_analyzed=days,
         cleanest_hour_utc=cleanest,
+        dirtiest_hour_utc=dirtiest,
+        shift_savings_pct=shift_savings_pct,
+        annual_kg_saved=annual_kg_saved,
         suggested_cron=f"0 {cleanest} * * *" if cleanest is not None else None,
         ranked_hours=[
             HourRank(hour_utc=r["hour"], mean_gco2_kwh=r["mean_gco2_kwh"], samples=r["samples"])
