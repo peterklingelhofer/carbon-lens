@@ -2002,6 +2002,12 @@ export interface components {
             /** Carbon Intensity Gco2 Kwh */
             carbon_intensity_gco2_kwh: number;
             /**
+             * Clean Surplus
+             * @description True when this slot looks like clean oversupply: renewables dominant, very low carbon, so it's the highest-value time to run (near-zero marginal). Given a bounded ranking edge. A heuristic from the fuel mix; curtailment isn't measured.
+             * @default false
+             */
+            clean_surplus: boolean;
+            /**
              * End
              * Format: date-time
              */

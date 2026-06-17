@@ -351,6 +351,8 @@ export interface TimeSlot {
   carbon_intensity_gco2_kwh: number;
   renewable_percentage: number;
   score: number;
+  // True when this slot looks like clean oversupply - the highest-value time to run.
+  clean_surplus?: boolean;
 }
 
 export interface ScheduleRecommendation {
