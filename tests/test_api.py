@@ -86,7 +86,8 @@ def test_accounting_savings(client: TestClient):
     assert resp.status_code == 200
     data = resp.json()
     assert data["total_requests"] >= 1
-    assert data["total_carbon_saved_gco2_kwh"] >= 0
+    assert "avg_intensity_reduction_gco2_kwh" in data
+    assert data["baseline"]
 
 
 def test_readiness_probe(client: TestClient):
