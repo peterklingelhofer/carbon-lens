@@ -5,6 +5,7 @@ import { type CarbonSnapshot, snapshotEnabled, useSnapshot } from "../api/snapsh
 import type { CarbonIntensity, CarbonUpdate, CloudRegion } from "../api/types";
 import { CustomZoneLookup } from "../components/CustomZoneLookup";
 import { InfoTip } from "../components/InfoTip";
+import { ShiftabilityPanel } from "../components/ShiftabilityPanel";
 import { DATA_QUALITY_TIP, DATA_QUALITY_TIP_RICH, MARGINAL_TIP } from "../copy";
 import { timeAgo } from "../lib/format";
 import { card, providerChip, section as sectionFn } from "../styles";
@@ -498,6 +499,8 @@ export function Dashboard() {
       {!snapshotEnabled && <LivePanel />}
 
       <CustomZoneLookup />
+
+      <ShiftabilityPanel />
 
       {/* Filter */}
       <div
