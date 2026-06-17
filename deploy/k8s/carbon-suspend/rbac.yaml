@@ -1,0 +1,31 @@
+# Least-privilege access for the carbon-suspend controller: it only needs to read
+# and toggle .spec.suspend on CronJobs in its own namespace.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: carbon-suspend
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: carbon-suspend
+  namespace: default
+rules:
+  - apiGroups: ["batch"]
+    resources: ["cronjobs"]
+    verbs: ["get", "list", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: carbon-suspend
+  namespace: default
+subjects:
+  - kind: ServiceAccount
+    name: carbon-suspend
+    namespace: default
+roleRef:
+  kind: Role
+  name: carbon-suspend
+  apiGroup: rbac.authorization.k8s.io
