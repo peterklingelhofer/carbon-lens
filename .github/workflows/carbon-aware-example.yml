@@ -1,0 +1,34 @@
+# Example: a carbon-aware flexible job. Manually triggered so it never runs on its
+# own in this repo -- copy the pattern into your own non-urgent / scheduled workflow.
+name: Carbon-aware example
+
+on:
+  workflow_dispatch:
+    inputs:
+      region:
+        description: "provider/region to check"
+        default: "aws/us-east-1"
+
+jobs:
+  run-when-clean:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check the grid
+        id: carbon
+        uses: ./.github/actions/carbon-signal
+        with:
+          region: ${{ github.event.inputs.region }}
+          max-intensity: "150"
+          # Advisory here (won't fail the run); set true on a `schedule:` workflow to
+          # skip-and-retry until a clean window.
+          fail-if-dirty: "false"
+
+      - name: Run the flexible job when the grid is clean
+        if: steps.carbon.outputs.clean-now == 'true'
+        run: echo "Grid is clean (${{ steps.carbon.outputs.intensity }} gCO2/kWh) — running."
+
+      - name: Otherwise note why we'd defer
+        if: steps.carbon.outputs.clean-now != 'true'
+        run: |
+          echo "Deferring: state=${{ steps.carbon.outputs.state }}, advice=${{ steps.carbon.outputs.advice }}"
+          echo "Soonest clean-surplus window: ${{ steps.carbon.outputs.surplus-window-hours }}h away"

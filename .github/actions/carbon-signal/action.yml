@@ -1,0 +1,113 @@
+name: "CarbonLens Carbon Signal"
+description: "Check whether now is a low-carbon time to run a job, with an honest marginal/surplus read"
+branding:
+  icon: "zap"
+  color: "green"
+
+inputs:
+  region:
+    description: "Target region as provider/region (e.g. aws/us-east-1). For a self-hosted runner, use the region it actually runs in."
+    required: true
+  api-url:
+    description: "CarbonLens API URL"
+    required: false
+    default: "https://carbonlens-gssa.onrender.com"
+  max-intensity:
+    description: "Optional gCO2/kWh cap; 'now' is considered clean only at/under this"
+    required: false
+  fail-if-dirty:
+    description: "Exit 1 when now is NOT a good time, so a cron workflow can skip and rerun later"
+    required: false
+    default: "false"
+
+outputs:
+  clean-now:
+    description: "true when now is a good time to run (run_now or clean surplus, within max-intensity)"
+    value: ${{ steps.signal.outputs.clean_now }}
+  state:
+    description: "green | yellow | red"
+    value: ${{ steps.signal.outputs.state }}
+  advice:
+    description: "run_now | wait_for_cleaner"
+    value: ${{ steps.signal.outputs.advice }}
+  intensity:
+    description: "Current average carbon intensity (gCO2/kWh)"
+    value: ${{ steps.signal.outputs.intensity }}
+  marginal:
+    description: "Marginal intensity (gCO2/kWh) -- what an extra kWh emits now; what actually responds to shifting load"
+    value: ${{ steps.signal.outputs.marginal }}
+  clean-surplus:
+    description: "true when renewables are abundant (likely surplus) -- the highest-value time to run"
+    value: ${{ steps.signal.outputs.clean_surplus }}
+  surplus-window-hours:
+    description: "Hours until the soonest upcoming clean-surplus window, if any"
+    value: ${{ steps.signal.outputs.surplus_window_hours }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Query carbon signal
+      id: signal
+      shell: bash
+      run: |
+        set -euo pipefail
+        PROVIDER="${{ inputs.region }}"
+        if [[ "$PROVIDER" != */* ]]; then
+          echo "::error::region must be provider/region, e.g. aws/us-east-1 (got '$PROVIDER')"
+          exit 1
+        fi
+
+        RESPONSE=$(curl -sf "${{ inputs.api-url }}/api/v1/carbon/signal/${PROVIDER}") || {
+          echo "::error::Failed to reach CarbonLens API at ${{ inputs.api-url }}"
+          exit 1
+        }
+
+        STATE=$(echo "$RESPONSE" | jq -r '.state')
+        ADVICE=$(echo "$RESPONSE" | jq -r '.advice')
+        INTENSITY=$(echo "$RESPONSE" | jq -r '.intensity_gco2_kwh')
+        MARGINAL=$(echo "$RESPONSE" | jq -r '.marginal_intensity_gco2_kwh // "n/a"')
+        NOTE=$(echo "$RESPONSE" | jq -r '.marginal_note // ""')
+        SURPLUS=$(echo "$RESPONSE" | jq -r '.clean_surplus')
+        SWINDOW=$(echo "$RESPONSE" | jq -r '.surplus_window_in_hours // ""')
+
+        # Clean now if the signal says run_now, or it's clean surplus -- subject to an
+        # optional caller-set intensity cap.
+        CLEAN=false
+        if [ "$ADVICE" = "run_now" ] || [ "$SURPLUS" = "true" ]; then CLEAN=true; fi
+        MAXI="${{ inputs.max-intensity }}"
+        if [ -n "$MAXI" ] && awk -v a="$INTENSITY" -v b="$MAXI" 'BEGIN{exit !(a>b)}'; then
+          CLEAN=false
+        fi
+
+        {
+          echo "clean_now=$CLEAN"
+          echo "state=$STATE"
+          echo "advice=$ADVICE"
+          echo "intensity=$INTENSITY"
+          echo "marginal=$MARGINAL"
+          echo "clean_surplus=$SURPLUS"
+          echo "surplus_window_hours=$SWINDOW"
+        } >> "$GITHUB_OUTPUT"
+
+        {
+          echo "### ⚡ CarbonLens signal — ${PROVIDER}"
+          echo ""
+          echo "| Field | Value |"
+          echo "|-------|-------|"
+          echo "| Good time to run now | **$CLEAN** |"
+          echo "| State | $STATE |"
+          echo "| Advice | $ADVICE |"
+          echo "| Intensity (avg) | ${INTENSITY} gCO2/kWh |"
+          echo "| Marginal (extra kWh now) | ${MARGINAL} gCO2/kWh |"
+          echo "| Clean surplus | $SURPLUS |"
+          if [ -n "$SWINDOW" ]; then echo "| Clean-surplus window | ~${SWINDOW}h away |"; fi
+          echo ""
+          if [ -n "$NOTE" ]; then echo "> $NOTE"; fi
+        } >> "$GITHUB_STEP_SUMMARY"
+
+        if [ "${{ inputs.fail-if-dirty }}" = "true" ] && [ "$CLEAN" != "true" ]; then
+          MSG="Grid isn't clean enough right now (${INTENSITY} gCO2/kWh, ${STATE})"
+          if [ -n "$SWINDOW" ]; then MSG="$MSG; a clean-surplus window is ~${SWINDOW}h away"; fi
+          echo "::notice::$MSG — skipping (rerun later)."
+          exit 1
+        fi
