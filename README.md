@@ -247,6 +247,7 @@ Run flexible workloads when the grid is cleanest, with no app changes:
 
 - **CronJob suspend controller** — annotate any `CronJob` with `carbonlens.dev/region` and a tiny controller toggles its `.spec.suspend` by the live grid (suspended when dirty, resumed on `run_now`/clean surplus). In-cluster via the service-account token, no extra dependencies. See [`deploy/k8s/carbon-suspend`](deploy/k8s/carbon-suspend/README.md).
 - **KEDA autoscaling** — scale an interruptible `Deployment` (queue consumers, batch workers) to zero except during clean surplus, off the `carbon_clean_surplus` Prometheus gauge. See [`deploy/k8s/keda`](deploy/k8s/keda/README.md).
+- **Argo Workflows** — a reusable `carbon-gate` step that branches flexible pipeline work on the grid (`when: clean`); the dominant k8s-native batch/ML engine, made carbon-aware with no app changes. See [`deploy/argo`](deploy/argo/README.md).
 
 Both support **on-prem grid zones** too: use `carbonlens.dev/region: zone/FR` (the `/carbon/signal/zone/{grid_zone}` and `/carbon/best-time/zone/{grid_zone}` endpoints back the decision for data centers / colo that sit on a grid we cover but aren't a cloud region).
 
