@@ -15,6 +15,7 @@ from carbon_mesh.api.deps import (
     get_engine,
     get_grid_mapper,
     get_history_store,
+    get_marginal_source,
     get_scheduling_engine,
     get_session,
     get_tracker,
@@ -22,6 +23,7 @@ from carbon_mesh.api.deps import (
 from carbon_mesh.auth.dependencies import require_api_key
 from carbon_mesh.carbon_sources.base import CarbonDataSource
 from carbon_mesh.carbon_sources.history_store import HistoryStore
+from carbon_mesh.carbon_sources.marginal import WattTimeMarginalSource
 from carbon_mesh.carbon_sources.open_meteo import fetch_weather
 from carbon_mesh.config import settings
 from carbon_mesh.db.models import ApiKeyRecord
@@ -244,6 +246,7 @@ async def _build_signal(
     longitude: float,
     engine: SchedulingEngine,
     source: CarbonDataSource,
+    marginal_source: "WattTimeMarginalSource | None" = None,
 ) -> CarbonSignal:
     """Core run-now/wait decision for a grid zone. Shared by the cloud-region and
     on-prem (zone) endpoints so both make the exact same marginal/surplus-aware call."""
@@ -265,6 +268,12 @@ async def _build_signal(
     # curtailed power.
     current = await source.get_carbon_intensity(zone)
     marginal = current.marginal_intensity_gco2_kwh
+    marginal_basis = "heuristic"
+    # If the operator configured a measured-marginal source for this zone, prefer it.
+    if marginal_source is not None and marginal_source.can_handle(zone):
+        measured = await marginal_source.marginal_intensity(zone)
+        if measured is not None:
+            marginal, marginal_basis = measured, "measured"
     surplus = is_clean_surplus(current.renewable_percentage, now_v, marginal)
 
     # Soonest upcoming clean-surplus window (the highest-value time to shift into).
@@ -302,6 +311,7 @@ async def _build_signal(
         advice=advice,
         marginal_intensity_gco2_kwh=marginal,
         marginal_note=note,
+        marginal_basis=marginal_basis,
         clean_surplus=surplus,
         surplus_window_in_hours=surplus_window,
         cleaner_window_in_hours=window_h,
@@ -317,6 +327,7 @@ async def get_zone_signal(
     mapper: GridMapper = Depends(get_grid_mapper),
     engine: SchedulingEngine = Depends(get_scheduling_engine),
     source: CarbonDataSource = Depends(get_carbon_source),
+    marginal_source: WattTimeMarginalSource | None = Depends(get_marginal_source),
 ) -> CarbonSignal:
     """Run-now/wait decision for a grid zone directly -- for on-prem / colo workloads
     that sit on a grid we cover but aren't a cloud region. Use IDs from /carbon/zones."""
@@ -326,7 +337,9 @@ async def get_zone_signal(
             status_code=404,
             detail=f"Unknown grid zone: {grid_zone}. See /api/v1/carbon/zones for valid IDs.",
         )
-    return await _build_signal("zone", grid_zone, grid_zone, rep.longitude, engine, source)
+    return await _build_signal(
+        "zone", grid_zone, grid_zone, rep.longitude, engine, source, marginal_source
+    )
 
 
 @router.get("/carbon/signal/{provider}/{region}", response_model=CarbonSignal, tags=["Carbon Data"])
@@ -336,6 +349,7 @@ async def get_carbon_signal(
     mapper: GridMapper = Depends(get_grid_mapper),
     engine: SchedulingEngine = Depends(get_scheduling_engine),
     source: CarbonDataSource = Depends(get_carbon_source),
+    marginal_source: WattTimeMarginalSource | None = Depends(get_marginal_source),
 ) -> CarbonSignal:
     """One-call traffic-light decision: run a flexible job here now, or wait?
 
@@ -348,7 +362,7 @@ async def get_carbon_signal(
         raise HTTPException(status_code=404, detail=f"Unknown region: {provider}/{region}")
     info = mapper.get_region(provider, region)
     longitude = info.longitude if info else 0.0
-    return await _build_signal(provider, region, zone, longitude, engine, source)
+    return await _build_signal(provider, region, zone, longitude, engine, source, marginal_source)
 
 
 @router.get(

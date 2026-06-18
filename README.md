@@ -305,6 +305,15 @@ CARBON_LENS_ELECTRICITY_MAPS_API_KEY=your_key   # Global (paid: electricitymaps.
 
 Verify: `curl http://localhost:8000/health/providers`
 
+### Measured marginal emissions (optional, bring your own key)
+
+By default the marginal intensity is a labelled **heuristic** (merit-order estimate from the live fuel mix). If you have a [WattTime](https://watttime.org) account, supply a token and an explicit grid-zone → WattTime-region map, and `/carbon/signal` will use WattTime's **measured** MOER instead, labelled `marginal_basis: "measured"`. Off by default; unmapped zones stay on the heuristic (we never guess a region code):
+
+```bash
+CARBON_LENS_WATTTIME_TOKEN=your_bearer_token
+CARBON_LENS_WATTTIME_ZONE_MAP=US-CAL-CISO:CAISO_NORTH,US-MIDA-PJM:PJM_DC
+```
+
 ---
 
 ## Cloud Region Coverage

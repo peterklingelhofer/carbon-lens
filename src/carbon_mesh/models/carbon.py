@@ -84,6 +84,11 @@ class CarbonSignal(BaseModel):
         description="Plain-English caveat when the marginal picture changes the decision "
         "(e.g. clean on average but fossil on the margin), or null when nothing notable.",
     )
+    marginal_basis: str = Field(
+        default="heuristic",
+        description="'measured' when marginal comes from an operator-configured source "
+        "(e.g. WattTime MOER), else 'heuristic' (a fuel-mix merit-order estimate).",
+    )
     clean_surplus: bool = Field(
         default=False,
         description="True when the grid looks like clean oversupply now -- renewables "
