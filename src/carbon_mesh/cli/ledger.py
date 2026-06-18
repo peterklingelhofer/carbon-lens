@@ -22,12 +22,12 @@ def append(entry: dict) -> None:
         f.write(json.dumps(entry) + "\n")
 
 
-def read() -> list[dict]:
-    """Read all ledger records (skipping any unparseable lines)."""
-    if not LEDGER_FILE.exists():
+def read_file(path: Path) -> list[dict]:
+    """Read one ledger file's records (skipping any unparseable lines)."""
+    if not path.exists():
         return []
     out: list[dict] = []
-    for line in LEDGER_FILE.read_text().splitlines():
+    for line in path.read_text().splitlines():
         line = line.strip()
         if not line:
             continue
@@ -36,6 +36,73 @@ def read() -> list[dict]:
         except json.JSONDecodeError:
             continue
     return out
+
+
+def read() -> list[dict]:
+    """Read this host's local ledger records."""
+    return read_file(LEDGER_FILE)
+
+
+def _within(ts: str | None, cutoff: float) -> bool:
+    """Whether an entry's timestamp is within the window (undated entries kept)."""
+    try:
+        t = datetime.fromisoformat(ts).timestamp() if ts else None
+    except (TypeError, ValueError):
+        t = None
+    return t is None or t >= cutoff
+
+
+def fleet_summary(entries: list[dict], now: datetime, days: int, top: int = 20) -> dict:
+    """Org-level rollup across many hosts' ledgers, broken down by region.
+
+    Same honest rules as ``summarize``: real kg avoided only from runs that supplied
+    energy; run-now jobs avoid nothing. Concatenate each host's ``read_file`` output
+    and pass it here for a fleet view.
+    """
+    cutoff = now.timestamp() - days * 86_400
+    recent = [e for e in entries if _within(e.get("ts"), cutoff)]
+
+    by_region: dict[str, dict] = {}
+    total_kg = 0.0
+    measured = 0
+    shifted_total = 0
+    energy_jobs = 0
+    for e in recent:
+        region = e.get("region", "?")
+        row = by_region.setdefault(
+            region, {"region": region, "jobs": 0, "shifted": 0, "kg_avoided": 0.0, "_reds": []}
+        )
+        row["jobs"] += 1
+        if (e.get("deferred_hours") or 0) > 0:
+            row["shifted"] += 1
+            shifted_total += 1
+            red = e.get("reduction_gco2_kwh", 0.0) or 0.0
+            row["_reds"].append(red)
+            if e.get("basis") == "measured":
+                measured += 1
+            if e.get("energy_kwh"):
+                energy_jobs += 1
+                kg = red * e["energy_kwh"] / 1000
+                row["kg_avoided"] += kg
+                total_kg += kg
+
+    regions = []
+    for row in by_region.values():
+        reds = row.pop("_reds")
+        row["avg_reduction_gco2_kwh"] = round(sum(reds) / len(reds), 1) if reds else 0.0
+        row["kg_avoided"] = round(row["kg_avoided"], 2)
+        regions.append(row)
+    regions.sort(key=lambda r: r["kg_avoided"], reverse=True)
+
+    return {
+        "jobs": len(recent),
+        "shifted": shifted_total,
+        "measured": measured,
+        "jobs_with_energy": energy_jobs,
+        "total_kg_avoided": round(total_kg, 2),
+        "regions": regions[:top],
+        "days": days,
+    }
 
 
 def summarize(entries: list[dict], now: datetime, days: int) -> dict:
