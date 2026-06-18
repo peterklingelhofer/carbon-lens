@@ -18,7 +18,13 @@ describe("CleanCompute", () => {
         generated_at: "2026-06-17T12:00:00+00:00",
         days_analyzed: 14,
         greenest_regions: [
-          { provider: "gcp", region: "europe-north1", location: "Finland", typical_gco2_kwh: 70 },
+          {
+            provider: "gcp",
+            region: "europe-north1",
+            location: "Finland",
+            typical_gco2_kwh: 70,
+            trend_pct: -8,
+          },
         ],
         most_shiftable: [
           {
@@ -39,5 +45,6 @@ describe("CleanCompute", () => {
     expect(screen.getByText(/europe-north1/)).toBeTruthy();
     expect(screen.getByText("US-CAL-CISO")).toBeTruthy();
     expect(screen.getByText(/62% cleaner/)).toBeTruthy();
+    expect(screen.getByText(/↓ 8%/)).toBeTruthy(); // greening trend indicator
   });
 });

@@ -33,6 +33,22 @@ def test_report_ranks_shiftability_and_greenness():
     # Greenest: the low-average region ranks first.
     assert report["greenest_regions"][0]["region"] == "cleanflat"
     assert report["greenest_regions"][0]["typical_gco2_kwh"] == 65.0  # (60 + 70) / 2
+    # Each greenest entry carries a within-window trend (cleaner/dirtier).
+    assert "trend_pct" in report["greenest_regions"][0]
+
+
+def test_trend_pct_detects_direction():
+    from carbon_mesh.engine.clean_compute import _trend_pct
+
+    # Later half cleaner than earlier half -> negative (greening).
+    pts = [
+        {"t": "2026-06-10T00:00:00+00:00", "c": 400},
+        {"t": "2026-06-11T00:00:00+00:00", "c": 400},
+        {"t": "2026-06-12T00:00:00+00:00", "c": 200},
+        {"t": "2026-06-13T00:00:00+00:00", "c": 200},
+    ]
+    assert _trend_pct(pts) == -50.0
+    assert _trend_pct(pts[:2]) is None  # too few points
 
 
 def test_report_skips_thin_history():

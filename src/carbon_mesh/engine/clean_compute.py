@@ -27,6 +27,25 @@ def _within(ts: str | None, cutoff: datetime) -> bool:
     return t >= cutoff
 
 
+def _trend_pct(points: list[dict]) -> float | None:
+    """Within-window trend: later-half mean vs earlier-half mean (%).
+
+    Negative = the grid has been getting cleaner over the window; positive = dirtier.
+    A directional read over the available history (about a week), not week-over-week.
+    """
+    pts = sorted((p for p in points if p.get("c") is not None and p.get("t")), key=lambda p: p["t"])
+    if len(pts) < 4:
+        return None
+    mid = len(pts) // 2
+    early = pts[:mid]
+    late = pts[mid:]
+    early_mean = sum(float(p["c"]) for p in early) / len(early)
+    late_mean = sum(float(p["c"]) for p in late) / len(late)
+    if early_mean <= 0:
+        return None
+    return round((late_mean - early_mean) / early_mean * 100, 1)
+
+
 def build_clean_compute_report(
     history: dict,
     region_meta: dict[str, dict],
@@ -62,6 +81,7 @@ def build_clean_compute_report(
                     "region": region,
                     "location": meta.get("location", ""),
                     "typical_gco2_kwh": typical,
+                    "trend_pct": _trend_pct(recent),
                 }
             )
 
