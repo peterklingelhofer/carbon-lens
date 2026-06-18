@@ -224,6 +224,13 @@ def nightly_etl():
 
 Works with on-prem grids too (`zone/FR`). `wait_for_clean_window` blocks the calling thread, so for **Airflow** use the deferrable [`CarbonAwareSensor`](src/carbon_mesh/integrations/README.md) instead — it frees the worker slot while waiting for a clean window.
 
+For **always-on** work that can't defer but can do *less* when the grid is dirty (AI inference, media, batch sizing), pick by the grid instead of waiting:
+
+```python
+model = cl.choose_by_carbon("aws/us-east-1", "gpt-full", "gpt-mini")   # leaner model when dirty
+bitrate = cl.choose_by_state("aws/us-east-1", "1080p", "720p", "480p")  # graded by green/yellow/red
+```
+
 ### Carbon-aware GitHub Action
 
 Gate or annotate a workflow by the live grid — run flexible CI/CD when it's cleanest:
