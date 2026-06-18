@@ -452,6 +452,22 @@ class TestRunCommand:
         result = runner.invoke(app, ["run", "--region", "bogus", "--dry-run", "--", "echo", "hi"])
         assert result.exit_code == 1
 
+    def test_measure_energy_records_measured_kwh(self):
+        # RAPL reads 3.6e9 uj more after the run -> 0.001 kWh, recorded as measured.
+        captured: list[dict] = []
+        reads = iter([(1_000_000_000, 0), (4_600_000_000, 0)])
+        with (
+            patch("carbon_mesh.cli.client.forecast", return_value=_forecast([40, 300])),
+            patch("carbon_mesh.cli.energy.read_rapl_uj", side_effect=lambda: next(reads)),
+            patch("carbon_mesh.cli.ledger.append", side_effect=captured.append),
+        ):
+            result = runner.invoke(
+                app, ["run", "--region", "aws/us-east-1", "--measure-energy", "--", "echo", "hi"]
+            )
+        assert result.exit_code == 0
+        assert captured[0]["energy_measured"] is True
+        assert captured[0]["energy_kwh"] == 0.001
+
     def test_records_measured_reduction_at_run_time(self):
         # Forecast says defer 2h to ~100; at run time the grid actually reads 90.
         captured: list[dict] = []
