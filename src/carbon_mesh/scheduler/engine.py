@@ -77,6 +77,11 @@ class ScheduleRecommendation(BaseModel):
         description="Percentage of carbon saved vs running immediately"
     )
     evaluated_slots: int
+    marginal_basis: str = Field(
+        default="heuristic",
+        description="Whether the recommended region's marginal signal is 'measured' (from a "
+        "configured marginal source) or 'heuristic' (a merit-order estimate)",
+    )
 
 
 class CronSchedule(BaseModel):
@@ -268,6 +273,7 @@ class SchedulingEngine:
                 strategy=strategy,
                 carbon_saved_vs_now_pct=0,
                 evaluated_slots=0,
+                marginal_basis=self._marginal_basis_for(first_zone),
             )
 
         # Sort by score (lower is better for carbon, we want lowest carbon)
@@ -312,7 +318,14 @@ class SchedulingEngine:
             strategy=strategy,
             carbon_saved_vs_now_pct=max(saved_pct, 0),
             evaluated_slots=len(slots),
+            marginal_basis=self._marginal_basis_for(recommended.grid_zone),
         )
+
+    def _marginal_basis_for(self, grid_zone: str) -> str:
+        """'measured' when a configured marginal source covers this zone, else 'heuristic'."""
+        if self._marginal_source is not None and self._marginal_source.can_handle(grid_zone):
+            return "measured"
+        return "heuristic"
 
     async def forecast_zone(
         self,
