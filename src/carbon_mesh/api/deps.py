@@ -10,6 +10,10 @@ from carbon_mesh.carbon_sources.entsoe import ENTSOECarbonSource
 from carbon_mesh.carbon_sources.gridstatus import GridStatusCarbonSource
 from carbon_mesh.carbon_sources.history_store import HistoryStore
 from carbon_mesh.carbon_sources.hybrid import HybridCarbonSource
+from carbon_mesh.carbon_sources.marginal import (
+    WattTimeMarginalSource,
+    marginal_source_from_settings,
+)
 from carbon_mesh.carbon_sources.mock import MockCarbonSource
 from carbon_mesh.config import settings
 from carbon_mesh.engine.cache import IntensityCache
@@ -85,6 +89,8 @@ def _build_carbon_source() -> CarbonDataSource:
 _carbon_source = _build_carbon_source()
 _cached_source = _CachedCarbonSource(_carbon_source, _cache)
 _history_store = HistoryStore(settings.history_url)
+# Optional measured-marginal source (None unless an operator configured WattTime).
+_marginal_source = marginal_source_from_settings(settings)
 # Demo/test fallback store; the DB-backed repo is used per-request when a DB is on.
 _in_memory_sla_repo = InMemorySLARepository()
 _engine = RoutingEngine(
@@ -108,6 +114,11 @@ def get_carbon_source() -> CarbonDataSource:
 
 def get_history_store() -> HistoryStore:
     return _history_store
+
+
+def get_marginal_source() -> WattTimeMarginalSource | None:
+    """The configured measured-marginal source, or None (heuristic-only)."""
+    return _marginal_source
 
 
 def get_scheduling_engine() -> "SchedulingEngine":

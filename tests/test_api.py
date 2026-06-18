@@ -266,6 +266,8 @@ def test_carbon_signal(client: TestClient):
     assert body["advice"] in ("run_now", "wait_for_cleaner")
     assert body["grid_zone"] == "US-NW-BPAT"
     assert isinstance(body["intensity_gco2_kwh"], (int, float))
+    # No WattTime configured in tests, so marginal is the labelled heuristic.
+    assert body["marginal_basis"] == "heuristic"
     if body["advice"] == "wait_for_cleaner":
         assert body["cleaner_window_in_hours"] >= 1
 
