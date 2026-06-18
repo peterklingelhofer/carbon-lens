@@ -422,6 +422,55 @@ def _print_best_time(label: str, data: dict) -> None:
         console.print("  Not enough data yet to recommend an hour.")
 
 
+@app.command(name="fleet-impact")
+def fleet_impact(
+    directory: str = typer.Option(
+        ..., "--dir", help="Directory of per-host *.jsonl impact ledgers (collected from the fleet)"
+    ),
+    days: int = typer.Option(30, "--days", help="Look back this many days"),
+    json_output: bool = typer.Option(False, "--json", help="Output raw JSON"),
+):
+    """Org-level verified carbon impact across a fleet of hosts' impact ledgers."""
+    import glob
+    from pathlib import Path
+
+    files = sorted(glob.glob(str(Path(directory) / "*.jsonl")))
+    if not files:
+        console.print(f"[red]Error:[/red] no *.jsonl ledger files in {directory}")
+        raise typer.Exit(1)
+    entries: list[dict] = []
+    for f in files:
+        entries.extend(ledger.read_file(Path(f)))
+    summary = ledger.fleet_summary(entries, datetime.now(timezone.utc), days)
+
+    if json_output:
+        import json
+
+        console.print_json(json.dumps(summary))
+        return
+
+    console.print(
+        f"[bold green]Fleet carbon impact — last {days} days[/bold green] ({len(files)} hosts)"
+    )
+    console.print(f"  Jobs run:           {summary['jobs']}")
+    console.print(
+        f"  Shifted to cleaner: {summary['shifted']} ({summary['measured']} verified at run time)"
+    )
+    console.print(
+        f"  CO2 avoided:        ~{summary['total_kg_avoided']} kg "
+        f"(from {summary['jobs_with_energy']} jobs run with --energy-kwh)"
+    )
+    if summary["regions"]:
+        table = Table(title="By region")
+        table.add_column("Region")
+        table.add_column("Jobs", justify="right")
+        table.add_column("Shifted", justify="right")
+        table.add_column("kg avoided", justify="right", style="green")
+        for r in summary["regions"]:
+            table.add_row(r["region"], str(r["jobs"]), str(r["shifted"]), f"{r['kg_avoided']:.1f}")
+        console.print(table)
+
+
 @app.command(name="best-time")
 def best_time(
     region: str = typer.Argument(
