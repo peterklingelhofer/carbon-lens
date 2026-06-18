@@ -6,6 +6,7 @@ import { Nav } from "./components/Nav";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { About } from "./pages/About";
 import { ApiExplorer } from "./pages/ApiExplorer";
+import { CleanCompute } from "./pages/CleanCompute";
 import { Compliance } from "./pages/Compliance";
 import { Dashboard } from "./pages/Dashboard";
 import { Landing } from "./pages/Landing";
@@ -65,6 +66,7 @@ function RoutedContent() {
           }
         />
         <Route path="/route" element={<RouteDemo />} />
+        <Route path="/clean-compute" element={<CleanCompute />} />
         <Route path="/compliance" element={<Compliance />} />
         <Route path="/sla" element={<SLAMonitor />} />
         <Route path="/scheduler" element={<Scheduler />} />
