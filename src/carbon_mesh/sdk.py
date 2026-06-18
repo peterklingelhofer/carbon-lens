@@ -47,6 +47,30 @@ def is_good_time(signal: dict, max_intensity: float | None = None) -> bool:
     return good
 
 
+def choose_by_carbon(signal: dict, when_clean, when_dirty, max_intensity: float | None = None):
+    """Pick one of two options by the grid: ``when_clean`` if now is good, else ``when_dirty``.
+
+    For ALWAYS-ON work that can't defer but can do *less* when the grid is dirty --
+    e.g. serve a smaller AI model, lower media bitrate, or a smaller batch size when
+    dirty, and the full-quality option when clean.
+    """
+    return when_clean if is_good_time(signal, max_intensity) else when_dirty
+
+
+def choose_by_state(signal: dict, green, yellow, red):
+    """Three-way pick by the signal's traffic-light ``state`` (green/yellow/red).
+
+    Graded degradation: full quality on green, a middle tier on yellow, the leanest
+    on red. Unknown state falls back to ``red`` (the safe, lowest-carbon choice).
+    """
+    state = signal.get("state")
+    if state == "green":
+        return green
+    if state == "yellow":
+        return yellow
+    return red
+
+
 class CarbonClient:
     """Thin programmatic client for carbon-aware decisions."""
 
@@ -66,6 +90,18 @@ class CarbonClient:
     def is_good_time(self, region: str, max_intensity: float | None = None) -> bool:
         """Whether now is a good time to run flexible load in ``region``."""
         return is_good_time(self.signal(region), max_intensity)
+
+    def choose_by_carbon(self, region, when_clean, when_dirty, max_intensity=None):
+        """``when_clean`` if the grid is good in ``region`` now, else ``when_dirty``.
+
+        e.g. ``model = cl.choose_by_carbon(region, "gpt-full", "gpt-mini")`` to serve a
+        leaner AI model when the grid is dirty.
+        """
+        return choose_by_carbon(self.signal(region), when_clean, when_dirty, max_intensity)
+
+    def choose_by_state(self, region, green, yellow, red):
+        """Three-way pick by ``region``'s traffic-light state (graded degradation)."""
+        return choose_by_state(self.signal(region), green, yellow, red)
 
     def wait_for_clean_window(
         self,
