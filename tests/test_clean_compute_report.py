@@ -51,6 +51,30 @@ def test_trend_pct_detects_direction():
     assert _trend_pct(pts[:2]) is None  # too few points
 
 
+def test_update_clean_compute_history_appends_replaces_and_caps():
+    from carbon_mesh.engine.clean_compute import update_clean_compute_history
+
+    report = {
+        "greenest_regions": [{"typical_gco2_kwh": 60}, {"typical_gco2_kwh": 80}],
+        "most_shiftable": [{"shift_savings_pct": 50}],
+    }
+    h = update_clean_compute_history(None, report, "2026-06-18")
+    assert h["days"][-1] == {
+        "date": "2026-06-18",
+        "greenest_mean_gco2_kwh": 70.0,
+        "top_shiftability_pct": 50,
+    }
+    # Same day replaces (no duplicate).
+    h2 = update_clean_compute_history(
+        h, {"greenest_regions": [{"typical_gco2_kwh": 40}], "most_shiftable": []}, "2026-06-18"
+    )
+    same_day = [d for d in h2["days"] if d["date"] == "2026-06-18"]
+    assert len(same_day) == 1 and same_day[0]["greenest_mean_gco2_kwh"] == 40.0
+    # Capped to max_points.
+    big = {"days": [{"date": f"2026-01-{i:02d}"} for i in range(1, 10)]}
+    assert len(update_clean_compute_history(big, report, "2026-06-18", max_points=3)["days"]) == 3
+
+
 def test_report_skips_thin_history():
     now = datetime(2026, 6, 16, tzinfo=timezone.utc)
     history = {"series": {"aws/new": [{"t": now.isoformat(), "c": 100.0, "r": 50.0}]}}
