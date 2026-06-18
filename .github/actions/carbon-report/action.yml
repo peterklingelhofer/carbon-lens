@@ -1,0 +1,58 @@
+name: "CarbonLens Clean-Compute Report"
+description: "Post the published State of Clean Compute report as a job summary (and optional PR comment)"
+branding:
+  icon: "bar-chart-2"
+  color: "green"
+
+inputs:
+  report-url:
+    description: "URL of the published clean_compute_report.json"
+    required: false
+    default: "https://raw.githubusercontent.com/peterklingelhofer/carbonlens/data/clean_compute_report.json"
+  top:
+    description: "How many rows to show in each table"
+    required: false
+    default: "8"
+  comment:
+    description: "Also post the report as a PR comment (needs pull-requests: write and GH_TOKEN)"
+    required: false
+    default: "false"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Render clean-compute report
+      shell: bash
+      run: |
+        set -euo pipefail
+        TOP="${{ inputs.top }}"
+
+        REPORT=$(curl -sf "${{ inputs.report-url }}") || {
+          echo "::warning::Clean-compute report unavailable at ${{ inputs.report-url }}"
+          exit 0
+        }
+
+        REPORT_MD="$(mktemp)"
+        {
+          echo "### ⚡ State of Clean Compute"
+          echo ""
+          echo "_Updated $(echo "$REPORT" | jq -r '.generated_at') · last $(echo "$REPORT" | jq -r '.days_analyzed') days of real grid data._"
+          echo ""
+          echo "**Greenest regions to deploy** — typical gCO2/kWh (lowest = host here)"
+          echo ""
+          echo "| Region | Location | gCO2/kWh |"
+          echo "|---|---|---|"
+          echo "$REPORT" | jq -r --argjson n "$TOP" '.greenest_regions[0:$n][] | "| \(.provider)/\(.region) | \(.location) | \(.typical_gco2_kwh) |"'
+          echo ""
+          echo "**Where carbon-aware scheduling helps most** — % a daily job saves at its cleanest hour"
+          echo ""
+          echo "| Grid zone | Location | Savings | Cleanest hour (UTC) |"
+          echo "|---|---|---|---|"
+          echo "$REPORT" | jq -r --argjson n "$TOP" '.most_shiftable[0:$n][] | "| \(.grid_zone) | \(.location) | \(.shift_savings_pct)% | \(.cleanest_hour_utc):00 |"'
+        } > "$REPORT_MD"
+
+        cat "$REPORT_MD" >> "$GITHUB_STEP_SUMMARY"
+
+        if [ "${{ inputs.comment }}" = "true" ] && [ -n "${{ github.event.pull_request.number }}" ]; then
+          gh pr comment "${{ github.event.pull_request.number }}" --body-file "$REPORT_MD"
+        fi
