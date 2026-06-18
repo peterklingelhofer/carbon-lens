@@ -43,6 +43,14 @@ jobs:
           CARBON_LENS_GRID_STATUS_API_KEY: ${{ secrets.CARBON_LENS_GRID_STATUS_API_KEY }}
         run: uv run python scripts/build_snapshot.py --out snapshot.json --min-live 5
 
+      # A small, citable 'state of clean compute' artifact: which grids reward
+      # carbon-aware scheduling most, and which regions are greenest to host on.
+      # Computed from the freshly-built history -- reuses this cron, no extra cost.
+      - name: Build clean-compute report
+        run: |
+          uv run python scripts/build_clean_compute_report.py \
+            --history history.json --snapshot snapshot.json --out clean_compute_report.json || true
+
       - name: Publish to data branch
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -51,10 +59,12 @@ jobs:
           cp snapshot.json /tmp/pub/snapshot.json
           cp history.json /tmp/pub/history.json
           cp history.csv /tmp/pub/history.csv
+          cp clean_compute_report.json /tmp/pub/clean_compute_report.json 2>/dev/null || true
           cd /tmp/pub
           git init -q
           git checkout -q -b data
-          git add snapshot.json history.json history.csv
+          git add snapshot.json history.json history.csv clean_compute_report.json 2>/dev/null || \
+            git add snapshot.json history.json history.csv
           git -c user.name="carbonlens-bot" \
               -c user.email="github-actions[bot]@users.noreply.github.com" \
               commit -qm "snapshot ${{ github.run_id }}"
