@@ -27,6 +27,32 @@ def _within(ts: str | None, cutoff: datetime) -> bool:
     return t >= cutoff
 
 
+def update_clean_compute_history(
+    history: dict | None, report: dict, day: str, max_points: int = 84
+) -> dict:
+    """Append (or replace) one day's summary in the rolling report-history.
+
+    Keeps one point per day so the Clean Compute page can show a real multi-week
+    trend. ``day`` is an ISO date (YYYY-MM-DD); capped at ``max_points`` days.
+    """
+    series = [e for e in (history or {}).get("days", []) if e.get("date") != day]
+    greenest = report.get("greenest_regions", [])
+    shiftable = report.get("most_shiftable", [])
+    series.append(
+        {
+            "date": day,
+            "greenest_mean_gco2_kwh": (
+                round(sum(r["typical_gco2_kwh"] for r in greenest) / len(greenest), 1)
+                if greenest
+                else None
+            ),
+            "top_shiftability_pct": shiftable[0]["shift_savings_pct"] if shiftable else None,
+        }
+    )
+    series.sort(key=lambda e: e["date"])
+    return {"days": series[-max_points:]}
+
+
 def _trend_pct(points: list[dict]) -> float | None:
     """Within-window trend: later-half mean vs earlier-half mean (%).
 

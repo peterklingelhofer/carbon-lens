@@ -60,11 +60,11 @@ jobs:
           cp history.json /tmp/pub/history.json
           cp history.csv /tmp/pub/history.csv
           cp clean_compute_report.json /tmp/pub/clean_compute_report.json 2>/dev/null || true
+          cp clean_compute_history.json /tmp/pub/clean_compute_history.json 2>/dev/null || true
           cd /tmp/pub
           git init -q
           git checkout -q -b data
-          git add snapshot.json history.json history.csv clean_compute_report.json 2>/dev/null || \
-            git add snapshot.json history.json history.csv
+          git add -A
           git -c user.name="carbonlens-bot" \
               -c user.email="github-actions[bot]@users.noreply.github.com" \
               commit -qm "snapshot ${{ github.run_id }}"
