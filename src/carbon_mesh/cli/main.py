@@ -10,7 +10,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from carbon_mesh.cli import client, ledger
+from carbon_mesh.cli import client, energy, ledger
 from carbon_mesh.cli.green_run import choose_run_index, choose_run_plan
 
 app = typer.Typer(
@@ -233,6 +233,12 @@ def run(
         "--energy-kwh",
         help="Job energy in kWh; enables a real grams-avoided estimate in `carbonlens impact`",
     ),
+    measure_energy: bool = typer.Option(
+        False,
+        "--measure-energy",
+        help="Measure the job's actual CPU-package energy via RAPL (Linux) instead of "
+        "--energy-kwh; falls back to --energy-kwh where RAPL is unavailable",
+    ),
     dry_run: bool = typer.Option(False, "--dry-run", help="Show the plan; don't wait or run"),
 ):
     """Run a command at the cleanest time (and, with several regions, the cleanest place)."""
@@ -329,6 +335,27 @@ def run(
     have_shift = idx > 0 and now_v is not None
     predicted = max(0.0, now_v - chosen_v) if (have_shift and chosen_v is not None) else 0.0
     measured = max(0.0, now_v - run_v) if (have_shift and run_v is not None) else 0.0
+
+    # Tell the command which region was chosen, so it can target it.
+    env = {**os.environ, "CARBONLENS_REGION": chosen_label} if multi else None
+
+    # Optionally measure the job's actual CPU-package energy (RAPL) around the run,
+    # so the ledger's avoided-CO2 is a measurement, not the operator's estimate.
+    rapl_before = energy.read_rapl_uj() if measure_energy else None
+    result = subprocess.run(command, env=env)
+    job_energy_kwh = energy_kwh
+    if measure_energy and rapl_before is not None:
+        rapl_after = energy.read_rapl_uj()
+        if rapl_after is not None:
+            job_energy_kwh = round(
+                energy.energy_kwh_between(rapl_before[0], rapl_after[0], rapl_before[1]), 4
+            )
+            console.print(f"[dim]Measured ~{job_energy_kwh:.4f} kWh (CPU package, RAPL)[/dim]")
+        else:
+            console.print("[yellow]RAPL unreadable after run; using --energy-kwh.[/yellow]")
+    elif measure_energy:
+        console.print("[yellow]RAPL not available here; using --energy-kwh.[/yellow]")
+
     ledger.append(
         {
             "ts": datetime.now(timezone.utc).isoformat(),
@@ -341,13 +368,10 @@ def run(
             "basis": basis,
             "predicted_reduction_gco2_kwh": round(predicted, 1),
             "reduction_gco2_kwh": round(measured, 1),
-            "energy_kwh": energy_kwh,
+            "energy_kwh": job_energy_kwh,
+            "energy_measured": measure_energy and job_energy_kwh is not None,
         }
     )
-
-    # Tell the command which region was chosen, so it can target it.
-    env = {**os.environ, "CARBONLENS_REGION": chosen_label} if multi else None
-    result = subprocess.run(command, env=env)
     raise typer.Exit(result.returncode)
 
 
