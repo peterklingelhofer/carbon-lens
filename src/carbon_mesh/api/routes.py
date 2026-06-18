@@ -23,7 +23,7 @@ from carbon_mesh.api.deps import (
 from carbon_mesh.auth.dependencies import require_api_key
 from carbon_mesh.carbon_sources.base import CarbonDataSource
 from carbon_mesh.carbon_sources.history_store import HistoryStore
-from carbon_mesh.carbon_sources.marginal import WattTimeMarginalSource
+from carbon_mesh.carbon_sources.marginal import MarginalSource
 from carbon_mesh.carbon_sources.open_meteo import fetch_weather
 from carbon_mesh.config import settings
 from carbon_mesh.db.models import ApiKeyRecord
@@ -246,7 +246,7 @@ async def _build_signal(
     longitude: float,
     engine: SchedulingEngine,
     source: CarbonDataSource,
-    marginal_source: "WattTimeMarginalSource | None" = None,
+    marginal_source: "MarginalSource | None" = None,
 ) -> CarbonSignal:
     """Core run-now/wait decision for a grid zone. Shared by the cloud-region and
     on-prem (zone) endpoints so both make the exact same marginal/surplus-aware call."""
@@ -327,7 +327,7 @@ async def get_zone_signal(
     mapper: GridMapper = Depends(get_grid_mapper),
     engine: SchedulingEngine = Depends(get_scheduling_engine),
     source: CarbonDataSource = Depends(get_carbon_source),
-    marginal_source: WattTimeMarginalSource | None = Depends(get_marginal_source),
+    marginal_source: MarginalSource | None = Depends(get_marginal_source),
 ) -> CarbonSignal:
     """Run-now/wait decision for a grid zone directly -- for on-prem / colo workloads
     that sit on a grid we cover but aren't a cloud region. Use IDs from /carbon/zones."""
@@ -349,7 +349,7 @@ async def get_carbon_signal(
     mapper: GridMapper = Depends(get_grid_mapper),
     engine: SchedulingEngine = Depends(get_scheduling_engine),
     source: CarbonDataSource = Depends(get_carbon_source),
-    marginal_source: WattTimeMarginalSource | None = Depends(get_marginal_source),
+    marginal_source: MarginalSource | None = Depends(get_marginal_source),
 ) -> CarbonSignal:
     """One-call traffic-light decision: run a flexible job here now, or wait?
 
