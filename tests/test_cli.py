@@ -254,6 +254,57 @@ class TestImpactLedger:
         assert s["shifted"] == 2
         assert s["measured"] == 1
 
+    def test_fleet_summary_aggregates_by_region(self):
+        from datetime import datetime, timezone
+
+        from carbon_mesh.cli.ledger import fleet_summary
+
+        now = datetime(2026, 6, 17, tzinfo=timezone.utc)
+        entries = [
+            {
+                "ts": now.isoformat(),
+                "region": "aws/us-east-1",
+                "deferred_hours": 3,
+                "reduction_gco2_kwh": 200,
+                "energy_kwh": 10,
+                "basis": "measured",
+            },  # 2.0 kg
+            {
+                "ts": now.isoformat(),
+                "region": "aws/us-east-1",
+                "deferred_hours": 2,
+                "reduction_gco2_kwh": 100,
+                "energy_kwh": 5,
+                "basis": "forecast",
+            },  # 0.5 kg
+            {"ts": now.isoformat(), "region": "gcp/europe-west1", "deferred_hours": 0},  # ran now
+        ]
+        s = fleet_summary(entries, now, days=30)
+        assert s["jobs"] == 3
+        assert s["shifted"] == 2
+        assert s["measured"] == 1
+        assert s["total_kg_avoided"] == 2.5
+        assert s["regions"][0]["region"] == "aws/us-east-1"
+        assert s["regions"][0]["kg_avoided"] == 2.5
+
+    def test_fleet_impact_command_reads_dir(self, tmp_path: Path):
+        (tmp_path / "host-a.jsonl").write_text(
+            json.dumps(
+                {
+                    "ts": "2026-06-17T12:00:00+00:00",
+                    "region": "aws/us-east-1",
+                    "deferred_hours": 3,
+                    "reduction_gco2_kwh": 200,
+                    "energy_kwh": 10,
+                    "basis": "measured",
+                }
+            )
+            + "\n"
+        )
+        result = runner.invoke(app, ["fleet-impact", "--dir", str(tmp_path), "--days", "3650"])
+        assert result.exit_code == 0
+        assert "aws/us-east-1" in result.output
+
     def test_old_entries_drop_out_of_window(self):
         from datetime import datetime, timedelta, timezone
 
