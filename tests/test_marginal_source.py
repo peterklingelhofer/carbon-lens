@@ -54,6 +54,64 @@ def test_parse_moer_forecast():
     assert curve == {0: moer_to_gco2_kwh(800), 2: moer_to_gco2_kwh(400)}
 
 
+def test_parse_em_forecast():
+    from datetime import datetime, timezone
+
+    from carbon_mesh.carbon_sources.marginal import parse_em_forecast
+
+    now = datetime(2026, 6, 18, 12, 0, tzinfo=timezone.utc)
+    data = [
+        {"datetime": "2026-06-18T12:00:00Z", "marginalCarbonIntensity": 300},  # offset 0
+        {"datetime": "2026-06-18T15:00:00Z", "marginalCarbonIntensity": 120},  # offset 3
+        {"datetime": "2026-06-17T12:00:00Z", "marginalCarbonIntensity": 999},  # past -> dropped
+    ]
+    assert parse_em_forecast(data, now, hours=24) == {0: 300.0, 3: 120.0}
+
+
+async def test_electricity_maps_source_reads_marginal(monkeypatch):
+    from carbon_mesh.carbon_sources.marginal import ElectricityMapsMarginalSource
+
+    src = ElectricityMapsMarginalSource("tok", {"FR": "FR"})
+
+    class FakeResp:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"marginalCarbonIntensity": 88.0}  # already g/kWh
+
+    async def fake_get(url, params=None, headers=None):
+        assert headers == {"auth-token": "tok"}
+        return FakeResp()
+
+    monkeypatch.setattr(src._client, "get", fake_get)
+    assert await src.marginal_intensity("FR") == 88.0
+    assert await src.marginal_intensity("XX") is None
+
+
+def test_factory_prefers_watttime_then_electricity_maps():
+    from carbon_mesh.carbon_sources.marginal import (
+        ElectricityMapsMarginalSource,
+        WattTimeMarginalSource,
+        marginal_source_from_settings,
+    )
+
+    class Both:
+        watttime_token = "wt"
+        watttime_zone_map = "US-CAL-CISO:CAISO_NORTH"
+        electricity_maps_api_key = "em"
+        electricity_maps_zone_map = "FR:FR"
+
+    class EMOnly:
+        watttime_token = ""
+        watttime_zone_map = ""
+        electricity_maps_api_key = "em"
+        electricity_maps_zone_map = "FR:FR"
+
+    assert isinstance(marginal_source_from_settings(Both()), WattTimeMarginalSource)
+    assert isinstance(marginal_source_from_settings(EMOnly()), ElectricityMapsMarginalSource)
+
+
 def test_factory_is_off_without_token_or_map():
     class NoToken:
         watttime_token = ""
