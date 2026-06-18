@@ -186,6 +186,28 @@ async def test_find_optimal_window_returns_recommendation():
 
 
 @pytest.mark.asyncio
+async def test_forecast_zone_stamps_measured_marginal():
+    """When a marginal source has a forecast for the zone, forecast points carry the
+    measured marginal instead of the heuristic/None."""
+
+    class FakeMarginal:
+        def can_handle(self, zone):
+            return zone == "FI"
+
+        async def marginal_forecast(self, zone, hours):
+            return {0: 111.0, 1: 99.0}
+
+    engine = SchedulingEngine(
+        carbon_source=MockCarbonSource(),
+        grid_mapper=MockGridMapper(),
+        marginal_source=FakeMarginal(),
+    )
+    _, points = await engine.forecast_zone("FI", longitude=0.0, hours=3)
+    assert points[0].marginal_intensity_gco2_kwh == 111.0
+    assert points[1].marginal_intensity_gco2_kwh == 99.0
+
+
+@pytest.mark.asyncio
 async def test_long_job_is_scored_over_its_whole_window():
     """A multi-hour job's slot intensity is the average over its run window, not just
     the start hour."""

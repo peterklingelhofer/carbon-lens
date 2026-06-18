@@ -111,11 +111,15 @@ class SchedulingEngine:
         grid_mapper: GridMapper,
         forecast_source: ENTSOEForecastSource | None = None,
         weather_forecast_source: OpenMeteoForecastSource | None = None,
+        marginal_source=None,
     ) -> None:
         self._carbon_source = carbon_source
         self._grid_mapper = grid_mapper
         self._forecast_source = forecast_source
         self._weather_forecast_source = weather_forecast_source
+        # Optional measured-marginal source (WattTime). When present, forecast points
+        # carry MEASURED marginal so surplus/decisions are marginal-correct, not heuristic.
+        self._marginal_source = marginal_source
 
     async def find_optimal_window(
         self,
@@ -351,6 +355,18 @@ class SchedulingEngine:
             if projected is None:
                 projected = self._project_intensity(current, hour_offset, longitude)
             points.append(projected)
+
+        # Stamp MEASURED marginal across the forecast where an operator-configured
+        # source has it, so surplus/decisions use measured marginal -- not the
+        # heuristic -- for future hours too. Best-effort; absent -> points stay heuristic.
+        if self._marginal_source is not None and self._marginal_source.can_handle(grid_zone):
+            try:
+                mcurve = await self._marginal_source.marginal_forecast(grid_zone, hours)
+            except Exception:
+                mcurve = {}
+            for h, point in enumerate(points):
+                if h in mcurve:
+                    point.marginal_intensity_gco2_kwh = mcurve[h]
 
         return method, points
 
