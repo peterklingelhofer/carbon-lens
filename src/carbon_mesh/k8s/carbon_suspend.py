@@ -175,13 +175,14 @@ def reconcile() -> int:
             ).raise_for_status()
             changed += 1
             logger.info(
-                "%s/%s suspend=%s (region=%s, %s gCO2/kWh, surplus=%s)",
+                "%s/%s suspend=%s (region=%s, %s gCO2/kWh, surplus=%s, marginal=%s)",
                 namespace,
                 name,
                 want,
                 region,
                 signal.get("intensity_gco2_kwh"),
                 signal.get("clean_surplus"),
+                signal.get("marginal_basis", "heuristic"),
             )
     finally:
         k8s.close()
