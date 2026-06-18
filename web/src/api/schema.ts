@@ -208,6 +208,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/carbon/methodology": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Methodology
+         * @description How each number is derived, and how honest it is -- measured vs estimated.
+         *
+         *     A machine-readable transparency contract. The marginal entry reflects this
+         *     deployment's actual config (measured when an operator wired a source, else the
+         *     labelled heuristic).
+         */
+        get: operations["get_methodology_api_v1_carbon_methodology_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/carbon/shiftability": {
         parameters: {
             query?: never;
@@ -1973,6 +1997,33 @@ export interface components {
              */
             providers: string[];
         };
+        /**
+         * Methodology
+         * @description Machine-readable provenance: how each number is derived, and how honest it is.
+         *
+         *     The transparency contract -- so a user or auditor can see exactly what's measured
+         *     vs estimated, and what the caveats are, without reading the code.
+         */
+        Methodology: {
+            /** Fields */
+            fields: components["schemas"]["MethodologyField"][];
+            /** Note */
+            note: string;
+        };
+        /** MethodologyField */
+        MethodologyField: {
+            /**
+             * Basis
+             * @description measured | heuristic | estimated | forecast | derived
+             */
+            basis: string;
+            /** Field */
+            field: string;
+            /** Notes */
+            notes: string;
+            /** Source */
+            source: string;
+        };
         /** RegionRecommendation */
         RegionRecommendation: {
             /** Carbon Intensity Gco2 Kwh */
@@ -2799,6 +2850,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_methodology_api_v1_carbon_methodology_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Methodology"];
                 };
             };
         };

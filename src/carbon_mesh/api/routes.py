@@ -44,6 +44,8 @@ from carbon_mesh.models.carbon import (
     CarbonIntensity,
     CarbonSignal,
     HourRank,
+    Methodology,
+    MethodologyField,
     ShiftabilityRanking,
     SitingOption,
     SitingRecommendation,
@@ -686,6 +688,77 @@ async def get_shiftability(
         )
     rows.sort(key=lambda z: z.shift_savings_pct, reverse=True)
     return ShiftabilityRanking(days_analyzed=days, zones=rows[:limit])
+
+
+@router.get("/carbon/methodology", response_model=Methodology, tags=["Carbon Data"])
+async def get_methodology(
+    marginal_source: MarginalSource | None = Depends(get_marginal_source),
+) -> Methodology:
+    """How each number is derived, and how honest it is -- measured vs estimated.
+
+    A machine-readable transparency contract. The marginal entry reflects this
+    deployment's actual config (measured when an operator wired a source, else the
+    labelled heuristic)."""
+    marginal_basis = "measured" if marginal_source is not None else "heuristic"
+    marginal_source_desc = (
+        "operator-configured WattTime / Electricity Maps (measured MOER)"
+        if marginal_source is not None
+        else "fuel-mix merit-order estimate"
+    )
+    fields = [
+        MethodologyField(
+            field="carbon_intensity_gco2_kwh",
+            basis="measured",
+            source="grid operators (EIA, ENTSO-E, UK, AEMO, ...) where a live feed exists",
+            notes="Average grid intensity. Live where a feed exists, else modelled from "
+            "weather or a regional mix heuristic -- see /status/sources for which is which.",
+        ),
+        MethodologyField(
+            field="renewable_percentage",
+            basis="derived",
+            source="live fuel mix",
+            notes="Share of generation from wind/solar/hydro; excludes nuclear, so a clean "
+            "nuclear grid can read low here yet still be low-carbon.",
+        ),
+        MethodologyField(
+            field="marginal_intensity_gco2_kwh",
+            basis=marginal_basis,
+            source=marginal_source_desc,
+            notes="What an extra kWh of demand emits now -- the number that responds to "
+            "shifting load. Heuristic by default; measured when an operator brings a key.",
+        ),
+        MethodologyField(
+            field="clean_surplus",
+            basis="heuristic",
+            source="renewable share + intensity + marginal",
+            notes="Inferred clean oversupply, not metered curtailment. Conservative.",
+        ),
+        MethodologyField(
+            field="forecast",
+            basis="forecast",
+            source="ENTSO-E day-ahead (EU), Open-Meteo (weather), else a time-of-day model",
+            notes="Method is named per response. The uncertainty band is illustrative, "
+            "not a measured error.",
+        ),
+        MethodologyField(
+            field="best_time / shiftability / siting",
+            basis="derived",
+            source="published rolling history (hour-of-day and overall means)",
+            notes="Typical patterns over the window; directional guidance, not a guarantee.",
+        ),
+        MethodologyField(
+            field="impact (avoided CO2)",
+            basis="measured-or-estimated",
+            source="run-time grid re-reading + job energy",
+            notes="Counterfactual: running at submit time. Real kg only with job energy "
+            "(RAPL-measured via --measure-energy, else operator-supplied). Location-based.",
+        ),
+    ]
+    return Methodology(
+        fields=fields,
+        note="An estimate-and-measurement mix, labelled per field. Not an assured "
+        "third-party attestation.",
+    )
 
 
 @router.get("/carbon/zones", tags=["Carbon Data"])

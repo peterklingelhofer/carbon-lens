@@ -303,6 +303,17 @@ def test_migration_0007_chain():
     assert m.down_revision == "0006"
 
 
+def test_methodology_endpoint(client: TestClient):
+    resp = client.get("/api/v1/carbon/methodology")
+    assert resp.status_code == 200
+    body = resp.json()
+    fields = {f["field"]: f for f in body["fields"]}
+    assert "carbon_intensity_gco2_kwh" in fields
+    # No measured-marginal source configured in tests -> labelled heuristic.
+    assert fields["marginal_intensity_gco2_kwh"]["basis"] == "heuristic"
+    assert "attestation" in body["note"].lower()
+
+
 def test_zone_signal(client: TestClient):
     # On-prem / colo: ask by grid zone directly, no cloud region needed.
     resp = client.get("/api/v1/carbon/signal/zone/US-NW-BPAT")

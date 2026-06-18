@@ -1654,6 +1654,57 @@
         "title": "JobConstraints",
         "type": "object"
       },
+      "Methodology": {
+        "description": "Machine-readable provenance: how each number is derived, and how honest it is.\n\nThe transparency contract -- so a user or auditor can see exactly what's measured\nvs estimated, and what the caveats are, without reading the code.",
+        "properties": {
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/MethodologyField"
+            },
+            "title": "Fields",
+            "type": "array"
+          },
+          "note": {
+            "title": "Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "fields",
+          "note"
+        ],
+        "title": "Methodology",
+        "type": "object"
+      },
+      "MethodologyField": {
+        "properties": {
+          "basis": {
+            "description": "measured | heuristic | estimated | forecast | derived",
+            "title": "Basis",
+            "type": "string"
+          },
+          "field": {
+            "title": "Field",
+            "type": "string"
+          },
+          "notes": {
+            "title": "Notes",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          }
+        },
+        "required": [
+          "field",
+          "basis",
+          "source",
+          "notes"
+        ],
+        "title": "MethodologyField",
+        "type": "object"
+      },
       "RegionRecommendation": {
         "properties": {
           "carbon_intensity_gco2_kwh": {
@@ -3292,6 +3343,29 @@
           }
         },
         "summary": "Get Carbon History",
+        "tags": [
+          "Carbon Routing",
+          "Carbon Data"
+        ]
+      }
+    },
+    "/api/v1/carbon/methodology": {
+      "get": {
+        "description": "How each number is derived, and how honest it is -- measured vs estimated.\n\nA machine-readable transparency contract. The marginal entry reflects this\ndeployment's actual config (measured when an operator wired a source, else the\nlabelled heuristic).",
+        "operationId": "get_methodology_api_v1_carbon_methodology_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Methodology"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Methodology",
         "tags": [
           "Carbon Routing",
           "Carbon Data"
