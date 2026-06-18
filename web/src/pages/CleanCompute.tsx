@@ -1,4 +1,5 @@
-import { REPORT_URL, useCleanComputeReport } from "../api/report";
+import { REPORT_URL, useCleanComputeHistory, useCleanComputeReport } from "../api/report";
+import { MiniSparkline } from "../components/MiniSparkline";
 import { timeAgo } from "../lib/format";
 
 // A public, citable "State of Clean Compute": which grids reward carbon-aware
@@ -6,6 +7,8 @@ import { timeAgo } from "../lib/format";
 // on (lowest typical intensity), from the published rolling history.
 export function CleanCompute() {
   const { data, isLoading, isError } = useCleanComputeReport();
+  const { data: history } = useCleanComputeHistory();
+  const trend = (history?.days ?? []).filter((d) => d.greenest_mean_gco2_kwh != null);
 
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", padding: "2rem 1.25rem" }}>
@@ -26,6 +29,25 @@ export function CleanCompute() {
         <p style={{ color: "var(--gray-500)" }}>
           The report is still accumulating — check back once history has built up.
         </p>
+      )}
+
+      {trend.length >= 2 && (
+        <section style={{ marginBottom: "2rem" }}>
+          <h2 style={{ fontSize: "1.15rem", margin: "0 0 0.25rem" }}>Trend</h2>
+          <p style={{ color: "var(--gray-500)", fontSize: "0.85rem", margin: "0 0 0.5rem" }}>
+            Average typical intensity of the greenest regions, by day — is clean compute getting
+            cleaner?
+          </p>
+          <MiniSparkline
+            values={trend.map((d) => d.greenest_mean_gco2_kwh as number)}
+            labels={trend.map((d) => d.date.slice(5))}
+            mark="last"
+            ariaLabel="Greenest-region average carbon intensity over time"
+          />
+          <div style={{ fontSize: "0.65rem", color: "var(--gray-400)", marginTop: 2 }}>
+            {trend.length} days · lower is cleaner
+          </div>
+        </section>
       )}
 
       {data && (

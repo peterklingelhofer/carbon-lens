@@ -13,7 +13,10 @@ import json
 import urllib.request
 from datetime import datetime, timezone
 
-from carbon_mesh.engine.clean_compute import build_clean_compute_report
+from carbon_mesh.engine.clean_compute import (
+    build_clean_compute_report,
+    update_clean_compute_history,
+)
 
 
 def _load(path_or_url: str) -> dict:
@@ -40,13 +43,22 @@ def main() -> int:
     )
     parser.add_argument("--out", default="clean_compute_report.json", help="Output path")
     parser.add_argument("--days", type=int, default=14)
+    parser.add_argument(
+        "--history-out",
+        default="clean_compute_history.json",
+        help="Rolling daily-summary output for the trend chart; '' to skip",
+    )
+    parser.add_argument(
+        "--history-baseline",
+        default="https://raw.githubusercontent.com/peterklingelhofer/carbonlens/data/clean_compute_history.json",
+        help="Previous report-history (URL or path) to append to; '' to disable",
+    )
     args = parser.parse_args()
 
+    now = datetime.now(timezone.utc)
     history = _load(args.history)
     snapshot = _load(args.snapshot)
-    report = build_clean_compute_report(
-        history, _region_meta(snapshot), datetime.now(timezone.utc), days=args.days
-    )
+    report = build_clean_compute_report(history, _region_meta(snapshot), now, days=args.days)
 
     with open(args.out, "w") as f:
         json.dump(report, f, indent=2)
@@ -54,6 +66,19 @@ def main() -> int:
         f"Wrote {args.out}: {len(report['most_shiftable'])} shiftable grids, "
         f"{len(report['greenest_regions'])} regions"
     )
+
+    # Maintain the rolling daily-summary history for the trend chart (one point/day).
+    if args.history_out:
+        baseline: dict = {}
+        if args.history_baseline:
+            try:
+                baseline = _load(args.history_baseline)
+            except Exception:
+                baseline = {}
+        updated = update_clean_compute_history(baseline, report, now.date().isoformat())
+        with open(args.history_out, "w") as f:
+            json.dump(updated, f, indent=2)
+        print(f"Wrote {args.history_out}: {len(updated['days'])} day(s) of trend")
     return 0
 
 
