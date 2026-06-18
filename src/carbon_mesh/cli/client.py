@@ -102,6 +102,18 @@ def forecast(provider: str, region: str, hours: int = 24) -> dict:
     return resp.json()
 
 
+def report_impact(api_url: str, entry: dict) -> dict:
+    """POST one run's impact to an org ledger API (the /accounting/impact endpoint)."""
+    resp = httpx.post(
+        f"{api_url.rstrip('/')}/api/v1/accounting/impact",
+        json=entry,
+        headers=_headers(),
+        timeout=15,
+    )
+    resp.raise_for_status()
+    return resp.json()
+
+
 def siting(
     providers: str = "aws,gcp,azure",
     power_watts: float | None = None,
