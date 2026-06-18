@@ -287,6 +287,58 @@ class TestImpactLedger:
         assert s["regions"][0]["region"] == "aws/us-east-1"
         assert s["regions"][0]["kg_avoided"] == 2.5
 
+    def test_org_statement_states_methodology(self):
+        from datetime import datetime, timezone
+
+        from carbon_mesh.cli.ledger import org_statement
+
+        now = datetime(2026, 6, 18, tzinfo=timezone.utc)
+        entries = [
+            {
+                "ts": now.isoformat(),
+                "region": "aws/us-east-1",
+                "deferred_hours": 3,
+                "reduction_gco2_kwh": 200,
+                "energy_kwh": 10,
+                "basis": "measured",
+            },
+            {
+                "ts": now.isoformat(),
+                "region": "aws/us-east-1",
+                "deferred_hours": 2,
+                "reduction_gco2_kwh": 100,
+                "energy_kwh": 5,
+                "basis": "forecast",
+            },
+        ]
+        stmt = org_statement(entries, now, days=90, org_name="Acme")
+        assert stmt["org"] == "Acme"
+        assert stmt["shifted"] == 2
+        assert stmt["verified_share_pct"] == 50.0  # 1 of 2 re-measured
+        assert stmt["total_kg_avoided"] == 2.5
+        assert "counterfactual" in stmt and "Location-based" in stmt["accounting"]
+
+    def test_org_statement_command(self, tmp_path: Path):
+        (tmp_path / "h.jsonl").write_text(
+            json.dumps(
+                {
+                    "ts": "2026-06-18T12:00:00+00:00",
+                    "region": "aws/us-east-1",
+                    "deferred_hours": 3,
+                    "reduction_gco2_kwh": 200,
+                    "energy_kwh": 10,
+                    "basis": "measured",
+                }
+            )
+            + "\n"
+        )
+        result = runner.invoke(
+            app, ["org-statement", "--dir", str(tmp_path), "--org", "Acme", "--days", "3650"]
+        )
+        assert result.exit_code == 0
+        assert "Acme" in result.output
+        assert "Counterfactual" in result.output
+
     def test_fleet_impact_command_reads_dir(self, tmp_path: Path):
         (tmp_path / "host-a.jsonl").write_text(
             json.dumps(
