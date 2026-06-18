@@ -12,6 +12,7 @@ from rich.table import Table
 
 from carbon_mesh.cli import client, energy, ledger
 from carbon_mesh.cli.green_run import choose_run_index, choose_run_plan
+from carbon_mesh.cli.plan import plan_estimate
 
 app = typer.Typer(
     name="carbonlens",
@@ -648,6 +649,51 @@ def siting(
             f"{o['annual_kg']:.0f}" if o.get("annual_kg") is not None else "-",
         )
     console.print(table)
+    console.print()
+
+
+@app.command()
+def plan(
+    power_watts: float = typer.Option(..., "--power-watts", help="Continuous workload power (W)"),
+    flexible: float = typer.Option(
+        0.5, "--flexible", help="Fraction of the load that can be time-shifted (0-1)"
+    ),
+    providers: str = typer.Option("aws,gcp,azure", "--providers", "-p"),
+    days: int = typer.Option(30, "--days", help="History window"),
+    json_output: bool = typer.Option(False, "--json"),
+):
+    """Estimate the annual carbon opportunity: naive vs greenest-region + time-shifting."""
+    try:
+        siting_data = client.siting(providers, power_watts, days)
+        shift_data = client.shiftability(days, 200)
+    except Exception as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+
+    est = plan_estimate(siting_data, shift_data, power_watts, flexible)
+    if not est.get("available"):
+        console.print("Not enough data to plan right now.")
+        return
+    if json_output:
+        import json
+
+        console.print_json(json.dumps(est))
+        return
+
+    console.print()
+    console.print(f"[bold green]Annual carbon opportunity[/bold green] — {power_watts:.0f} W")
+    console.print(f"  Naive (carbon-blind):   {est['naive_annual_kg']:.0f} kg CO2/yr")
+    console.print(
+        f"  Carbon-aware:           {est['optimized_annual_kg']:.0f} kg CO2/yr "
+        f"in [bold]{est['best_region']}[/bold]"
+    )
+    console.print(
+        f"  Total avoided:          ~{est['total_saving_kg']:.0f} kg CO2/yr "
+        f"(region {est['region_saving_kg']:.0f} + shifting {est['shift_saving_kg']:.0f})"
+    )
+    console.print(
+        f"  [dim]Assumes {flexible:.0%} of load is shiftable and today's grid patterns hold.[/dim]"
+    )
     console.print()
 
 
