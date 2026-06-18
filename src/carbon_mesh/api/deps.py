@@ -10,10 +10,7 @@ from carbon_mesh.carbon_sources.entsoe import ENTSOECarbonSource
 from carbon_mesh.carbon_sources.gridstatus import GridStatusCarbonSource
 from carbon_mesh.carbon_sources.history_store import HistoryStore
 from carbon_mesh.carbon_sources.hybrid import HybridCarbonSource
-from carbon_mesh.carbon_sources.marginal import (
-    WattTimeMarginalSource,
-    marginal_source_from_settings,
-)
+from carbon_mesh.carbon_sources.marginal import MarginalSource, marginal_source_from_settings
 from carbon_mesh.carbon_sources.mock import MockCarbonSource
 from carbon_mesh.config import settings
 from carbon_mesh.engine.cache import IntensityCache
@@ -116,7 +113,7 @@ def get_history_store() -> HistoryStore:
     return _history_store
 
 
-def get_marginal_source() -> WattTimeMarginalSource | None:
+def get_marginal_source() -> MarginalSource | None:
     """The configured measured-marginal source, or None (heuristic-only)."""
     return _marginal_source
 

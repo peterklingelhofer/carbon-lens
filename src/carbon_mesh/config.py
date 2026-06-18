@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     # Map format: "US-CAL-CISO:CAISO_NORTH,US-MIDA-PJM:PJM_DC".
     watttime_token: str = ""
     watttime_zone_map: str = ""
+    # Electricity Maps marginal (also bring-your-own-key): reuses the EM api key above,
+    # plus a grid-zone -> EM-zone map, e.g. "US-CAL-CISO:US-CAL-CISO,FR:FR".
+    electricity_maps_zone_map: str = ""
 
     # Carbon source mode: "hybrid" (recommended), "mock", "eia", "gridstatus", "electricity_maps"
     carbon_source: str = "hybrid"
