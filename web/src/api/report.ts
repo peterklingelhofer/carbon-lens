@@ -47,3 +47,31 @@ export function useCleanComputeReport() {
     retry: 1,
   });
 }
+
+export interface ReportHistoryDay {
+  date: string;
+  greenest_mean_gco2_kwh: number | null;
+  top_shiftability_pct: number | null;
+}
+
+export interface CleanComputeHistory {
+  days: ReportHistoryDay[];
+}
+
+export const HISTORY_URL = SNAPSHOT_URL
+  ? SNAPSHOT_URL.replace("snapshot.json", "clean_compute_history.json")
+  : "";
+
+export function useCleanComputeHistory() {
+  return useQuery({
+    queryKey: ["clean-compute-history"],
+    queryFn: async (): Promise<CleanComputeHistory> => {
+      const res = await fetch(HISTORY_URL);
+      if (!res.ok) throw new Error(`history fetch failed: ${res.status}`);
+      return res.json();
+    },
+    enabled: !!HISTORY_URL,
+    staleTime: 30 * 60 * 1000,
+    retry: 1,
+  });
+}
