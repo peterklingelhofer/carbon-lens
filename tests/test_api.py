@@ -652,6 +652,17 @@ def test_metrics_exposes_carbon_gauges(client: TestClient):
     # Org-impact gauges (DB-backed; present even at 0 so dashboards have a stable series).
     assert "carbon_impact_kg_avoided" in body
     assert "carbon_impact_jobs_shifted" in body
+    # Graded tier gauge for proportional autoscaling.
+    assert "carbon_intensity_tier" in body
+
+
+def test_intensity_tier_thresholds():
+    from carbon_mesh.api.metrics import intensity_tier
+
+    assert intensity_tier(50) == 0  # green
+    assert intensity_tier(150) == 0
+    assert intensity_tier(300) == 1  # yellow
+    assert intensity_tier(500) == 2  # red
 
 
 def test_sla_crud_and_check_flow(client: TestClient):

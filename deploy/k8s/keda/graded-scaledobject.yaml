@@ -1,0 +1,27 @@
+# GRADED carbon-aware autoscaling: scale a flexible Deployment in proportion to how
+# clean the grid is, not just on/off. Uses the `carbon_intensity_tier` gauge
+# (0 green, 1 yellow, 2 red) -- "2 - tier" is clean headroom (clean=2, yellow=1,
+# dirty=0). This captures the large yellow middle that the binary surplus signal
+# (see scaledobject.yaml) misses.
+#
+# With this query x4 and threshold 1, KEDA targets ~8 replicas when green, ~4 on
+# yellow, and scales to minReplicaCount when red.
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: carbon-aware-batch-graded
+  namespace: default
+spec:
+  scaleTargetRef:
+    name: batch-worker # your interruptible Deployment
+  minReplicaCount: 1 # keep a little capacity even when dirty (raise/lower to taste)
+  maxReplicaCount: 8 # the "grid is green" ceiling
+  pollingInterval: 60
+  cooldownPeriod: 300
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://prometheus.monitoring.svc:9090
+        # Clean headroom (0..2) x 4 -> desired replicas = ceil(value / threshold).
+        query: (2 - max(carbon_intensity_tier{grid_zone="US-NW-BPAT"})) * 4
+        threshold: "1"

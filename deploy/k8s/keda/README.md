@@ -30,6 +30,15 @@ keeps the Deployment at `minReplicaCount` (0) until the metric crosses 0.5 — i
 hits 1 — then scales up toward `maxReplicaCount`. When surplus ends, it scales back
 to 0 after `cooldownPeriod`.
 
+## Graded scaling (capture the yellow middle)
+
+On/off surplus scaling leaves savings on the table during the large "yellow" period
+when the grid is neither clean surplus nor dirty. [`graded-scaledobject.yaml`](graded-scaledobject.yaml)
+scales **in proportion** to the `carbon_intensity_tier` gauge (0 green, 1 yellow, 2
+red): the fleet runs largest when green, smaller on yellow, and down to a floor when
+red. Use it for work that's flexible in *volume* (it can run partially) rather than
+strictly all-or-nothing.
+
 ## Honest limits
 
 - Only for **interruptible, queue-style** work: replicas can vanish at any time, so

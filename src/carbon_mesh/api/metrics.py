@@ -46,6 +46,22 @@ CLEAN_SURPLUS = Gauge(
     "this to trigger carbon-aware batch scaling with your existing Prometheus/Alertmanager.",
     _LABELS,
 )
+CARBON_TIER = Gauge(
+    "carbon_intensity_tier",
+    "Grid cleanliness tier: 0 = green (clean), 1 = yellow, 2 = red (dirty). For GRADED "
+    "autoscaling -- scale a fleet by '2 - tier' so it runs larger when the grid is cleaner, "
+    "capturing the yellow-zone savings an on/off surplus signal misses.",
+    _LABELS,
+)
+
+
+def intensity_tier(intensity_gco2_kwh: float) -> int:
+    """0 green (<=150), 1 yellow (<=400), 2 red -- same thresholds as the signal state."""
+    if intensity_gco2_kwh <= 150:
+        return 0
+    if intensity_gco2_kwh <= 400:
+        return 1
+    return 2
 
 
 IMPACT_KG_AVOIDED = Gauge(
@@ -116,5 +132,6 @@ async def refresh_carbon_metrics() -> None:
                 ci.marginal_intensity_gco2_kwh,
             )
             CLEAN_SURPLUS.labels(**labels).set(1 if surplus else 0)
+            CARBON_TIER.labels(**labels).set(intensity_tier(ci.carbon_intensity_gco2_kwh))
     except Exception as e:
         logger.warning("Carbon metrics refresh failed (non-fatal): %s", e)
