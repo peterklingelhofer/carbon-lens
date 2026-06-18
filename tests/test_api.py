@@ -276,6 +276,33 @@ def test_carbon_signal_unknown_region(client: TestClient):
     assert client.get("/api/v1/carbon/signal/aws/nope").status_code == 404
 
 
+def test_org_ledger_endpoints_without_db(client: TestClient):
+    # No DB in tests: ingest reports it wasn't stored, statement is a zeroed shape.
+    resp = client.post(
+        "/api/v1/accounting/impact",
+        json={"region": "aws/us-east-1", "deferred_hours": 3, "reduction_gco2_kwh": 200},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["stored"] is False
+
+    stmt = client.get("/api/v1/accounting/org-statement?days=90&org=Acme")
+    assert stmt.status_code == 200
+    body = stmt.json()
+    assert body["org"] == "Acme"
+    assert body["jobs"] == 0
+    assert "counterfactual" in body
+
+
+def test_migration_0007_chain():
+    import importlib.util as u
+
+    spec = u.spec_from_file_location("m7", "alembic/versions/0007_add_impact_records.py")
+    m = u.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    assert m.revision == "0007"
+    assert m.down_revision == "0006"
+
+
 def test_zone_signal(client: TestClient):
     # On-prem / colo: ask by grid zone directly, no cloud region needed.
     resp = client.get("/api/v1/carbon/signal/zone/US-NW-BPAT")
