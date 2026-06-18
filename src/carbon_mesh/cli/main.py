@@ -240,6 +240,12 @@ def run(
         help="Measure the job's actual CPU-package energy via RAPL (Linux) instead of "
         "--energy-kwh; falls back to --energy-kwh where RAPL is unavailable",
     ),
+    report_to: str | None = typer.Option(
+        None,
+        "--report-to",
+        help="POST this run's impact to an org ledger API base URL (its /accounting/impact "
+        "endpoint), so org-statement and the Prometheus gauges stay live without a manual gather",
+    ),
     dry_run: bool = typer.Option(False, "--dry-run", help="Show the plan; don't wait or run"),
 ):
     """Run a command at the cleanest time (and, with several regions, the cleanest place)."""
@@ -357,22 +363,30 @@ def run(
     elif measure_energy:
         console.print("[yellow]RAPL not available here; using --energy-kwh.[/yellow]")
 
-    ledger.append(
-        {
-            "ts": datetime.now(timezone.utc).isoformat(),
-            "region": chosen_label,
-            "reason": reason,
-            "deferred_hours": idx,
-            "now_gco2_kwh": now_v,
-            "chosen_gco2_kwh": chosen_v,
-            "run_gco2_kwh": run_v,
-            "basis": basis,
-            "predicted_reduction_gco2_kwh": round(predicted, 1),
-            "reduction_gco2_kwh": round(measured, 1),
-            "energy_kwh": job_energy_kwh,
-            "energy_measured": measure_energy and job_energy_kwh is not None,
-        }
-    )
+    entry = {
+        "ts": datetime.now(timezone.utc).isoformat(),
+        "region": chosen_label,
+        "reason": reason,
+        "deferred_hours": idx,
+        "now_gco2_kwh": now_v,
+        "chosen_gco2_kwh": chosen_v,
+        "run_gco2_kwh": run_v,
+        "basis": basis,
+        "predicted_reduction_gco2_kwh": round(predicted, 1),
+        "reduction_gco2_kwh": round(measured, 1),
+        "energy_kwh": job_energy_kwh,
+        "energy_measured": measure_energy and job_energy_kwh is not None,
+    }
+    ledger.append(entry)
+
+    # Also push to the org ledger API so org-statement and the Prometheus gauges go
+    # live, no manual file gather. Best-effort: a reporting failure never fails the run.
+    if report_to:
+        try:
+            client.report_impact(report_to, entry)
+        except Exception as e:
+            console.print(f"[yellow]Could not report impact to {report_to}: {e}[/yellow]")
+
     raise typer.Exit(result.returncode)
 
 

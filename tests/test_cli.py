@@ -86,6 +86,29 @@ class TestClientFunctions:
     def test_save_config_exists(self):
         assert callable(client.save_config)
 
+    def test_report_impact_posts_entry_to_org_ledger(self, monkeypatch):
+        captured = {}
+
+        class _Resp:
+            def raise_for_status(self):
+                pass
+
+            def json(self):
+                return {"stored": True}
+
+        def fake_post(url, json, headers, timeout):
+            captured["url"] = url
+            captured["json"] = json
+            return _Resp()
+
+        monkeypatch.setattr(client.httpx, "post", fake_post)
+        entry = {"region": "aws/us-east-1", "reduction_gco2_kwh": 120.0, "energy_kwh": 0.5}
+        out = client.report_impact("https://ledger.example.com/", entry)
+
+        assert out == {"stored": True}
+        assert captured["url"] == "https://ledger.example.com/api/v1/accounting/impact"
+        assert captured["json"] == entry
+
 
 # ---------------------------------------------------------------------------
 # Config load / save with temp directory
