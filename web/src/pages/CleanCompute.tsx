@@ -51,6 +51,18 @@ export function CleanCompute() {
                   <span style={{ color: "var(--green-text)" }}>
                     — {Math.round(r.typical_gco2_kwh)} gCO₂/kWh
                   </span>
+                  {r.trend_pct != null && Math.abs(r.trend_pct) >= 1 && (
+                    <span
+                      style={{
+                        marginLeft: 6,
+                        fontSize: "0.78rem",
+                        color: r.trend_pct < 0 ? "var(--green-text)" : "#b45309",
+                      }}
+                      title="Trend over the analysed window (negative = getting cleaner)"
+                    >
+                      {r.trend_pct < 0 ? "↓" : "↑"} {Math.abs(Math.round(r.trend_pct))}%
+                    </span>
+                  )}
                 </li>
               ))}
             </ol>
