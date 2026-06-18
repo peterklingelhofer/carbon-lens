@@ -4,6 +4,52 @@
  */
 
 export interface paths {
+    "/api/v1/accounting/impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ingest Impact
+         * @description Record one carbon-aware run in the org ledger (the system-of-record).
+         *
+         *     Hosts running `carbonlens run` POST here so org-statement is live and multi-host.
+         *     Persists only when a database is configured; otherwise reports it wasn't stored.
+         */
+        post: operations["ingest_impact_api_v1_accounting_impact_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounting/org-statement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Org Statement
+         * @description Methodology-stated org carbon-savings statement from the DB-backed ledger.
+         *
+         *     Returns an empty (zeroed) statement when no database is configured, so the shape
+         *     is stable. Same aggregation/methodology as the `carbonlens org-statement` CLI.
+         */
+        get: operations["get_org_statement_api_v1_accounting_org_statement_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/accounting/savings": {
         parameters: {
             query?: never;
@@ -1872,6 +1918,31 @@ export interface components {
             /** Samples */
             samples: number;
         };
+        /**
+         * ImpactIngest
+         * @description One carbon-aware run's impact, POSTed to the org ledger by a host.
+         */
+        ImpactIngest: {
+            /**
+             * Basis
+             * @default forecast
+             */
+            basis: string;
+            /**
+             * Deferred Hours
+             * @default 0
+             */
+            deferred_hours: number;
+            /** Energy Kwh */
+            energy_kwh?: number | null;
+            /**
+             * Reduction Gco2 Kwh
+             * @default 0
+             */
+            reduction_gco2_kwh: number;
+            /** Region */
+            region: string;
+        };
         /** JobConstraints */
         JobConstraints: {
             /**
@@ -2429,6 +2500,77 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    ingest_impact_api_v1_accounting_impact_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ImpactIngest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_org_statement_api_v1_accounting_org_statement_get: {
+        parameters: {
+            query?: {
+                /** @description Reporting period (days). */
+                days?: number;
+                /** @description Organization name for the header. */
+                org?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_savings_api_v1_accounting_savings_get: {
         parameters: {
             query?: never;

@@ -1550,6 +1550,46 @@
         "title": "HourRank",
         "type": "object"
       },
+      "ImpactIngest": {
+        "description": "One carbon-aware run's impact, POSTed to the org ledger by a host.",
+        "properties": {
+          "basis": {
+            "default": "forecast",
+            "title": "Basis",
+            "type": "string"
+          },
+          "deferred_hours": {
+            "default": 0,
+            "title": "Deferred Hours",
+            "type": "integer"
+          },
+          "energy_kwh": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Energy Kwh"
+          },
+          "reduction_gco2_kwh": {
+            "default": 0.0,
+            "title": "Reduction Gco2 Kwh",
+            "type": "number"
+          },
+          "region": {
+            "title": "Region",
+            "type": "string"
+          }
+        },
+        "required": [
+          "region"
+        ],
+        "title": "ImpactIngest",
+        "type": "object"
+      },
       "JobConstraints": {
         "properties": {
           "candidate_regions": {
@@ -2708,6 +2748,124 @@
   },
   "openapi": "3.1.0",
   "paths": {
+    "/api/v1/accounting/impact": {
+      "post": {
+        "description": "Record one carbon-aware run in the org ledger (the system-of-record).\n\nHosts running `carbonlens run` POST here so org-statement is live and multi-host.\nPersists only when a database is configured; otherwise reports it wasn't stored.",
+        "operationId": "ingest_impact_api_v1_accounting_impact_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImpactIngest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Ingest Impact Api V1 Accounting Impact Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Ingest Impact",
+        "tags": [
+          "Carbon Routing",
+          "Accounting"
+        ]
+      }
+    },
+    "/api/v1/accounting/org-statement": {
+      "get": {
+        "description": "Methodology-stated org carbon-savings statement from the DB-backed ledger.\n\nReturns an empty (zeroed) statement when no database is configured, so the shape\nis stable. Same aggregation/methodology as the `carbonlens org-statement` CLI.",
+        "operationId": "get_org_statement_api_v1_accounting_org_statement_get",
+        "parameters": [
+          {
+            "description": "Reporting period (days).",
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 90,
+              "description": "Reporting period (days).",
+              "maximum": 365,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Organization name for the header.",
+            "in": "query",
+            "name": "org",
+            "required": false,
+            "schema": {
+              "default": "Your organization",
+              "description": "Organization name for the header.",
+              "title": "Org",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Get Org Statement Api V1 Accounting Org Statement Get",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "summary": "Get Org Statement",
+        "tags": [
+          "Carbon Routing",
+          "Accounting"
+        ]
+      }
+    },
     "/api/v1/accounting/savings": {
       "get": {
         "description": "Get carbon savings report for all routed workloads.",
