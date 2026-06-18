@@ -33,3 +33,33 @@ imports without it; only instantiating the sensor requires it.
 Only gate genuinely flexible tasks (nightly batch, retraining, report generation).
 Set `max_wait_hours` so time-sensitive DAGs still complete. `api_url` defaults to the
 public instance — point it at your own deployment for production.
+
+## Prefect — `wait_for_clean_window`
+
+```python
+from prefect import flow
+from carbon_mesh.integrations.prefect import wait_for_clean_window
+
+@flow
+def nightly():
+    wait_for_clean_window("aws/us-east-1", max_intensity=150, max_wait_hours=6)
+    train_model()
+```
+
+`clean_window_task(**task_kwargs)` returns it as a native Prefect `@task`. `pip install prefect`.
+
+## Dagster — `clean_window_op`
+
+```python
+from dagster import job
+from carbon_mesh.integrations.dagster import clean_window_op
+
+wait = clean_window_op("aws/us-east-1", max_intensity=150, max_wait_hours=6)
+
+@job
+def nightly():
+    train_model(wait())
+```
+
+`pip install dagster`. Both reuse `carbon_mesh.sdk`, so the decision matches the CLI,
+GitHub Action, Kubernetes, and Airflow surfaces.
