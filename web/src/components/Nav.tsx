@@ -22,6 +22,7 @@ const LINKS: { to: string; label: string; end?: boolean }[] = [
   { to: "/sla", label: "SLA" },
   { to: "/scheduler", label: "Scheduler" },
   { to: "/route", label: "Route" },
+  { to: "/clean-compute", label: "Clean Compute" },
   { to: "/methodology", label: "Methodology" },
   { to: "/settings", label: "Status" },
   { to: "/about", label: "About" },
