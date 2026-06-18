@@ -39,6 +39,9 @@ outputs:
   clean-surplus:
     description: "true when renewables are abundant (likely surplus) -- the highest-value time to run"
     value: ${{ steps.signal.outputs.clean_surplus }}
+  marginal-basis:
+    description: "measured (operator-configured source) or heuristic (fuel-mix estimate)"
+    value: ${{ steps.signal.outputs.marginal_basis }}
   surplus-window-hours:
     description: "Hours until the soonest upcoming clean-surplus window, if any"
     value: ${{ steps.signal.outputs.surplus_window_hours }}
@@ -69,6 +72,7 @@ runs:
         NOTE=$(echo "$RESPONSE" | jq -r '.marginal_note // ""')
         SURPLUS=$(echo "$RESPONSE" | jq -r '.clean_surplus')
         SWINDOW=$(echo "$RESPONSE" | jq -r '.surplus_window_in_hours // ""')
+        MBASIS=$(echo "$RESPONSE" | jq -r '.marginal_basis // "heuristic"')
 
         # Clean now if the signal says run_now, or it's clean surplus -- subject to an
         # optional caller-set intensity cap.
@@ -87,6 +91,7 @@ runs:
           echo "marginal=$MARGINAL"
           echo "clean_surplus=$SURPLUS"
           echo "surplus_window_hours=$SWINDOW"
+          echo "marginal_basis=$MBASIS"
         } >> "$GITHUB_OUTPUT"
 
         {
@@ -98,7 +103,7 @@ runs:
           echo "| State | $STATE |"
           echo "| Advice | $ADVICE |"
           echo "| Intensity (avg) | ${INTENSITY} gCO2/kWh |"
-          echo "| Marginal (extra kWh now) | ${MARGINAL} gCO2/kWh |"
+          echo "| Marginal (extra kWh now) | ${MARGINAL} gCO2/kWh (${MBASIS}) |"
           echo "| Clean surplus | $SURPLUS |"
           if [ -n "$SWINDOW" ]; then echo "| Clean-surplus window | ~${SWINDOW}h away |"; fi
           echo ""
