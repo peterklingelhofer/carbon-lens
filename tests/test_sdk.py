@@ -1,6 +1,27 @@
 """Tests for the carbon-aware Python SDK (pure decision logic + the wait loop)."""
 
-from carbon_mesh.sdk import CarbonClient, is_good_time
+from carbon_mesh.sdk import CarbonClient, choose_by_carbon, choose_by_state, is_good_time
+
+
+def test_choose_by_carbon():
+    clean = {"advice": "run_now", "clean_surplus": False}
+    dirty = {"advice": "wait_for_cleaner", "clean_surplus": False}
+    assert choose_by_carbon(clean, "gpt-full", "gpt-mini") == "gpt-full"
+    assert choose_by_carbon(dirty, "gpt-full", "gpt-mini") == "gpt-mini"
+
+
+def test_choose_by_state():
+    assert choose_by_state({"state": "green"}, "full", "mid", "lean") == "full"
+    assert choose_by_state({"state": "yellow"}, "full", "mid", "lean") == "mid"
+    assert choose_by_state({"state": "red"}, "full", "mid", "lean") == "lean"
+    # Unknown/missing state -> the lowest-carbon (red) choice.
+    assert choose_by_state({}, "full", "mid", "lean") == "lean"
+
+
+def test_client_choose_by_carbon():
+    cl = CarbonClient()
+    cl.signal = lambda region: {"advice": "wait_for_cleaner", "clean_surplus": False}  # type: ignore
+    assert cl.choose_by_carbon("aws/us-east-1", "full", "mini") == "mini"
 
 
 def test_is_good_time_run_now():
