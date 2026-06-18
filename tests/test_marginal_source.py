@@ -39,6 +39,21 @@ async def test_watttime_source_converts_and_skips_unmapped(monkeypatch):
     assert await src.marginal_intensity("XX-UNMAPPED") is None
 
 
+def test_parse_moer_forecast():
+    from datetime import datetime, timezone
+
+    from carbon_mesh.carbon_sources.marginal import moer_to_gco2_kwh, parse_moer_forecast
+
+    now = datetime(2026, 6, 18, 12, 0, tzinfo=timezone.utc)
+    data = [
+        {"point_time": "2026-06-18T12:00:00Z", "value": 800},  # offset 0
+        {"point_time": "2026-06-18T14:00:00Z", "value": 400},  # offset 2
+        {"point_time": "2026-06-17T12:00:00Z", "value": 999},  # past -> dropped
+    ]
+    curve = parse_moer_forecast(data, now, hours=24)
+    assert curve == {0: moer_to_gco2_kwh(800), 2: moer_to_gco2_kwh(400)}
+
+
 def test_factory_is_off_without_token_or_map():
     class NoToken:
         watttime_token = ""
