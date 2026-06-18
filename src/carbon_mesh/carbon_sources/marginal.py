@@ -10,6 +10,8 @@ we never guess a region code (which would risk reporting the wrong grid's number
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 import httpx
 
 from carbon_mesh.carbon_sources.http_pool import shared_client
@@ -22,6 +24,29 @@ _LBS_PER_MWH_TO_G_PER_KWH = 453.59237 / 1000
 def moer_to_gco2_kwh(lbs_per_mwh: float) -> float:
     """Convert a WattTime MOER (lbs CO2/MWh) to g CO2/kWh."""
     return round(lbs_per_mwh * _LBS_PER_MWH_TO_G_PER_KWH, 1)
+
+
+def parse_moer_forecast(data: list[dict], now: datetime, hours: int) -> dict[int, float]:
+    """Turn WattTime forecast points into ``{hour_offset: g CO2/kWh}`` from ``now``.
+
+    Each point is ``{"point_time": iso8601, "value": lbs/MWh}``. Pure, so the parsing
+    and conversion are testable without the network.
+    """
+    curve: dict[int, float] = {}
+    for pt in data:
+        t, v = pt.get("point_time"), pt.get("value")
+        if not t or v is None:
+            continue
+        try:
+            ts = datetime.fromisoformat(str(t).replace("Z", "+00:00"))
+        except (TypeError, ValueError):
+            continue
+        if ts.tzinfo is None:
+            ts = ts.replace(tzinfo=timezone.utc)
+        offset = round((ts - now).total_seconds() / 3600)
+        if 0 <= offset <= hours:
+            curve[offset] = moer_to_gco2_kwh(float(v))
+    return curve
 
 
 def parse_zone_map(spec: str) -> dict[str, str]:
@@ -64,6 +89,23 @@ class WattTimeMarginalSource:
             return None
         value = data[0].get("value")
         return moer_to_gco2_kwh(float(value)) if value is not None else None
+
+    async def marginal_forecast(self, grid_zone: str, hours: int) -> dict[int, float]:
+        """Measured marginal forecast for a mapped zone: ``{hour_offset: g CO2/kWh}``."""
+        region = self._zone_map.get(grid_zone)
+        if not region:
+            return {}
+        try:
+            resp = await self._client.get(
+                "https://api.watttime.org/v3/forecast",
+                params={"region": region, "signal_type": "co2_moer", "horizon_hours": hours},
+                headers={"Authorization": f"Bearer {self._token}"},
+            )
+            resp.raise_for_status()
+            data = resp.json().get("data", [])
+        except (httpx.HTTPError, ValueError, KeyError):
+            return {}
+        return parse_moer_forecast(data, datetime.now(timezone.utc), hours)
 
 
 def marginal_source_from_settings(settings) -> WattTimeMarginalSource | None:

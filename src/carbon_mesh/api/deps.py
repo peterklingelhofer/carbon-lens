@@ -139,6 +139,7 @@ def get_scheduling_engine() -> "SchedulingEngine":
         grid_mapper=_grid_mapper,
         forecast_source=ENTSOEForecastSource(settings.entsoe_token),
         weather_forecast_source=OpenMeteoForecastSource(),
+        marginal_source=_marginal_source,
     )
 
 
