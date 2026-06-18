@@ -229,6 +229,23 @@ class SitingRecommendation(BaseModel):
     days_analyzed: int
 
 
+class MethodologyField(BaseModel):
+    field: str
+    basis: str = Field(description="measured | heuristic | estimated | forecast | derived")
+    source: str
+    notes: str
+
+
+class Methodology(BaseModel):
+    """Machine-readable provenance: how each number is derived, and how honest it is.
+
+    The transparency contract -- so a user or auditor can see exactly what's measured
+    vs estimated, and what the caveats are, without reading the code."""
+
+    fields: list[MethodologyField]
+    note: str
+
+
 class WeatherConditions(BaseModel):
     """Current weather at a region's coordinates -- the physical drivers behind its
     renewable output. Wind turns turbines; sunlight drives solar. A single-point
