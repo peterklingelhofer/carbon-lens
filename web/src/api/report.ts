@@ -17,6 +17,8 @@ export interface GreenRegion {
   region: string;
   location: string;
   typical_gco2_kwh: number;
+  // Within-window trend: negative = getting cleaner, positive = dirtier. May be absent.
+  trend_pct?: number | null;
 }
 
 export interface CleanComputeReport {
