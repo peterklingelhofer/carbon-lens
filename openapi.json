@@ -578,6 +578,12 @@
             "title": "Intensity Gco2 Kwh",
             "type": "number"
           },
+          "marginal_basis": {
+            "default": "heuristic",
+            "description": "'measured' when marginal comes from an operator-configured source (e.g. WattTime MOER), else 'heuristic' (a fuel-mix merit-order estimate).",
+            "title": "Marginal Basis",
+            "type": "string"
+          },
           "marginal_intensity_gco2_kwh": {
             "anyOf": [
               {
