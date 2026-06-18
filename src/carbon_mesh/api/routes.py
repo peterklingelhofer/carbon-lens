@@ -29,7 +29,9 @@ from carbon_mesh.config import settings
 from carbon_mesh.db.models import ApiKeyRecord
 from carbon_mesh.engine.router import RoutingEngine
 from carbon_mesh.grid.mapper import GridMapper
-from carbon_mesh.models.accounting import CarbonSavingsReport
+from carbon_mesh.accounting.impact_repo import record_impact, recent_impacts
+from carbon_mesh.cli.ledger import org_statement
+from carbon_mesh.models.accounting import CarbonSavingsReport, ImpactIngest
 from carbon_mesh.engine.anomaly import compute_anomaly
 from carbon_mesh.engine.recurring import mean_intensity, rank_hours_utc, shiftability_pct
 from carbon_mesh.engine.surplus import is_clean_surplus, surplus_offsets
@@ -785,3 +787,39 @@ async def get_savings(
         api_key_id = key.id if key else None
         return await db_tracker.report(session, api_key_id)
     return tracker.report()
+
+
+@router.post("/accounting/impact", tags=["Accounting"])
+async def ingest_impact(
+    entry: ImpactIngest,
+    session: AsyncSession | None = Depends(get_session),
+    key: ApiKeyRecord | None = Depends(require_api_key),
+) -> dict:
+    """Record one carbon-aware run in the org ledger (the system-of-record).
+
+    Hosts running `carbonlens run` POST here so org-statement is live and multi-host.
+    Persists only when a database is configured; otherwise reports it wasn't stored.
+    """
+    if settings.use_database and session is not None:
+        await record_impact(session, entry.model_dump(), key.id if key else None)
+        return {"stored": True}
+    return {"stored": False, "detail": "No database configured; the org ledger is disabled."}
+
+
+@router.get("/accounting/org-statement", tags=["Accounting"])
+async def get_org_statement(
+    days: int = Query(90, ge=1, le=365, description="Reporting period (days)."),
+    org: str = Query("Your organization", description="Organization name for the header."),
+    session: AsyncSession | None = Depends(get_session),
+    key: ApiKeyRecord | None = Depends(require_api_key),
+) -> dict:
+    """Methodology-stated org carbon-savings statement from the DB-backed ledger.
+
+    Returns an empty (zeroed) statement when no database is configured, so the shape
+    is stable. Same aggregation/methodology as the `carbonlens org-statement` CLI.
+    """
+    now = datetime.now(timezone.utc)
+    rows: list[dict] = []
+    if settings.use_database and session is not None:
+        rows = await recent_impacts(session, now - timedelta(days=days))
+    return org_statement(rows, now, days, org)
