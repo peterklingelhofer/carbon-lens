@@ -638,6 +638,9 @@ def test_metrics_exposes_carbon_gauges(client: TestClient):
     assert "carbon_renewable_percentage" in body
     # Clean-surplus gauge -- ops can alert on it to trigger carbon-aware batch scaling.
     assert "carbon_clean_surplus" in body
+    # Org-impact gauges (DB-backed; present even at 0 so dashboards have a stable series).
+    assert "carbon_impact_kg_avoided" in body
+    assert "carbon_impact_jobs_shifted" in body
 
 
 def test_sla_crud_and_check_flow(client: TestClient):

@@ -48,6 +48,39 @@ CLEAN_SURPLUS = Gauge(
 )
 
 
+IMPACT_KG_AVOIDED = Gauge(
+    "carbon_impact_kg_avoided",
+    "Estimated kg CO2 avoided by carbon-aware runs in the last 30 days, from the "
+    "DB-backed org ledger. Dashboard it next to cost so realized savings are visible.",
+)
+IMPACT_JOBS_SHIFTED = Gauge(
+    "carbon_impact_jobs_shifted",
+    "Carbon-aware jobs shifted to cleaner windows in the last 30 days (DB-backed ledger).",
+)
+
+
+async def refresh_impact_metrics() -> None:
+    """Repopulate the org-impact gauges from the DB-backed ledger. No-op without a
+    database; best-effort so /metrics never errors."""
+    if not settings.use_database:
+        return
+    try:
+        from datetime import datetime, timedelta, timezone
+
+        from carbon_mesh.accounting.impact_repo import recent_impacts
+        from carbon_mesh.cli.ledger import fleet_summary
+        from carbon_mesh.db.engine import AsyncSessionLocal
+
+        now = datetime.now(timezone.utc)
+        async with AsyncSessionLocal() as session:
+            rows = await recent_impacts(session, now - timedelta(days=30))
+        summary = fleet_summary(rows, now, 30)
+        IMPACT_KG_AVOIDED.set(summary["total_kg_avoided"])
+        IMPACT_JOBS_SHIFTED.set(summary["shifted"])
+    except Exception as e:
+        logger.warning("Impact metrics refresh failed (non-fatal): %s", e)
+
+
 async def refresh_carbon_metrics() -> None:
     """Repopulate the carbon gauges from the current snapshot/cached data. Called
     on each scrape; best-effort so /metrics never errors."""
