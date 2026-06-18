@@ -368,6 +368,52 @@ class TestImpactLedger:
         assert summarize(entries, now, days=30)["jobs"] == 0
 
 
+class TestPlanEstimate:
+    def test_combines_region_and_shift_savings(self):
+        from carbon_mesh.cli.plan import plan_estimate
+
+        # Two candidates: greenest 100, other 300 -> naive mean 200.
+        siting = {
+            "options": [
+                {"provider": "gcp", "region": "fi", "grid_zone": "FI", "typical_gco2_kwh": 100},
+                {"provider": "aws", "region": "us", "grid_zone": "US", "typical_gco2_kwh": 300},
+            ]
+        }
+        shift = {"zones": [{"grid_zone": "FI", "shift_savings_pct": 50}]}
+        # 1 kW continuous, all load flexible.
+        est = plan_estimate(siting, shift, power_watts=1000, flexible_fraction=1.0)
+        # naive: 200 gCO2/kWh * 1 kW * 8760 h / 1000 = 1752 kg
+        assert est["naive_annual_kg"] == 1752.0
+        # region pick -> 100 g/kWh -> 876 kg; shift 50% of the (all-flexible) load -> -438
+        assert est["region_saving_kg"] == 876.0
+        assert est["shift_saving_kg"] == 438.0
+        assert est["optimized_annual_kg"] == 438.0
+        assert est["total_saving_kg"] == 1314.0
+
+    def test_no_options_unavailable(self):
+        from carbon_mesh.cli.plan import plan_estimate
+
+        assert plan_estimate({"options": []}, {"zones": []}, 500, 0.5) == {"available": False}
+
+
+class TestPlanCommand:
+    def test_plan_renders(self):
+        siting = {
+            "options": [
+                {"provider": "gcp", "region": "fi", "grid_zone": "FI", "typical_gco2_kwh": 100},
+                {"provider": "aws", "region": "us", "grid_zone": "US", "typical_gco2_kwh": 300},
+            ]
+        }
+        shift = {"zones": [{"grid_zone": "FI", "shift_savings_pct": 50}]}
+        with (
+            patch("carbon_mesh.cli.client.siting", return_value=siting),
+            patch("carbon_mesh.cli.client.shiftability", return_value=shift),
+        ):
+            result = runner.invoke(app, ["plan", "--power-watts", "1000", "--flexible", "1.0"])
+        assert result.exit_code == 0
+        assert "gcp/fi" in result.output
+
+
 class TestChooseRunPlan:
     def test_picks_cleanest_region_and_hour(self):
         regions = [
