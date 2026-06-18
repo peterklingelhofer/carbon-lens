@@ -186,6 +186,30 @@ async def test_find_optimal_window_returns_recommendation():
 
 
 @pytest.mark.asyncio
+async def test_long_job_is_scored_over_its_whole_window():
+    """A multi-hour job's slot intensity is the average over its run window, not just
+    the start hour."""
+    source = MockCarbonSource(default_intensity=300, default_renewable=30)
+    engine = SchedulingEngine(carbon_source=source, grid_mapper=MockGridMapper())
+
+    rec = await engine.find_optimal_window(
+        job_duration_minutes=180,  # 3 hours
+        providers=["gcp"],
+        preferred_regions=["europe-north1"],
+        max_delay_hours=12,
+    )
+
+    current = await source.get_carbon_intensity("FI")
+    expected = round(
+        sum(engine._project_intensity(current, h, 0.0).carbon_intensity_gco2_kwh for h in range(3))
+        / 3,
+        2,
+    )
+    slot0 = next(s for s in rec.forecast if s.start == rec.window_start)
+    assert slot0.carbon_intensity_gco2_kwh == expected
+
+
+@pytest.mark.asyncio
 async def test_find_optimal_window_lowest_carbon():
     """Lowest-carbon strategy should pick the zone with lowest intensity."""
     source = MockCarbonSource(

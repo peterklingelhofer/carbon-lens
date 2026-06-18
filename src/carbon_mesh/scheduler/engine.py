@@ -176,6 +176,20 @@ class SchedulingEngine:
             1, max_delay_hours // 24
         )  # 1-hour slots for 24h, larger for longer windows
 
+        # A job runs ACROSS hours, so score each candidate by the AVERAGE projected
+        # intensity over its whole run window, not just the start hour -- a long job
+        # that starts clean but runs into a dirty morning ramp should rank by what it
+        # actually emits. (A sub-hour job -> a single hour, so behaviour is unchanged.)
+        duration_hours = max(1, (job_duration_minutes + 59) // 60)
+
+        def _project_at(zone: str, current: CarbonIntensity, curve: dict | None, h: int):
+            projected = None
+            if curve and h in curve and 0 in curve:
+                projected = self._project_with_forecast(current, curve[0], curve[h], h)
+            if projected is None:
+                projected = self._project_intensity(current, h, zone_lng.get(zone, 0.0))
+            return projected
+
         for hour_offset in range(0, max_delay_hours, slot_interval_hours):
             slot_start = now + timedelta(hours=hour_offset)
             slot_end = slot_start + timedelta(minutes=job_duration_minutes)
@@ -188,24 +202,26 @@ class SchedulingEngine:
                 if not current:
                     continue
 
-                # Apply time-of-day heuristic to project future carbon intensity
                 curve = zone_curve.get(zone)
-                projected = None
-                if curve and hour_offset in curve and 0 in curve:
-                    projected = self._project_with_forecast(
-                        current, curve[0], curve[hour_offset], hour_offset
-                    )
-                if projected is None:
-                    projected = self._project_intensity(
-                        current, hour_offset, zone_lng.get(zone, 0.0)
-                    )
-
-                surplus = is_clean_surplus(
-                    projected.renewable_percentage,
-                    projected.carbon_intensity_gco2_kwh,
-                    projected.marginal_intensity_gco2_kwh,
+                window = [
+                    _project_at(zone, current, curve, hour_offset + d)
+                    for d in range(duration_hours)
+                ]
+                avg_carbon = round(
+                    sum(p.carbon_intensity_gco2_kwh for p in window) / len(window), 2
                 )
-                score = self._score_slot(projected, strategy, surplus)
+                avg_renewable = round(sum(p.renewable_percentage for p in window) / len(window), 1)
+
+                # Representative intensity over the run window (projection -> no marginal).
+                averaged = CarbonIntensity(
+                    grid_zone=zone,
+                    carbon_intensity_gco2_kwh=avg_carbon,
+                    renewable_percentage=avg_renewable,
+                    timestamp=slot_start,
+                    source=window[0].source,
+                )
+                surplus = is_clean_surplus(avg_renewable, avg_carbon, None)
+                score = self._score_slot(averaged, strategy, surplus)
 
                 slots.append(
                     TimeSlot(
@@ -214,8 +230,8 @@ class SchedulingEngine:
                         provider=provider,
                         region=region,
                         grid_zone=zone,
-                        carbon_intensity_gco2_kwh=projected.carbon_intensity_gco2_kwh,
-                        renewable_percentage=projected.renewable_percentage,
+                        carbon_intensity_gco2_kwh=avg_carbon,
+                        renewable_percentage=avg_renewable,
                         score=score,
                         clean_surplus=surplus,
                     )
