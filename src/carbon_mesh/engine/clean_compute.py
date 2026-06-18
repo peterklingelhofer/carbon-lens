@@ -1,0 +1,90 @@
+"""Build the public 'state of clean compute' report from the history archive.
+
+A compact, citable artifact published alongside the snapshot: which grids reward
+carbon-aware scheduling most (biggest intra-day swing), and which regions are
+greenest to host on (lowest typical intensity). Pure function so it's unit-tested;
+the script wrapper handles I/O.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime, timezone
+
+from carbon_mesh.engine.recurring import mean_intensity, rank_hours_utc, shiftability_pct
+
+_MIN_SAMPLES = 8
+
+
+def _within(ts: str | None, cutoff: datetime) -> bool:
+    if not ts:
+        return False
+    try:
+        t = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return False
+    if t.tzinfo is None:
+        t = t.replace(tzinfo=timezone.utc)
+    return t >= cutoff
+
+
+def build_clean_compute_report(
+    history: dict,
+    region_meta: dict[str, dict],
+    now: datetime,
+    days: int = 14,
+    top: int = 15,
+) -> dict:
+    """Rank grids by shiftability and regions by typical intensity from history.
+
+    ``history`` is ``{"series": {"provider/region": [{"t","c","r"}, ...]}}``.
+    ``region_meta`` maps that key to ``{"grid_zone", "location"}``.
+    """
+    from datetime import timedelta
+
+    cutoff = now - timedelta(days=days)
+    most_shiftable: list[dict] = []
+    greenest: list[dict] = []
+    seen_zones: set[str] = set()
+
+    for key, points in history.get("series", {}).items():
+        recent = [p for p in points if _within(p.get("t"), cutoff)]
+        ranked = rank_hours_utc([{"t": p.get("t"), "c": p.get("c")} for p in recent])
+        if sum(r["samples"] for r in ranked) < _MIN_SAMPLES:
+            continue
+        meta = region_meta.get(key, {})
+        provider, _, region = key.partition("/")
+
+        typical = mean_intensity([{"c": p.get("c")} for p in recent])
+        if typical is not None:
+            greenest.append(
+                {
+                    "provider": provider,
+                    "region": region,
+                    "location": meta.get("location", ""),
+                    "typical_gco2_kwh": typical,
+                }
+            )
+
+        zone = meta.get("grid_zone", key)
+        if zone not in seen_zones:
+            pct = shiftability_pct(ranked)
+            if pct is not None:
+                seen_zones.add(zone)
+                most_shiftable.append(
+                    {
+                        "grid_zone": zone,
+                        "location": meta.get("location", ""),
+                        "shift_savings_pct": pct,
+                        "cleanest_hour_utc": ranked[0]["hour"],
+                        "samples": sum(r["samples"] for r in ranked),
+                    }
+                )
+
+    most_shiftable.sort(key=lambda x: x["shift_savings_pct"], reverse=True)
+    greenest.sort(key=lambda x: x["typical_gco2_kwh"])
+    return {
+        "generated_at": now.isoformat(),
+        "days_analyzed": days,
+        "most_shiftable": most_shiftable[:top],
+        "greenest_regions": greenest[:top],
+    }
