@@ -21,6 +21,16 @@ class EmissionsRecord(BaseModel):
     chosen_renewable_pct: float = 0.0
 
 
+class ImpactIngest(BaseModel):
+    """One carbon-aware run's impact, POSTed to the org ledger by a host."""
+
+    region: str
+    deferred_hours: int = 0
+    reduction_gco2_kwh: float = 0.0
+    energy_kwh: float | None = None
+    basis: str = "forecast"
+
+
 class CarbonSavingsReport(BaseModel):
     total_requests: int
     avg_intensity_reduction_gco2_kwh: float = Field(
