@@ -63,3 +63,18 @@ def nightly():
 
 `pip install dagster`. Both reuse `carbon_mesh.sdk`, so the decision matches the CLI,
 GitHub Action, Kubernetes, and Airflow surfaces.
+
+## Celery — `apply_when_clean`
+
+Schedule a task for the next clean window using Celery's own `countdown` — **no worker
+is blocked** while waiting:
+
+```python
+from carbon_mesh.integrations.celery import apply_when_clean
+
+apply_when_clean(train_model, "aws/us-east-1", args=(dataset,), max_intensity=150)
+```
+
+If the grid is clean now it dispatches immediately; otherwise it schedules the task
+for the soonest cleaner/surplus window (capped at `max_wait_hours`). No Celery import
+is needed — it just calls your task's `.apply_async`.
