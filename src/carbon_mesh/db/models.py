@@ -76,6 +76,28 @@ class EmissionsRecordDB(Base):
     chosen_renewable_pct: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
 
 
+class ImpactRecordDB(Base):
+    """One carbon-aware run's record -- the org system-of-record for `carbonlens run`
+    impact. Hosts POST here when configured, so org-statement is live and multi-host
+    instead of a manual ledger-file gather."""
+
+    __tablename__ = "impact_records"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    api_key_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
+    ts: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        default=lambda: datetime.now(timezone.utc),
+        index=True,
+    )
+    region: Mapped[str] = mapped_column(String(64), nullable=False)
+    deferred_hours: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    reduction_gco2_kwh: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    energy_kwh: Mapped[float | None] = mapped_column(Float, nullable=True)
+    basis: Mapped[str] = mapped_column(String(16), nullable=False, default="forecast")
+
+
 class DailyUsageRecord(Base):
     __tablename__ = "daily_usage"
     __table_args__ = (UniqueConstraint("api_key_id", "usage_date", name="uq_daily_usage_key_date"),)
