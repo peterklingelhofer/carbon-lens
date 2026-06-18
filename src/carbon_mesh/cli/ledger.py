@@ -105,6 +105,38 @@ def fleet_summary(entries: list[dict], now: datetime, days: int, top: int = 20) 
     }
 
 
+def org_statement(
+    entries: list[dict], now: datetime, days: int, org_name: str = "Your organization"
+) -> dict:
+    """A methodology-stated, org-level carbon-aware-compute statement for disclosure.
+
+    Builds on ``fleet_summary`` and adds the explicit counterfactual and accounting
+    basis, plus the share of savings that were verified (re-measured at run time)
+    rather than forecast -- so a sustainability team can cite it honestly.
+    """
+    s = fleet_summary(entries, now, days)
+    verified_share = round(s["measured"] / s["shifted"] * 100, 1) if s["shifted"] else 0.0
+    return {
+        "org": org_name,
+        "period_days": days,
+        "jobs": s["jobs"],
+        "shifted": s["shifted"],
+        "verified_share_pct": verified_share,
+        "jobs_with_energy": s["jobs_with_energy"],
+        "total_kg_avoided": s["total_kg_avoided"],
+        "regions": s["regions"],
+        "counterfactual": (
+            "running each job at the moment it was submitted (i.e. without carbon-aware deferral)"
+        ),
+        "accounting": (
+            "Location-based. CO2 avoided is summed only for jobs that supplied energy (kWh); "
+            "intensity reductions alone aren't additive. Verified jobs re-measured the grid at "
+            "execution time; the rest are forecast estimates. An estimate, not an assured "
+            "third-party attestation."
+        ),
+    }
+
+
 def summarize(entries: list[dict], now: datetime, days: int) -> dict:
     """Aggregate ledger entries from the last ``days`` into an honest summary.
 

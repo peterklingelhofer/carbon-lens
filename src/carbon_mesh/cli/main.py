@@ -471,6 +471,59 @@ def fleet_impact(
         console.print(table)
 
 
+@app.command(name="org-statement")
+def org_statement(
+    directory: str = typer.Option(
+        ..., "--dir", help="Directory of per-host *.jsonl impact ledgers (collected from the fleet)"
+    ),
+    org: str = typer.Option("Your organization", "--org", help="Organization name for the header"),
+    days: int = typer.Option(90, "--days", help="Reporting period (days)"),
+    json_output: bool = typer.Option(False, "--json", help="Output raw JSON"),
+):
+    """A methodology-stated, org-level carbon-aware-compute statement (for disclosure)."""
+    import glob
+    from pathlib import Path
+
+    files = sorted(glob.glob(str(Path(directory) / "*.jsonl")))
+    if not files:
+        console.print(f"[red]Error:[/red] no *.jsonl ledger files in {directory}")
+        raise typer.Exit(1)
+    entries: list[dict] = []
+    for f in files:
+        entries.extend(ledger.read_file(Path(f)))
+    stmt = ledger.org_statement(entries, datetime.now(timezone.utc), days, org)
+
+    if json_output:
+        import json
+
+        console.print_json(json.dumps(stmt))
+        return
+
+    console.print(f"\n## Carbon-aware compute statement — {stmt['org']}")
+    console.print(f"Period: last {stmt['period_days']} days · {len(files)} host(s)\n")
+    console.print(f"- Jobs run: {stmt['jobs']}")
+    console.print(
+        f"- Shifted to cleaner windows: {stmt['shifted']} "
+        f"({stmt['verified_share_pct']}% verified at run time)"
+    )
+    console.print(
+        f"- CO2 avoided: ~{stmt['total_kg_avoided']} kg "
+        f"(from {stmt['jobs_with_energy']} jobs with measured energy)"
+    )
+    console.print(f"\n[dim]Counterfactual:[/dim] {stmt['counterfactual']}")
+    console.print(f"[dim]Accounting:[/dim] {stmt['accounting']}")
+    if stmt["regions"]:
+        table = Table(title="By region")
+        table.add_column("Region")
+        table.add_column("Jobs", justify="right")
+        table.add_column("Shifted", justify="right")
+        table.add_column("kg avoided", justify="right", style="green")
+        for r in stmt["regions"]:
+            table.add_row(r["region"], str(r["jobs"]), str(r["shifted"]), f"{r['kg_avoided']:.1f}")
+        console.print(table)
+    console.print()
+
+
 @app.command(name="best-time")
 def best_time(
     region: str = typer.Argument(
