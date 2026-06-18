@@ -2279,6 +2279,12 @@ export interface components {
             id: string;
             /** Job Duration Minutes */
             job_duration_minutes: number;
+            /**
+             * Marginal Basis
+             * @description Whether the recommended region's marginal signal is 'measured' (from a configured marginal source) or 'heuristic' (a merit-order estimate)
+             * @default heuristic
+             */
+            marginal_basis: string;
             recommended: components["schemas"]["TimeSlot"];
             strategy: components["schemas"]["ScheduleStrategy"];
             /**

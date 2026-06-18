@@ -2171,6 +2171,12 @@
             "title": "Job Duration Minutes",
             "type": "integer"
           },
+          "marginal_basis": {
+            "default": "heuristic",
+            "description": "Whether the recommended region's marginal signal is 'measured' (from a configured marginal source) or 'heuristic' (a merit-order estimate)",
+            "title": "Marginal Basis",
+            "type": "string"
+          },
           "recommended": {
             "$ref": "#/components/schemas/TimeSlot"
           },
