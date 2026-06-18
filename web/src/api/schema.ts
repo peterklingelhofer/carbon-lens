@@ -1344,6 +1344,12 @@ export interface components {
             /** Intensity Gco2 Kwh */
             intensity_gco2_kwh: number;
             /**
+             * Marginal Basis
+             * @description 'measured' when marginal comes from an operator-configured source (e.g. WattTime MOER), else 'heuristic' (a fuel-mix merit-order estimate).
+             * @default heuristic
+             */
+            marginal_basis: string;
+            /**
              * Marginal Intensity Gco2 Kwh
              * @description Estimated emissions of an extra kWh of demand now -- the number that actually responds to shifting load. Heuristic from the fuel mix; null when no live fuel mix is available.
              */

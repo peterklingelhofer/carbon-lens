@@ -15,6 +15,13 @@ class Settings(BaseSettings):
     electricity_maps_api_key: str = ""
     entsoe_token: str = ""
 
+    # Optional MEASURED marginal source (bring your own key). Off by default: when a
+    # WattTime token AND a grid-zone -> WattTime-region map are set, the signal reports
+    # WattTime's measured MOER instead of the fuel-mix heuristic, labelled "measured".
+    # Map format: "US-CAL-CISO:CAISO_NORTH,US-MIDA-PJM:PJM_DC".
+    watttime_token: str = ""
+    watttime_zone_map: str = ""
+
     # Carbon source mode: "hybrid" (recommended), "mock", "eia", "gridstatus", "electricity_maps"
     carbon_source: str = "hybrid"
     cache_ttl_seconds: int = 300
