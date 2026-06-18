@@ -183,6 +183,28 @@ async def test_find_optimal_window_returns_recommendation():
     assert rec.recommended is not None
     assert rec.evaluated_slots > 0
     assert rec.job_duration_minutes == 30
+    # No marginal source configured -> recommendation is honest about being heuristic
+    assert rec.marginal_basis == "heuristic"
+
+
+@pytest.mark.asyncio
+async def test_recommendation_reports_measured_marginal_basis():
+    """When a marginal source covers the recommended zone, the recommendation says so."""
+
+    class FakeMarginal:
+        def can_handle(self, zone):
+            return True
+
+        async def marginal_forecast(self, zone, hours):
+            return {}
+
+    engine = SchedulingEngine(
+        carbon_source=MockCarbonSource(),
+        grid_mapper=MockGridMapper(),
+        marginal_source=FakeMarginal(),
+    )
+    rec = await engine.find_optimal_window(job_duration_minutes=30, providers=["aws", "gcp"])
+    assert rec.marginal_basis == "measured"
 
 
 @pytest.mark.asyncio
