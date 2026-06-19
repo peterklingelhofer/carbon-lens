@@ -22,14 +22,19 @@ vi.mock("../api/client", () => ({
   },
 }));
 
-// RegionSignal/RegionForecast read precomputed snapshot data (no API call); mock them.
-vi.mock("../api/snapshot", () => ({ useSignal: vi.fn(), useForecastSnapshot: vi.fn() }));
+// RegionSignal/RegionForecast/RegionBestTime read precomputed snapshot data; mock them.
+vi.mock("../api/snapshot", () => ({
+  useSignal: vi.fn(),
+  useForecastSnapshot: vi.fn(),
+  useBestTimeSnapshot: vi.fn(),
+}));
 
 import { api } from "../api/client";
-import { useForecastSnapshot, useSignal } from "../api/snapshot";
+import { useBestTimeSnapshot, useForecastSnapshot, useSignal } from "../api/snapshot";
 
 const mockUseSignal = vi.mocked(useSignal);
 const mockUseForecastSnapshot = vi.mocked(useForecastSnapshot);
+const mockUseBestTimeSnapshot = vi.mocked(useBestTimeSnapshot);
 const mockHistory = vi.mocked(api.carbonHistory);
 const mockForecast = vi.mocked(api.carbonForecast);
 const mockWeather = vi.mocked(api.regionWeather);
@@ -155,6 +160,15 @@ describe("RegionBestTime", () => {
     mockBestTime.mockResolvedValue(bestTime(null, null));
     const { container } = renderWithClient(<RegionBestTime provider="aws" region="us-west-2" />);
     await waitFor(() => expect(container.querySelector("div")).toBeNull());
+  });
+
+  it("renders from the precomputed snapshot best-time without calling the API", () => {
+    mockUseBestTimeSnapshot.mockReturnValue(bestTime(7, 64));
+    renderWithClient(<RegionBestTime provider="gcp" region="europe-north1" />);
+
+    expect(screen.getByText("07:00 UTC", { exact: false })).toBeTruthy();
+    expect(screen.getByText("0 7 * * *")).toBeTruthy();
+    expect(mockBestTime).not.toHaveBeenCalled(); // served from the snapshot
   });
 });
 

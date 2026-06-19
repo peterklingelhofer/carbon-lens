@@ -289,6 +289,37 @@ def test_compute_signals_precomputes_per_region():
     assert pjm["method"] == "time_of_day_model"  # no forecast sources in the test
 
 
+def test_compute_best_times_ranks_history_with_forecast_fallback():
+    regions = [
+        {"provider": "aws", "region": "us-east-1", "grid_zone": "US-MIDA-PJM"},
+        {"provider": "gcp", "region": "europe-north1", "grid_zone": "FI"},
+    ]
+    # PJM has rich history (cleanest at 03:00 UTC); FI has none -> forecast fallback.
+    history = {
+        "series": {
+            "aws/us-east-1": [
+                {"t": f"2026-06-{10 + d:02d}T03:00:00+00:00", "c": 100.0} for d in range(5)
+            ]
+            + [{"t": f"2026-06-{10 + d:02d}T18:00:00+00:00", "c": 500.0} for d in range(5)],
+        }
+    }
+    forecasts = {
+        "gcp/europe-north1": {
+            "points": [
+                {"t": "2026-06-14T05:00:00+00:00", "c": 40.0},
+                {"t": "2026-06-14T06:00:00+00:00", "c": 300.0},
+            ],
+        }
+    }
+    best = build_snapshot.compute_best_times(history, forecasts, regions, days=14)
+    assert best["aws/us-east-1"]["basis"] == "history"
+    assert best["aws/us-east-1"]["cleanest_hour_utc"] == 3
+    assert best["aws/us-east-1"]["suggested_cron"] == "0 3 * * *"
+    # FI falls back to its forecast curve (cleanest of the two forecast hours is 05:00).
+    assert best["gcp/europe-north1"]["basis"] == "forecast"
+    assert best["gcp/europe-north1"]["cleanest_hour_utc"] == 5
+
+
 def test_append_history_caps_to_max_points():
     history = None
     for i in range(10):

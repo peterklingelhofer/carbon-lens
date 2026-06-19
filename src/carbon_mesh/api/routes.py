@@ -27,6 +27,7 @@ from carbon_mesh.carbon_sources.marginal import MarginalSource
 from carbon_mesh.carbon_sources.open_meteo import fetch_weather
 from carbon_mesh.config import settings
 from carbon_mesh.db.models import ApiKeyRecord
+from carbon_mesh.engine.besttime import build_best_time
 from carbon_mesh.engine.router import RoutingEngine
 from carbon_mesh.engine.signal import build_signal
 from carbon_mesh.grid.mapper import GridMapper
@@ -44,7 +45,6 @@ from carbon_mesh.models.carbon import (
     CarbonHistoryPoint,
     CarbonIntensity,
     CarbonSignal,
-    HourRank,
     Methodology,
     MethodologyField,
     ShiftabilityRanking,
@@ -374,50 +374,16 @@ async def _build_best_time(
     on-prem (zone) endpoints. ``history_key`` is the archive key to read."""
     since = datetime.now(timezone.utc) - timedelta(days=days)
     raw = await store.series_for(history_key, since)
-    ranked = rank_hours_utc(raw)
-    basis = "history"
 
-    # Too few observations to be useful -> use the forecast curve as a proxy.
-    if sum(r["samples"] for r in ranked) < 8:
+    # Only pay for the 48h forecast fallback when history is too thin to rank.
+    forecast_points: list[dict] = []
+    if sum(r["samples"] for r in rank_hours_utc(raw)) < 8:
         _, points = await engine.forecast_zone(zone, longitude, 48)
         forecast_points = [
             {"t": p.timestamp.isoformat(), "c": p.carbon_intensity_gco2_kwh} for p in points
         ]
-        forecast_ranked = rank_hours_utc(forecast_points)
-        if forecast_ranked:
-            ranked, basis = forecast_ranked, "forecast"
-        elif not ranked:
-            basis = "insufficient"
 
-    cleanest = ranked[0]["hour"] if ranked else None
-    dirtiest = ranked[-1]["hour"] if ranked else None
-    shift_savings_pct = None
-    annual_kg_saved = None
-    if ranked:
-        best_mean = ranked[0]["mean_gco2_kwh"]
-        worst_mean = ranked[-1]["mean_gco2_kwh"]
-        if worst_mean > 0:
-            shift_savings_pct = round((worst_mean - best_mean) / worst_mean * 100, 1)
-        if energy_kwh:
-            # gCO2/kWh delta x kWh/day x 365 days, to kg.
-            annual_kg_saved = round((worst_mean - best_mean) * energy_kwh * 365 / 1000, 1)
-
-    return BestTime(
-        provider=provider,
-        region=region,
-        grid_zone=zone,
-        basis=basis,
-        days_analyzed=days,
-        cleanest_hour_utc=cleanest,
-        dirtiest_hour_utc=dirtiest,
-        shift_savings_pct=shift_savings_pct,
-        annual_kg_saved=annual_kg_saved,
-        suggested_cron=f"0 {cleanest} * * *" if cleanest is not None else None,
-        ranked_hours=[
-            HourRank(hour_utc=r["hour"], mean_gco2_kwh=r["mean_gco2_kwh"], samples=r["samples"])
-            for r in ranked[:6]
-        ],
-    )
+    return build_best_time(provider, region, zone, raw, forecast_points, days, energy_kwh)
 
 
 # Zone-first route, before /carbon/best-time/{provider}/{region}.
