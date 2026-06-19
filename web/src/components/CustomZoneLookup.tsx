@@ -1,6 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "../api/client";
+import {
+  gridZonesFromSnapshot,
+  snapshotEnabled,
+  useSnapshot,
+  zoneIntensityFromSnapshot,
+} from "../api/snapshot";
 import { intensityColor } from "../lib/intensity";
 import { card } from "../styles";
 import { InfoTip } from "./InfoTip";
@@ -8,27 +14,33 @@ import { InfoTip } from "./InfoTip";
 const muted: React.CSSProperties = { color: "var(--gray-500)", fontSize: "0.82rem" };
 
 // Look up carbon intensity for any covered grid zone directly -- for on-prem /
-// colocation workloads that aren't a cloud region but sit on a grid we cover.
+// colocation workloads that aren't a cloud region but sit on a grid we cover. Reads the
+// zone list and intensities from the CDN snapshot when available (no API call); falls
+// back to /carbon/zones + /carbon/{zone} without it.
 export function CustomZoneLookup() {
-  const { data: zones } = useQuery({
+  const { data: snapshot } = useSnapshot();
+  const [zone, setZone] = useState("DE");
+
+  const { data: apiZones } = useQuery({
     queryKey: ["carbon-zones"],
     queryFn: () => api.carbonZones(),
     staleTime: 60 * 60_000,
+    enabled: !snapshotEnabled,
   });
-  const [zone, setZone] = useState("DE");
-
   const {
-    data: ci,
+    data: apiCi,
     isLoading,
     isError,
   } = useQuery({
     queryKey: ["carbon-zone", zone],
     queryFn: () => api.carbonZone(zone),
-    enabled: !!zone,
+    enabled: !snapshotEnabled && !!zone,
     staleTime: 5 * 60_000,
     retry: 1,
   });
 
+  const zones = snapshot ? gridZonesFromSnapshot(snapshot) : apiZones;
+  const ci = snapshot ? zoneIntensityFromSnapshot(snapshot, zone) : apiCi;
   const selected = zones?.find((z) => z.grid_zone === zone);
 
   return (

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { BestTime, CarbonIntensity, CloudRegion } from "./types";
+import type { BestTime, CarbonIntensity, CloudRegion, GridZoneSummary } from "./types";
 
 // Static carbon snapshot published to a CDN by the `snapshot` GitHub Action.
 // When VITE_SNAPSHOT_URL is set, the dashboard reads real data from here
@@ -161,4 +161,67 @@ export function useRegionHistoryArchive(
     retry: 1,
   });
   return data?.series?.[`${provider}/${region}`];
+}
+
+// All covered grid zones, each with the cloud regions on it -- the static equivalent of
+// GET /carbon/zones, derived from the snapshot's region list. Empty without a snapshot.
+export function gridZonesFromSnapshot(snapshot: CarbonSnapshot | undefined): GridZoneSummary[] {
+  if (!snapshot) return [];
+  const byZone = new Map<string, GridZoneSummary>();
+  for (const r of snapshot.regions) {
+    const summary = byZone.get(r.grid_zone);
+    if (summary) summary.regions.push(`${r.provider}/${r.region}`);
+    else
+      byZone.set(r.grid_zone, {
+        grid_zone: r.grid_zone,
+        location: r.location,
+        regions: [`${r.provider}/${r.region}`],
+      });
+  }
+  return [...byZone.values()].sort((a, b) => a.grid_zone.localeCompare(b.grid_zone));
+}
+
+// Carbon intensity for a grid zone, from any snapshot region on that zone -- the static
+// equivalent of GET /carbon/{zone}. Undefined when the zone isn't in the snapshot.
+export function zoneIntensityFromSnapshot(
+  snapshot: CarbonSnapshot | undefined,
+  zone: string,
+): CarbonIntensity | undefined {
+  if (!snapshot) return undefined;
+  for (const ci of Object.values(snapshot.intensities)) {
+    if (ci.grid_zone === zone) return ci;
+  }
+  return undefined;
+}
+
+export interface GreenestRegion {
+  provider: string;
+  region: string;
+  carbon_intensity_gco2_kwh: number;
+  renewable_percentage: number;
+}
+
+// The greenest region (lowest current intensity) among the given providers, derived from
+// the snapshot -- the static equivalent of carbon-weighted /route. Undefined without a
+// snapshot or when no provider matches.
+export function greenestRegion(
+  snapshot: CarbonSnapshot | undefined,
+  providers: string[],
+): GreenestRegion | undefined {
+  if (!snapshot) return undefined;
+  let best: GreenestRegion | undefined;
+  for (const [key, ci] of Object.entries(snapshot.intensities)) {
+    const slash = key.indexOf("/");
+    const provider = key.slice(0, slash);
+    if (!providers.includes(provider)) continue;
+    if (!best || ci.carbon_intensity_gco2_kwh < best.carbon_intensity_gco2_kwh) {
+      best = {
+        provider,
+        region: key.slice(slash + 1),
+        carbon_intensity_gco2_kwh: ci.carbon_intensity_gco2_kwh,
+        renewable_percentage: ci.renewable_percentage,
+      };
+    }
+  }
+  return best;
 }
