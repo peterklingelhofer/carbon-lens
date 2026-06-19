@@ -822,9 +822,15 @@ def _render_doctor(api: str, checks: dict, ok: bool, json_output: bool) -> None:
 
     marg = checks.get("marginal", {})
     if "error" in marg:
-        console.print(f"[yellow]![/yellow] Could not read methodology: {marg['error']}")
+        console.print(f"[yellow]![/yellow] Could not read marginal honesty: {marg['error']}")
     elif marg.get("ok"):
         console.print("[green]✓[/green] Marginal signal: measured (operator key configured)")
+    elif marg.get("configured_but_unmapped"):
+        console.print(
+            "[red]✗[/red] Marginal signal: heuristic, but a marginal key IS configured — no zone "
+            "is mapped, so it's silently unused. Set CARBON_LENS_WATTTIME_ZONE_MAP (or "
+            "CARBON_LENS_ELECTRICITY_MAPS_ZONE_MAP)."
+        )
     else:
         console.print(
             "[yellow]![/yellow] Marginal signal: heuristic "
@@ -877,12 +883,16 @@ def doctor(
         ok = False
 
     try:
-        meth = client.methodology()
-        basis = "heuristic"
-        for f in meth.get("fields", []):
-            if f.get("field") == "marginal_intensity_gco2_kwh":
-                basis = f.get("basis", basis)
-        checks["marginal"] = {"ok": basis == "measured", "basis": basis}
+        h = client.honesty()
+        basis = h.get("marginal_basis", "heuristic")
+        unmapped = bool(h.get("marginal_configured_but_unmapped"))
+        checks["marginal"] = {
+            "ok": basis == "measured",
+            "basis": basis,
+            "configured_but_unmapped": unmapped,
+        }
+        if unmapped:
+            ok = False  # a key was set but no zone mapped -- a misconfiguration, not a choice
     except Exception as e:
         checks["marginal"] = {"error": str(e)}
 

@@ -184,8 +184,8 @@ class TestCliApp:
         monkeypatch.setattr(client, "source_health", lambda: {"healthy": 7, "total": 7})
         monkeypatch.setattr(
             client,
-            "methodology",
-            lambda: {"fields": [{"field": "marginal_intensity_gco2_kwh", "basis": "measured"}]},
+            "honesty",
+            lambda: {"marginal_basis": "measured", "marginal_configured_but_unmapped": False},
         )
         result = runner.invoke(app, ["doctor"])
         assert result.exit_code == 0
@@ -199,14 +199,28 @@ class TestCliApp:
         monkeypatch.setattr(client, "source_health", lambda: {"healthy": 4, "total": 7})
         monkeypatch.setattr(
             client,
-            "methodology",
-            lambda: {"fields": [{"field": "marginal_intensity_gco2_kwh", "basis": "heuristic"}]},
+            "honesty",
+            lambda: {"marginal_basis": "heuristic", "marginal_configured_but_unmapped": False},
         )
         result = runner.invoke(app, ["doctor"])
         assert result.exit_code == 0
         assert "4/7 live" in result.stdout
         assert "heuristic" in result.stdout
         assert "caveats" in result.stdout
+
+    def test_doctor_flags_configured_but_unmapped_marginal(self, monkeypatch):
+        monkeypatch.setattr(client, "health", lambda: {"status": "ok"})
+        monkeypatch.setattr(client, "source_health", lambda: {"healthy": 7, "total": 7})
+        monkeypatch.setattr(
+            client,
+            "honesty",
+            lambda: {"marginal_basis": "heuristic", "marginal_configured_but_unmapped": True},
+        )
+        result = runner.invoke(app, ["doctor"])
+        assert result.exit_code == 0
+        assert "no zone" in result.stdout.lower()
+        assert "ZONE_MAP" in result.stdout
+        assert "caveats" in result.stdout  # the unmapped trap flips the verdict
 
     def test_doctor_json_output(self, monkeypatch):
         import json as _json
@@ -215,15 +229,19 @@ class TestCliApp:
         monkeypatch.setattr(client, "source_health", lambda: {"healthy": 4, "total": 7})
         monkeypatch.setattr(
             client,
-            "methodology",
-            lambda: {"fields": [{"field": "marginal_intensity_gco2_kwh", "basis": "heuristic"}]},
+            "honesty",
+            lambda: {"marginal_basis": "heuristic", "marginal_configured_but_unmapped": False},
         )
         result = runner.invoke(app, ["doctor", "--json"])
         assert result.exit_code == 0
         payload = _json.loads(result.stdout)
         assert payload["ok"] is False
         assert payload["checks"]["data_sources"] == {"ok": False, "live": 4, "total": 7}
-        assert payload["checks"]["marginal"] == {"ok": False, "basis": "heuristic"}
+        assert payload["checks"]["marginal"] == {
+            "ok": False,
+            "basis": "heuristic",
+            "configured_but_unmapped": False,
+        }
 
     def test_doctor_exits_when_api_unreachable(self, monkeypatch):
         def _boom():
