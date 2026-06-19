@@ -673,6 +673,8 @@ def test_metrics_exposes_carbon_gauges(client: TestClient):
     assert "carbon_impact_jobs_shifted" in body
     # Graded tier gauge for proportional autoscaling.
     assert "carbon_intensity_tier" in body
+    # Config-honesty gauge: 0 here (no marginal credential), present for alerting.
+    assert "carbon_marginal_unmapped 0.0" in body
 
 
 def test_intensity_tier_thresholds():

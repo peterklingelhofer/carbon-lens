@@ -776,15 +776,11 @@ async def honesty(
     load on a guess" rather than merely report it.
     """
     basis = "measured" if marginal_source is not None else "heuristic"
-    # The silent-heuristic trap: an operator set a marginal credential but no zone map,
-    # so no source got built and the signal quietly stays heuristic. Surface it.
-    from carbon_mesh.carbon_sources.marginal import parse_zone_map
+    # The silent-heuristic trap: a marginal credential set but no zone map, so the signal
+    # quietly stays heuristic. Surface it (and the Prometheus gauge alerts on the same).
+    from carbon_mesh.carbon_sources.marginal import marginal_unmapped
 
-    wt_token = bool(getattr(settings, "watttime_token", ""))
-    wt_map = bool(parse_zone_map(getattr(settings, "watttime_zone_map", "")))
-    em_key = bool(getattr(settings, "electricity_maps_api_key", ""))
-    em_map = bool(parse_zone_map(getattr(settings, "electricity_maps_zone_map", "")))
-    unmapped = marginal_source is None and ((wt_token and not wt_map) or (em_key and not em_map))
+    unmapped = marginal_unmapped(settings)
     body: dict = {
         "marginal_basis": basis,
         "marginal_configured_but_unmapped": unmapped,
