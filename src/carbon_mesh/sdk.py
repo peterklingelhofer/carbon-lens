@@ -27,12 +27,17 @@ framework's deferrable/reschedule mechanism over blocking for hours.
 from __future__ import annotations
 
 import functools
+import os
 import time
 from collections.abc import Callable
 
 import httpx
 
 DEFAULT_API_URL = "https://carbonlens-gssa.onrender.com"
+
+# How long a fetched CDN snapshot is reused before refetching (matches the publish
+# cadence). Reading signals from the snapshot avoids waking the API on every call.
+_SNAPSHOT_TTL_SECONDS = 300.0
 
 
 def is_good_time(signal: dict, max_intensity: float | None = None) -> bool:
@@ -92,14 +97,56 @@ def impact_from_signal(region: str, signal: dict, deferred_hours: float) -> dict
 
 
 class CarbonClient:
-    """Thin programmatic client for carbon-aware decisions."""
+    """Thin programmatic client for carbon-aware decisions.
 
-    def __init__(self, api_url: str = DEFAULT_API_URL, timeout: float = 20.0) -> None:
+    When ``snapshot_url`` is set (or ``CARBONLENS_SNAPSHOT_URL`` is in the environment),
+    ``signal`` reads the precomputed per-region decision straight from the static CDN
+    snapshot -- no API call, so it never has to wait for a sleeping server to wake. It
+    falls back to the live API for regions/zones the snapshot doesn't cover (e.g. on-prem
+    ``zone/<id>`` signals), and for everything else (waiting loops, reporting)."""
+
+    def __init__(
+        self,
+        api_url: str = DEFAULT_API_URL,
+        timeout: float = 20.0,
+        snapshot_url: str | None = None,
+    ) -> None:
         self._base = api_url.rstrip("/")
         self._timeout = timeout
+        self._snapshot_url = snapshot_url or os.environ.get("CARBONLENS_SNAPSHOT_URL") or None
+        self._snapshot_cache: dict | None = None
+        self._snapshot_at = 0.0
+
+    def _load_snapshot(self, _clock: Callable[[], float] = time.monotonic) -> dict | None:
+        """Fetch+cache the CDN snapshot; returns the last good copy on a fetch error."""
+        if not self._snapshot_url:
+            return None
+        now = _clock()
+        if self._snapshot_cache is not None and (now - self._snapshot_at) < _SNAPSHOT_TTL_SECONDS:
+            return self._snapshot_cache
+        try:
+            resp = httpx.get(self._snapshot_url, timeout=self._timeout)
+            resp.raise_for_status()
+            self._snapshot_cache = resp.json()
+            self._snapshot_at = now
+        except Exception:
+            return self._snapshot_cache  # serve stale (or None) rather than raise
+        return self._snapshot_cache
+
+    def _snapshot_signal(self, region: str) -> dict | None:
+        """The precomputed signal for ``region`` from the CDN snapshot, or None."""
+        snap = self._load_snapshot()
+        if not snap:
+            return None
+        return (snap.get("signals") or {}).get(region)
 
     def signal(self, region: str) -> dict:
-        """Raw signal for a ``provider/region`` or ``zone/<id>`` (for on-prem grids)."""
+        """Raw signal for a ``provider/region`` or ``zone/<id>`` (for on-prem grids).
+
+        Served from the CDN snapshot when configured and present; otherwise from the API."""
+        cached = self._snapshot_signal(region)
+        if cached is not None:
+            return cached
         provider, _, reg = region.partition("/")
         resp = httpx.get(
             f"{self._base}/api/v1/carbon/signal/{provider}/{reg}", timeout=self._timeout

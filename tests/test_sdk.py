@@ -87,6 +87,79 @@ def test_wait_polls_until_clean():
     assert slept == [600]  # waited one poll interval before the second (clean) check
 
 
+def test_signal_reads_from_snapshot_without_calling_api():
+    cl = CarbonClient(snapshot_url="https://cdn.example/snapshot.json")
+    snap = {"signals": {"aws/us-east-1": {"advice": "run_now", "state": "green"}}}
+    cl._load_snapshot = lambda: snap  # type: ignore
+
+    # Any API call would explode this, proving the snapshot path is used.
+    cl_api_called = []
+    import carbon_mesh.sdk as sdk_mod
+
+    orig_get = sdk_mod.httpx.get
+    sdk_mod.httpx.get = lambda *a, **k: cl_api_called.append(1)  # type: ignore
+    try:
+        sig = cl.signal("aws/us-east-1")
+    finally:
+        sdk_mod.httpx.get = orig_get
+    assert sig == {"advice": "run_now", "state": "green"}
+    assert cl_api_called == []  # served from the snapshot, no API hit
+
+
+def test_signal_falls_back_to_api_when_region_absent_from_snapshot(monkeypatch):
+    cl = CarbonClient(snapshot_url="https://cdn.example/snapshot.json")
+    cl._load_snapshot = lambda: {"signals": {"aws/us-east-1": {"advice": "run_now"}}}  # type: ignore
+
+    class _Resp:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"advice": "wait_for_cleaner", "from": "api"}
+
+    called = {}
+
+    def fake_get(url, timeout):
+        called["url"] = url
+        return _Resp()
+
+    monkeypatch.setattr("carbon_mesh.sdk.httpx.get", fake_get)
+    # zone/FR isn't in the snapshot -> API fallback.
+    sig = cl.signal("zone/FR")
+    assert sig == {"advice": "wait_for_cleaner", "from": "api"}
+    assert "/api/v1/carbon/signal/zone/FR" in called["url"]
+
+
+def test_load_snapshot_caches_and_serves_stale_on_error():
+    cl = CarbonClient(snapshot_url="https://cdn.example/snapshot.json")
+    calls = []
+
+    class _Resp:
+        def __init__(self, body):
+            self._body = body
+
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return self._body
+
+    import carbon_mesh.sdk as sdk_mod
+
+    orig = sdk_mod.httpx.get
+    sdk_mod.httpx.get = lambda *a, **k: (calls.append(1), _Resp({"signals": {}}))[1]  # type: ignore
+    try:
+        clock = [1000.0]
+        first = cl._load_snapshot(_clock=lambda: clock[0])
+        # Within TTL -> cached, no second fetch.
+        clock[0] = 1000.0 + 100
+        second = cl._load_snapshot(_clock=lambda: clock[0])
+        assert first is second
+        assert len(calls) == 1
+    finally:
+        sdk_mod.httpx.get = orig
+
+
 def test_impact_from_signal_predicts_reduction_and_mirrors_basis():
     signal = {
         "intensity_gco2_kwh": 400,
