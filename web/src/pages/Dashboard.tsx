@@ -520,6 +520,7 @@ export function Dashboard() {
             type="button"
             key={p}
             onClick={() => setProvider(p)}
+            aria-pressed={provider === p}
             style={{
               padding: "0.4rem 1rem",
               borderRadius: 6,
