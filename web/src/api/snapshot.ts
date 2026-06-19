@@ -37,6 +37,13 @@ export interface CarbonSnapshotForecast {
   points: { t: string; c: number }[];
 }
 
+// Precomputed current weather drivers per region (Open-Meteo), baked into the snapshot.
+export interface SnapshotWeather {
+  wind_speed_kmh: number;
+  solar_irradiance_w_m2: number;
+  source?: string;
+}
+
 export interface CarbonSnapshot {
   generated_at: string;
   regions: CloudRegion[];
@@ -45,6 +52,7 @@ export interface CarbonSnapshot {
   signals?: Record<string, CarbonSignal>;
   forecasts?: Record<string, CarbonSnapshotForecast>;
   best_time?: Record<string, BestTime>;
+  weather?: Record<string, SnapshotWeather>;
   summary: {
     live_zones: number;
     estimated_zones: number;
@@ -54,6 +62,7 @@ export interface CarbonSnapshot {
     signals_published?: number;
     forecasts_published?: number;
     best_time_published?: number;
+    weather_published?: number;
     degraded: string[];
   };
 }
@@ -94,6 +103,13 @@ export function useForecastSnapshot(
 export function useBestTimeSnapshot(provider: string, region: string): BestTime | undefined {
   const { data } = useSnapshot();
   return data?.best_time?.[`${provider}/${region}`];
+}
+
+// The precomputed weather drivers for one region from the cached snapshot (no extra
+// fetch). Undefined when snapshots are disabled or this region has no weather yet.
+export function useWeatherSnapshot(provider: string, region: string): SnapshotWeather | undefined {
+  const { data } = useSnapshot();
+  return data?.weather?.[`${provider}/${region}`];
 }
 
 export function useSnapshot() {
