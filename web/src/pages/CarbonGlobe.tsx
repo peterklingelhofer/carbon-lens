@@ -515,6 +515,11 @@ export default function CarbonGlobe() {
     controls.autoRotateSpeed = 0.55;
     controls.enableZoom = true;
 
+    // Respect the OS "reduce motion" setting: no continuous auto-rotation. A
+    // carbon tool shouldn't spin a GPU-bound globe for users who've opted out of
+    // motion -- it's both an accessibility and an energy concern.
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
     // Capture mode: `?lng=120` (optionally &lat=&alt=) freezes the camera at an
     // exact longitude, so screenshot frames have perfectly uniform rotation for
     // building a smooth GIF. With no params, the live app auto-rotates.
@@ -528,7 +533,7 @@ export default function CarbonGlobe() {
         altitude: parseFloat(params.get("alt") ?? "2.9"),
       });
     } else {
-      controls.autoRotate = true;
+      controls.autoRotate = !reduceMotion;
       globe.pointOfView({ lat: 25, lng: 0, altitude: 2.4 });
     }
 
@@ -697,20 +702,50 @@ export default function CarbonGlobe() {
     };
     window.addEventListener("resize", onResize);
 
-    // Pause auto-rotation while the user is interacting; resume after.
+    // Pause auto-rotation while the user is interacting; resume after (unless the
+    // user has asked for reduced motion, in which case it never auto-spins).
     let resumeTimer: ReturnType<typeof setTimeout>;
     const pause = () => {
       controls.autoRotate = false;
       clearTimeout(resumeTimer);
+      if (reduceMotion) return;
       resumeTimer = setTimeout(() => {
         controls.autoRotate = true;
       }, 3500);
     };
     el.addEventListener("pointerdown", pause);
 
+    // Stop the render loop entirely when the page is hidden or the globe is
+    // scrolled off-screen. globe.gl/three render on every animation frame
+    // regardless of whether anything moved, so an open-but-unwatched globe
+    // otherwise pins a GPU core indefinitely -- the biggest continuous energy
+    // cost in the app. pauseAnimation() takes it to zero; we resume only when
+    // it's both visible and on-screen.
+    let onScreen = true;
+    let pageVisible = !document.hidden;
+    const applyRunState = () => {
+      if (onScreen && pageVisible) globe.resumeAnimation();
+      else globe.pauseAnimation();
+    };
+    const onVisibility = () => {
+      pageVisible = !document.hidden;
+      applyRunState();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        onScreen = entry.isIntersecting;
+        applyRunState();
+      },
+      { threshold: 0 },
+    );
+    io.observe(el);
+
     return () => {
       window.removeEventListener("resize", onResize);
       el.removeEventListener("pointerdown", pause);
+      document.removeEventListener("visibilitychange", onVisibility);
+      io.disconnect();
       clearTimeout(resumeTimer);
       clearTimeout(scaleTimer);
       clearInterval(sunTimer);
