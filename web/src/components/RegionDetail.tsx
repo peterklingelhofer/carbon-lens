@@ -1,7 +1,47 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
+import { useSignal } from "../api/snapshot";
 import { relativeToUsual } from "../lib/anomaly";
 import { MiniSparkline, trendLabel } from "./MiniSparkline";
+
+const SIGNAL_COLOR = { green: "#4ade80", yellow: "#fbbf24", red: "#f87171" } as const;
+
+// The run-now/wait decision for a region, read straight from the precomputed snapshot
+// signal on the CDN -- no API call, so it's instant even when the server is asleep.
+// Renders nothing when there's no signal (snapshot disabled, or region not covered).
+export function RegionSignal({ provider, region }: { provider: string; region: string }) {
+  const signal = useSignal(provider, region);
+  if (!signal) return null;
+  const color = SIGNAL_COLOR[signal.state];
+  const runNow = signal.advice === "run_now";
+  const window = signal.surplus_window_in_hours ?? signal.cleaner_window_in_hours;
+
+  return (
+    <div style={{ marginTop: 10 }}>
+      <div style={{ fontSize: "0.72rem", color: "#9ca3af", marginBottom: 4 }}>
+        Run a flexible job now?
+      </div>
+      <div style={{ fontSize: "0.85rem", fontWeight: 600, color }}>
+        {signal.clean_surplus ? "⚡ " : ""}
+        {runNow ? "Yes — run now" : `Wait${window != null ? ` ~${window}h` : ""} for cleaner`}
+        {!runNow && signal.cleaner_window_intensity_gco2_kwh != null && (
+          <span style={{ color: "#86efac", fontWeight: 400 }}>
+            {" "}
+            · then ~{Math.round(signal.cleaner_window_intensity_gco2_kwh)} gCO₂/kWh
+          </span>
+        )}
+      </div>
+      {signal.marginal_note && (
+        <div style={{ fontSize: "0.62rem", color: "#9ca3af", marginTop: 3 }}>
+          {signal.marginal_note}
+        </div>
+      )}
+      <div style={{ fontSize: "0.58rem", color: "#6b7280", marginTop: 2 }}>
+        precomputed signal · marginal {signal.marginal_basis}
+      </div>
+    </div>
+  );
+}
 
 // "Cleaner / dirtier than usual" badge from the history baseline, when available.
 function UsualBadge({
