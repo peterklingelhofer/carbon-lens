@@ -314,6 +314,23 @@ def test_methodology_endpoint(client: TestClient):
     assert "attestation" in body["note"].lower()
 
 
+def test_honesty_probe_heuristic_by_default(client: TestClient):
+    resp = client.get("/api/v1/healthz/honesty")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["marginal_basis"] == "heuristic"
+    assert body["ok"] is True
+
+
+def test_honesty_probe_gates_on_require_measured(client: TestClient):
+    # No measured marginal source in tests -> require_measured must fail the probe.
+    resp = client.get("/api/v1/healthz/honesty", params={"require_measured": "true"})
+    assert resp.status_code == 503
+    body = resp.json()
+    assert body["ok"] is False
+    assert "heuristic" in body["reason"]
+
+
 def test_zone_signal(client: TestClient):
     # On-prem / colo: ask by grid zone directly, no cloud region needed.
     resp = client.get("/api/v1/carbon/signal/zone/US-NW-BPAT")
