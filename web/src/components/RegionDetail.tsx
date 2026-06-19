@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
-import { useSignal } from "../api/snapshot";
+import { useForecastSnapshot, useSignal } from "../api/snapshot";
 import { relativeToUsual } from "../lib/anomaly";
 import { MiniSparkline, trendLabel } from "./MiniSparkline";
 
@@ -225,22 +225,33 @@ export function RegionBestTime({ provider, region }: { provider: string; region:
   );
 }
 
-// Next-24h carbon-intensity forecast for the selected region, fetched live from
-// the API's /carbon/forecast endpoint and drawn as a sparkline. EU zones get a
-// real ENTSO-E day-ahead curve; elsewhere it's the labelled time-of-day model.
+// Next-24h carbon-intensity forecast for the selected region, drawn as a sparkline.
+// Read from the precomputed snapshot curve when available (no API call); otherwise
+// fetched live from /carbon/forecast. EU zones get a real ENTSO-E day-ahead curve;
+// elsewhere it's the labelled time-of-day model.
 export function RegionForecast({ provider, region }: { provider: string; region: string }) {
+  const snap = useForecastSnapshot(provider, region);
   const { data, isLoading, isError } = useQuery({
     queryKey: ["forecast", provider, region],
     queryFn: () => api.carbonForecast(provider, region, 24),
     staleTime: 5 * 60_000,
     retry: 1,
+    enabled: !snap, // snapshot already has the curve -> skip the API
   });
 
   const label = (
     <div style={{ fontSize: "0.72rem", color: "#9ca3af", marginBottom: 4 }}>Next 24h</div>
   );
 
-  if (isLoading) {
+  // Normalize either source to {ts, c}; the snapshot's compact {t, c} or the API's
+  // CarbonIntensity points.
+  const points = snap
+    ? snap.points.map((p) => ({ ts: p.t, c: p.c }))
+    : (data?.points ?? []).map((p) => ({ ts: p.timestamp, c: p.carbon_intensity_gco2_kwh }));
+  const method = snap?.method ?? data?.method;
+  const surplusHours = snap?.clean_surplus_hours ?? data?.clean_surplus_hours;
+
+  if (!snap && isLoading) {
     return (
       <div style={{ marginTop: 10 }}>
         {label}
@@ -248,17 +259,17 @@ export function RegionForecast({ provider, region }: { provider: string; region:
       </div>
     );
   }
-  if (isError || !data || data.points.length < 2) return null;
+  if ((!snap && isError) || points.length < 2) return null;
 
-  const vals = data.points.map((p) => p.carbon_intensity_gco2_kwh);
-  const labels = data.points.map((p) =>
-    new Date(p.timestamp).toLocaleTimeString(undefined, { hour: "numeric" }),
+  const vals = points.map((p) => p.c);
+  const labels = points.map((p) =>
+    new Date(p.ts).toLocaleTimeString(undefined, { hour: "numeric" }),
   );
   const trend = trendLabel(vals[0], vals[vals.length - 1]);
   const methodLabel =
-    data.method === "entsoe_day_ahead"
+    method === "entsoe_day_ahead"
       ? "ENTSO-E day-ahead"
-      : data.method === "open_meteo_forecast"
+      : method === "open_meteo_forecast"
         ? "weather forecast (Open-Meteo)"
         : "time-of-day model";
 
@@ -266,9 +277,9 @@ export function RegionForecast({ provider, region }: { provider: string; region:
   // day-ahead forecast and widest for the bare time-of-day model. Not a measured
   // error band.
   const [base, perHour] =
-    data.method === "entsoe_day_ahead"
+    method === "entsoe_day_ahead"
       ? [0.04, 0.004]
-      : data.method === "open_meteo_forecast"
+      : method === "open_meteo_forecast"
         ? [0.06, 0.007]
         : [0.08, 0.01];
   const band = vals.map((v, i): [number, number] => {
@@ -292,7 +303,7 @@ export function RegionForecast({ provider, region }: { provider: string; region:
       {(() => {
         // Soonest upcoming clean-surplus hour (renewables abundant): the
         // highest-value window to shift a flexible job into.
-        const soonest = data.clean_surplus_hours?.find((h) => h >= 1);
+        const soonest = surplusHours?.find((h) => h >= 1);
         return soonest != null ? (
           <div style={{ fontSize: "0.66rem", color: "#4ade80", marginTop: 3 }}>
             ⚡ Clean-surplus window in ~{soonest}h · highest-value time to run

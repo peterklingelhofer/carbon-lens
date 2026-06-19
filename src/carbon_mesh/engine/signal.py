@@ -56,11 +56,17 @@ async def build_signal(
     engine: SchedulingEngine,
     source: CarbonDataSource,
     marginal_source: MarginalSource | None = None,
+    points=None,
 ) -> CarbonSignal:
     """Core run-now/wait decision for a grid zone. Shared by the cloud-region and
     on-prem (zone) endpoints and the snapshot builder so all make the exact same
-    marginal/surplus-aware call."""
-    _, points = await engine.forecast_zone(zone, longitude, 24)
+    marginal/surplus-aware call.
+
+    ``points`` may be a precomputed 24h forecast (from ``engine.forecast_zone``); when
+    omitted it's fetched here. Passing it lets the snapshot builder reuse one forecast
+    for both the signal and the published forecast curve."""
+    if points is None:
+        _, points = await engine.forecast_zone(zone, longitude, 24)
     intensities = [p.carbon_intensity_gco2_kwh for p in points]
     now_v = intensities[0]
     state = signal_state(now_v)

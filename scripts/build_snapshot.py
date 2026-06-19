@@ -153,22 +153,26 @@ def _ci_from_entry(entry: dict) -> CarbonIntensity:
 _UNSET = object()
 
 
-async def compute_signals(
+async def compute_region_data(
     snapshot_intensities: dict[str, dict],
     region_meta: dict[str, dict],
     mapper: GridMapper,
     forecast_source=_UNSET,
     weather_forecast_source=_UNSET,
 ) -> dict[str, dict]:
-    """Precompute the run-now/wait signal per published region, reusing the exact same
-    ``engine.signal.build_signal`` the live API uses (so the static CDN signal matches).
+    """Precompute the run-now/wait signal AND the 24h forecast curve per published region.
 
-    Computed once per grid zone (forecast is per-zone) and fanned out to every region
-    sharing it. Best-effort: a zone whose forecast fails is simply omitted. The forecast
-    sources are injectable (pass None for both) so tests run without network."""
+    Both reuse the exact same engine the live API uses (so the static CDN data matches),
+    and the forecast is computed once per grid zone and shared by the signal and the
+    published curve, then fanned out to every region sharing the zone. Best-effort: a
+    zone whose forecast fails is simply omitted. Forecast sources are injectable (pass
+    None for both) so tests run without network.
+
+    Returns ``{"signals": {key: signal}, "forecasts": {key: forecast}}``."""
     from carbon_mesh.carbon_sources.entsoe_forecast import ENTSOEForecastSource
     from carbon_mesh.carbon_sources.open_meteo import OpenMeteoForecastSource
     from carbon_mesh.engine.signal import build_signal
+    from carbon_mesh.engine.surplus import surplus_offsets
     from carbon_mesh.scheduler.engine import SchedulingEngine
 
     if forecast_source is _UNSET:
@@ -193,25 +197,53 @@ async def compute_signals(
     )
 
     signals: dict[str, dict] = {}
+    forecasts: dict[str, dict] = {}
     for zone, keys in zone_keys.items():
         rep = region_meta.get(keys[0], {})
         lon = rep.get("longitude") or 0.0
         try:
+            method, points = await engine.forecast_zone(zone, lon, 24)
+        except Exception as e:
+            print(f"  (forecast for {zone} unavailable: {e})", file=sys.stderr)
+            continue
+
+        fc_base = {
+            "grid_zone": zone,
+            "method": method,
+            "generated_at": points[0].timestamp.isoformat() if points else None,
+            "clean_surplus_hours": surplus_offsets(points),
+            "points": [
+                {"t": p.timestamp.isoformat(), "c": round(p.carbon_intensity_gco2_kwh, 1)}
+                for p in points
+            ],
+        }
+
+        sig_base: dict | None = None
+        try:
             sig = await build_signal(
-                rep.get("provider", ""), rep.get("region", ""), zone, lon, engine, prefetched
+                rep.get("provider", ""),
+                rep.get("region", ""),
+                zone,
+                lon,
+                engine,
+                prefetched,
+                points=points,
             )
+            sig_base = sig.model_dump()
         except Exception as e:
             print(f"  (signal for {zone} unavailable: {e})", file=sys.stderr)
-            continue
-        base = sig.model_dump()
+
         for key in keys:
             m = region_meta.get(key, {})
-            signals[key] = {
-                **base,
-                "provider": m.get("provider", base["provider"]),
-                "region": m.get("region", base["region"]),
-            }
-    return signals
+            prov, reg = m.get("provider", ""), m.get("region", "")
+            forecasts[key] = {**fc_base, "provider": prov, "region": reg}
+            if sig_base is not None:
+                signals[key] = {
+                    **sig_base,
+                    "provider": prov or sig_base["provider"],
+                    "region": reg or sig_base["region"],
+                }
+    return {"signals": signals, "forecasts": forecasts}
 
 
 async def build_snapshot(
@@ -285,21 +317,24 @@ async def build_snapshot(
     )
     degraded = sorted(k for k, v in snapshot_intensities.items() if v["quality"] == "estimated")
 
-    # Precompute the run-now/wait signal per region so the frontend and SDK can read
-    # decisions straight from the CDN -- no live API, no cold start. Best-effort: a
-    # failure here never blocks publishing the snapshot itself.
+    # Precompute the run-now/wait signal and 24h forecast per region so the frontend and
+    # SDK can read decisions and curves straight from the CDN -- no live API, no cold
+    # start. Best-effort: a failure here never blocks publishing the snapshot itself.
     signals: dict[str, dict] = {}
+    forecasts: dict[str, dict] = {}
     if with_signals:
         try:
-            signals = await compute_signals(snapshot_intensities, region_meta, mapper)
+            data = await compute_region_data(snapshot_intensities, region_meta, mapper)
+            signals, forecasts = data["signals"], data["forecasts"]
         except Exception as e:
-            print(f"  (signal precompute skipped: {e})", file=sys.stderr)
+            print(f"  (signal/forecast precompute skipped: {e})", file=sys.stderr)
 
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "regions": snapshot_regions,
         "intensities": snapshot_intensities,
         "signals": signals,
+        "forecasts": forecasts,
         "summary": {
             "live_zones": counts["live"],
             "estimated_zones": counts["estimated"],
@@ -307,6 +342,7 @@ async def build_snapshot(
             "carried_forward": carried,
             "regions_published": len(snapshot_regions),
             "signals_published": len(signals),
+            "forecasts_published": len(forecasts),
             "degraded": degraded,
         },
     }
