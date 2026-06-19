@@ -310,6 +310,7 @@ function MetricToggle({
             type="button"
             key={m}
             onClick={() => onChange(m)}
+            aria-pressed={value === m}
             style={{
               flex: 1,
               textAlign: "center",
@@ -1279,6 +1280,8 @@ export default function CarbonGlobe() {
       {/* Empty / loading / error state - distinguish a failed fetch from loading */}
       {!webglError && points.length === 0 && (
         <div
+          role="status"
+          aria-live="polite"
           style={{
             position: "absolute",
             inset: 0,
