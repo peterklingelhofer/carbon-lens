@@ -25,12 +25,25 @@ export interface CarbonSignal {
   surplus_window_in_hours: number | null;
 }
 
+// A compact 24h forecast curve baked into the snapshot (point 0 = current reading).
+// Each point is {t: timestamp, c: gCO2/kWh} -- only what the sparkline needs.
+export interface CarbonSnapshotForecast {
+  grid_zone: string;
+  provider: string;
+  region: string;
+  method: string;
+  generated_at: string | null;
+  clean_surplus_hours: number[];
+  points: { t: string; c: number }[];
+}
+
 export interface CarbonSnapshot {
   generated_at: string;
   regions: CloudRegion[];
   intensities: Record<string, CarbonIntensity>;
-  // Optional: older snapshots predate precomputed signals, so treat as may-be-absent.
+  // Optional: older snapshots predate precomputed signals/forecasts, so may be absent.
   signals?: Record<string, CarbonSignal>;
+  forecasts?: Record<string, CarbonSnapshotForecast>;
   summary: {
     live_zones: number;
     estimated_zones: number;
@@ -38,6 +51,7 @@ export interface CarbonSnapshot {
     carried_forward?: number;
     regions_published: number;
     signals_published?: number;
+    forecasts_published?: number;
     degraded: string[];
   };
 }
@@ -61,6 +75,16 @@ export function qualityFromSource(source: string): "live" | "estimated" | "mock"
 export function useSignal(provider: string, region: string): CarbonSignal | undefined {
   const { data } = useSnapshot();
   return data?.signals?.[`${provider}/${region}`];
+}
+
+// The precomputed 24h forecast for one region from the cached snapshot (no extra
+// fetch). Undefined when snapshots are disabled or this region has no forecast yet.
+export function useForecastSnapshot(
+  provider: string,
+  region: string,
+): CarbonSnapshotForecast | undefined {
+  const { data } = useSnapshot();
+  return data?.forecasts?.[`${provider}/${region}`];
 }
 
 export function useSnapshot() {
