@@ -751,6 +751,70 @@ def shiftability(
     console.print(table)
 
 
+@app.command()
+def doctor():
+    """Preflight self-test: API reachability, live-vs-estimated sources, marginal basis.
+
+    A quick honesty check before you wire CarbonLens into a pipeline -- it tells you
+    which signals are live/measured versus modelled/heuristic, so you know what you're
+    acting on.
+    """
+    api = client.get_api_url()
+    console.print(f"[bold]CarbonLens doctor[/bold] — checking {api}\n")
+    ok = True
+
+    try:
+        client.health()
+        console.print("[green]✓[/green] API reachable")
+    except Exception as e:
+        console.print(f"[red]✗[/red] API unreachable: {e}")
+        console.print(
+            "\n[red]Cannot continue without the API.[/red] "
+            "Set its URL with `carbonlens config set api-url <url>`."
+        )
+        raise typer.Exit(1)
+
+    try:
+        sh = client.source_health()
+        healthy, total = sh.get("healthy", 0), sh.get("total", 0)
+        if healthy == total and total:
+            console.print(f"[green]✓[/green] Data sources: {healthy}/{total} live")
+        else:
+            console.print(
+                f"[yellow]![/yellow] Data sources: {healthy}/{total} live "
+                "(the rest fall back to estimates)"
+            )
+            ok = False
+    except Exception as e:
+        console.print(f"[yellow]![/yellow] Could not check data sources: {e}")
+        ok = False
+
+    try:
+        meth = client.methodology()
+        basis = "heuristic"
+        for f in meth.get("fields", []):
+            if f.get("field") == "marginal_intensity_gco2_kwh":
+                basis = f.get("basis", basis)
+        if basis == "measured":
+            console.print("[green]✓[/green] Marginal signal: measured (operator key configured)")
+        else:
+            console.print(
+                "[yellow]![/yellow] Marginal signal: heuristic "
+                "(merit-order estimate; bring a WattTime / Electricity Maps key to measure)"
+            )
+    except Exception as e:
+        console.print(f"[yellow]![/yellow] Could not read methodology: {e}")
+
+    console.print()
+    if ok:
+        console.print("[green]Ready.[/green] API reachable and data sources live.")
+    else:
+        console.print(
+            "[yellow]Usable, with the caveats above.[/yellow] "
+            "CarbonLens degrades to honest estimates when a source is unavailable."
+        )
+
+
 @config_app.command("set")
 def config_set(
     key: str = typer.Argument(help="Config key: api-url or api-key"),
