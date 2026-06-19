@@ -8,6 +8,28 @@ import { card, providerChip, section as sectionFn } from "../styles";
 
 const section = sectionFn(1100);
 
+// A ready-to-edit example matching the exact columns the upload expects, so users can
+// shape their own spreadsheet to match instead of guessing. Rows mirror the demo data.
+const SAMPLE_USAGE_CSV = `provider,region,service,resource_type,usage_quantity,usage_unit,period_start,period_end
+aws,us-east-1,ec2,m6i.xlarge,7200,vcpu_hours,2026-05-01,2026-06-01
+aws,eu-west-1,s3,standard,500000,gb_hours,2026-05-01,2026-06-01
+gcp,us-central1,compute-engine,n2-standard-4,4800,vcpu_hours,2026-05-01,2026-06-01
+gcp,us-central1,cloud-functions,default,2000000,requests,2026-05-01,2026-06-01
+azure,eastus,virtual-machines,Standard_D4s_v5,3600,vcpu_hours,2026-05-01,2026-06-01
+`;
+
+function downloadSampleCsv() {
+  const blob = new Blob([SAMPLE_USAGE_CSV], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "carbonlens-sample-usage.csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 export function Compliance() {
   const queryClient = useQueryClient();
   const [orgId] = useState("demo");
@@ -218,7 +240,22 @@ export function Compliance() {
           </code>{" "}
           (<code>resource_type</code> optional). Units: <code>vcpu_hours</code>,{" "}
           <code>gb_hours</code>, <code>requests</code>, <code>gb_transferred</code>, or{" "}
-          <code>kwh</code>. Dates are ISO 8601 (e.g. 2026-05-01).
+          <code>kwh</code>. Dates are ISO 8601 (e.g. 2026-05-01).{" "}
+          <button
+            type="button"
+            onClick={downloadSampleCsv}
+            style={{
+              background: "none",
+              border: "none",
+              padding: 0,
+              color: "var(--btn-green)",
+              font: "inherit",
+              cursor: "pointer",
+              textDecoration: "underline",
+            }}
+          >
+            Download a sample CSV →
+          </button>
         </p>
         <div
           style={{
