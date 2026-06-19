@@ -62,12 +62,16 @@ export function SitingPicker() {
           margin: "0.5rem 0 0.75rem",
         }}
       >
-        <div style={{ display: "flex", gap: 8 }}>
+        <fieldset
+          style={{ display: "flex", gap: 8, border: "none", margin: 0, padding: 0, minWidth: 0 }}
+        >
+          <legend className="sr-only">Cloud providers to compare</legend>
           {PROVIDERS.map((p) => (
             <button
               type="button"
               key={p}
               onClick={() => toggle(p)}
+              aria-pressed={providers.includes(p)}
               style={{
                 padding: "3px 10px",
                 borderRadius: 6,
@@ -81,7 +85,7 @@ export function SitingPicker() {
               {p.toUpperCase()}
             </button>
           ))}
-        </div>
+        </fieldset>
         <label style={{ fontSize: "0.8rem", color: "var(--gray-500)" }}>
           Continuous load{" "}
           <input

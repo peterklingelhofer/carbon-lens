@@ -116,6 +116,7 @@ export function RegionComparison() {
               setProvider(p);
               setRegion(DEFAULT_REGION[p]);
             }}
+            aria-pressed={provider === p}
             style={{
               padding: "0.3rem 0.8rem",
               borderRadius: 6,

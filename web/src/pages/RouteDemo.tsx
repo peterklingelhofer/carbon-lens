@@ -114,8 +114,8 @@ export function RouteDemo() {
         <h3 style={{ marginTop: 0, marginBottom: "1rem" }}>Configure Routing</h3>
 
         {/* Providers */}
-        <div style={{ marginBottom: "1.25rem" }}>
-          <span
+        <fieldset style={{ border: "none", margin: "0 0 1.25rem", padding: 0, minWidth: 0 }}>
+          <legend
             style={{
               fontWeight: 600,
               display: "block",
@@ -123,13 +123,14 @@ export function RouteDemo() {
             }}
           >
             Cloud Providers
-          </span>
+          </legend>
           <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
             {["aws", "gcp", "azure", "scaleway", "ovh", "hetzner"].map((p) => (
               <button
                 type="button"
                 key={p}
                 onClick={() => toggleProvider(p)}
+                aria-pressed={providers.includes(p)}
                 style={{
                   padding: "0.5rem 1.25rem",
                   borderRadius: 6,
@@ -146,7 +147,7 @@ export function RouteDemo() {
               </button>
             ))}
           </div>
-        </div>
+        </fieldset>
 
         {/* Data Residency */}
         <div style={{ marginBottom: "1.25rem" }}>
