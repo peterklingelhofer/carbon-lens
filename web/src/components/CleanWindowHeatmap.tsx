@@ -157,6 +157,7 @@ export function CleanWindowHeatmap() {
               setProvider(p);
               setRegion(DEFAULT_REGION[p]);
             }}
+            aria-pressed={provider === p}
             style={{
               padding: "0.3rem 0.9rem",
               borderRadius: 6,
