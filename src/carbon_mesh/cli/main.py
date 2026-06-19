@@ -649,6 +649,56 @@ def org_statement(
     console.print()
 
 
+@app.command()
+def verify(
+    directory: Optional[str] = typer.Option(
+        None,
+        "--dir",
+        help="Directory of per-host *.jsonl ledgers; omit to use this host's local ledger",
+    ),
+    org: str = typer.Option("Your organization", "--org", help="Organization name for the header"),
+    days: int = typer.Option(90, "--days", help="Reporting period (days)"),
+    out: Optional[str] = typer.Option(
+        None, "--out", help="Write the disclosure as Markdown to this path"
+    ),
+    json_output: bool = typer.Option(False, "--json", help="Output raw JSON"),
+):
+    """Produce a citable carbon-aware-compute disclosure (statement + forecast accuracy).
+
+    Combines the org statement (counterfactual, verified share, CO2 avoided) with forecast
+    calibration into one Markdown artifact a sustainability team can attach to a report.
+    """
+    if directory:
+        import glob
+        from pathlib import Path
+
+        files = sorted(glob.glob(str(Path(directory) / "*.jsonl")))
+        if not files:
+            console.print(f"[red]Error:[/red] no *.jsonl ledger files in {directory}")
+            raise typer.Exit(1)
+        entries: list[dict] = []
+        for f in files:
+            entries.extend(ledger.read_file(Path(f)))
+    else:
+        entries = ledger.read()
+
+    stmt = ledger.org_statement(entries, datetime.now(timezone.utc), days, org)
+    if json_output:
+        import json
+
+        console.print_json(json.dumps(stmt))
+        return
+
+    md = ledger.disclosure_markdown(stmt)
+    if out:
+        from pathlib import Path
+
+        Path(out).write_text(md)
+        console.print(f"[green]Wrote disclosure to {out}[/green]")
+    else:
+        console.print(md, markup=False)
+
+
 @app.command(name="best-time")
 def best_time(
     region: str = typer.Argument(

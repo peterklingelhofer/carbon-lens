@@ -213,6 +213,58 @@ def org_statement(
     }
 
 
+def disclosure_markdown(stmt: dict) -> str:
+    """Render an org-statement dict as a self-contained, citable Markdown disclosure.
+
+    Combines the headline numbers, the stated counterfactual/accounting basis, the
+    per-region breakdown, and -- crucially -- the forecast accuracy, so a reader can
+    judge not just how much was avoided but how trustworthy the estimate is.
+    """
+    lines = [f"# Carbon-aware compute statement — {stmt['org']}", ""]
+    lines.append(f"**Period:** last {stmt['period_days']} days")
+    lines.append("")
+    lines.append(f"- Jobs run: {stmt['jobs']}")
+    lines.append(
+        f"- Shifted to cleaner windows: {stmt['shifted']} "
+        f"({stmt['verified_share_pct']}% verified at run time)"
+    )
+    lines.append(
+        f"- CO2 avoided: ~{stmt['total_kg_avoided']} kg "
+        f"(from {stmt['jobs_with_energy']} jobs with measured energy)"
+    )
+    cal = stmt.get("forecast_calibration") or {}
+    if cal.get("samples"):
+        ratio = cal["calibration_ratio"]
+        verdict = (
+            "well-calibrated"
+            if 0.85 <= ratio <= 1.15
+            else ("over-promised" if ratio < 0.85 else "under-promised")
+        )
+        lines.append(
+            f"- Forecast accuracy: ratio {ratio} ({verdict}); predicted "
+            f"{round(cal['mean_predicted_gco2_kwh'])} vs actual "
+            f"{round(cal['mean_actual_gco2_kwh'])} gCO2/kWh across {cal['samples']} verified runs"
+        )
+    lines.append("")
+    if stmt.get("regions"):
+        lines += [
+            "## By region",
+            "",
+            "| Region | Jobs | Shifted | kg avoided |",
+            "| --- | ---: | ---: | ---: |",
+        ]
+        for r in stmt["regions"]:
+            lines.append(
+                f"| {r['region']} | {r['jobs']} | {r['shifted']} | {r['kg_avoided']:.1f} |"
+            )
+        lines.append("")
+    lines.append(f"**Counterfactual:** {stmt['counterfactual']}")
+    lines.append("")
+    lines.append(f"**Accounting:** {stmt['accounting']}")
+    lines.append("")
+    return "\n".join(lines)
+
+
 def summarize(entries: list[dict], now: datetime, days: int) -> dict:
     """Aggregate ledger entries from the last ``days`` into an honest summary.
 

@@ -179,6 +179,34 @@ class TestCliApp:
         command_names = [c.name or c.callback.__name__ for c in app.registered_commands]
         assert "doctor" in command_names
 
+    def test_verify_writes_markdown_disclosure(self, tmp_path: Path, monkeypatch):
+        from datetime import datetime, timezone
+
+        from carbon_mesh.cli import ledger as ledger_mod
+
+        now = datetime(2026, 6, 18, tzinfo=timezone.utc)
+        monkeypatch.setattr(
+            ledger_mod,
+            "read",
+            lambda: [
+                {
+                    "ts": now.isoformat(),
+                    "region": "aws/us-east-1",
+                    "deferred_hours": 3,
+                    "predicted_reduction_gco2_kwh": 200,
+                    "reduction_gco2_kwh": 200,
+                    "energy_kwh": 10,
+                    "basis": "measured",
+                }
+            ],
+        )
+        out = tmp_path / "disclosure.md"
+        result = runner.invoke(app, ["verify", "--org", "Acme", "--out", str(out)])
+        assert result.exit_code == 0
+        body = out.read_text()
+        assert "# Carbon-aware compute statement — Acme" in body
+        assert "Forecast accuracy" in body
+
     def test_doctor_reports_live_and_measured(self, monkeypatch):
         monkeypatch.setattr(client, "health", lambda: {"status": "ok"})
         monkeypatch.setattr(client, "source_health", lambda: {"healthy": 7, "total": 7})
@@ -441,6 +469,29 @@ class TestImpactLedger:
         cal = calibration([{"ts": now.isoformat(), "deferred_hours": 0}], now, days=30)
         assert cal["samples"] == 0
         assert cal["calibration_ratio"] == 0.0
+
+    def test_disclosure_markdown_includes_accuracy_and_counterfactual(self):
+        from datetime import datetime, timezone
+
+        from carbon_mesh.cli.ledger import disclosure_markdown, org_statement
+
+        now = datetime(2026, 6, 18, tzinfo=timezone.utc)
+        entries = [
+            {
+                "ts": now.isoformat(),
+                "region": "aws/us-east-1",
+                "deferred_hours": 3,
+                "predicted_reduction_gco2_kwh": 200,
+                "reduction_gco2_kwh": 190,
+                "energy_kwh": 10,
+                "basis": "measured",
+            }
+        ]
+        md = disclosure_markdown(org_statement(entries, now, days=90, org_name="Acme"))
+        assert md.startswith("# Carbon-aware compute statement — Acme")
+        assert "Forecast accuracy: ratio 0.95" in md
+        assert "Counterfactual:" in md
+        assert "| aws/us-east-1 |" in md
 
     def test_org_statement_includes_forecast_calibration(self):
         from datetime import datetime, timezone
