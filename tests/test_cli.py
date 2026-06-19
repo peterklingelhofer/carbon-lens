@@ -175,6 +175,48 @@ class TestCliApp:
         group_names = [g.name for g in app.registered_groups]
         assert "config" in group_names
 
+    def test_app_has_doctor_command(self):
+        command_names = [c.name or c.callback.__name__ for c in app.registered_commands]
+        assert "doctor" in command_names
+
+    def test_doctor_reports_live_and_measured(self, monkeypatch):
+        monkeypatch.setattr(client, "health", lambda: {"status": "ok"})
+        monkeypatch.setattr(client, "source_health", lambda: {"healthy": 7, "total": 7})
+        monkeypatch.setattr(
+            client,
+            "methodology",
+            lambda: {"fields": [{"field": "marginal_intensity_gco2_kwh", "basis": "measured"}]},
+        )
+        result = runner.invoke(app, ["doctor"])
+        assert result.exit_code == 0
+        assert "API reachable" in result.stdout
+        assert "7/7 live" in result.stdout
+        assert "measured" in result.stdout
+        assert "Ready" in result.stdout
+
+    def test_doctor_flags_heuristic_and_degraded(self, monkeypatch):
+        monkeypatch.setattr(client, "health", lambda: {"status": "ok"})
+        monkeypatch.setattr(client, "source_health", lambda: {"healthy": 4, "total": 7})
+        monkeypatch.setattr(
+            client,
+            "methodology",
+            lambda: {"fields": [{"field": "marginal_intensity_gco2_kwh", "basis": "heuristic"}]},
+        )
+        result = runner.invoke(app, ["doctor"])
+        assert result.exit_code == 0
+        assert "4/7 live" in result.stdout
+        assert "heuristic" in result.stdout
+        assert "caveats" in result.stdout
+
+    def test_doctor_exits_when_api_unreachable(self, monkeypatch):
+        def _boom():
+            raise RuntimeError("connection refused")
+
+        monkeypatch.setattr(client, "health", _boom)
+        result = runner.invoke(app, ["doctor"])
+        assert result.exit_code == 1
+        assert "unreachable" in result.stdout
+
     def test_no_args_shows_help(self):
         result = runner.invoke(app, [])
         # Typer with no_args_is_help=True exits with code 0 or 2 depending on version
