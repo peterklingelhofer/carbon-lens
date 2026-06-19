@@ -23,3 +23,35 @@ groups:
             A measured-marginal credential is set but no zone is mapped, so the marginal
             signal is silently heuristic. Set CARBON_LENS_WATTTIME_ZONE_MAP (or
             CARBON_LENS_ELECTRICITY_MAPS_ZONE_MAP). Run `carbonlens doctor` for the fix.
+
+  - name: carbonlens-data
+    rules:
+      # The carbon gauges are absent entirely -- the exporter is down or every data
+      # source failed on the last scrape, so any carbon-aware decision is now flying
+      # blind. (Per-scrape refresh means a transient blip clears on its own.)
+      - alert: CarbonGaugesAbsent
+        expr: absent(carbon_intensity_gco2_kwh)
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: Carbon intensity gauges absent
+          description: >
+            No carbon_intensity_gco2_kwh series for 15m: the /metrics exporter is down or
+            all upstream sources are failing. Check the service and `carbonlens doctor`
+            (data sources line) -- decisions fall back to estimates until it recovers.
+
+      # No grid zone has been in the clean tier for a long stretch. Not necessarily a
+      # fault (the whole fleet's grids can be dirty for hours), but if it persists for a
+      # full day it usually means a stuck/stale feed worth a look. Tune for your zones.
+      - alert: CarbonNeverClean
+        expr: min(carbon_intensity_tier) > 0
+        for: 24h
+        labels:
+          severity: info
+        annotations:
+          summary: No zone has reached the clean tier in 24h
+          description: >
+            Every monitored grid zone has stayed above the clean tier for 24h. Often
+            genuine, but a stuck feed looks identical -- spot-check a zone against the
+            grid operator, or widen the zone set if you only track dirty grids.

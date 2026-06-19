@@ -1,0 +1,44 @@
+# Example Alertmanager routing for CarbonLens alerts (see carbonlens.rules.yml).
+#
+# Minimal, copy-and-adapt: route CarbonLens alerts to a dedicated receiver, page on
+# critical, and keep the noisier info-level alert on a low-urgency channel. Wire your
+# own webhook/Slack/email under `receivers`.
+#
+# Point Alertmanager at this file with --config.file, and Prometheus at Alertmanager
+# under `alerting.alertmanagers` in prometheus.yml.
+
+route:
+  receiver: default
+  group_by: [alertname]
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  routes:
+    # CarbonLens alerts share the alertname prefix Carbon*; split by severity.
+    - matchers:
+        - alertname =~ "Carbon.*"
+        - severity = "critical"
+      receiver: carbonlens-pager
+      repeat_interval: 1h
+    - matchers:
+        - alertname =~ "Carbon.*"
+        - severity = "warning"
+      receiver: carbonlens-ops
+    - matchers:
+        - alertname =~ "Carbon.*"
+        - severity = "info"
+      receiver: carbonlens-lowpri
+      repeat_interval: 24h
+
+receivers:
+  - name: default
+  - name: carbonlens-pager
+    # Replace with your real pager integration (PagerDuty, Opsgenie, ...).
+    webhook_configs:
+      - url: http://example.invalid/pager
+  - name: carbonlens-ops
+    webhook_configs:
+      - url: http://example.invalid/ops
+  - name: carbonlens-lowpri
+    webhook_configs:
+      - url: http://example.invalid/lowpri
