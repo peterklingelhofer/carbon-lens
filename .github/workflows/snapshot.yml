@@ -7,9 +7,11 @@ name: Carbon snapshot
 
 on:
   schedule:
-    # Every 30 min. Grid carbon only updates every ~30-60 min, and this keeps
-    # private-repo Actions minutes well under the free 2000/month.
-    - cron: "*/30 * * * *"
+    # Hourly. Grid carbon updates every ~30-60 min, so this tracks it while
+    # halving runner energy and Actions minutes vs the old 30-min cadence (and
+    # carry-forward + the "last updated" badge cover the wider gap). Bump back to
+    # "*/30 * * * *" if fresher data is worth the extra runner cost.
+    - cron: "0 * * * *"
   workflow_dispatch: {}
 
 # GitHub scheduled crons are best-effort and may be delayed under load. The
@@ -33,7 +35,9 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        run: uv sync --all-extras
+        # The snapshot only needs core deps (httpx + carbon_mesh); the dev/cloud
+        # extras aren't imported here, so installing them every run is pure waste.
+        run: uv sync
 
       - name: Build snapshot
         env:

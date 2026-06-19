@@ -1,9 +1,14 @@
 # Render Blueprint — one-click deploy at https://render.com/deploy
 # Click "New Blueprint Instance" and point to this repo.
 
+# Oregon is Render's greenest free region (Pacific Northwest / BPA hydro grid,
+# ~90-150 gCO2/kWh) vs Ohio/Virginia (~360-400). Pin it explicitly so the
+# service can't silently drift onto a dirtier default -- a carbon tool should
+# run on a clean grid, and Oregon is free. Services and DB must share a region.
 databases:
   - name: carbon-mesh-db
     plan: free
+    region: oregon
     databaseName: carbon_mesh
     user: carbon_mesh
     ipAllowList: []
@@ -13,6 +18,7 @@ services:
     name: carbon-mesh-api
     runtime: docker
     plan: free
+    region: oregon
     dockerfilePath: ./Dockerfile
     envVars:
       - key: CARBON_LENS_USE_DATABASE
@@ -48,6 +54,7 @@ services:
     name: carbon-mesh-web
     runtime: docker
     plan: free
+    region: oregon
     dockerfilePath: ./web/Dockerfile
     dockerContext: ./web
     autoDeploy: true

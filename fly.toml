@@ -4,7 +4,10 @@
 # Attach Postgres: fly postgres create && fly postgres attach
 
 app = "carbon-mesh"
-primary_region = "iad"
+# Seattle sits on the BPA / Pacific Northwest hydro grid (~90 gCO2/kWh) rather
+# than PJM (iad, ~360-400) -- a carbon tool should run on a clean grid. This is
+# a secondary deploy path; the live service runs on Render (see render.yaml)
+primary_region = "sea"
 
 [build]
   dockerfile = "Dockerfile"
