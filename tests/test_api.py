@@ -320,6 +320,8 @@ def test_honesty_probe_heuristic_by_default(client: TestClient):
     body = resp.json()
     assert body["marginal_basis"] == "heuristic"
     assert body["ok"] is True
+    # No marginal credential configured in tests -> not the "configured but unmapped" trap.
+    assert body["marginal_configured_but_unmapped"] is False
 
 
 def test_honesty_probe_gates_on_require_measured(client: TestClient):
