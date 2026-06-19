@@ -343,6 +343,22 @@ def run(
     predicted = max(0.0, now_v - chosen_v) if (have_shift and chosen_v is not None) else 0.0
     measured = max(0.0, now_v - run_v) if (have_shift and run_v is not None) else 0.0
 
+    # Self-correcting forecast: nudge the prediction by how this host's past forecasts
+    # actually landed (rolling calibration ratio from the local ledger). We keep the raw
+    # prediction too, so the adjustment never feeds back into the calibration that made it.
+    cal = ledger.calibration(ledger.read(), datetime.now(timezone.utc), 30)
+    ratio = (
+        cal["calibration_ratio"] if cal["samples"] >= 3 and cal["calibration_ratio"] > 0 else None
+    )
+    predicted_calibrated = ledger.adjusted_prediction(predicted, ratio) if ratio else None
+    if ratio is not None and predicted > 0:
+        direction = "lower" if ratio < 1 else "higher"
+        console.print(
+            f"[dim]Calibration-adjusted expected cut: ~{predicted_calibrated:.0f} gCO2/kWh "
+            f"(your forecasts have run {abs(round((ratio - 1) * 100))}% {direction} than actual "
+            f"over {cal['samples']} runs)[/dim]"
+        )
+
     # Tell the command which region was chosen, so it can target it.
     env = {**os.environ, "CARBONLENS_REGION": chosen_label} if multi else None
 
@@ -373,6 +389,8 @@ def run(
         "run_gco2_kwh": run_v,
         "basis": basis,
         "predicted_reduction_gco2_kwh": round(predicted, 1),
+        "predicted_reduction_calibrated_gco2_kwh": predicted_calibrated,
+        "calibration_ratio_applied": ratio,
         "reduction_gco2_kwh": round(measured, 1),
         "energy_kwh": job_energy_kwh,
         "energy_measured": measure_energy and job_energy_kwh is not None,
