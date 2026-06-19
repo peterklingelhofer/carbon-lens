@@ -71,6 +71,26 @@ def choose_by_state(signal: dict, green, yellow, red):
     return red
 
 
+def impact_from_signal(region: str, signal: dict, deferred_hours: float) -> dict:
+    """Build an org-ledger impact entry from a signal and a chosen deferral.
+
+    The predicted per-kWh reduction is how much cleaner the window we shift into is
+    versus now. Energy is unknown at scheduling time, so it's left None -- the ledger
+    stores a rate; real grams need metered energy (carbonlens run --measure-energy).
+    ``basis`` mirrors the signal's marginal basis (measured vs heuristic).
+    """
+    now_v = signal.get("intensity_gco2_kwh") or 0
+    window_v = signal.get("cleaner_window_intensity_gco2_kwh")
+    reduction = (now_v - window_v) if window_v is not None else 0.0
+    return {
+        "region": region,
+        "deferred_hours": int(round(deferred_hours)),
+        "reduction_gco2_kwh": round(max(reduction, 0.0), 1),
+        "energy_kwh": None,
+        "basis": signal.get("marginal_basis", "heuristic"),
+    }
+
+
 class CarbonClient:
     """Thin programmatic client for carbon-aware decisions."""
 
@@ -91,6 +111,18 @@ class CarbonClient:
         """Whether now is a good time to run flexible load in ``region``."""
         return is_good_time(self.signal(region), max_intensity)
 
+    def report_impact(self, entry: dict) -> dict:
+        """POST one carbon-aware decision's impact to this API's org ledger.
+
+        Raises on HTTP error; callers that must never fail the underlying job should
+        wrap this in try/except (the integrations do).
+        """
+        resp = httpx.post(
+            f"{self._base}/api/v1/accounting/impact", json=entry, timeout=self._timeout
+        )
+        resp.raise_for_status()
+        return resp.json()
+
     def choose_by_carbon(self, region, when_clean, when_dirty, max_intensity=None):
         """``when_clean`` if the grid is good in ``region`` now, else ``when_dirty``.
 
@@ -109,21 +141,46 @@ class CarbonClient:
         max_wait_hours: float = 24,
         max_intensity: float | None = None,
         poll_seconds: float = 600,
+        report: bool = False,
         _sleep: Callable[[float], None] = time.sleep,
         _clock: Callable[[], float] = time.monotonic,
     ) -> dict:
         """Block until the grid is a good time to run, or the deadline passes.
 
-        Returns ``{"reason": "clean"|"deadline", "signal": <last signal>}``. Polls
-        every ``poll_seconds``. ``_sleep``/``_clock`` are injectable for testing.
+        Returns ``{"reason": "clean"|"deadline", "signal": <last signal>,
+        "initial_signal": <first signal>, "waited_hours": <float>}``. Polls every
+        ``poll_seconds``. With ``report=True``, posts the predicted impact to the org
+        ledger when the wait actually shifted the job (best-effort; never raises).
+        ``_sleep``/``_clock`` are injectable for testing.
         """
-        deadline = _clock() + max_wait_hours * 3600
+        start = _clock()
+        deadline = start + max_wait_hours * 3600
+        initial_signal: dict | None = None
         while True:
             signal = self.signal(region)
+            if initial_signal is None:
+                initial_signal = signal
+            now = _clock()
+            reason = None
             if is_good_time(signal, max_intensity):
-                return {"reason": "clean", "signal": signal}
-            if _clock() >= deadline:
-                return {"reason": "deadline", "signal": signal}
+                reason = "clean"
+            elif now >= deadline:
+                reason = "deadline"
+            if reason is not None:
+                result = {
+                    "reason": reason,
+                    "signal": signal,
+                    "initial_signal": initial_signal,
+                    "waited_hours": (now - start) / 3600,
+                }
+                if report and reason == "clean" and result["waited_hours"] > 0:
+                    try:
+                        self.report_impact(
+                            impact_from_signal(region, initial_signal, result["waited_hours"])
+                        )
+                    except Exception:
+                        pass
+                return result
             _sleep(poll_seconds)
 
     def run_when_clean(
@@ -132,13 +189,16 @@ class CarbonClient:
         max_wait_hours: float = 24,
         max_intensity: float | None = None,
         poll_seconds: float = 600,
+        report: bool = False,
     ) -> Callable[[Callable], Callable]:
         """Decorator: defer the wrapped function until the grid is clean, then run it."""
 
         def decorator(fn: Callable) -> Callable:
             @functools.wraps(fn)
             def wrapper(*args, **kwargs):
-                self.wait_for_clean_window(region, max_wait_hours, max_intensity, poll_seconds)
+                self.wait_for_clean_window(
+                    region, max_wait_hours, max_intensity, poll_seconds, report=report
+                )
                 return fn(*args, **kwargs)
 
             return wrapper

@@ -78,3 +78,12 @@ apply_when_clean(train_model, "aws/us-east-1", args=(dataset,), max_intensity=15
 If the grid is clean now it dispatches immediately; otherwise it schedules the task
 for the soonest cleaner/surplus window (capped at `max_wait_hours`). No Celery import
 is needed — it just calls your task's `.apply_async`.
+
+### Feeding org-statement
+
+Pass `report=True` to any of these wrappers (`apply_when_clean`, `wait_for_clean_window`,
+`clean_window_op`) to POST each deferral's predicted impact to the API's org ledger,
+best-effort — so Celery/Prefect/Dagster jobs accrue into `org-statement` and the
+Prometheus impact gauges the same way `carbonlens run --report-to` does. A reporting
+failure never blocks the job. The predicted reduction is per-kWh (energy is unknown at
+schedule time); real grams still need a metered run via `carbonlens run --measure-energy`.
