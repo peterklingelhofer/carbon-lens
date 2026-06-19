@@ -289,6 +289,27 @@ def test_compute_signals_precomputes_per_region():
     assert pjm["method"] == "time_of_day_model"  # no forecast sources in the test
 
 
+def test_compute_weather_precomputes_per_region_best_effort():
+    region_meta = {
+        "aws/us-east-1": {"latitude": 38.0, "longitude": -77.0},
+        "gcp/europe-north1": {"latitude": 60.0, "longitude": 25.0},
+        "aws/no-coords": {},  # missing coordinates -> omitted
+    }
+
+    async def fake_fetch(lat, lon):
+        if lat == 60.0:
+            raise RuntimeError("upstream blip")  # one region fails -> omitted, not fatal
+        return (24.3, 480.6)
+
+    weather = asyncio.run(build_snapshot.compute_weather(region_meta, fetch=fake_fetch))
+    assert set(weather) == {"aws/us-east-1"}
+    assert weather["aws/us-east-1"] == {
+        "wind_speed_kmh": 24.3,
+        "solar_irradiance_w_m2": 481,
+        "source": "open_meteo",
+    }
+
+
 def test_compute_best_times_ranks_history_with_forecast_fallback():
     regions = [
         {"provider": "aws", "region": "us-east-1", "grid_zone": "US-MIDA-PJM"},
