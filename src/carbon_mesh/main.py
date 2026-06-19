@@ -356,8 +356,13 @@ Instrumentator().instrument(app)
 async def metrics() -> Response:
     from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 
-    from carbon_mesh.api.metrics import refresh_carbon_metrics, refresh_impact_metrics
+    from carbon_mesh.api.metrics import (
+        refresh_carbon_metrics,
+        refresh_config_metrics,
+        refresh_impact_metrics,
+    )
 
+    refresh_config_metrics()
     await refresh_carbon_metrics()
     await refresh_impact_metrics()
     return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
