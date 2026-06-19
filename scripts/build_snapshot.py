@@ -198,24 +198,37 @@ async def compute_region_data(
 
     signals: dict[str, dict] = {}
     forecasts: dict[str, dict] = {}
+    forecasts_week: dict[str, dict] = {}
+
+    def _compact(pts):
+        return [
+            {"t": p.timestamp.isoformat(), "c": round(p.carbon_intensity_gco2_kwh, 1)} for p in pts
+        ]
+
     for zone, keys in zone_keys.items():
         rep = region_meta.get(keys[0], {})
         lon = rep.get("longitude") or 0.0
         try:
-            method, points = await engine.forecast_zone(zone, lon, 24)
+            # One 7-day projection: the first 24h drives the panel forecast + signal (so
+            # they match the 24h API exactly), the full 168h feeds the week heatmap.
+            method, points = await engine.forecast_zone(zone, lon, 168)
         except Exception as e:
             print(f"  (forecast for {zone} unavailable: {e})", file=sys.stderr)
             continue
 
+        points24 = points[:25]
         fc_base = {
             "grid_zone": zone,
             "method": method,
             "generated_at": points[0].timestamp.isoformat() if points else None,
-            "clean_surplus_hours": surplus_offsets(points),
-            "points": [
-                {"t": p.timestamp.isoformat(), "c": round(p.carbon_intensity_gco2_kwh, 1)}
-                for p in points
-            ],
+            "clean_surplus_hours": surplus_offsets(points24),
+            "points": _compact(points24),
+        }
+        week_base = {
+            "grid_zone": zone,
+            "method": method,
+            "generated_at": points[0].timestamp.isoformat() if points else None,
+            "points": _compact(points),
         }
 
         sig_base: dict | None = None
@@ -227,7 +240,7 @@ async def compute_region_data(
                 lon,
                 engine,
                 prefetched,
-                points=points,
+                points=points24,
             )
             sig_base = sig.model_dump()
         except Exception as e:
@@ -237,13 +250,14 @@ async def compute_region_data(
             m = region_meta.get(key, {})
             prov, reg = m.get("provider", ""), m.get("region", "")
             forecasts[key] = {**fc_base, "provider": prov, "region": reg}
+            forecasts_week[key] = {**week_base, "provider": prov, "region": reg}
             if sig_base is not None:
                 signals[key] = {
                     **sig_base,
                     "provider": prov or sig_base["provider"],
                     "region": reg or sig_base["region"],
                 }
-    return {"signals": signals, "forecasts": forecasts}
+    return {"signals": signals, "forecasts": forecasts, "forecasts_week": forecasts_week}
 
 
 async def compute_weather(region_meta: dict[str, dict], fetch=_UNSET, concurrency: int = 8) -> dict:
@@ -356,12 +370,17 @@ async def build_snapshot(
     # start. Best-effort: a failure here never blocks publishing the snapshot itself.
     signals: dict[str, dict] = {}
     forecasts: dict[str, dict] = {}
+    forecasts_week: dict[str, dict] = {}
     weather: dict[str, dict] = {}
     if with_signals:
         published_meta = {k: region_meta[k] for k in snapshot_intensities if k in region_meta}
         try:
             data = await compute_region_data(snapshot_intensities, region_meta, mapper)
-            signals, forecasts = data["signals"], data["forecasts"]
+            signals, forecasts, forecasts_week = (
+                data["signals"],
+                data["forecasts"],
+                data["forecasts_week"],
+            )
         except Exception as e:
             print(f"  (signal/forecast precompute skipped: {e})", file=sys.stderr)
         try:
@@ -377,6 +396,10 @@ async def build_snapshot(
         "forecasts": forecasts,
         "weather": weather,
         "best_time": {},  # filled in by _main once the rolling history is built
+        # The 7-day curve per region is big and only the Scheduler heatmap needs it, so
+        # _main pops this out to its own lazy-loaded forecast_week.json -- it never ships
+        # in the site-wide snapshot.json.
+        "forecast_week": forecasts_week,
         "summary": {
             "live_zones": counts["live"],
             "estimated_zones": counts["estimated"],
@@ -491,6 +514,11 @@ async def _main() -> int:
         action="store_true",
         help="Skip precomputing per-region run-now/wait signals (faster local builds)",
     )
+    parser.add_argument(
+        "--forecast-week-out",
+        default="forecast_week.json",
+        help="Lazy-loaded 7-day per-region forecast (for the clean-window heatmap); '' to skip",
+    )
     args = parser.parse_args()
 
     baseline = _load_baseline(args.baseline)
@@ -509,6 +537,14 @@ async def _main() -> int:
             history, snapshot.get("forecasts", {}), snapshot["regions"]
         )
         snapshot["summary"]["best_time_published"] = len(snapshot["best_time"])
+
+    # The 7-day forecast is large and only the heatmap needs it -> its own lazy file,
+    # never in the site-wide snapshot.json.
+    forecast_week = snapshot.pop("forecast_week", {})
+    if args.forecast_week_out and forecast_week:
+        with open(args.forecast_week_out, "w") as f:
+            json.dump({"forecasts": forecast_week}, f, separators=(",", ":"))
+        print(f"Wrote {args.forecast_week_out}: {len(forecast_week)} region week-forecasts")
 
     with open(args.out, "w") as f:
         json.dump(snapshot, f, indent=2)
