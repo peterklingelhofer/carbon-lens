@@ -29,6 +29,7 @@ from carbon_mesh.carbon_sources.gridstatus import GridStatusCarbonSource
 from carbon_mesh.carbon_sources.hybrid import HybridCarbonSource
 from carbon_mesh.config import settings
 from carbon_mesh.grid.mapper import GridMapper
+from carbon_mesh.models.carbon import CarbonIntensity
 
 
 def _quality(source: str) -> str:
@@ -116,7 +117,106 @@ def _build_source() -> HybridCarbonSource:
     )
 
 
-async def build_snapshot(baseline: dict | None = None, max_stale_hours: float = 6.0) -> dict:
+class _PrefetchedSource:
+    """Serves this run's already-fetched intensities in-memory, so signal precompute
+    reuses snapshot data instead of re-hitting upstream provider APIs for the current
+    reading. Forecasts still come from the (free) ENTSO-E / Open-Meteo forecast sources."""
+
+    def __init__(self, by_zone: dict[str, CarbonIntensity]) -> None:
+        self._by_zone = by_zone
+
+    async def get_carbon_intensity(self, grid_zone: str) -> CarbonIntensity:
+        ci = self._by_zone.get(grid_zone)
+        if ci is None:
+            raise KeyError(f"no prefetched intensity for zone {grid_zone}")
+        return ci
+
+    async def get_carbon_intensity_batch(self, grid_zones: list[str]) -> dict[str, CarbonIntensity]:
+        return {z: self._by_zone[z] for z in grid_zones if z in self._by_zone}
+
+
+def _ci_from_entry(entry: dict) -> CarbonIntensity:
+    """Reconstruct a CarbonIntensity from a published snapshot entry (covers
+    carried-forward zones too, which aren't in this run's fresh fetch)."""
+    return CarbonIntensity(
+        grid_zone=entry["grid_zone"],
+        carbon_intensity_gco2_kwh=entry["carbon_intensity_gco2_kwh"],
+        renewable_percentage=entry["renewable_percentage"],
+        timestamp=datetime.fromisoformat(entry["timestamp"]),
+        source=entry["source"],
+        grid_load_mw=entry.get("grid_load_mw"),
+        marginal_intensity_gco2_kwh=entry.get("marginal_intensity_gco2_kwh"),
+        power_breakdown_mw=entry.get("power_breakdown_mw"),
+    )
+
+
+_UNSET = object()
+
+
+async def compute_signals(
+    snapshot_intensities: dict[str, dict],
+    region_meta: dict[str, dict],
+    mapper: GridMapper,
+    forecast_source=_UNSET,
+    weather_forecast_source=_UNSET,
+) -> dict[str, dict]:
+    """Precompute the run-now/wait signal per published region, reusing the exact same
+    ``engine.signal.build_signal`` the live API uses (so the static CDN signal matches).
+
+    Computed once per grid zone (forecast is per-zone) and fanned out to every region
+    sharing it. Best-effort: a zone whose forecast fails is simply omitted. The forecast
+    sources are injectable (pass None for both) so tests run without network."""
+    from carbon_mesh.carbon_sources.entsoe_forecast import ENTSOEForecastSource
+    from carbon_mesh.carbon_sources.open_meteo import OpenMeteoForecastSource
+    from carbon_mesh.engine.signal import build_signal
+    from carbon_mesh.scheduler.engine import SchedulingEngine
+
+    if forecast_source is _UNSET:
+        forecast_source = ENTSOEForecastSource(settings.entsoe_token)
+    if weather_forecast_source is _UNSET:
+        weather_forecast_source = OpenMeteoForecastSource()
+
+    by_zone: dict[str, CarbonIntensity] = {}
+    zone_keys: dict[str, list[str]] = {}
+    for key, entry in snapshot_intensities.items():
+        zone = entry["grid_zone"]
+        by_zone.setdefault(zone, _ci_from_entry(entry))
+        zone_keys.setdefault(zone, []).append(key)
+
+    prefetched = _PrefetchedSource(by_zone)
+    engine = SchedulingEngine(
+        carbon_source=prefetched,
+        grid_mapper=mapper,
+        forecast_source=forecast_source,
+        weather_forecast_source=weather_forecast_source,
+        marginal_source=None,  # public snapshot: heuristic marginal only
+    )
+
+    signals: dict[str, dict] = {}
+    for zone, keys in zone_keys.items():
+        rep = region_meta.get(keys[0], {})
+        lon = rep.get("longitude") or 0.0
+        try:
+            sig = await build_signal(
+                rep.get("provider", ""), rep.get("region", ""), zone, lon, engine, prefetched
+            )
+        except Exception as e:
+            print(f"  (signal for {zone} unavailable: {e})", file=sys.stderr)
+            continue
+        base = sig.model_dump()
+        for key in keys:
+            m = region_meta.get(key, {})
+            signals[key] = {
+                **base,
+                "provider": m.get("provider", base["provider"]),
+                "region": m.get("region", base["region"]),
+            }
+    return signals
+
+
+async def build_snapshot(
+    baseline: dict | None = None, max_stale_hours: float = 6.0, with_signals: bool = True
+) -> dict:
     mapper = GridMapper(settings.region_map_path)
     source = _build_source()
 
@@ -185,16 +285,28 @@ async def build_snapshot(baseline: dict | None = None, max_stale_hours: float = 
     )
     degraded = sorted(k for k, v in snapshot_intensities.items() if v["quality"] == "estimated")
 
+    # Precompute the run-now/wait signal per region so the frontend and SDK can read
+    # decisions straight from the CDN -- no live API, no cold start. Best-effort: a
+    # failure here never blocks publishing the snapshot itself.
+    signals: dict[str, dict] = {}
+    if with_signals:
+        try:
+            signals = await compute_signals(snapshot_intensities, region_meta, mapper)
+        except Exception as e:
+            print(f"  (signal precompute skipped: {e})", file=sys.stderr)
+
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "regions": snapshot_regions,
         "intensities": snapshot_intensities,
+        "signals": signals,
         "summary": {
             "live_zones": counts["live"],
             "estimated_zones": counts["estimated"],
             "mock_zones_dropped": counts["mock"],
             "carried_forward": carried,
             "regions_published": len(snapshot_regions),
+            "signals_published": len(signals),
             "degraded": degraded,
         },
     }
@@ -276,10 +388,19 @@ async def _main() -> int:
         default="https://raw.githubusercontent.com/peterklingelhofer/carbonlens/data/history.json",
         help="Previous history archive (URL or path) to append to; '' to disable",
     )
+    parser.add_argument(
+        "--no-signals",
+        action="store_true",
+        help="Skip precomputing per-region run-now/wait signals (faster local builds)",
+    )
     args = parser.parse_args()
 
     baseline = _load_baseline(args.baseline)
-    snapshot = await build_snapshot(baseline=baseline, max_stale_hours=args.max_stale_hours)
+    snapshot = await build_snapshot(
+        baseline=baseline,
+        max_stale_hours=args.max_stale_hours,
+        with_signals=not args.no_signals,
+    )
     with open(args.out, "w") as f:
         json.dump(snapshot, f, indent=2)
 
@@ -303,7 +424,8 @@ async def _main() -> int:
     print(
         f"Wrote {args.out}: {s['regions_published']} regions "
         f"({s['live_zones']} live zones, {s['estimated_zones']} estimated, "
-        f"{s['mock_zones_dropped']} mock dropped, {s['carried_forward']} carried forward)"
+        f"{s['mock_zones_dropped']} mock dropped, {s['carried_forward']} carried forward, "
+        f"{s.get('signals_published', 0)} signals)"
     )
     if s["degraded"]:
         print(f"  estimated/intermittent: {', '.join(s['degraded'])}")
