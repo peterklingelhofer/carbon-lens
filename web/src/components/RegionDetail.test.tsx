@@ -3,7 +3,13 @@ import { render, screen, waitFor } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { BestTime, CarbonForecast, CarbonHistory, WeatherConditions } from "../api/types";
-import { RegionBestTime, RegionForecast, RegionHistory, RegionWeather } from "./RegionDetail";
+import {
+  RegionBestTime,
+  RegionForecast,
+  RegionHistory,
+  RegionSignal,
+  RegionWeather,
+} from "./RegionDetail";
 
 // Mock the HTTP client so the container components resolve from fixtures, not a
 // real fetch. vi.mock is hoisted, so the import below receives the mock.
@@ -16,8 +22,13 @@ vi.mock("../api/client", () => ({
   },
 }));
 
-import { api } from "../api/client";
+// RegionSignal reads the precomputed snapshot signal (no API call); mock the hook.
+vi.mock("../api/snapshot", () => ({ useSignal: vi.fn() }));
 
+import { api } from "../api/client";
+import { useSignal } from "../api/snapshot";
+
+const mockUseSignal = vi.mocked(useSignal);
 const mockHistory = vi.mocked(api.carbonHistory);
 const mockForecast = vi.mocked(api.carbonForecast);
 const mockWeather = vi.mocked(api.regionWeather);
@@ -176,5 +187,53 @@ describe("RegionForecast", () => {
 
     await waitFor(() => expect(screen.queryByText("Loading forecast…")).toBeNull());
     expect(screen.queryByText("Next 24h")).toBeNull();
+  });
+});
+
+describe("RegionSignal", () => {
+  function signal(overrides: Partial<ReturnType<typeof useSignal>> = {}) {
+    return {
+      provider: "aws",
+      region: "us-west-2",
+      grid_zone: "US-NW-BPAT",
+      intensity_gco2_kwh: 40,
+      state: "green",
+      advice: "run_now",
+      cleaner_window_in_hours: null,
+      cleaner_window_intensity_gco2_kwh: null,
+      marginal_intensity_gco2_kwh: 80,
+      marginal_note: null,
+      marginal_basis: "heuristic",
+      clean_surplus: true,
+      surplus_window_in_hours: null,
+      ...overrides,
+      // biome-ignore lint/suspicious/noExplicitAny: partial signal fixture for the test
+    } as any;
+  }
+
+  it("renders nothing when no precomputed signal exists", () => {
+    mockUseSignal.mockReturnValue(undefined);
+    const { container } = render(<RegionSignal provider="aws" region="us-west-2" />);
+    expect(container.textContent).toBe("");
+  });
+
+  it("says run now for a clean-surplus region", () => {
+    mockUseSignal.mockReturnValue(signal());
+    render(<RegionSignal provider="aws" region="us-west-2" />);
+    expect(screen.getByText(/Yes — run now/)).toBeTruthy();
+  });
+
+  it("says wait with the cleaner window when dirty", () => {
+    mockUseSignal.mockReturnValue(
+      signal({
+        state: "red",
+        advice: "wait_for_cleaner",
+        clean_surplus: false,
+        cleaner_window_in_hours: 5,
+        cleaner_window_intensity_gco2_kwh: 120,
+      }),
+    );
+    render(<RegionSignal provider="aws" region="us-west-2" />);
+    expect(screen.getByText(/Wait ~5h for cleaner/)).toBeTruthy();
   });
 });

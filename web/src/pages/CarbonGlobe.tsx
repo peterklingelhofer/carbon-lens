@@ -11,6 +11,7 @@ import {
   RegionBestTime,
   RegionForecast,
   RegionHistory,
+  RegionSignal,
   RegionWeather,
 } from "../components/RegionDetail";
 import { DATA_QUALITY_TIP_RICH, MARGINAL_TIP, SURPLUS_TIP } from "../copy";
@@ -1388,6 +1389,7 @@ export default function CarbonGlobe() {
             </div>
           )}
           {selected.powerBreakdown && <PowerMix breakdown={selected.powerBreakdown} />}
+          <RegionSignal provider={selected.provider} region={selected.region} />
           <RegionHistory
             provider={selected.provider}
             region={selected.region}

@@ -6,16 +6,38 @@ import type { CarbonIntensity, CloudRegion } from "./types";
 // instead of calling the live API, so viewer traffic never hits upstream
 // provider quotas. Falls back to the live API when the URL is unset.
 
+// The precomputed run-now/wait decision per region, baked into the snapshot by the
+// builder so the frontend (and SDK) read it straight from the CDN -- no live API call,
+// no cold start. Same shape and logic as the API's /carbon/signal endpoint.
+export interface CarbonSignal {
+  provider: string;
+  region: string;
+  grid_zone: string;
+  intensity_gco2_kwh: number;
+  state: "green" | "yellow" | "red";
+  advice: "run_now" | "wait_for_cleaner";
+  cleaner_window_in_hours: number | null;
+  cleaner_window_intensity_gco2_kwh: number | null;
+  marginal_intensity_gco2_kwh: number | null;
+  marginal_note: string | null;
+  marginal_basis: string;
+  clean_surplus: boolean;
+  surplus_window_in_hours: number | null;
+}
+
 export interface CarbonSnapshot {
   generated_at: string;
   regions: CloudRegion[];
   intensities: Record<string, CarbonIntensity>;
+  // Optional: older snapshots predate precomputed signals, so treat as may-be-absent.
+  signals?: Record<string, CarbonSignal>;
   summary: {
     live_zones: number;
     estimated_zones: number;
     mock_zones_dropped: number;
     carried_forward?: number;
     regions_published: number;
+    signals_published?: number;
     degraded: string[];
   };
 }
@@ -32,6 +54,13 @@ export function qualityFromSource(source: string): "live" | "estimated" | "mock"
   if (source.endsWith("_heuristic") || source === "open_meteo") return "estimated";
   if (source === "mock" || source === "electricity_maps_error") return "mock";
   return "live";
+}
+
+// The precomputed signal for one region, read from the cached snapshot (no extra
+// fetch). Undefined when snapshots are disabled or this region has no signal yet.
+export function useSignal(provider: string, region: string): CarbonSignal | undefined {
+  const { data } = useSnapshot();
+  return data?.signals?.[`${provider}/${region}`];
 }
 
 export function useSnapshot() {
