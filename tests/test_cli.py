@@ -208,6 +208,23 @@ class TestCliApp:
         assert "heuristic" in result.stdout
         assert "caveats" in result.stdout
 
+    def test_doctor_json_output(self, monkeypatch):
+        import json as _json
+
+        monkeypatch.setattr(client, "health", lambda: {"status": "ok"})
+        monkeypatch.setattr(client, "source_health", lambda: {"healthy": 4, "total": 7})
+        monkeypatch.setattr(
+            client,
+            "methodology",
+            lambda: {"fields": [{"field": "marginal_intensity_gco2_kwh", "basis": "heuristic"}]},
+        )
+        result = runner.invoke(app, ["doctor", "--json"])
+        assert result.exit_code == 0
+        payload = _json.loads(result.stdout)
+        assert payload["ok"] is False
+        assert payload["checks"]["data_sources"] == {"ok": False, "live": 4, "total": 7}
+        assert payload["checks"]["marginal"] == {"ok": False, "basis": "heuristic"}
+
     def test_doctor_exits_when_api_unreachable(self, monkeypatch):
         def _boom():
             raise RuntimeError("connection refused")
