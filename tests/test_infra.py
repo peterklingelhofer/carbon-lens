@@ -264,8 +264,8 @@ def test_compute_signals_precomputes_per_region():
         "aws/us-east-1": {"provider": "aws", "region": "us-east-1", "longitude": -77.0},
         "gcp/europe-north1": {"provider": "gcp", "region": "europe-north1", "longitude": 25.0},
     }
-    signals = asyncio.run(
-        build_snapshot.compute_signals(
+    data = asyncio.run(
+        build_snapshot.compute_region_data(
             snapshot_intensities,
             region_meta,
             mapper=None,
@@ -273,6 +273,7 @@ def test_compute_signals_precomputes_per_region():
             weather_forecast_source=None,
         )
     )
+    signals, forecasts = data["signals"], data["forecasts"]
     assert set(signals) == {"aws/us-east-1", "gcp/europe-north1"}
     # The dirty grid reads red; the very clean one reads green and says run now.
     assert signals["aws/us-east-1"]["state"] == "red"
@@ -280,6 +281,12 @@ def test_compute_signals_precomputes_per_region():
     assert signals["gcp/europe-north1"]["state"] == "green"
     assert signals["gcp/europe-north1"]["advice"] == "run_now"
     assert signals["gcp/europe-north1"]["marginal_basis"] == "heuristic"
+    # Each region also gets a 24h forecast curve (point 0 + 24 projected hours).
+    assert set(forecasts) == {"aws/us-east-1", "gcp/europe-north1"}
+    pjm = forecasts["aws/us-east-1"]
+    assert len(pjm["points"]) == 25
+    assert pjm["points"][0]["c"] == 520.0  # point 0 is the current reading
+    assert pjm["method"] == "time_of_day_model"  # no forecast sources in the test
 
 
 def test_append_history_caps_to_max_points():

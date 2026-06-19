@@ -22,13 +22,14 @@ vi.mock("../api/client", () => ({
   },
 }));
 
-// RegionSignal reads the precomputed snapshot signal (no API call); mock the hook.
-vi.mock("../api/snapshot", () => ({ useSignal: vi.fn() }));
+// RegionSignal/RegionForecast read precomputed snapshot data (no API call); mock them.
+vi.mock("../api/snapshot", () => ({ useSignal: vi.fn(), useForecastSnapshot: vi.fn() }));
 
 import { api } from "../api/client";
-import { useSignal } from "../api/snapshot";
+import { useForecastSnapshot, useSignal } from "../api/snapshot";
 
 const mockUseSignal = vi.mocked(useSignal);
+const mockUseForecastSnapshot = vi.mocked(useForecastSnapshot);
 const mockHistory = vi.mocked(api.carbonHistory);
 const mockForecast = vi.mocked(api.carbonForecast);
 const mockWeather = vi.mocked(api.regionWeather);
@@ -187,6 +188,27 @@ describe("RegionForecast", () => {
 
     await waitFor(() => expect(screen.queryByText("Loading forecast…")).toBeNull());
     expect(screen.queryByText("Next 24h")).toBeNull();
+  });
+
+  it("renders from the precomputed snapshot curve without calling the API", () => {
+    mockUseForecastSnapshot.mockReturnValue({
+      grid_zone: "FI",
+      provider: "gcp",
+      region: "europe-north1",
+      method: "entsoe_day_ahead",
+      generated_at: "2026-06-14T00:00:00+00:00",
+      clean_surplus_hours: [2, 3],
+      points: [
+        { t: "2026-06-14T00:00:00+00:00", c: 300 },
+        { t: "2026-06-14T01:00:00+00:00", c: 120 },
+        { t: "2026-06-14T02:00:00+00:00", c: 40 },
+      ],
+    });
+    renderWithClient(<RegionForecast provider="gcp" region="europe-north1" />);
+
+    expect(screen.getByText(/ENTSO-E day-ahead/)).toBeTruthy();
+    expect(screen.getByText(/Clean-surplus window in ~2h/)).toBeTruthy();
+    expect(mockForecast).not.toHaveBeenCalled(); // served from the snapshot
   });
 });
 
