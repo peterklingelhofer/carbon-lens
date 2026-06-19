@@ -1,26 +1,33 @@
-"""Emission factors for converting fuel mix (MW) to carbon intensity (gCO2/kWh).
+"""Emission factors for converting fuel mix (MW) to carbon intensity (gCO2e/kWh).
 
-Sources:
-- IPCC 2014 lifecycle assessment
-- US EPA eGRID
+Basis: lifecycle (incl. upstream/construction) median emission factors from the
+IPCC AR5 WG3 (2014), Annex III, Table A.III.2. A couple of values deliberately
+deviate from the IPCC median and are noted inline where they do, so the choice
+is transparent rather than implied. These are global, fuel-type lifecycle medians
+-- not plant- or region-specific operational factors, and not US EPA eGRID
+(eGRID is combustion-only and US-only; we don't use it for the factor values).
+
+The EIA_FUEL_MAP / GRIDSTATUS_FUEL_MAP below are *name mappings* from each
+provider's fuel codes onto these normalized types -- they are not a second
+source of emission numbers.
 """
 
-# gCO2 per kWh (lifecycle, including upstream)
+# gCO2e per kWh, lifecycle (IPCC AR5 2014 medians unless a note says otherwise)
 EMISSION_FACTORS: dict[str, float] = {
     # Fossil fuels
-    "coal": 900,
-    "natural_gas": 430,
-    "oil": 650,
+    "coal": 900,  # conservative; IPCC median is 820, but subcritical/lignite runs higher
+    "natural_gas": 430,  # efficient CCGT end; IPCC median is 490 (higher w/ methane leakage)
+    "oil": 650,  # no IPCC median row; mid-range diesel/HFO lifecycle estimate
     "petroleum": 650,
-    # Low-carbon
+    # Low-carbon (IPCC AR5 medians)
     "nuclear": 12,
-    "hydro": 24,
+    "hydro": 24,  # median; reservoir hydro can be far higher due to methane -- single value hides this
     "wind": 11,
-    "solar": 41,
+    "solar": 41,  # utility PV median
     "geothermal": 38,
-    "biomass": 230,
-    "battery": 0,  # Storage — emissions attributed to charging source
-    "other": 300,  # Conservative estimate for unknown
+    "biomass": 230,  # operational median; biogenic-CO2 accounting is contested
+    "battery": 0,  # storage -- discharge emissions belong to the charging source, not zero in reality
+    "other": 300,  # conservative placeholder for unknown/mixed fuels
 }
 
 # Fuel types considered renewable (for renewable percentage calculation)
