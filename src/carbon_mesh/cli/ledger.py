@@ -162,6 +162,24 @@ def calibration(entries: list[dict], now: datetime, days: int) -> dict:
     }
 
 
+def calibration_by_region(entries: list[dict], now: datetime, days: int) -> dict[str, dict]:
+    """Per-region forecast calibration -- grids differ in how forecastable they are.
+
+    Returns ``{region: <calibration block>}`` for each region that has at least one
+    qualifying (re-measured, shifted, predicted) run, so the self-correcting forecast can
+    use the relevant grid's own track record instead of a fleet-wide average.
+    """
+    by_region: dict[str, list[dict]] = {}
+    for e in entries:
+        by_region.setdefault(e.get("region", "?"), []).append(e)
+    out: dict[str, dict] = {}
+    for region, group in by_region.items():
+        cal = calibration(group, now, days)
+        if cal["samples"] > 0:
+            out[region] = cal
+    return out
+
+
 def org_statement(
     entries: list[dict], now: datetime, days: int, org_name: str = "Your organization"
 ) -> dict:

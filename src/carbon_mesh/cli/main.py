@@ -346,7 +346,14 @@ def run(
     # Self-correcting forecast: nudge the prediction by how this host's past forecasts
     # actually landed (rolling calibration ratio from the local ledger). We keep the raw
     # prediction too, so the adjustment never feeds back into the calibration that made it.
-    cal = ledger.calibration(ledger.read(), datetime.now(timezone.utc), 30)
+    # Prefer the chosen region's own track record (grids differ); fall back to the fleet.
+    _entries = ledger.read()
+    _now = datetime.now(timezone.utc)
+    region_cal = ledger.calibration_by_region(_entries, _now, 30).get(chosen_label)
+    if region_cal and region_cal["samples"] >= 3:
+        cal, cal_scope = region_cal, chosen_label
+    else:
+        cal, cal_scope = ledger.calibration(_entries, _now, 30), "across regions"
     ratio = (
         cal["calibration_ratio"] if cal["samples"] >= 3 and cal["calibration_ratio"] > 0 else None
     )
@@ -355,8 +362,8 @@ def run(
         direction = "lower" if ratio < 1 else "higher"
         console.print(
             f"[dim]Calibration-adjusted expected cut: ~{predicted_calibrated:.0f} gCO2/kWh "
-            f"(your forecasts have run {abs(round((ratio - 1) * 100))}% {direction} than actual "
-            f"over {cal['samples']} runs)[/dim]"
+            f"(forecasts {cal_scope} have run {abs(round((ratio - 1) * 100))}% {direction} than "
+            f"actual over {cal['samples']} runs)[/dim]"
         )
 
     # Tell the command which region was chosen, so it can target it.
@@ -419,11 +426,14 @@ def calibration(
     runs where predicted and actual are both real. A ratio near 1.0 means the forecast
     is well-calibrated; <1 means it over-promised, >1 means it under-promised.
     """
-    cal = ledger.calibration(ledger.read(), datetime.now(timezone.utc), days)
+    entries = ledger.read()
+    now = datetime.now(timezone.utc)
+    cal = ledger.calibration(entries, now, days)
+    by_region = ledger.calibration_by_region(entries, now, days)
     if json_output:
         import json
 
-        console.print_json(json.dumps(cal))
+        console.print_json(json.dumps({"overall": cal, "by_region": by_region}))
         return
     if cal["samples"] == 0:
         console.print(f"No re-measured shifted runs in the last {days} days to calibrate against.")
@@ -432,18 +442,38 @@ def calibration(
             "run-time actual is recorded.[/dim]"
         )
         return
+
+    def _verdict(r: float) -> str:
+        return (
+            "well-calibrated"
+            if 0.85 <= r <= 1.15
+            else ("over-promised" if r < 0.85 else "under-promised")
+        )
+
     ratio = cal["calibration_ratio"]
-    verdict = (
-        "well-calibrated"
-        if 0.85 <= ratio <= 1.15
-        else ("over-promised" if ratio < 0.85 else "under-promised")
-    )
     console.print(f"[bold green]Forecast calibration — last {days} days[/bold green]")
     console.print(f"  Samples:           {cal['samples']} re-measured shifted run(s)")
     console.print(f"  Mean predicted:    {cal['mean_predicted_gco2_kwh']} gCO2/kWh")
     console.print(f"  Mean actual:       {cal['mean_actual_gco2_kwh']} gCO2/kWh")
     console.print(f"  Mean abs error:    {cal['mean_abs_error_gco2_kwh']} gCO2/kWh")
-    console.print(f"  Calibration ratio: {ratio} ([bold]{verdict}[/bold])")
+    console.print(f"  Calibration ratio: {ratio} ([bold]{_verdict(ratio)}[/bold])")
+
+    if len(by_region) > 1:
+        table = Table(title="By region (grids differ in forecastability)")
+        table.add_column("Region")
+        table.add_column("Samples", justify="right")
+        table.add_column("Ratio", justify="right")
+        table.add_column("Mean abs error", justify="right")
+        table.add_column("Verdict")
+        for region, rc in sorted(by_region.items(), key=lambda kv: kv[1]["samples"], reverse=True):
+            table.add_row(
+                region,
+                str(rc["samples"]),
+                f"{rc['calibration_ratio']}",
+                f"{rc['mean_abs_error_gco2_kwh']} gCO2/kWh",
+                _verdict(rc["calibration_ratio"]),
+            )
+        console.print(table)
 
 
 @app.command()
