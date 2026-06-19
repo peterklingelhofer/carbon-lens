@@ -105,6 +105,53 @@ def fleet_summary(entries: list[dict], now: datetime, days: int, top: int = 20) 
     }
 
 
+def calibration(entries: list[dict], now: datetime, days: int) -> dict:
+    """How well submit-time forecasts predicted the run-time actual reduction.
+
+    Honest scope: only shifted jobs whose reduction was re-measured at execution
+    (``basis == "measured"``) and that recorded a submit-time prediction -- those are
+    the only entries where predicted and actual are both real. ``calibration_ratio`` is
+    actual / predicted: >1 means the forecast under-promised, <1 means it over-promised.
+    With no qualifying samples, every figure is 0 and ``samples`` is 0.
+    """
+    cutoff = now.timestamp() - days * 86_400
+    pairs: list[tuple[float, float]] = []
+    for e in entries:
+        if not _within(e.get("ts"), cutoff):
+            continue
+        if (e.get("deferred_hours") or 0) <= 0 or e.get("basis") != "measured":
+            continue
+        if "predicted_reduction_gco2_kwh" not in e:
+            continue
+        predicted = e.get("predicted_reduction_gco2_kwh") or 0.0
+        actual = e.get("reduction_gco2_kwh") or 0.0
+        pairs.append((predicted, actual))
+
+    if not pairs:
+        return {
+            "samples": 0,
+            "mean_predicted_gco2_kwh": 0.0,
+            "mean_actual_gco2_kwh": 0.0,
+            "calibration_ratio": 0.0,
+            "mean_abs_error_gco2_kwh": 0.0,
+            "days": days,
+        }
+
+    n = len(pairs)
+    pred_sum = sum(p for p, _ in pairs)
+    act_sum = sum(a for _, a in pairs)
+    mae = sum(abs(a - p) for p, a in pairs) / n
+    ratio = round(act_sum / pred_sum, 2) if pred_sum else 0.0
+    return {
+        "samples": n,
+        "mean_predicted_gco2_kwh": round(pred_sum / n, 1),
+        "mean_actual_gco2_kwh": round(act_sum / n, 1),
+        "calibration_ratio": ratio,
+        "mean_abs_error_gco2_kwh": round(mae, 1),
+        "days": days,
+    }
+
+
 def org_statement(
     entries: list[dict], now: datetime, days: int, org_name: str = "Your organization"
 ) -> dict:
@@ -124,6 +171,7 @@ def org_statement(
         "verified_share_pct": verified_share,
         "jobs_with_energy": s["jobs_with_energy"],
         "total_kg_avoided": s["total_kg_avoided"],
+        "forecast_calibration": calibration(entries, now, days),
         "regions": s["regions"],
         "counterfactual": (
             "running each job at the moment it was submitted (i.e. without carbon-aware deferral)"
