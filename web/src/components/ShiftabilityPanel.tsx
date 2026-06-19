@@ -1,21 +1,30 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
+import { REPORT_URL, useCleanComputeReport } from "../api/report";
 import { InfoTip } from "./InfoTip";
 
 // "Where carbon-aware scheduling helps most" — grid zones ranked by how much a daily
 // job would save shifting from its dirtiest to cleanest hour. High = a big intra-day
 // swing (variable wind/solar) so timing matters; low = flat grids where it barely
-// helps. From /carbon/shiftability; hidden until enough history has accumulated.
+// helps. Read from the published clean-compute report on the CDN when available (no API
+// call); otherwise from /carbon/shiftability. Hidden until enough history accumulates.
 export function ShiftabilityPanel() {
-  const { data, isLoading, isError } = useQuery({
+  const report = useCleanComputeReport();
+  const {
+    data: apiData,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["shiftability"],
     queryFn: () => api.shiftability(14, 10),
     staleTime: 60 * 60_000,
     retry: 1,
+    enabled: !REPORT_URL, // the CDN report already has the ranking -> skip the API
   });
 
-  if (isLoading || isError || !data || data.zones.length === 0) return null;
-  const max = data.zones[0].shift_savings_pct || 1;
+  const zones = (report.data?.most_shiftable ?? apiData?.zones)?.slice(0, 10);
+  if ((!REPORT_URL && (isLoading || isError)) || !zones || zones.length === 0) return null;
+  const max = zones[0].shift_savings_pct || 1;
 
   return (
     <div style={{ marginTop: "2rem" }}>
@@ -37,7 +46,7 @@ export function ShiftabilityPanel() {
         % a daily job would save by shifting from the dirtiest to the cleanest hour (UTC).
       </p>
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-        {data.zones.map((z) => (
+        {zones.map((z) => (
           <div key={z.grid_zone} style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ width: 200, fontSize: "0.82rem" }}>
               <span style={{ fontWeight: 600 }}>{z.grid_zone}</span>{" "}
