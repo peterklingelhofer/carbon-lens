@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { CarbonIntensity, CloudRegion } from "./types";
+import type { BestTime, CarbonIntensity, CloudRegion } from "./types";
 
 // Static carbon snapshot published to a CDN by the `snapshot` GitHub Action.
 // When VITE_SNAPSHOT_URL is set, the dashboard reads real data from here
@@ -44,6 +44,7 @@ export interface CarbonSnapshot {
   // Optional: older snapshots predate precomputed signals/forecasts, so may be absent.
   signals?: Record<string, CarbonSignal>;
   forecasts?: Record<string, CarbonSnapshotForecast>;
+  best_time?: Record<string, BestTime>;
   summary: {
     live_zones: number;
     estimated_zones: number;
@@ -52,6 +53,7 @@ export interface CarbonSnapshot {
     regions_published: number;
     signals_published?: number;
     forecasts_published?: number;
+    best_time_published?: number;
     degraded: string[];
   };
 }
@@ -85,6 +87,13 @@ export function useForecastSnapshot(
 ): CarbonSnapshotForecast | undefined {
   const { data } = useSnapshot();
   return data?.forecasts?.[`${provider}/${region}`];
+}
+
+// The precomputed greenest-hour BestTime for one region from the cached snapshot (no
+// extra fetch). Undefined when snapshots are disabled or this region has none yet.
+export function useBestTimeSnapshot(provider: string, region: string): BestTime | undefined {
+  const { data } = useSnapshot();
+  return data?.best_time?.[`${provider}/${region}`];
 }
 
 export function useSnapshot() {
