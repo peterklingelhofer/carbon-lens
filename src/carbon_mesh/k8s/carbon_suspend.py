@@ -29,6 +29,8 @@ from pathlib import Path
 
 import httpx
 
+from carbon_mesh.sdk import impact_from_signal
+
 logger = logging.getLogger("carbon_suspend")
 
 ANNOTATION_REGION = "carbonlens.dev/region"
@@ -104,6 +106,23 @@ def desired_suspend_change(
     return want if want != bool(current_suspend) else None
 
 
+def report_on_suspend(region: str, want: bool, signal: dict) -> dict | None:
+    """The impact entry to log when a CronJob is freshly suspended (deferred), or None.
+
+    We report the *decision to defer* -- like the Celery/Prefect/Dagster integrations --
+    using the signal's predicted reduction and its cleaner-window horizon. A resume
+    (``want`` False) reports nothing: the run happens then, with no new deferral.
+    """
+    if not want:
+        return None
+    hours = signal.get("surplus_window_in_hours") or signal.get("cleaner_window_in_hours") or 0
+    return impact_from_signal(region, signal, hours)
+
+
+def _report_enabled() -> bool:
+    return os.environ.get("CARBON_SUSPEND_REPORT", "").lower() in ("1", "true", "yes")
+
+
 def _signal_path(region: str) -> str:
     """API path for a region annotation. ``zone/FR`` -> the on-prem zone endpoint,
     ``aws/us-east-1`` -> the cloud-region endpoint (partition handles both)."""
@@ -174,6 +193,14 @@ def reconcile() -> int:
                 headers={"Content-Type": "application/merge-patch+json"},
             ).raise_for_status()
             changed += 1
+
+            # Feed the org ledger on each fresh deferral (opt-in), so suspended CronJobs
+            # accrue into org-statement like the other integrations. Best-effort.
+            if _report_enabled() and (entry := report_on_suspend(region, want, signal)):
+                try:
+                    api.post("/api/v1/accounting/impact", json=entry).raise_for_status()
+                except httpx.HTTPError as e:
+                    logger.warning("impact report for %s failed (non-fatal): %s", name, e)
             logger.info(
                 "%s/%s suspend=%s (region=%s, %s gCO2/kWh, surplus=%s, marginal=%s)",
                 namespace,

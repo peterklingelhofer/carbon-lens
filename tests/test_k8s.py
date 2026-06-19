@@ -8,6 +8,7 @@ from carbon_mesh.k8s.carbon_suspend import (
     ANNOTATION_REGION,
     desired_suspend_change,
     overdue,
+    report_on_suspend,
     should_suspend,
     _hours_since,
     _signal_path,
@@ -44,6 +45,28 @@ def test_desired_change_only_when_it_differs():
 
 def test_unmanaged_cronjob_is_ignored():
     assert desired_suspend_change({}, current_suspend=False, signal={"advice": "run_now"}) is None
+
+
+def test_report_on_suspend_only_logs_fresh_deferrals():
+    signal = {
+        "advice": "wait_for_cleaner",
+        "clean_surplus": False,
+        "intensity_gco2_kwh": 500,
+        "cleaner_window_intensity_gco2_kwh": 300,
+        "cleaner_window_in_hours": 4,
+        "marginal_basis": "heuristic",
+    }
+    # Freshly suspended (deferred) -> a ledger entry with the predicted reduction.
+    entry = report_on_suspend("aws/us-east-1", want=True, signal=signal)
+    assert entry == {
+        "region": "aws/us-east-1",
+        "deferred_hours": 4,
+        "reduction_gco2_kwh": 200.0,
+        "energy_kwh": None,
+        "basis": "heuristic",
+    }
+    # A resume reports nothing -- the run happens then, with no new deferral.
+    assert report_on_suspend("aws/us-east-1", want=False, signal=signal) is None
 
 
 def test_max_intensity_annotation_is_honored():

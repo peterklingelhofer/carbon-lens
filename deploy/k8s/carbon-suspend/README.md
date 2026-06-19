@@ -45,6 +45,12 @@ The controller needs only `get`/`list`/`patch` on `cronjobs` in its namespace (s
 no extra dependencies. Point `CARBONLENS_API_URL` at your own deployment if you run
 one; otherwise it uses the public instance.
 
+Set `CARBON_SUSPEND_REPORT=true` to post each fresh deferral's predicted impact to the
+API's org ledger (`/accounting/impact`), so suspended CronJobs accrue into
+`org-statement` and the Prometheus impact gauges like the Celery/Prefect/Dagster
+integrations and `carbonlens run --report-to`. Best-effort — a reporting failure never
+affects suspend/resume.
+
 ## Honest limits
 
 - A suspended `CronJob` **skips** fire times while suspended; it does **not** queue
