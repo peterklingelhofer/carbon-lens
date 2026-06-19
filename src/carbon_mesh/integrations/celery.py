@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from carbon_mesh.sdk import DEFAULT_API_URL, CarbonClient, is_good_time
+from carbon_mesh.sdk import DEFAULT_API_URL, CarbonClient, impact_from_signal, is_good_time
 
 
 def defer_seconds(
@@ -45,11 +45,21 @@ def apply_when_clean(
     api_url: str = DEFAULT_API_URL,
     max_wait_hours: float = 24.0,
     max_intensity: float | None = None,
+    report: bool = False,
 ) -> Any:
     """Dispatch a Celery ``task`` now if the grid is clean, else schedule it (via
-    ``countdown``) for the soonest clean window. Returns the ``AsyncResult``."""
-    signal = CarbonClient(api_url).signal(region)
+    ``countdown``) for the soonest clean window. Returns the ``AsyncResult``.
+
+    With ``report=True``, the deferral's predicted impact is posted to the org ledger
+    (best-effort; a reporting failure never blocks the dispatch)."""
+    client = CarbonClient(api_url)
+    signal = client.signal(region)
     countdown = defer_seconds(signal, max_intensity, max_wait_hours)
     if countdown <= 0:
         return task.apply_async(args=args, kwargs=kwargs)
+    if report:
+        try:
+            client.report_impact(impact_from_signal(region, signal, countdown / 3600))
+        except Exception:
+            pass
     return task.apply_async(args=args, kwargs=kwargs, countdown=countdown)

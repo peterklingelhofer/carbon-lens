@@ -1,6 +1,12 @@
 """Tests for the carbon-aware Python SDK (pure decision logic + the wait loop)."""
 
-from carbon_mesh.sdk import CarbonClient, choose_by_carbon, choose_by_state, is_good_time
+from carbon_mesh.sdk import (
+    CarbonClient,
+    choose_by_carbon,
+    choose_by_state,
+    impact_from_signal,
+    is_good_time,
+)
 
 
 def test_choose_by_carbon():
@@ -79,6 +85,75 @@ def test_wait_polls_until_clean():
     result = cl.wait_for_clean_window("aws/us-east-1", _sleep=slept.append, _clock=lambda: 0.0)
     assert result["reason"] == "clean"
     assert slept == [600]  # waited one poll interval before the second (clean) check
+
+
+def test_impact_from_signal_predicts_reduction_and_mirrors_basis():
+    signal = {
+        "intensity_gco2_kwh": 400,
+        "cleaner_window_intensity_gco2_kwh": 250,
+        "marginal_basis": "measured",
+    }
+    entry = impact_from_signal("aws/us-east-1", signal, deferred_hours=3.4)
+    assert entry["region"] == "aws/us-east-1"
+    assert entry["deferred_hours"] == 3  # rounded
+    assert entry["reduction_gco2_kwh"] == 150.0
+    assert entry["energy_kwh"] is None
+    assert entry["basis"] == "measured"
+
+
+def test_impact_from_signal_clamps_and_defaults():
+    # No cleaner window -> no predicted reduction; missing basis -> heuristic
+    entry = impact_from_signal("zone/FR", {"intensity_gco2_kwh": 300}, deferred_hours=0)
+    assert entry["reduction_gco2_kwh"] == 0.0
+    assert entry["basis"] == "heuristic"
+
+
+def test_wait_reports_predicted_impact_when_it_shifts():
+    cl = CarbonClient()
+    sequence = iter(
+        [
+            {
+                "advice": "wait_for_cleaner",
+                "clean_surplus": False,
+                "intensity_gco2_kwh": 400,
+                "cleaner_window_intensity_gco2_kwh": 250,
+                "marginal_basis": "measured",
+            },
+            {"advice": "run_now", "clean_surplus": False},
+        ]
+    )
+    cl.signal = lambda region: next(sequence)  # type: ignore
+    reported: list[dict] = []
+    cl.report_impact = lambda entry: reported.append(entry) or {"stored": True}  # type: ignore
+    ticks = iter([0.0, 0.0, 3600.0])  # start, deadline-check, waited-hours read
+    result = cl.wait_for_clean_window(
+        "aws/us-east-1",
+        report=True,
+        _sleep=lambda s: None,
+        _clock=lambda: next(ticks),
+    )
+    assert result["reason"] == "clean"
+    assert result["waited_hours"] == 1.0
+    assert reported == [
+        {
+            "region": "aws/us-east-1",
+            "deferred_hours": 1,
+            "reduction_gco2_kwh": 150.0,
+            "energy_kwh": None,
+            "basis": "measured",
+        }
+    ]
+
+
+def test_wait_does_not_report_when_already_clean():
+    cl = CarbonClient()
+    cl.signal = lambda region: {"advice": "run_now", "clean_surplus": False}  # type: ignore
+    reported: list[dict] = []
+    cl.report_impact = lambda entry: reported.append(entry)  # type: ignore
+    cl.wait_for_clean_window(
+        "aws/us-east-1", report=True, _sleep=lambda s: None, _clock=lambda: 0.0
+    )
+    assert reported == []  # no deferral, nothing to report
 
 
 def test_run_when_clean_decorator_runs_after_wait():
