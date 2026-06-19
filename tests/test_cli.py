@@ -395,6 +395,14 @@ class TestImpactLedger:
         assert cal["calibration_ratio"] == 1.0  # 300 actual / 300 predicted
         assert cal["mean_abs_error_gco2_kwh"] == 20.0  # (|180-200| + |120-100|)/2
 
+    def test_adjusted_prediction_scales_by_ratio(self):
+        from carbon_mesh.cli.ledger import adjusted_prediction
+
+        # Past forecasts ran 10% high (ratio 0.9) -> a fresh 200 prediction nudges to 180.
+        assert adjusted_prediction(200, 0.9) == 180.0
+        # Under-promised history (ratio 1.2) scales a prediction up.
+        assert adjusted_prediction(100, 1.2) == 120.0
+
     def test_calibration_empty_when_no_measured_runs(self):
         from datetime import datetime, timezone
 

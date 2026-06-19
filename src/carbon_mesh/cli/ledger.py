@@ -105,6 +105,16 @@ def fleet_summary(entries: list[dict], now: datetime, days: int, top: int = 20) 
     }
 
 
+def adjusted_prediction(predicted: float, ratio: float) -> float:
+    """A submit-time prediction nudged by the rolling calibration ratio (actual/predicted).
+
+    Self-correcting: if past forecasts ran 10% high (ratio 0.9), a fresh prediction is
+    scaled down 10%. The raw prediction is still recorded separately, so this never
+    feeds back into the calibration that produced ``ratio``.
+    """
+    return round(predicted * ratio, 1)
+
+
 def calibration(entries: list[dict], now: datetime, days: int) -> dict:
     """How well submit-time forecasts predicted the run-time actual reduction.
 
