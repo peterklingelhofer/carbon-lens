@@ -68,6 +68,7 @@ jobs:
           cp history.csv /tmp/pub/history.csv
           cp clean_compute_report.json /tmp/pub/clean_compute_report.json 2>/dev/null || true
           cp clean_compute_history.json /tmp/pub/clean_compute_history.json 2>/dev/null || true
+          cp forecast_week.json /tmp/pub/forecast_week.json 2>/dev/null || true
           cd /tmp/pub
           git init -q
           git checkout -q -b data

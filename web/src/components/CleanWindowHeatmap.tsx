@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "../api/client";
+import { FORECAST_WEEK_URL, snapshotEnabled, useSnapshot, useWeekForecast } from "../api/snapshot";
 import { intensityColor } from "../lib/intensity";
 import { card } from "../styles";
 import { InfoTip } from "./InfoTip";
@@ -20,21 +21,38 @@ const muted: React.CSSProperties = { color: "var(--gray-500)", fontSize: "0.78re
 // Grid of the next ~7 days x 24 hours, each cell coloured by projected carbon
 // intensity, so the cleanest hours to run a job jump out at a glance.
 function Heatmap({ provider, region }: { provider: string; region: string }) {
-  const { data, isLoading, isError } = useQuery({
+  // Read the 7-day curve from the lazy-loaded CDN file when available (no API call);
+  // otherwise fetch it live. Only this component pays for the week file.
+  const week = useWeekForecast(provider, region);
+  const {
+    data: apiData,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["forecast-heatmap", provider, region],
     queryFn: () => api.carbonForecast(provider, region, 168),
     staleTime: 10 * 60_000,
     retry: 1,
+    enabled: !FORECAST_WEEK_URL, // CDN week-forecast available -> skip the API
   });
 
-  if (isLoading) return <p style={muted}>Loading forecast…</p>;
-  if (isError || !data || data.points.length < 2)
+  // Normalize either source to {ts, c}: the CDN file's compact {t, c} or the API points.
+  const points = week
+    ? week.points.map((p) => ({ ts: p.t, c: p.c }))
+    : (apiData?.points ?? []).map((p) => ({
+        ts: p.timestamp,
+        c: p.carbon_intensity_gco2_kwh,
+      }));
+  const fcMethod = week?.method ?? apiData?.method;
+
+  if (FORECAST_WEEK_URL ? !week : isLoading) return <p style={muted}>Loading forecast…</p>;
+  if ((!FORECAST_WEEK_URL && isError) || points.length < 2)
     return <p style={muted}>No forecast available for this region.</p>;
 
   // Bucket points into local-time date -> hour -> intensity.
   const byDate = new Map<string, (number | null)[]>();
-  for (const p of data.points) {
-    const d = new Date(p.timestamp);
+  for (const p of points) {
+    const d = new Date(p.ts);
     const key = d.toLocaleDateString(undefined, {
       weekday: "short",
       month: "short",
@@ -42,13 +60,13 @@ function Heatmap({ provider, region }: { provider: string; region: string }) {
     });
     if (!byDate.has(key)) byDate.set(key, Array(24).fill(null));
     const row = byDate.get(key);
-    if (row) row[d.getHours()] = p.carbon_intensity_gco2_kwh;
+    if (row) row[d.getHours()] = p.c;
   }
   const rows = [...byDate.entries()];
   const method =
-    data.method === "entsoe_day_ahead"
+    fcMethod === "entsoe_day_ahead"
       ? "ENTSO-E day-ahead for the first ~48h, then a time-of-day model"
-      : data.method === "open_meteo_forecast"
+      : fcMethod === "open_meteo_forecast"
         ? "an Open-Meteo weather forecast"
         : "a time-of-day model";
 
@@ -110,11 +128,14 @@ export function CleanWindowHeatmap() {
   const [provider, setProvider] = useState("aws");
   const [region, setRegion] = useState(DEFAULT_REGION.aws);
 
-  const { data: regions } = useQuery({
+  const { data: snapshot } = useSnapshot();
+  const { data: apiRegions } = useQuery({
     queryKey: ["regions", provider],
     queryFn: () => api.regions(provider),
     staleTime: 60 * 60_000,
+    enabled: !snapshotEnabled, // region list comes from the snapshot in production
   });
+  const regions = snapshot ? snapshot.regions.filter((r) => r.provider === provider) : apiRegions;
 
   return (
     <div style={{ ...card, marginTop: "1.5rem" }}>
