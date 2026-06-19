@@ -357,8 +357,8 @@ export function Scheduler() {
           </div>
 
           {/* Strategy */}
-          <div>
-            <span style={labelStyle}>Strategy</span>
+          <fieldset style={{ border: "none", margin: 0, padding: 0, minWidth: 0 }}>
+            <legend style={labelStyle}>Strategy</legend>
             <div
               style={{
                 display: "flex",
@@ -402,17 +402,18 @@ export function Scheduler() {
                 </label>
               ))}
             </div>
-          </div>
+          </fieldset>
 
           {/* Providers */}
-          <div>
-            <span style={labelStyle}>Cloud Providers</span>
+          <fieldset style={{ border: "none", margin: 0, padding: 0, minWidth: 0 }}>
+            <legend style={labelStyle}>Cloud Providers</legend>
             <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
               {PROVIDERS.map((p) => (
                 <button
                   type="button"
                   key={p}
                   onClick={() => toggleProvider(p)}
+                  aria-pressed={selectedProviders.includes(p)}
                   style={{
                     padding: "0.4rem 0.8rem",
                     borderRadius: 6,
@@ -433,7 +434,7 @@ export function Scheduler() {
                 </button>
               ))}
             </div>
-          </div>
+          </fieldset>
         </div>
 
         <button
