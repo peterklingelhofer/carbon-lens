@@ -1283,6 +1283,9 @@ export default function CarbonGlobe() {
             padding: "16px 18px",
             color: "#fff",
             backdropFilter: "blur(8px)",
+            // Sit above the cold-start banner (z 15, fixed at the top) so on mobile the
+            // panel and its close button aren't covered by it; stays below the nav (20).
+            zIndex: 16,
           }}
         >
           <div
