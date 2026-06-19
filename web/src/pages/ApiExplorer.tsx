@@ -141,6 +141,7 @@ export function ApiExplorer() {
             type="button"
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
+            aria-pressed={activeTab === tab.key}
             style={{
               padding: "0.5rem 1.25rem",
               borderRadius: 6,
