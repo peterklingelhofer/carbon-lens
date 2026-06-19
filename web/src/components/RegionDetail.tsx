@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
-import { useForecastSnapshot, useSignal } from "../api/snapshot";
+import { useBestTimeSnapshot, useForecastSnapshot, useSignal } from "../api/snapshot";
 import { relativeToUsual } from "../lib/anomaly";
 import { MiniSparkline, trendLabel } from "./MiniSparkline";
 
@@ -176,14 +176,21 @@ export function RegionWeather({ provider, region }: { provider: string; region: 
 // change with permanent savings. From /carbon/best-time (history, or the forecast
 // curve as a fallback). Hidden when there's no usable signal yet.
 export function RegionBestTime({ provider, region }: { provider: string; region: string }) {
-  const { data, isLoading, isError } = useQuery({
+  const snap = useBestTimeSnapshot(provider, region);
+  const {
+    data: apiData,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["best-time", provider, region],
     queryFn: () => api.bestTime(provider, region),
     staleTime: 30 * 60_000,
     retry: 1,
+    enabled: !snap, // snapshot already has the greenest hour -> skip the API
   });
 
-  if (isLoading || isError || !data || data.cleanest_hour_utc == null) return null;
+  const data = snap ?? apiData;
+  if ((!snap && (isLoading || isError)) || !data || data.cleanest_hour_utc == null) return null;
   const hh = String(data.cleanest_hour_utc).padStart(2, "0");
   const savings = data.shift_savings_pct;
 
