@@ -1,6 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
-import { useBestTimeSnapshot, useForecastSnapshot, useSignal } from "../api/snapshot";
+import {
+  useBestTimeSnapshot,
+  useForecastSnapshot,
+  useRegionHistoryArchive,
+  useSignal,
+} from "../api/snapshot";
 import { relativeToUsual } from "../lib/anomaly";
 import { MiniSparkline, trendLabel } from "./MiniSparkline";
 
@@ -71,9 +76,10 @@ function UsualBadge({
   );
 }
 
-// Past-7-days carbon intensity for the selected region, from /carbon/history.
-// The archive accumulates over time, so a region shows nothing until it has been
-// observed -- handled with an honest "still accumulating" note rather than a gap.
+// Past-7-days carbon intensity for the selected region. Read from the published
+// history archive on the CDN when available (a single cached fetch, no API call);
+// otherwise from /carbon/history. The archive accumulates over time, so a region
+// shows nothing until observed -- an honest "still accumulating" note, not a gap.
 export function RegionHistory({
   provider,
   region,
@@ -83,18 +89,29 @@ export function RegionHistory({
   region: string;
   current?: number;
 }) {
-  const { data, isLoading } = useQuery({
+  const archive = useRegionHistoryArchive(provider, region);
+  const { data: apiData, isLoading } = useQuery({
     queryKey: ["history", provider, region],
     queryFn: () => api.carbonHistory(provider, region, 168),
     staleTime: 10 * 60_000,
     retry: 1,
+    enabled: !archive, // the CDN archive already has it -> skip the API
   });
+
+  // Normalize either source to points with timestamp + carbon (+ renewable).
+  const points = archive
+    ? archive.map((p) => ({
+        timestamp: p.t,
+        carbon_intensity_gco2_kwh: p.c,
+        renewable_percentage: p.r,
+      }))
+    : apiData?.points;
 
   const label = (
     <div style={{ fontSize: "0.72rem", color: "#9ca3af", marginBottom: 4 }}>Past 7 days</div>
   );
-  if (isLoading) return null;
-  if (!data || data.points.length < 2) {
+  if (!archive && isLoading) return null;
+  if (!points || points.length < 2) {
     return (
       <div style={{ marginTop: 10 }}>
         {label}
@@ -103,8 +120,8 @@ export function RegionHistory({
     );
   }
 
-  const vals = data.points.map((p) => p.carbon_intensity_gco2_kwh);
-  const labels = data.points.map((p) =>
+  const vals = points.map((p) => p.carbon_intensity_gco2_kwh);
+  const labels = points.map((p) =>
     new Date(p.timestamp).toLocaleString(undefined, { weekday: "short", hour: "numeric" }),
   );
   return (
@@ -117,9 +134,9 @@ export function RegionHistory({
         ariaLabel={`Carbon intensity over the past 7 days, trending ${trendLabel(vals[0], vals[vals.length - 1])}`}
       />
       <div style={{ fontSize: "0.65rem", color: "#6b7280", marginTop: 2 }}>
-        {data.points.length} readings · hover to inspect
+        {points.length} readings · hover to inspect
       </div>
-      {current != null && <UsualBadge current={current} points={data.points} />}
+      {current != null && <UsualBadge current={current} points={points} />}
     </div>
   );
 }
