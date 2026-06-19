@@ -102,6 +102,24 @@ def forecast(provider: str, region: str, hours: int = 24) -> dict:
     return resp.json()
 
 
+def health() -> dict:
+    resp = httpx.get(f"{get_api_url()}/health", headers=_headers(), timeout=10)
+    resp.raise_for_status()
+    return resp.json()
+
+
+def methodology() -> dict:
+    resp = httpx.get(f"{get_api_url()}/api/v1/carbon/methodology", headers=_headers(), timeout=15)
+    resp.raise_for_status()
+    return resp.json()
+
+
+def source_health() -> dict:
+    resp = httpx.get(f"{get_api_url()}/api/v1/status/sources", headers=_headers(), timeout=30)
+    resp.raise_for_status()
+    return resp.json()
+
+
 def report_impact(api_url: str, entry: dict) -> dict:
     """POST one run's impact to an org ledger API (the /accounting/impact endpoint)."""
     resp = httpx.post(
