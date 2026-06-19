@@ -22,6 +22,7 @@ type Mode = "hidden" | "loading" | "waking";
 const QUIET_QUERY_KEYS = new Set([
   "snapshot",
   "history-archive",
+  "forecast-week",
   "clean-compute-report",
   "clean-compute-history",
   "weather",
