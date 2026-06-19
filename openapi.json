@@ -4348,6 +4348,51 @@
         ]
       }
     },
+    "/api/v1/healthz/honesty": {
+      "get": {
+        "description": "Machine-readable honesty probe: is the marginal signal measured or heuristic?\n\nCheap and deterministic (no upstream calls), so it is safe as a Kubernetes\nreadinessProbe. With ``require_measured=true`` it returns 503 unless an operator\nhas wired a measured marginal source, letting a deployment *enforce* \"don't shift\nload on a guess\" rather than merely report it.",
+        "operationId": "honesty_api_v1_healthz_honesty_get",
+        "parameters": [
+          {
+            "description": "Return 503 when the marginal signal is heuristic, not measured",
+            "in": "query",
+            "name": "require_measured",
+            "required": false,
+            "schema": {
+              "default": false,
+              "description": "Return 503 when the marginal signal is heuristic, not measured",
+              "title": "Require Measured",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Honesty",
+        "tags": [
+          "Carbon Routing",
+          "System"
+        ]
+      }
+    },
     "/api/v1/regions": {
       "get": {
         "description": "List all supported cloud regions.",

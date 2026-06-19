@@ -751,59 +751,47 @@ def shiftability(
     console.print(table)
 
 
-@app.command()
-def doctor():
-    """Preflight self-test: API reachability, live-vs-estimated sources, marginal basis.
+def _render_doctor(api: str, checks: dict, ok: bool, json_output: bool) -> None:
+    """Print the doctor result as JSON (for CI gating) or a human checklist."""
+    if json_output:
+        import json
 
-    A quick honesty check before you wire CarbonLens into a pipeline -- it tells you
-    which signals are live/measured versus modelled/heuristic, so you know what you're
-    acting on.
-    """
-    api = client.get_api_url()
+        console.print_json(json.dumps({"api_url": api, "ok": ok, "checks": checks}))
+        return
+
     console.print(f"[bold]CarbonLens doctor[/bold] — checking {api}\n")
-    ok = True
 
-    try:
-        client.health()
-        console.print("[green]✓[/green] API reachable")
-    except Exception as e:
-        console.print(f"[red]✗[/red] API unreachable: {e}")
+    api_check = checks["api_reachable"]
+    if not api_check["ok"]:
+        console.print(f"[red]✗[/red] API unreachable: {api_check['error']}")
         console.print(
             "\n[red]Cannot continue without the API.[/red] "
             "Set its URL with `carbonlens config set api-url <url>`."
         )
-        raise typer.Exit(1)
+        return
+    console.print("[green]✓[/green] API reachable")
 
-    try:
-        sh = client.source_health()
-        healthy, total = sh.get("healthy", 0), sh.get("total", 0)
-        if healthy == total and total:
-            console.print(f"[green]✓[/green] Data sources: {healthy}/{total} live")
-        else:
-            console.print(
-                f"[yellow]![/yellow] Data sources: {healthy}/{total} live "
-                "(the rest fall back to estimates)"
-            )
-            ok = False
-    except Exception as e:
-        console.print(f"[yellow]![/yellow] Could not check data sources: {e}")
-        ok = False
+    src = checks.get("data_sources", {})
+    if "error" in src:
+        console.print(f"[yellow]![/yellow] Could not check data sources: {src['error']}")
+    elif src.get("ok"):
+        console.print(f"[green]✓[/green] Data sources: {src['live']}/{src['total']} live")
+    else:
+        console.print(
+            f"[yellow]![/yellow] Data sources: {src.get('live', 0)}/{src.get('total', 0)} live "
+            "(the rest fall back to estimates)"
+        )
 
-    try:
-        meth = client.methodology()
-        basis = "heuristic"
-        for f in meth.get("fields", []):
-            if f.get("field") == "marginal_intensity_gco2_kwh":
-                basis = f.get("basis", basis)
-        if basis == "measured":
-            console.print("[green]✓[/green] Marginal signal: measured (operator key configured)")
-        else:
-            console.print(
-                "[yellow]![/yellow] Marginal signal: heuristic "
-                "(merit-order estimate; bring a WattTime / Electricity Maps key to measure)"
-            )
-    except Exception as e:
-        console.print(f"[yellow]![/yellow] Could not read methodology: {e}")
+    marg = checks.get("marginal", {})
+    if "error" in marg:
+        console.print(f"[yellow]![/yellow] Could not read methodology: {marg['error']}")
+    elif marg.get("ok"):
+        console.print("[green]✓[/green] Marginal signal: measured (operator key configured)")
+    else:
+        console.print(
+            "[yellow]![/yellow] Marginal signal: heuristic "
+            "(merit-order estimate; bring a WattTime / Electricity Maps key to measure)"
+        )
 
     console.print()
     if ok:
@@ -813,6 +801,54 @@ def doctor():
             "[yellow]Usable, with the caveats above.[/yellow] "
             "CarbonLens degrades to honest estimates when a source is unavailable."
         )
+
+
+@app.command()
+def doctor(
+    json_output: bool = typer.Option(
+        False, "--json", help="Emit the checks as JSON so CI / readiness gates can act on them"
+    ),
+):
+    """Preflight self-test: API reachability, live-vs-estimated sources, marginal basis.
+
+    A quick honesty check before you wire CarbonLens into a pipeline -- it tells you
+    which signals are live/measured versus modelled/heuristic, so you know what you're
+    acting on. Exits non-zero if the API is unreachable.
+    """
+    api = client.get_api_url()
+    checks: dict = {}
+    ok = True
+
+    try:
+        client.health()
+        checks["api_reachable"] = {"ok": True}
+    except Exception as e:
+        checks["api_reachable"] = {"ok": False, "error": str(e)}
+        _render_doctor(api, checks, ok=False, json_output=json_output)
+        raise typer.Exit(1)
+
+    try:
+        sh = client.source_health()
+        healthy, total = sh.get("healthy", 0), sh.get("total", 0)
+        live_ok = healthy == total and bool(total)
+        checks["data_sources"] = {"ok": live_ok, "live": healthy, "total": total}
+        if not live_ok:
+            ok = False
+    except Exception as e:
+        checks["data_sources"] = {"error": str(e)}
+        ok = False
+
+    try:
+        meth = client.methodology()
+        basis = "heuristic"
+        for f in meth.get("fields", []):
+            if f.get("field") == "marginal_intensity_gco2_kwh":
+                basis = f.get("basis", basis)
+        checks["marginal"] = {"ok": basis == "measured", "basis": basis}
+    except Exception as e:
+        checks["marginal"] = {"error": str(e)}
+
+    _render_doctor(api, checks, ok=ok, json_output=json_output)
 
 
 @config_app.command("set")

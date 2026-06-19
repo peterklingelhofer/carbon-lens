@@ -594,6 +594,31 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/healthz/honesty": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Honesty
+         * @description Machine-readable honesty probe: is the marginal signal measured or heuristic?
+         *
+         *     Cheap and deterministic (no upstream calls), so it is safe as a Kubernetes
+         *     readinessProbe. With ``require_measured=true`` it returns 503 unless an operator
+         *     has wired a measured marginal source, letting a deployment *enforce* "don't shift
+         *     load on a guess" rather than merely report it.
+         */
+        get: operations["honesty_api_v1_healthz_honesty_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/regions": {
         parameters: {
             query?: never;
@@ -3416,6 +3441,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UsageIngestionResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    honesty_api_v1_healthz_honesty_get: {
+        parameters: {
+            query?: {
+                /** @description Return 503 when the marginal signal is heuristic, not measured */
+                require_measured?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

@@ -761,6 +761,38 @@ async def get_methodology(
     )
 
 
+@router.get("/healthz/honesty", tags=["System"], response_model=None)
+async def honesty(
+    require_measured: bool = Query(
+        False, description="Return 503 when the marginal signal is heuristic, not measured"
+    ),
+    marginal_source: MarginalSource | None = Depends(get_marginal_source),
+) -> dict | JSONResponse:
+    """Machine-readable honesty probe: is the marginal signal measured or heuristic?
+
+    Cheap and deterministic (no upstream calls), so it is safe as a Kubernetes
+    readinessProbe. With ``require_measured=true`` it returns 503 unless an operator
+    has wired a measured marginal source, letting a deployment *enforce* "don't shift
+    load on a guess" rather than merely report it.
+    """
+    basis = "measured" if marginal_source is not None else "heuristic"
+    body: dict = {
+        "marginal_basis": basis,
+        "carbon_source": settings.carbon_source,
+        "ok": True,
+    }
+    if require_measured and basis != "measured":
+        return JSONResponse(
+            status_code=503,
+            content={
+                **body,
+                "ok": False,
+                "reason": "marginal signal is heuristic, not measured",
+            },
+        )
+    return body
+
+
 @router.get("/carbon/zones", tags=["Carbon Data"])
 async def list_grid_zones(
     mapper: GridMapper = Depends(get_grid_mapper),
