@@ -38,10 +38,14 @@ def wait_for_clean_window(
     max_wait_hours: float = 24.0,
     max_intensity: float | None = None,
     poll_seconds: float = 600.0,
+    report: bool = False,
 ) -> dict:
-    """Block until ``region`` is a good time to run; returns the SDK wait result."""
+    """Block until ``region`` is a good time to run; returns the SDK wait result.
+
+    With ``report=True``, the shifted run's predicted impact is posted to the org
+    ledger (best-effort) so Prefect flows feed org-statement like ``carbonlens run``."""
     return CarbonClient(api_url).wait_for_clean_window(
-        region, max_wait_hours, max_intensity, poll_seconds
+        region, max_wait_hours, max_intensity, poll_seconds, report=report
     )
 
 
