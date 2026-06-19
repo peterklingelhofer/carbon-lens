@@ -348,7 +348,7 @@ def test_zone_signal_unknown_zone(client: TestClient):
 
 
 def test_marginal_note_honesty():
-    from carbon_mesh.api.routes import _marginal_note
+    from carbon_mesh.engine.signal import marginal_note as _marginal_note
 
     # Clean on average (120) but fossil on the margin (380): shifting helps more.
     note = _marginal_note(120, 380)
