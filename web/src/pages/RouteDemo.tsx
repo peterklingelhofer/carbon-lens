@@ -216,7 +216,11 @@ export function RouteDemo() {
           {loading ? "Routing..." : "Find Greenest Region"}
         </button>
 
-        {error && <p style={{ color: "var(--red-500)", marginTop: "1rem" }}>{error}</p>}
+        {error && (
+          <p role="alert" style={{ color: "var(--red-500)", marginTop: "1rem" }}>
+            {error}
+          </p>
+        )}
       </div>
 
       {/* Result */}
