@@ -6,6 +6,13 @@ on:
   pull_request:
     branches: [main]
 
+# Cancel superseded runs on a branch/PR so rapid pushes don't keep whole
+# pipelines (incl. the Docker builds) burning runners to no purpose. Never
+# cancel main pushes (they publish images).
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   backend:
     runs-on: ubuntu-latest
@@ -123,6 +130,9 @@ jobs:
           tags: |
             ghcr.io/${{ steps.ns.outputs.repo }}/api:latest
             ghcr.io/${{ steps.ns.outputs.repo }}/api:${{ github.sha }}
+          # Reuse unchanged layers across runs instead of rebuilding from scratch
+          cache-from: type=gha,scope=api
+          cache-to: type=gha,scope=api,mode=max
 
       - name: Build (and push on main) Web image
         uses: docker/build-push-action@v6
@@ -132,3 +142,5 @@ jobs:
           tags: |
             ghcr.io/${{ steps.ns.outputs.repo }}/web:latest
             ghcr.io/${{ steps.ns.outputs.repo }}/web:${{ github.sha }}
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,scope=web,mode=max
