@@ -163,6 +163,35 @@ export function useRegionHistoryArchive(
   return data?.series?.[`${provider}/${region}`];
 }
 
+// The 7-day forecast archive sits next to snapshot.json on the data branch. It's large
+// and only the clean-window heatmap needs it, so it's published separately and fetched
+// lazily (never part of the site-wide snapshot).
+export const FORECAST_WEEK_URL = SNAPSHOT_URL
+  ? SNAPSHOT_URL.replace("snapshot.json", "forecast_week.json")
+  : "";
+
+// One region's precomputed 7-day forecast curve from the CDN (forecast_week.json). The
+// whole file is a single cached fetch; only components that mount it (the Scheduler
+// heatmap) pay for it. Undefined when unavailable, so callers fall back to the API.
+export function useWeekForecast(
+  provider: string,
+  region: string,
+): CarbonSnapshotForecast | undefined {
+  const { data } = useQuery({
+    queryKey: ["forecast-week"],
+    queryFn: async (): Promise<{ forecasts: Record<string, CarbonSnapshotForecast> }> => {
+      const res = await fetch(FORECAST_WEEK_URL);
+      if (!res.ok) throw new Error(`forecast_week fetch failed: ${res.status}`);
+      return res.json();
+    },
+    enabled: !!FORECAST_WEEK_URL,
+    refetchInterval: 30 * 60 * 1000,
+    staleTime: 30 * 60 * 1000,
+    retry: 1,
+  });
+  return data?.forecasts?.[`${provider}/${region}`];
+}
+
 // All covered grid zones, each with the cloud regions on it -- the static equivalent of
 // GET /carbon/zones, derived from the snapshot's region list. Empty without a snapshot.
 export function gridZonesFromSnapshot(snapshot: CarbonSnapshot | undefined): GridZoneSummary[] {
