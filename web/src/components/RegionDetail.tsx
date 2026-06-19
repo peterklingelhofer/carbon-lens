@@ -5,6 +5,7 @@ import {
   useForecastSnapshot,
   useRegionHistoryArchive,
   useSignal,
+  useWeatherSnapshot,
 } from "../api/snapshot";
 import { relativeToUsual } from "../lib/anomaly";
 import { MiniSparkline, trendLabel } from "./MiniSparkline";
@@ -141,20 +142,27 @@ export function RegionHistory({
   );
 }
 
-// Wind speed + solar irradiance at the region's coordinates, from /carbon/weather
-// (Open-Meteo). These are the physical drivers behind a grid's renewable output,
-// so they explain *why* the intensity is what it is. A single-point proxy, fetched
-// only when a region is opened (so it's free and on-demand, not a globe-wide layer).
+// Wind speed + solar irradiance at the region's coordinates (Open-Meteo) -- the
+// physical drivers behind a grid's renewable output, so they explain *why* the
+// intensity is what it is. Read from the precomputed snapshot when available (no API
+// call); otherwise fetched on-demand from /carbon/weather when a region is opened.
 export function RegionWeather({ provider, region }: { provider: string; region: string }) {
-  const { data, isLoading, isError } = useQuery({
+  const snap = useWeatherSnapshot(provider, region);
+  const {
+    data: apiData,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["weather", provider, region],
     queryFn: () => api.regionWeather(provider, region),
     staleTime: 10 * 60_000,
     retry: 1,
+    enabled: !snap, // snapshot already has the weather -> skip the API
   });
 
+  const data = snap ?? apiData;
   // Stay quiet on load/error: weather is a nice-to-have driver, not core data.
-  if (isLoading || isError || !data) return null;
+  if ((!snap && (isLoading || isError)) || !data) return null;
 
   const wind = Math.round(data.wind_speed_kmh);
   const solar = Math.round(data.solar_irradiance_w_m2);

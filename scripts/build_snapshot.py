@@ -246,6 +246,40 @@ async def compute_region_data(
     return {"signals": signals, "forecasts": forecasts}
 
 
+async def compute_weather(region_meta: dict[str, dict], fetch=_UNSET, concurrency: int = 8) -> dict:
+    """Precompute current wind/solar per region (Open-Meteo) so the frontend reads the
+    weather drivers from the CDN, not the live API. Concurrency-limited and best-effort:
+    a region whose fetch fails (or lacks coordinates) is simply omitted. ``fetch`` is
+    injectable (the Open-Meteo call) so tests run without network."""
+    import asyncio
+
+    if fetch is _UNSET:
+        from carbon_mesh.carbon_sources.open_meteo import fetch_weather
+
+        fetch = fetch_weather
+
+    sem = asyncio.Semaphore(concurrency)
+    out: dict[str, dict] = {}
+
+    async def _one(key: str, meta: dict) -> None:
+        lat, lon = meta.get("latitude"), meta.get("longitude")
+        if lat is None or lon is None:
+            return
+        async with sem:
+            try:
+                wind, solar = await fetch(lat, lon)
+            except Exception:
+                return
+        out[key] = {
+            "wind_speed_kmh": round(wind, 1),
+            "solar_irradiance_w_m2": round(solar),
+            "source": "open_meteo",
+        }
+
+    await asyncio.gather(*[_one(k, m) for k, m in region_meta.items()])
+    return out
+
+
 async def build_snapshot(
     baseline: dict | None = None, max_stale_hours: float = 6.0, with_signals: bool = True
 ) -> dict:
@@ -322,12 +356,18 @@ async def build_snapshot(
     # start. Best-effort: a failure here never blocks publishing the snapshot itself.
     signals: dict[str, dict] = {}
     forecasts: dict[str, dict] = {}
+    weather: dict[str, dict] = {}
     if with_signals:
+        published_meta = {k: region_meta[k] for k in snapshot_intensities if k in region_meta}
         try:
             data = await compute_region_data(snapshot_intensities, region_meta, mapper)
             signals, forecasts = data["signals"], data["forecasts"]
         except Exception as e:
             print(f"  (signal/forecast precompute skipped: {e})", file=sys.stderr)
+        try:
+            weather = await compute_weather(published_meta)
+        except Exception as e:
+            print(f"  (weather precompute skipped: {e})", file=sys.stderr)
 
     return {
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -335,6 +375,7 @@ async def build_snapshot(
         "intensities": snapshot_intensities,
         "signals": signals,
         "forecasts": forecasts,
+        "weather": weather,
         "best_time": {},  # filled in by _main once the rolling history is built
         "summary": {
             "live_zones": counts["live"],
@@ -344,6 +385,7 @@ async def build_snapshot(
             "regions_published": len(snapshot_regions),
             "signals_published": len(signals),
             "forecasts_published": len(forecasts),
+            "weather_published": len(weather),
             "degraded": degraded,
         },
     }
