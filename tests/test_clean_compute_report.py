@@ -81,3 +81,17 @@ def test_report_skips_thin_history():
     report = build_clean_compute_report(history, {}, now, days=14)
     assert report["most_shiftable"] == []
     assert report["greenest_regions"] == []
+
+
+def test_report_includes_calibration_only_when_it_has_samples():
+    now = datetime(2026, 6, 16, tzinfo=timezone.utc)
+    history = {"series": {}}
+
+    # Empty / zero-sample calibration -> omitted entirely (no fabricated accuracy).
+    none_report = build_clean_compute_report(history, {}, now, calibration={"samples": 0})
+    assert "forecast_calibration" not in none_report
+    assert "forecast_calibration" not in build_clean_compute_report(history, {}, now)
+
+    cal = {"samples": 3, "calibration_ratio": 0.95, "mean_abs_error_gco2_kwh": 12.0}
+    report = build_clean_compute_report(history, {}, now, calibration=cal)
+    assert report["forecast_calibration"] == cal

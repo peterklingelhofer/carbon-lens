@@ -9,6 +9,13 @@ export function CleanCompute() {
   const { data, isLoading, isError } = useCleanComputeReport();
   const { data: history } = useCleanComputeHistory();
   const trend = (history?.days ?? []).filter((d) => d.greenest_mean_gco2_kwh != null);
+  const cal = data?.forecast_calibration;
+  const calVerdict =
+    cal && cal.calibration_ratio >= 0.85 && cal.calibration_ratio <= 1.15
+      ? "well-calibrated"
+      : cal && cal.calibration_ratio < 0.85
+        ? "over-promised"
+        : "under-promised";
 
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", padding: "2rem 1.25rem" }}>
@@ -47,6 +54,33 @@ export function CleanCompute() {
           <div style={{ fontSize: "0.65rem", color: "var(--gray-400)", marginTop: 2 }}>
             {trend.length} days · lower is cleaner
           </div>
+        </section>
+      )}
+
+      {cal && cal.samples > 0 && (
+        <section style={{ marginBottom: "2rem" }}>
+          <h2 style={{ fontSize: "1.15rem", margin: "0 0 0.25rem" }}>Forecast accuracy</h2>
+          <p style={{ color: "var(--gray-500)", fontSize: "0.85rem", margin: "0 0 0.5rem" }}>
+            How submit-time predicted reductions compared to the run-time re-measured actuals,
+            across {cal.samples} verified shifted run{cal.samples === 1 ? "" : "s"} — the honest
+            counterpart to any avoided-CO₂ claim.
+          </p>
+          <p style={{ fontSize: "0.95rem", margin: 0 }}>
+            Calibration ratio <strong>{cal.calibration_ratio.toFixed(2)}</strong>{" "}
+            <span
+              style={{
+                color: calVerdict === "well-calibrated" ? "var(--green-text)" : "#b45309",
+              }}
+            >
+              ({calVerdict})
+            </span>
+            <span style={{ color: "var(--gray-500)" }}>
+              {" "}
+              · predicted {Math.round(cal.mean_predicted_gco2_kwh)} vs actual{" "}
+              {Math.round(cal.mean_actual_gco2_kwh)} gCO₂/kWh · mean error ±
+              {Math.round(cal.mean_abs_error_gco2_kwh)}
+            </span>
+          </p>
         </section>
       )}
 
