@@ -218,7 +218,9 @@ export function Scheduler() {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 1fr",
+          // Collapse to a single column on narrow viewports so the two cards
+          // don't force horizontal scrolling at 320px (WCAG 1.4.10 reflow).
+          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))",
           gap: "1rem",
           marginBottom: "2rem",
         }}
