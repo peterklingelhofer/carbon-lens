@@ -336,6 +336,78 @@ class TestImpactLedger:
         assert s["shifted"] == 2
         assert s["measured"] == 1
 
+    def test_calibration_compares_predicted_to_measured_actual(self):
+        from datetime import datetime, timezone
+
+        from carbon_mesh.cli.ledger import calibration
+
+        now = datetime(2026, 6, 18, tzinfo=timezone.utc)
+        entries = [
+            # Re-measured shifted run: predicted 200, actual 180.
+            {
+                "ts": now.isoformat(),
+                "deferred_hours": 3,
+                "predicted_reduction_gco2_kwh": 200,
+                "reduction_gco2_kwh": 180,
+                "basis": "measured",
+            },
+            # Re-measured shifted run: predicted 100, actual 120.
+            {
+                "ts": now.isoformat(),
+                "deferred_hours": 2,
+                "predicted_reduction_gco2_kwh": 100,
+                "reduction_gco2_kwh": 120,
+                "basis": "measured",
+            },
+            # Forecast-only (not re-measured) -> excluded from calibration.
+            {
+                "ts": now.isoformat(),
+                "deferred_hours": 2,
+                "predicted_reduction_gco2_kwh": 50,
+                "reduction_gco2_kwh": 50,
+                "basis": "forecast",
+            },
+            # Ran now -> excluded.
+            {"ts": now.isoformat(), "deferred_hours": 0},
+        ]
+        cal = calibration(entries, now, days=30)
+        assert cal["samples"] == 2
+        assert cal["mean_predicted_gco2_kwh"] == 150.0
+        assert cal["mean_actual_gco2_kwh"] == 150.0
+        assert cal["calibration_ratio"] == 1.0  # 300 actual / 300 predicted
+        assert cal["mean_abs_error_gco2_kwh"] == 20.0  # (|180-200| + |120-100|)/2
+
+    def test_calibration_empty_when_no_measured_runs(self):
+        from datetime import datetime, timezone
+
+        from carbon_mesh.cli.ledger import calibration
+
+        now = datetime(2026, 6, 18, tzinfo=timezone.utc)
+        cal = calibration([{"ts": now.isoformat(), "deferred_hours": 0}], now, days=30)
+        assert cal["samples"] == 0
+        assert cal["calibration_ratio"] == 0.0
+
+    def test_org_statement_includes_forecast_calibration(self):
+        from datetime import datetime, timezone
+
+        from carbon_mesh.cli.ledger import org_statement
+
+        now = datetime(2026, 6, 18, tzinfo=timezone.utc)
+        entries = [
+            {
+                "ts": now.isoformat(),
+                "region": "aws/us-east-1",
+                "deferred_hours": 3,
+                "predicted_reduction_gco2_kwh": 200,
+                "reduction_gco2_kwh": 200,
+                "energy_kwh": 10,
+                "basis": "measured",
+            }
+        ]
+        stmt = org_statement(entries, now, days=90)
+        assert stmt["forecast_calibration"]["samples"] == 1
+        assert stmt["forecast_calibration"]["calibration_ratio"] == 1.0
+
     def test_fleet_summary_aggregates_by_region(self):
         from datetime import datetime, timezone
 
