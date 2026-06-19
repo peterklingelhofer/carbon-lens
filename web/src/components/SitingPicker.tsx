@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "../api/client";
+import { REPORT_URL, sitingFromGreenest, useCleanComputeReport } from "../api/report";
 import { InfoTip } from "./InfoTip";
 
 const PROVIDERS = ["aws", "gcp", "azure"];
@@ -9,6 +10,8 @@ const PROVIDERS = ["aws", "gcp", "azure"];
 // typical (history-mean) carbon intensity, and, given a continuous load, the annual
 // kg each region would emit. Distinct from per-request routing: region choice is a
 // permanent, high-leverage decision (a region can be many times cleaner forever).
+// Runs fully static off the published clean-compute report on the CDN (filtering and
+// the annual-kg math happen client-side); falls back to /carbon/siting without it.
 export function SitingPicker() {
   const [providers, setProviders] = useState<string[]>(PROVIDERS);
   const [watts, setWatts] = useState<number>(500);
@@ -16,14 +19,23 @@ export function SitingPicker() {
   const toggle = (p: string) =>
     setProviders((cur) => (cur.includes(p) ? cur.filter((x) => x !== p) : [...cur, p]));
 
+  const report = useCleanComputeReport();
   const providersCsv = providers.join(",");
-  const { data, isLoading, isError } = useQuery({
+  const {
+    data: apiData,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["siting", providersCsv, watts],
     queryFn: () => api.siting(providersCsv, watts || undefined),
-    enabled: providers.length > 0,
+    enabled: !REPORT_URL && providers.length > 0, // CDN report has it -> skip the API
     staleTime: 30 * 60_000,
     retry: 1,
   });
+
+  const data = report.data
+    ? sitingFromGreenest(report.data.greenest_regions, providers, watts, report.data.days_analyzed)
+    : apiData;
 
   return (
     <div style={{ marginTop: "2rem" }}>
