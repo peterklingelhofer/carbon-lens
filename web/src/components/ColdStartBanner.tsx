@@ -15,11 +15,21 @@ const LIKELY_AWAKE_MS = 10 * 60 * 1000;
 
 type Mode = "hidden" | "loading" | "waking";
 
+// Queries that must NOT trigger the banner: the CDN-backed static files (snapshot,
+// history archive, clean-compute report) are fast and unrelated to the API waking up,
+// and weather is an optional late-loading driver that should never make the page look
+// like it's waiting on a cold start.
+const QUIET_QUERY_KEYS = new Set([
+  "snapshot",
+  "history-archive",
+  "clean-compute-report",
+  "clean-compute-history",
+  "weather",
+]);
+
 export function ColdStartBanner() {
-  // Count only real API traffic - exclude the CDN snapshot query, which is fast
-  // and unrelated to the API server waking up.
   const apiFetching = useIsFetching({
-    predicate: (q) => q.queryKey[0] !== "snapshot",
+    predicate: (q) => !QUIET_QUERY_KEYS.has(q.queryKey[0] as string),
   });
   const mutating = useIsMutating();
   const busy = apiFetching + mutating > 0;
