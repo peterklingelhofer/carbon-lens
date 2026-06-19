@@ -46,10 +46,17 @@ jobs:
       # A small, citable 'state of clean compute' artifact: which grids reward
       # carbon-aware scheduling most, and which regions are greenest to host on.
       # Computed from the freshly-built history -- reuses this cron, no extra cost.
+      # Pull the live deployment's org-statement (which carries forecast_calibration)
+      # so the public report shows how accurate our forecasts have actually been.
+      # Best-effort: if the API is unreachable or has no ledger, calibration is omitted.
       - name: Build clean-compute report
+        env:
+          REPORT_API_URL: ${{ secrets.CARBON_LENS_REPORT_API_URL || 'https://carbonlens-gssa.onrender.com' }}
         run: |
+          curl -fsS "${REPORT_API_URL%/}/api/v1/accounting/org-statement" -o org_statement.json || true
           uv run python scripts/build_clean_compute_report.py \
-            --history history.json --snapshot snapshot.json --out clean_compute_report.json || true
+            --history history.json --snapshot snapshot.json --out clean_compute_report.json \
+            --calibration org_statement.json || true
 
       - name: Publish to data branch
         env:
