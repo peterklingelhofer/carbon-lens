@@ -3,6 +3,7 @@ import { Route, Routes, useLocation } from "react-router-dom";
 import { ColdStartBanner } from "./components/ColdStartBanner";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Nav } from "./components/Nav";
+import { RouteAnnouncer } from "./components/RouteAnnouncer";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { About } from "./pages/About";
 import { ApiExplorer } from "./pages/ApiExplorer";
@@ -23,10 +24,20 @@ const CarbonGlobe = lazy(() => import("./pages/CarbonGlobe"));
 export default function App() {
   return (
     <ErrorBoundary>
+      <a className="skip-link" href="#main">
+        Skip to content
+      </a>
       <ScrollToTop />
-      <Nav />
+      <RouteAnnouncer />
+      <header>
+        <Nav />
+      </header>
       <ColdStartBanner />
-      <RoutedContent />
+      {/* tabIndex=-1 makes <main> a programmatic focus target for the skip link
+          and post-navigation focus move, without putting it in the tab order. */}
+      <main id="main" tabIndex={-1}>
+        <RoutedContent />
+      </main>
     </ErrorBoundary>
   );
 }
