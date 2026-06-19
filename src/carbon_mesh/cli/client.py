@@ -114,6 +114,12 @@ def methodology() -> dict:
     return resp.json()
 
 
+def honesty() -> dict:
+    resp = httpx.get(f"{get_api_url()}/api/v1/healthz/honesty", headers=_headers(), timeout=10)
+    resp.raise_for_status()
+    return resp.json()
+
+
 def source_health() -> dict:
     resp = httpx.get(f"{get_api_url()}/api/v1/status/sources", headers=_headers(), timeout=30)
     resp.raise_for_status()
