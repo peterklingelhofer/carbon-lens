@@ -111,3 +111,38 @@ export function useSnapshot() {
     retry: 1,
   });
 }
+
+// One compact rolling-history point: timestamp, carbon (gCO2/kWh), renewable %.
+export interface HistoryArchivePoint {
+  t: string;
+  c: number;
+  r: number;
+}
+
+// The rolling history archive sits next to snapshot.json on the data branch.
+export const HISTORY_ARCHIVE_URL = SNAPSHOT_URL
+  ? SNAPSHOT_URL.replace("snapshot.json", "history.json")
+  : "";
+
+// One region's rolling carbon history from the published archive (history.json on the
+// CDN) -- the same data /carbon/history returns, but static. The whole archive is a
+// single cached fetch shared across every region the viewer opens. Undefined when the
+// archive is unavailable (so callers can fall back to the live API).
+export function useRegionHistoryArchive(
+  provider: string,
+  region: string,
+): HistoryArchivePoint[] | undefined {
+  const { data } = useQuery({
+    queryKey: ["history-archive"],
+    queryFn: async (): Promise<{ series: Record<string, HistoryArchivePoint[]> }> => {
+      const res = await fetch(HISTORY_ARCHIVE_URL);
+      if (!res.ok) throw new Error(`history archive fetch failed: ${res.status}`);
+      return res.json();
+    },
+    enabled: !!HISTORY_ARCHIVE_URL,
+    refetchInterval: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+  });
+  return data?.series?.[`${provider}/${region}`];
+}

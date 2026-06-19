@@ -22,19 +22,26 @@ vi.mock("../api/client", () => ({
   },
 }));
 
-// RegionSignal/RegionForecast/RegionBestTime read precomputed snapshot data; mock them.
+// The region components read precomputed snapshot/CDN data (no API call); mock them.
 vi.mock("../api/snapshot", () => ({
   useSignal: vi.fn(),
   useForecastSnapshot: vi.fn(),
   useBestTimeSnapshot: vi.fn(),
+  useRegionHistoryArchive: vi.fn(),
 }));
 
 import { api } from "../api/client";
-import { useBestTimeSnapshot, useForecastSnapshot, useSignal } from "../api/snapshot";
+import {
+  useBestTimeSnapshot,
+  useForecastSnapshot,
+  useRegionHistoryArchive,
+  useSignal,
+} from "../api/snapshot";
 
 const mockUseSignal = vi.mocked(useSignal);
 const mockUseForecastSnapshot = vi.mocked(useForecastSnapshot);
 const mockUseBestTimeSnapshot = vi.mocked(useBestTimeSnapshot);
+const mockUseRegionHistoryArchive = vi.mocked(useRegionHistoryArchive);
 const mockHistory = vi.mocked(api.carbonHistory);
 const mockForecast = vi.mocked(api.carbonForecast);
 const mockWeather = vi.mocked(api.regionWeather);
@@ -96,6 +103,18 @@ describe("RegionHistory", () => {
     renderWithClient(<RegionHistory provider="aws" region="us-west-2" />);
 
     expect(await screen.findByText("History is still accumulating.")).toBeTruthy();
+  });
+
+  it("renders from the CDN history archive without calling the API", () => {
+    mockUseRegionHistoryArchive.mockReturnValue([
+      { t: "2026-06-14T00:00:00+00:00", c: 300, r: 40 },
+      { t: "2026-06-14T01:00:00+00:00", c: 250, r: 45 },
+      { t: "2026-06-14T02:00:00+00:00", c: 200, r: 50 },
+    ]);
+    renderWithClient(<RegionHistory provider="gcp" region="europe-north1" />);
+
+    expect(screen.getByText(/3 readings/)).toBeTruthy();
+    expect(mockHistory).not.toHaveBeenCalled(); // served from the CDN archive
   });
 });
 
