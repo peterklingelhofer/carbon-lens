@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import type { SitingOption, SitingRecommendation } from "./types";
 
 // The "state of clean compute" report, published to the data branch every 30 min by
 // the snapshot cron (scripts/build_clean_compute_report.py). We read it from the same
@@ -27,6 +28,49 @@ export interface CleanComputeReport {
   most_shiftable: ShiftableGrid[];
   greenest_regions: GreenRegion[];
   forecast_calibration?: ForecastCalibration | null;
+}
+
+const HOURS_PER_YEAR = 8760;
+
+// Build the same SitingRecommendation the /carbon/siting endpoint returns, but from the
+// published greenest-regions report: filter by provider and compute annual kg client-side
+// (typical gCO2/kWh x kW x 8760 / 1000), matching the server formula exactly. Lets the
+// siting picker run fully static off the CDN report instead of waking the API.
+export function sitingFromGreenest(
+  greenest: GreenRegion[],
+  providers: string[],
+  watts: number,
+  daysAnalyzed: number,
+): SitingRecommendation {
+  const powerKw = watts ? watts / 1000 : null;
+  const annualKg = (typical: number) =>
+    powerKw != null ? Math.round(((typical * powerKw * HOURS_PER_YEAR) / 1000) * 10) / 10 : null;
+
+  const options: SitingOption[] = greenest
+    .filter((r) => providers.includes(r.provider))
+    .map((r) => ({
+      provider: r.provider,
+      region: r.region,
+      grid_zone: "",
+      location: r.location,
+      typical_gco2_kwh: r.typical_gco2_kwh,
+      basis: "history",
+      annual_kg: annualKg(r.typical_gco2_kwh),
+    }))
+    .sort((a, b) => a.typical_gco2_kwh - b.typical_gco2_kwh);
+
+  let saved: number | null = null;
+  if (powerKw != null && options.length > 1) {
+    const delta = options[options.length - 1].typical_gco2_kwh - options[0].typical_gco2_kwh;
+    saved = Math.round(((delta * powerKw * HOURS_PER_YEAR) / 1000) * 10) / 10;
+  }
+  return {
+    recommended: options[0],
+    options,
+    annual_kg_saved_vs_worst: saved,
+    power_watts: watts || null,
+    days_analyzed: daysAnalyzed,
+  };
 }
 
 // Forecast accuracy from a deployment's impact ledger: how submit-time predicted
