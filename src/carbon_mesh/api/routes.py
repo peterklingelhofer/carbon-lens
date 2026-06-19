@@ -1,5 +1,3 @@
-import hashlib
-import json as _json
 from datetime import datetime, timedelta, timezone
 
 import httpx
@@ -91,11 +89,9 @@ async def list_regions(
     mapper: GridMapper = Depends(get_grid_mapper),
 ):
     """List all supported cloud regions."""
-    regions = mapper.list_regions(provider)
-    content = [r.model_dump() for r in regions]
-
-    # ETag — region list is static, skip resending if unchanged
-    etag = '"' + hashlib.md5(_json.dumps(content, sort_keys=True).encode()).hexdigest() + '"'
+    # Body + ETag are memoized on the mapper (the region list is static), so the
+    # per-request cost is just the if-none-match compare below.
+    content, etag = mapper.regions_payload(provider)
     if request.headers.get("if-none-match") == etag:
         return Response(status_code=304, headers={"ETag": etag})
 

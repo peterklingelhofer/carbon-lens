@@ -10,7 +10,11 @@ non-essential work* when the grid is dirty. This middleware:
   with a 503 + ``Retry-After`` while the grid is dirty.
 
 The grid signal is fetched once per ``refresh_seconds`` and cached, so per-request
-overhead is nil. Reuses ``carbon_mesh.sdk`` so the decision matches every other surface.
+overhead is nil. The SDK client is synchronous (``httpx.get``), so refreshes run in a
+worker thread and never block the event loop: the very first request awaits the fetch
+(nothing is cached yet), and every later refresh happens in the background while the
+request serves the last good signal (stale-while-revalidate). Reuses ``carbon_mesh.sdk``
+so the decision matches every other surface.
 
     from fastapi import FastAPI
     from carbon_mesh.middleware import CarbonAwareShedder
@@ -22,6 +26,7 @@ overhead is nil. Reuses ``carbon_mesh.sdk`` so the decision matches every other 
 
 from __future__ import annotations
 
+import asyncio
 import time
 from collections.abc import Callable
 
@@ -62,19 +67,40 @@ class CarbonAwareShedder(BaseHTTPMiddleware):
         self._clock = _clock
         self._signal: dict = {}
         self._fetched_at: float | None = None
+        self._refreshing = False
+        self._refresh_task: asyncio.Task | None = None
 
-    def _current_signal(self) -> dict:
-        now = self._clock()
-        if self._fetched_at is None or now - self._fetched_at >= self._refresh:
-            try:
-                self._signal = self._client.signal(self._region)  # type: ignore[attr-defined]
-            except Exception:
-                pass  # keep the last good signal; never fail a request over this
-            self._fetched_at = now
+    def _is_stale(self) -> bool:
+        return self._fetched_at is None or self._clock() - self._fetched_at >= self._refresh
+
+    async def _fetch_signal(self) -> None:
+        """Refresh the cached signal off the event loop (the SDK client blocks)."""
+        try:
+            self._signal = await asyncio.to_thread(
+                self._client.signal,  # type: ignore[attr-defined]
+                self._region,
+            )
+        except Exception:
+            pass  # keep the last good signal; never fail a request over this
+        finally:
+            self._fetched_at = self._clock()
+            self._refreshing = False
+
+    async def _current_signal(self) -> dict:
+        if self._is_stale() and not self._refreshing:
+            self._refreshing = True
+            if self._fetched_at is None:
+                # Nothing cached yet -- await the first fetch (in a thread, so the
+                # event loop keeps serving other requests during the round-trip).
+                await self._fetch_signal()
+            else:
+                # We have a prior signal: revalidate in the background and serve
+                # the stale value now, so no request ever waits on the network.
+                self._refresh_task = asyncio.create_task(self._fetch_signal())
         return self._signal
 
     async def dispatch(self, request, call_next):
-        signal = self._current_signal()
+        signal = await self._current_signal()
         mode = carbon_mode(signal, self._max_intensity)
 
         if (
