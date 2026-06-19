@@ -1,0 +1,25 @@
+# Prometheus alert rules for CarbonLens.
+#
+# Load alongside your Prometheus config:
+#   rule_files:
+#     - /etc/prometheus/carbonlens.rules.yml
+#
+# The gauges these reference are exported at /metrics and refreshed on each scrape.
+groups:
+  - name: carbonlens-config
+    rules:
+      # The silent-heuristic trap: an operator wired a measured-marginal credential
+      # (WattTime / Electricity Maps) but no zone map, so no source got built and the
+      # marginal signal quietly falls back to heuristic. This is a misconfiguration, not
+      # a deliberate choice -- alert so it gets fixed instead of going unnoticed.
+      - alert: CarbonMarginalUnmapped
+        expr: max(carbon_marginal_unmapped) >= 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Marginal source configured but no zone mapped
+          description: >
+            A measured-marginal credential is set but no zone is mapped, so the marginal
+            signal is silently heuristic. Set CARBON_LENS_WATTTIME_ZONE_MAP (or
+            CARBON_LENS_ELECTRICITY_MAPS_ZONE_MAP). Run `carbonlens doctor` for the fix.

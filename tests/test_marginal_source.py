@@ -128,3 +128,27 @@ def test_factory_is_off_without_token_or_map():
     assert marginal_source_from_settings(NoToken()) is None
     assert marginal_source_from_settings(NoMap()) is None
     assert marginal_source_from_settings(Configured()) is not None
+
+
+def test_marginal_unmapped_flags_only_the_silent_trap():
+    from carbon_mesh.carbon_sources.marginal import marginal_unmapped
+
+    class KeyNoMap:  # the trap: token set, no zone map
+        watttime_token = "tok"
+        watttime_zone_map = ""
+
+    class EMKeyNoMap:
+        electricity_maps_api_key = "k"
+        electricity_maps_zone_map = ""
+
+    class Configured:  # properly mapped -> not a trap
+        watttime_token = "tok"
+        watttime_zone_map = "US-CAL-CISO:CAISO_NORTH"
+
+    class Nothing:  # no credential at all -> deliberate heuristic, not a trap
+        pass
+
+    assert marginal_unmapped(KeyNoMap()) is True
+    assert marginal_unmapped(EMKeyNoMap()) is True
+    assert marginal_unmapped(Configured()) is False
+    assert marginal_unmapped(Nothing()) is False

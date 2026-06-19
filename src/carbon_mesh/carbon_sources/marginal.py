@@ -199,3 +199,21 @@ def marginal_source_from_settings(settings):
     if em_map and getattr(settings, "electricity_maps_api_key", ""):
         return ElectricityMapsMarginalSource(settings.electricity_maps_api_key, em_map)
     return None
+
+
+def marginal_unmapped(settings) -> bool:
+    """True when a marginal credential is configured but no zone is mapped.
+
+    The silent-heuristic trap: an operator set a WattTime / Electricity Maps key but no
+    zone map, so no source gets built and the signal quietly stays heuristic. A
+    misconfiguration to surface (honesty probe) and alert on (Prometheus), not a choice.
+    """
+    if marginal_source_from_settings(settings) is not None:
+        return False
+    wt = bool(getattr(settings, "watttime_token", "")) and not parse_zone_map(
+        getattr(settings, "watttime_zone_map", "")
+    )
+    em = bool(getattr(settings, "electricity_maps_api_key", "")) and not parse_zone_map(
+        getattr(settings, "electricity_maps_zone_map", "")
+    )
+    return bool(wt or em)

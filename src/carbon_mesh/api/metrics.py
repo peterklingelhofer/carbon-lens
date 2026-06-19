@@ -75,6 +75,24 @@ IMPACT_JOBS_SHIFTED = Gauge(
 )
 
 
+MARGINAL_UNMAPPED = Gauge(
+    "carbon_marginal_unmapped",
+    "1 when a measured-marginal credential is configured but no zone is mapped, so the "
+    "marginal signal silently falls back to heuristic; else 0. Alert on this -- it's a "
+    "misconfiguration, not a choice (run `carbonlens doctor` to see the fix).",
+)
+
+
+def refresh_config_metrics() -> None:
+    """Set config-derived gauges (deterministic, no upstream calls). Best-effort."""
+    try:
+        from carbon_mesh.carbon_sources.marginal import marginal_unmapped
+
+        MARGINAL_UNMAPPED.set(1 if marginal_unmapped(settings) else 0)
+    except Exception as e:
+        logger.warning("Config metrics refresh failed (non-fatal): %s", e)
+
+
 async def refresh_impact_metrics() -> None:
     """Repopulate the org-impact gauges from the DB-backed ledger. No-op without a
     database; best-effort so /metrics never errors."""
