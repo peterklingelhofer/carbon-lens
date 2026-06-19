@@ -403,6 +403,35 @@ class TestImpactLedger:
         # Under-promised history (ratio 1.2) scales a prediction up.
         assert adjusted_prediction(100, 1.2) == 120.0
 
+    def test_calibration_by_region_buckets_separately(self):
+        from datetime import datetime, timezone
+
+        from carbon_mesh.cli.ledger import calibration_by_region
+
+        now = datetime(2026, 6, 18, tzinfo=timezone.utc)
+        entries = [
+            {
+                "ts": now.isoformat(),
+                "region": "aws/us-east-1",
+                "deferred_hours": 3,
+                "predicted_reduction_gco2_kwh": 200,
+                "reduction_gco2_kwh": 200,
+                "basis": "measured",
+            },
+            {
+                "ts": now.isoformat(),
+                "region": "gcp/europe-west1",
+                "deferred_hours": 2,
+                "predicted_reduction_gco2_kwh": 100,
+                "reduction_gco2_kwh": 50,  # forecast ran 2x high here
+                "basis": "measured",
+            },
+        ]
+        by_region = calibration_by_region(entries, now, days=30)
+        assert set(by_region) == {"aws/us-east-1", "gcp/europe-west1"}
+        assert by_region["aws/us-east-1"]["calibration_ratio"] == 1.0
+        assert by_region["gcp/europe-west1"]["calibration_ratio"] == 0.5
+
     def test_calibration_empty_when_no_measured_runs(self):
         from datetime import datetime, timezone
 
