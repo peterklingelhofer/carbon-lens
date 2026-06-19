@@ -28,6 +28,7 @@ vi.mock("../api/snapshot", () => ({
   useForecastSnapshot: vi.fn(),
   useBestTimeSnapshot: vi.fn(),
   useRegionHistoryArchive: vi.fn(),
+  useWeatherSnapshot: vi.fn(),
 }));
 
 import { api } from "../api/client";
@@ -36,12 +37,14 @@ import {
   useForecastSnapshot,
   useRegionHistoryArchive,
   useSignal,
+  useWeatherSnapshot,
 } from "../api/snapshot";
 
 const mockUseSignal = vi.mocked(useSignal);
 const mockUseForecastSnapshot = vi.mocked(useForecastSnapshot);
 const mockUseBestTimeSnapshot = vi.mocked(useBestTimeSnapshot);
 const mockUseRegionHistoryArchive = vi.mocked(useRegionHistoryArchive);
+const mockUseWeatherSnapshot = vi.mocked(useWeatherSnapshot);
 const mockHistory = vi.mocked(api.carbonHistory);
 const mockForecast = vi.mocked(api.carbonForecast);
 const mockWeather = vi.mocked(api.regionWeather);
@@ -146,6 +149,19 @@ describe("RegionWeather", () => {
     const { container } = renderWithClient(<RegionWeather provider="aws" region="us-west-2" />);
 
     await waitFor(() => expect(container.querySelector("div")).toBeNull());
+  });
+
+  it("renders from the precomputed snapshot weather without calling the API", () => {
+    mockUseWeatherSnapshot.mockReturnValue({
+      wind_speed_kmh: 30,
+      solar_irradiance_w_m2: 520,
+      source: "open_meteo",
+    });
+    renderWithClient(<RegionWeather provider="gcp" region="europe-north1" />);
+
+    expect(screen.getByText("Weather now")).toBeTruthy();
+    expect(screen.getByText(/30/)).toBeTruthy();
+    expect(mockWeather).not.toHaveBeenCalled(); // served from the snapshot
   });
 });
 
