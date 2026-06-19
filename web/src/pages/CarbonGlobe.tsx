@@ -1397,7 +1397,6 @@ export default function CarbonGlobe() {
           />
           <RegionForecast provider={selected.provider} region={selected.region} />
           <RegionBestTime provider={selected.provider} region={selected.region} />
-          <RegionWeather provider={selected.provider} region={selected.region} />
           <div
             style={{
               marginTop: 12,
@@ -1411,6 +1410,9 @@ export default function CarbonGlobe() {
             <span style={{ color: "#6b7280" }}> · {selected.source}</span>
             <InfoTip label="live vs estimated" text={DATA_QUALITY_TIP_RICH} placement="top" />
           </div>
+          {/* Weather sits last and stays silent until it resolves -- an optional driver
+              that simply extends the panel when ready, never a "loading" placeholder. */}
+          <RegionWeather provider={selected.provider} region={selected.region} />
         </div>
       )}
     </div>
