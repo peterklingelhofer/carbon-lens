@@ -335,6 +335,7 @@ async def build_snapshot(
         "intensities": snapshot_intensities,
         "signals": signals,
         "forecasts": forecasts,
+        "best_time": {},  # filled in by _main once the rolling history is built
         "summary": {
             "live_zones": counts["live"],
             "estimated_zones": counts["estimated"],
@@ -374,6 +375,25 @@ def append_history(
             prev_points.pop()
         series[key] = (prev_points + [point])[-max_points:]
     return {"generated_at": generated_at, "series": series}
+
+
+def compute_best_times(
+    history: dict, forecasts: dict, regions: list[dict], days: int = 14
+) -> dict[str, dict]:
+    """Precompute the greenest-hour BestTime per region from the rolling history archive
+    (with each region's 24h forecast curve as the thin-history fallback), reusing the same
+    ``engine.besttime.build_best_time`` the live endpoint uses so the static result matches."""
+    from carbon_mesh.engine.besttime import build_best_time
+
+    series = history.get("series", {})
+    out: dict[str, dict] = {}
+    for r in regions:
+        key = f"{r['provider']}/{r['region']}"
+        raw = series.get(key, [])
+        fc_points = forecasts.get(key, {}).get("points", [])
+        bt = build_best_time(r["provider"], r["region"], r["grid_zone"], raw, fc_points, days)
+        out[key] = bt.model_dump()
+    return out
 
 
 def history_to_csv(history: dict) -> str:
@@ -437,12 +457,21 @@ async def _main() -> int:
         max_stale_hours=args.max_stale_hours,
         with_signals=not args.no_signals,
     )
+
+    # Build the rolling history first so we can fold the greenest-hour BestTime into the
+    # snapshot too (it ranks history, with each region's forecast curve as the fallback).
+    prev_history = _load_baseline(args.history_baseline) if args.history_baseline else {}
+    history = append_history(prev_history, snapshot)
+    if not args.no_signals:
+        snapshot["best_time"] = compute_best_times(
+            history, snapshot.get("forecasts", {}), snapshot["regions"]
+        )
+        snapshot["summary"]["best_time_published"] = len(snapshot["best_time"])
+
     with open(args.out, "w") as f:
         json.dump(snapshot, f, indent=2)
 
     if args.history_out:
-        prev_history = _load_baseline(args.history_baseline)
-        history = append_history(prev_history, snapshot)
         with open(args.history_out, "w") as f:
             json.dump(history, f, separators=(",", ":"))
         # Publish the same data as a tidy CSV open dataset (history.csv) for anyone
