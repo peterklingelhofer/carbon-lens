@@ -97,7 +97,7 @@ export function SitingPicker() {
 
       {isLoading && <div style={{ fontSize: "0.8rem", color: "var(--gray-500)" }}>Loading…</div>}
       {isError && (
-        <div style={{ fontSize: "0.8rem", color: "var(--gray-500)" }}>
+        <div role="alert" style={{ fontSize: "0.8rem", color: "var(--gray-500)" }}>
           Couldn't load siting data right now.
         </div>
       )}
