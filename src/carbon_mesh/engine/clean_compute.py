@@ -78,11 +78,17 @@ def build_clean_compute_report(
     now: datetime,
     days: int = 14,
     top: int = 15,
+    calibration: dict | None = None,
 ) -> dict:
     """Rank grids by shiftability and regions by typical intensity from history.
 
     ``history`` is ``{"series": {"provider/region": [{"t","c","r"}, ...]}}``.
     ``region_meta`` maps that key to ``{"grid_zone", "location"}``.
+
+    ``calibration`` is an optional forecast-accuracy block (from a deployment's impact
+    ledger via ``carbonlens calibration --json`` or the org-statement endpoint). It is
+    carried through only when it has samples and omitted otherwise -- the public report
+    never fabricates accuracy it can't substantiate.
     """
     from datetime import timedelta
 
@@ -128,9 +134,12 @@ def build_clean_compute_report(
 
     most_shiftable.sort(key=lambda x: x["shift_savings_pct"], reverse=True)
     greenest.sort(key=lambda x: x["typical_gco2_kwh"])
-    return {
+    report = {
         "generated_at": now.isoformat(),
         "days_analyzed": days,
         "most_shiftable": most_shiftable[:top],
         "greenest_regions": greenest[:top],
     }
+    if calibration and calibration.get("samples"):
+        report["forecast_calibration"] = calibration
+    return report

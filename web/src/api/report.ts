@@ -26,6 +26,19 @@ export interface CleanComputeReport {
   days_analyzed: number;
   most_shiftable: ShiftableGrid[];
   greenest_regions: GreenRegion[];
+  forecast_calibration?: ForecastCalibration | null;
+}
+
+// Forecast accuracy from a deployment's impact ledger: how submit-time predicted
+// reductions compared to the run-time re-measured actuals. Absent unless published.
+export interface ForecastCalibration {
+  samples: number;
+  mean_predicted_gco2_kwh: number;
+  mean_actual_gco2_kwh: number;
+  // actual / predicted: <1 over-promised, >1 under-promised, ~1 well-calibrated.
+  calibration_ratio: number;
+  mean_abs_error_gco2_kwh: number;
+  days: number;
 }
 
 const SNAPSHOT_URL = import.meta.env.VITE_SNAPSHOT_URL || "";

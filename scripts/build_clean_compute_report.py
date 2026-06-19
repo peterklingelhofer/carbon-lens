@@ -44,6 +44,12 @@ def main() -> int:
     parser.add_argument("--out", default="clean_compute_report.json", help="Output path")
     parser.add_argument("--days", type=int, default=14)
     parser.add_argument(
+        "--calibration",
+        default="",
+        help="Optional forecast-calibration JSON (path or URL) from `carbonlens calibration "
+        "--json` or /accounting/org-statement; included only when it has samples",
+    )
+    parser.add_argument(
         "--history-out",
         default="clean_compute_history.json",
         help="Rolling daily-summary output for the trend chart; '' to skip",
@@ -58,7 +64,19 @@ def main() -> int:
     now = datetime.now(timezone.utc)
     history = _load(args.history)
     snapshot = _load(args.snapshot)
-    report = build_clean_compute_report(history, _region_meta(snapshot), now, days=args.days)
+
+    calibration: dict | None = None
+    if args.calibration:
+        try:
+            loaded = _load(args.calibration)
+            # Accept either a bare calibration block or an org-statement wrapping one.
+            calibration = loaded.get("forecast_calibration", loaded)
+        except Exception:
+            calibration = None
+
+    report = build_clean_compute_report(
+        history, _region_meta(snapshot), now, days=args.days, calibration=calibration
+    )
 
     with open(args.out, "w") as f:
         json.dump(report, f, indent=2)
