@@ -28,13 +28,14 @@ from carbon_mesh.carbon_sources.open_meteo import fetch_weather
 from carbon_mesh.config import settings
 from carbon_mesh.db.models import ApiKeyRecord
 from carbon_mesh.engine.router import RoutingEngine
+from carbon_mesh.engine.signal import build_signal
 from carbon_mesh.grid.mapper import GridMapper
 from carbon_mesh.accounting.impact_repo import record_impact, recent_impacts
 from carbon_mesh.cli.ledger import org_statement
 from carbon_mesh.models.accounting import CarbonSavingsReport, ImpactIngest
 from carbon_mesh.engine.anomaly import compute_anomaly
 from carbon_mesh.engine.recurring import mean_intensity, rank_hours_utc, shiftability_pct
-from carbon_mesh.engine.surplus import is_clean_surplus, surplus_offsets
+from carbon_mesh.engine.surplus import surplus_offsets
 from carbon_mesh.models.carbon import (
     BestTime,
     CarbonAnomaly,
@@ -215,112 +216,10 @@ def _zone_representative(mapper: GridMapper, grid_zone: str) -> CloudRegion | No
     return None
 
 
-def _signal_state(intensity: float) -> str:
-    if intensity <= 150:
-        return "green"
-    if intensity <= 400:
-        return "yellow"
-    return "red"
-
-
-def _marginal_note(avg: float, marginal: float | None) -> str | None:
-    """An honest caveat when the marginal picture changes the run-now/wait call.
-
-    Marginal -- what an extra kWh emits right now -- is what actually responds to
-    shifting load, not the average. When a grid is clean on average but fossil on the
-    margin, shifting helps more than the average implies; when the margin is already
-    clean, it helps little. Returns None when nothing notable applies."""
-    if marginal is None:
-        return None
-    if marginal >= 300 and marginal >= avg * 1.3:
-        return (
-            f"Clean on average, but extra load here is met mostly by fossil generation "
-            f"(~{round(marginal)} gCO₂/kWh on the margin), so shifting time or region cuts "
-            f"more than the average suggests."
-        )
-    if marginal <= 100:
-        return "Clean even on the margin: extra demand is largely served by low-carbon power."
-    return None
-
-
-async def _build_signal(
-    provider: str,
-    region: str,
-    zone: str,
-    longitude: float,
-    engine: SchedulingEngine,
-    source: CarbonDataSource,
-    marginal_source: "MarginalSource | None" = None,
-) -> CarbonSignal:
-    """Core run-now/wait decision for a grid zone. Shared by the cloud-region and
-    on-prem (zone) endpoints so both make the exact same marginal/surplus-aware call."""
-    _, points = await engine.forecast_zone(zone, longitude, 24)
-    intensities = [p.carbon_intensity_gco2_kwh for p in points]
-    now_v = intensities[0]
-    state = _signal_state(now_v)
-
-    # Soonest upcoming hour that's notably cleaner (>= 15% lower) than now.
-    best_i, best_v = 0, now_v
-    for i in range(1, len(intensities)):
-        if intensities[i] < best_v:
-            best_i, best_v = i, intensities[i]
-    notably_cleaner = best_i >= 1 and best_v <= now_v * 0.85
-
-    # Marginal is what actually responds to shifting load, so surface it (and an
-    # honest caveat) alongside the average-based traffic light. Clean surplus is the
-    # strongest run-now case: renewables abundant, so extra load soaks up would-be
-    # curtailed power.
-    current = await source.get_carbon_intensity(zone)
-    marginal = current.marginal_intensity_gco2_kwh
-    marginal_basis = "heuristic"
-    # If the operator configured a measured-marginal source for this zone, prefer it.
-    if marginal_source is not None and marginal_source.can_handle(zone):
-        measured = await marginal_source.marginal_intensity(zone)
-        if measured is not None:
-            marginal, marginal_basis = measured, "measured"
-    surplus = is_clean_surplus(current.renewable_percentage, now_v, marginal)
-
-    # Soonest upcoming clean-surplus window (the highest-value time to shift into).
-    surplus_window = next((h for h in surplus_offsets(points) if h >= 1), None)
-
-    if surplus:
-        advice, window_h, window_v = "run_now", None, None
-        note = (
-            "Renewables are abundant right now (likely surplus): extra load is largely served "
-            "by clean power that might otherwise be curtailed. Ideal time to run flexible jobs."
-        )
-    elif surplus_window is not None:
-        advice, window_h, window_v = (
-            "wait_for_cleaner",
-            surplus_window,
-            round(intensities[surplus_window]),
-        )
-        note = (
-            f"A clean-surplus window (renewables abundant) is expected in ~{surplus_window}h -- "
-            f"the highest-value time to run a flexible job."
-        )
-    elif state == "green" or not notably_cleaner:
-        advice, window_h, window_v = "run_now", None, None
-        note = _marginal_note(now_v, marginal)
-    else:
-        advice, window_h, window_v = "wait_for_cleaner", best_i, round(best_v)
-        note = _marginal_note(now_v, marginal)
-
-    return CarbonSignal(
-        provider=provider,
-        region=region,
-        grid_zone=zone,
-        intensity_gco2_kwh=round(now_v),
-        state=state,
-        advice=advice,
-        marginal_intensity_gco2_kwh=marginal,
-        marginal_note=note,
-        marginal_basis=marginal_basis,
-        clean_surplus=surplus,
-        surplus_window_in_hours=surplus_window,
-        cleaner_window_in_hours=window_h,
-        cleaner_window_intensity_gco2_kwh=window_v,
-    )
+# The run-now/wait decision lives in carbon_mesh.engine.signal so the static snapshot
+# builder can precompute the exact same signal the API serves. Aliased to the former
+# private name to keep the call sites below unchanged.
+_build_signal = build_signal
 
 
 # Zone-first route, declared BEFORE /carbon/signal/{provider}/{region} so
