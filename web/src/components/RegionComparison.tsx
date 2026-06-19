@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "../api/client";
+import { greenestRegion, snapshotEnabled, useSnapshot } from "../api/snapshot";
 import { intensityColor } from "../lib/intensity";
 import { card } from "../styles";
 import { InfoTip } from "./InfoTip";
@@ -58,15 +59,18 @@ export function RegionComparison() {
   const [provider, setProvider] = useState("aws");
   const [region, setRegion] = useState(DEFAULT_REGION.aws);
 
-  const { data: regions } = useQuery({
+  const { data: snapshot } = useSnapshot();
+
+  const { data: apiRegions } = useQuery({
     queryKey: ["regions", provider],
     queryFn: () => api.regions(provider),
     staleTime: 60 * 60_000,
+    enabled: !snapshotEnabled,
   });
-  const { data: current } = useQuery({
+  const { data: apiCurrent } = useQuery({
     queryKey: ["carbon", provider, region],
     queryFn: () => api.carbonIntensity(provider, region),
-    enabled: !!region,
+    enabled: !snapshotEnabled && !!region,
     staleTime: 5 * 60_000,
     retry: 1,
   });
@@ -76,9 +80,15 @@ export function RegionComparison() {
       api.route({ constraints: { providers: PROVIDERS, carbon_weight: 1, cost_weight: 0 } }),
     staleTime: 5 * 60_000,
     retry: 1,
+    enabled: !snapshotEnabled,
   });
 
-  const greenest = route?.recommended;
+  // Snapshot-first: region list, the chosen region's intensity, and the greenest region
+  // (carbon-weighted routing = lowest current intensity) are all derived from the CDN
+  // snapshot; the live API is only used when no snapshot is configured.
+  const regions = snapshot ? snapshot.regions.filter((r) => r.provider === provider) : apiRegions;
+  const current = snapshot ? snapshot.intensities[`${provider}/${region}`] : apiCurrent;
+  const greenest = greenestRegion(snapshot, PROVIDERS) ?? route?.recommended;
   const curV = current?.carbon_intensity_gco2_kwh;
   const greenV = greenest?.carbon_intensity_gco2_kwh;
   const isGreenest = greenest && greenest.provider === provider && greenest.region === region;
