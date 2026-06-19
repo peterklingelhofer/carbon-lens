@@ -1,6 +1,7 @@
 """Unit tests for the recently-added infrastructure: snapshot-backed source,
 cached source wrapper, forecast projection, and snapshot carry-forward."""
 
+import asyncio
 import importlib.util
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -239,6 +240,46 @@ def test_history_to_csv_emits_tidy_rows():
     assert lines[0] == "provider,region,timestamp,carbon_intensity_gco2_kwh,renewable_percentage"
     assert lines[1] == "aws,us-east-1,2026-06-14T00:00:00+00:00,300.0,40.0"
     assert len(lines) == 3  # header + 2 points
+
+
+def test_compute_signals_precomputes_per_region():
+    # Forecast sources None -> pure time-of-day model, so no network in tests.
+    snapshot_intensities = {
+        "aws/us-east-1": {
+            "grid_zone": "US-MIDA-PJM",
+            "carbon_intensity_gco2_kwh": 520.0,
+            "renewable_percentage": 8.0,
+            "timestamp": "2026-06-10T16:00:00+00:00",
+            "source": "eia",
+        },
+        "gcp/europe-north1": {
+            "grid_zone": "FI",
+            "carbon_intensity_gco2_kwh": 35.0,
+            "renewable_percentage": 92.0,
+            "timestamp": "2026-06-10T16:00:00+00:00",
+            "source": "entsoe",
+        },
+    }
+    region_meta = {
+        "aws/us-east-1": {"provider": "aws", "region": "us-east-1", "longitude": -77.0},
+        "gcp/europe-north1": {"provider": "gcp", "region": "europe-north1", "longitude": 25.0},
+    }
+    signals = asyncio.run(
+        build_snapshot.compute_signals(
+            snapshot_intensities,
+            region_meta,
+            mapper=None,
+            forecast_source=None,
+            weather_forecast_source=None,
+        )
+    )
+    assert set(signals) == {"aws/us-east-1", "gcp/europe-north1"}
+    # The dirty grid reads red; the very clean one reads green and says run now.
+    assert signals["aws/us-east-1"]["state"] == "red"
+    assert signals["aws/us-east-1"]["provider"] == "aws"
+    assert signals["gcp/europe-north1"]["state"] == "green"
+    assert signals["gcp/europe-north1"]["advice"] == "run_now"
+    assert signals["gcp/europe-north1"]["marginal_basis"] == "heuristic"
 
 
 def test_append_history_caps_to_max_points():
