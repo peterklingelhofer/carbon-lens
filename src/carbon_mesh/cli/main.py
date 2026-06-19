@@ -391,6 +391,44 @@ def run(
 
 
 @app.command()
+def calibration(
+    days: int = typer.Option(30, "--days", help="Look back this many days"),
+    json_output: bool = typer.Option(False, "--json", help="Output raw JSON"),
+):
+    """Check how well submit-time forecasts predicted the run-time actual reduction.
+
+    Only counts shifted jobs whose reduction was re-measured at execution -- the only
+    runs where predicted and actual are both real. A ratio near 1.0 means the forecast
+    is well-calibrated; <1 means it over-promised, >1 means it under-promised.
+    """
+    cal = ledger.calibration(ledger.read(), datetime.now(timezone.utc), days)
+    if json_output:
+        import json
+
+        console.print_json(json.dumps(cal))
+        return
+    if cal["samples"] == 0:
+        console.print(f"No re-measured shifted runs in the last {days} days to calibrate against.")
+        console.print(
+            "[dim]Run with `--measure-energy` (or against a measured-marginal source) so the "
+            "run-time actual is recorded.[/dim]"
+        )
+        return
+    ratio = cal["calibration_ratio"]
+    verdict = (
+        "well-calibrated"
+        if 0.85 <= ratio <= 1.15
+        else ("over-promised" if ratio < 0.85 else "under-promised")
+    )
+    console.print(f"[bold green]Forecast calibration — last {days} days[/bold green]")
+    console.print(f"  Samples:           {cal['samples']} re-measured shifted run(s)")
+    console.print(f"  Mean predicted:    {cal['mean_predicted_gco2_kwh']} gCO2/kWh")
+    console.print(f"  Mean actual:       {cal['mean_actual_gco2_kwh']} gCO2/kWh")
+    console.print(f"  Mean abs error:    {cal['mean_abs_error_gco2_kwh']} gCO2/kWh")
+    console.print(f"  Calibration ratio: {ratio} ([bold]{verdict}[/bold])")
+
+
+@app.command()
 def impact(
     days: int = typer.Option(30, "--days", help="Look back this many days"),
 ):
