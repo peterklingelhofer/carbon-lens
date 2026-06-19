@@ -86,3 +86,47 @@ def test_celery_apply_when_clean_dispatches_or_schedules(monkeypatch):
     task2 = _FakeTask()
     celery.apply_when_clean(task2, "aws/us-east-1")
     assert task2.calls[0]["countdown"] == 2 * 3600
+
+
+def test_celery_apply_when_clean_reports_on_defer(monkeypatch):
+    from carbon_mesh.integrations import celery
+
+    monkeypatch.setattr(
+        CarbonClient,
+        "signal",
+        lambda self, region: {
+            "advice": "wait_for_cleaner",
+            "clean_surplus": False,
+            "surplus_window_in_hours": 2,
+            "intensity_gco2_kwh": 500,
+            "cleaner_window_intensity_gco2_kwh": 300,
+            "marginal_basis": "heuristic",
+        },
+    )
+    reported: list[dict] = []
+    monkeypatch.setattr(CarbonClient, "report_impact", lambda self, entry: reported.append(entry))
+    task = _FakeTask()
+    celery.apply_when_clean(task, "aws/us-east-1", report=True)
+    assert task.calls[0]["countdown"] == 2 * 3600
+    assert reported == [
+        {
+            "region": "aws/us-east-1",
+            "deferred_hours": 2,
+            "reduction_gco2_kwh": 200.0,
+            "energy_kwh": None,
+            "basis": "heuristic",
+        }
+    ]
+
+
+def test_celery_apply_when_clean_does_not_report_when_clean(monkeypatch):
+    from carbon_mesh.integrations import celery
+
+    monkeypatch.setattr(
+        CarbonClient, "signal", lambda self, region: {"advice": "run_now", "clean_surplus": False}
+    )
+    reported: list[dict] = []
+    monkeypatch.setattr(CarbonClient, "report_impact", lambda self, entry: reported.append(entry))
+    task = _FakeTask()
+    celery.apply_when_clean(task, "aws/us-east-1", report=True)
+    assert reported == []  # dispatched now, no deferral to report
