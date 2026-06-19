@@ -1012,7 +1012,9 @@ export default function CarbonGlobe() {
           </p>
         )}
         {snapshot && (
-          <p style={{ margin: "3px 0 0", fontSize: "0.7rem", color: "#64748b" }}>
+          // #94a3b8 (not #64748b) so this small timestamp clears AA 4.5:1 on the
+          // dark globe -- #64748b measured 4.41:1, just under.
+          <p style={{ margin: "3px 0 0", fontSize: "0.7rem", color: "#94a3b8" }}>
             Data updated {timeAgo(snapshot.generated_at)}
           </p>
         )}
