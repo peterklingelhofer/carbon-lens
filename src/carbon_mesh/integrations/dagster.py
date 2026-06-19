@@ -38,9 +38,13 @@ def clean_window_op(
     max_wait_hours: float = 24.0,
     max_intensity: float | None = None,
     poll_seconds: float = 600.0,
+    report: bool = False,
     **op_kwargs: Any,
 ):
-    """Build a Dagster op that blocks until ``region`` is a good time to run (needs Dagster)."""
+    """Build a Dagster op that blocks until ``region`` is a good time to run (needs Dagster).
+
+    With ``report=True``, the shifted run's predicted impact is posted to the org
+    ledger (best-effort) so Dagster jobs feed org-statement like ``carbonlens run``."""
     if not _HAS_DAGSTER:
         raise ImportError("The Dagster integration needs Dagster installed (pip install dagster).")
     op_kwargs.setdefault("name", "wait_for_clean_grid")
@@ -48,7 +52,7 @@ def clean_window_op(
     @_dagster_op(**op_kwargs)
     def _wait() -> dict:
         return CarbonClient(api_url).wait_for_clean_window(
-            region, max_wait_hours, max_intensity, poll_seconds
+            region, max_wait_hours, max_intensity, poll_seconds, report=report
         )
 
     return _wait
