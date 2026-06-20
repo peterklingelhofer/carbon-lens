@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import { FORECAST_WEEK_URL, snapshotEnabled, useSnapshot, useWeekForecast } from "../api/snapshot";
 import { intensityColor } from "../lib/intensity";
@@ -36,6 +36,28 @@ function Heatmap({ provider, region }: { provider: string; region: string }) {
     enabled: !FORECAST_WEEK_URL, // CDN week-forecast available -> skip the API
   });
 
+  // Hovered (desktop) / tapped (mobile) cell tooltip with the underlying value.
+  // Declared before the early returns below to respect the rules of hooks.
+  const [tip, setTip] = useState<{
+    key: string;
+    x: number;
+    y: number;
+    label: string;
+    hour: number;
+    v: number | null;
+  } | null>(null);
+
+  // On touch, a tap opens the tooltip; close it again when the next pointer-down
+  // lands anywhere outside a heatmap cell.
+  useEffect(() => {
+    if (!tip) return;
+    const onDown = (e: PointerEvent) => {
+      if (!(e.target as HTMLElement).closest("[data-heatcell]")) setTip(null);
+    };
+    document.addEventListener("pointerdown", onDown);
+    return () => document.removeEventListener("pointerdown", onDown);
+  }, [tip]);
+
   // Normalize either source to {ts, c}: the CDN file's compact {t, c} or the API points.
   const points = week
     ? week.points.map((p) => ({ ts: p.t, c: p.c }))
@@ -70,10 +92,39 @@ function Heatmap({ provider, region }: { provider: string; region: string }) {
         ? "an Open-Meteo weather forecast"
         : "a time-of-day model";
 
+  // Hover (desktop) / tap (mobile) shows the cell's value; toggle off on re-tap.
+  const showTip = (
+    e: React.MouseEvent,
+    key: string,
+    label: string,
+    hour: number,
+    v: number | null,
+  ) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    setTip({ key, x: r.left + r.width / 2, y: r.top, label, hour, v });
+  };
+
   return (
     <div>
       <div style={{ overflowX: "auto" }}>
-        <table style={{ borderCollapse: "collapse", fontSize: "0.7rem" }}>
+        {/* table-layout: fixed so the labelled 0/6/12/18 columns stay the same
+            width as the blank ones -- their two-digit labels overflow (centred)
+            into the empty neighbour columns instead of widening their own. */}
+        <table
+          style={{
+            borderCollapse: "collapse",
+            fontSize: "0.7rem",
+            tableLayout: "fixed",
+            width: "max-content",
+          }}
+        >
+          <colgroup>
+            <col style={{ width: 90 }} />
+            {Array.from({ length: 24 }, (_, h) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: fixed 24-hour columns, index is the hour
+              <col key={h} style={{ width: 15 }} />
+            ))}
+          </colgroup>
           <thead>
             <tr>
               <th aria-label="day" />
@@ -81,7 +132,13 @@ function Heatmap({ provider, region }: { provider: string; region: string }) {
                 <th
                   // biome-ignore lint/suspicious/noArrayIndexKey: fixed 24-hour columns, index is the hour
                   key={h}
-                  style={{ width: 15, color: "var(--gray-400)", fontWeight: 400, padding: 0 }}
+                  style={{
+                    color: "var(--gray-400)",
+                    fontWeight: 400,
+                    padding: 0,
+                    overflow: "visible",
+                    whiteSpace: "nowrap",
+                  }}
                 >
                   {h % 6 === 0 ? h : ""}
                 </th>
@@ -89,33 +146,71 @@ function Heatmap({ provider, region }: { provider: string; region: string }) {
             </tr>
           </thead>
           <tbody>
-            {rows.map(([label, hours]) => (
+            {rows.map(([label, hours], di) => (
               <tr key={label}>
                 <td style={{ paddingRight: 8, whiteSpace: "nowrap", color: "var(--gray-500)" }}>
                   {label}
                 </td>
-                {hours.map((v, h) => (
-                  <td
-                    // biome-ignore lint/suspicious/noArrayIndexKey: fixed 24-hour columns, index is the hour
-                    key={h}
-                    title={
-                      v == null
-                        ? `${label} ${h}:00 — no data`
-                        : `${label} ${h}:00 — ${Math.round(v)} gCO₂/kWh`
-                    }
-                    style={{
-                      width: 15,
-                      height: 15,
-                      background: v == null ? "var(--gray-100)" : intensityColor(v),
-                      border: "1px solid var(--surface)",
-                    }}
-                  />
-                ))}
+                {hours.map((v, h) => {
+                  const key = `${di}-${h}`;
+                  const text =
+                    v == null
+                      ? `${label} ${h}:00 — no data`
+                      : `${label} ${h}:00 — ${Math.round(v)} gCO₂/kWh`;
+                  return (
+                    // biome-ignore lint/a11y/useKeyWithClickEvents: visual overview grid (168 cells); keyboard/SR users use the "View as a table" alternative and each cell carries an aria-label
+                    <td
+                      // biome-ignore lint/suspicious/noArrayIndexKey: fixed 24-hour columns, index is the hour
+                      key={h}
+                      data-heatcell
+                      aria-label={text}
+                      onMouseEnter={(e) => showTip(e, key, label, h, v)}
+                      onMouseLeave={() => setTip((cur) => (cur?.key === key ? null : cur))}
+                      onClick={(e) =>
+                        tip?.key === key ? setTip(null) : showTip(e, key, label, h, v)
+                      }
+                      style={{
+                        height: 15,
+                        background: v == null ? "var(--gray-100)" : intensityColor(v),
+                        border: "1px solid var(--surface)",
+                        cursor: "pointer",
+                        touchAction: "manipulation",
+                      }}
+                    />
+                  );
+                })}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      {tip && (
+        <div
+          role="tooltip"
+          style={{
+            position: "fixed",
+            left: tip.x,
+            top: tip.y - 8,
+            transform: "translate(-50%, -100%)",
+            background: "var(--gray-900)",
+            color: "var(--surface)",
+            padding: "5px 9px",
+            borderRadius: 6,
+            fontSize: "0.72rem",
+            lineHeight: 1.35,
+            whiteSpace: "nowrap",
+            pointerEvents: "none",
+            zIndex: 50,
+            boxShadow: "0 2px 10px rgba(0,0,0,0.3)",
+          }}
+        >
+          <strong>
+            {tip.label} · {String(tip.hour).padStart(2, "0")}:00
+          </strong>
+          <br />
+          {tip.v == null ? "no forecast" : `${Math.round(tip.v)} gCO₂/kWh`}
+        </div>
+      )}
       <p style={{ ...muted, marginTop: 8 }}>
         Greener = cleaner; each cell is one local-time hour. Projection from {method} — directional
         guidance, not a precise prediction.
@@ -157,6 +252,7 @@ export function CleanWindowHeatmap() {
               setProvider(p);
               setRegion(DEFAULT_REGION[p]);
             }}
+            aria-pressed={provider === p}
             style={{
               padding: "0.3rem 0.9rem",
               borderRadius: 6,

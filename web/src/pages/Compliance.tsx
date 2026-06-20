@@ -291,7 +291,7 @@ export function Compliance() {
           </button>
         </div>
         {csvPipeline.isError && (
-          <div style={{ color: "var(--red-400, #f87171)", fontSize: "0.8rem" }}>
+          <div role="alert" style={{ color: "var(--red-400, #f87171)", fontSize: "0.8rem" }}>
             {(csvPipeline.error as Error).message}
           </div>
         )}
@@ -347,26 +347,30 @@ export function Compliance() {
             </thead>
             <tbody>
               {reports.map((r) => (
-                <tr
-                  key={r.id}
-                  style={{
-                    borderBottom: "1px solid var(--gray-100)",
-                    cursor: "pointer",
-                  }}
-                  onClick={async () => {
-                    const full = await api.compliance.getReport(r.id, orgId);
-                    setActiveReport(full);
-                  }}
-                >
-                  <td
-                    style={{
-                      padding: "0.5rem",
-                      fontSize: "0.85rem",
-                      color: "var(--green-text)",
-                      fontWeight: 500,
-                    }}
-                  >
-                    {r.report_name}
+                <tr key={r.id} style={{ borderBottom: "1px solid var(--gray-100)" }}>
+                  <td style={{ padding: "0.5rem", fontSize: "0.85rem" }}>
+                    {/* A real button so the row is keyboard-operable; the row-level
+                        onClick it replaces was mouse-only. */}
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const full = await api.compliance.getReport(r.id, orgId);
+                        setActiveReport(full);
+                      }}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        padding: 0,
+                        font: "inherit",
+                        color: "var(--green-text)",
+                        fontWeight: 500,
+                        cursor: "pointer",
+                        textAlign: "left",
+                        textDecoration: "underline",
+                      }}
+                    >
+                      {r.report_name}
+                    </button>
                   </td>
                   <td style={{ padding: "0.5rem", fontSize: "0.8rem" }}>
                     {r.period_start.slice(0, 10)} - {r.period_end.slice(0, 10)}

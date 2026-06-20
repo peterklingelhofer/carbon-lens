@@ -114,8 +114,8 @@ export function RouteDemo() {
         <h3 style={{ marginTop: 0, marginBottom: "1rem" }}>Configure Routing</h3>
 
         {/* Providers */}
-        <div style={{ marginBottom: "1.25rem" }}>
-          <span
+        <fieldset style={{ border: "none", margin: "0 0 1.25rem", padding: 0, minWidth: 0 }}>
+          <legend
             style={{
               fontWeight: 600,
               display: "block",
@@ -123,13 +123,14 @@ export function RouteDemo() {
             }}
           >
             Cloud Providers
-          </span>
+          </legend>
           <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
             {["aws", "gcp", "azure", "scaleway", "ovh", "hetzner"].map((p) => (
               <button
                 type="button"
                 key={p}
                 onClick={() => toggleProvider(p)}
+                aria-pressed={providers.includes(p)}
                 style={{
                   padding: "0.5rem 1.25rem",
                   borderRadius: 6,
@@ -146,7 +147,7 @@ export function RouteDemo() {
               </button>
             ))}
           </div>
-        </div>
+        </fieldset>
 
         {/* Data Residency */}
         <div style={{ marginBottom: "1.25rem" }}>
@@ -216,7 +217,11 @@ export function RouteDemo() {
           {loading ? "Routing..." : "Find Greenest Region"}
         </button>
 
-        {error && <p style={{ color: "var(--red-500)", marginTop: "1rem" }}>{error}</p>}
+        {error && (
+          <p role="alert" style={{ color: "var(--red-500)", marginTop: "1rem" }}>
+            {error}
+          </p>
+        )}
       </div>
 
       {/* Result */}
@@ -225,7 +230,11 @@ export function RouteDemo() {
           <div
             style={{
               ...card,
-              background: "linear-gradient(135deg, var(--green-50), var(--surface))",
+              // A translucent green wash over the theme-aware --card-bg, NOT the
+              // fixed light --green-50 (which doesn't remap for dark mode and left
+              // the adaptive light text invisible on a near-white corner).
+              background:
+                "linear-gradient(135deg, rgba(34,197,94,0.12), transparent), var(--card-bg)",
               borderColor: "var(--green-200)",
             }}
           >
