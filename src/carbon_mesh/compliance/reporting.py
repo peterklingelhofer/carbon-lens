@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import uuid
 from collections import defaultdict
+from collections.abc import Callable
 from datetime import datetime, timezone
 
 from carbon_mesh.models.compliance import (
@@ -57,32 +58,40 @@ class ReportingEngine:
         period_start = min(c.period_start for c in calculations)
         period_end = max(c.period_end for c in calculations)
 
-        # Scope 2 (location-based) — direct compute/storage
-        s2_calcs = [c for c in calculations if c.scope.value == "scope_2"]
-        s2_location_total = sum(
-            c.emissions_kgco2e for c in s2_calcs if c.method == AccountingMethod.LOCATION_BASED
-        )
-        s2_market_total = sum(
-            c.emissions_kgco2e for c in s2_calcs if c.method == AccountingMethod.MARKET_BASED
-        )
+        # Scope 2 — direct compute/storage, split by accounting method
+        scope2_calcs = [c for c in calculations if c.scope.value == "scope_2"]
+        scope2_location_calcs = [
+            c for c in scope2_calcs if c.method == AccountingMethod.LOCATION_BASED
+        ]
+        scope2_market_calcs = [c for c in scope2_calcs if c.method == AccountingMethod.MARKET_BASED]
+        scope2_location_total = sum(c.emissions_kgco2e for c in scope2_location_calcs)
+        scope2_market_total = sum(c.emissions_kgco2e for c in scope2_market_calcs)
 
         # If all calcs use one method, report both as same (conservative)
-        if s2_location_total == 0 and s2_market_total > 0:
-            s2_location_total = s2_market_total
-        elif s2_market_total == 0 and s2_location_total > 0:
-            s2_market_total = s2_location_total
+        if scope2_location_total == 0 and scope2_market_total > 0:
+            scope2_location_calcs = scope2_market_calcs
+            scope2_location_total = scope2_market_total
+        elif scope2_market_total == 0 and scope2_location_total > 0:
+            scope2_market_calcs = scope2_location_calcs
+            scope2_market_total = scope2_location_total
 
-        s2_by_provider = _group_sum(s2_calcs, lambda c: c.provider)
-        s2_by_region = _group_sum(s2_calcs, lambda c: f"{c.provider}/{c.region}")
+        scope2_location_by_provider = _group_sum(scope2_location_calcs, lambda c: c.provider)
+        scope2_location_by_region = _group_sum(
+            scope2_location_calcs, lambda c: f"{c.provider}/{c.region}"
+        )
+        scope2_market_by_provider = _group_sum(scope2_market_calcs, lambda c: c.provider)
+        scope2_market_by_region = _group_sum(
+            scope2_market_calcs, lambda c: f"{c.provider}/{c.region}"
+        )
 
         # Scope 3 Category 1 — managed cloud services
-        s3_calcs = [c for c in calculations if c.scope.value == "scope_3_cat1"]
-        s3_total = sum(c.emissions_kgco2e for c in s3_calcs)
-        s3_by_provider = _group_sum(s3_calcs, lambda c: c.provider)
-        s3_by_service = _group_sum(s3_calcs, lambda c: c.service)
+        scope3_calcs = [c for c in calculations if c.scope.value == "scope_3_cat1"]
+        scope3_total = sum(c.emissions_kgco2e for c in scope3_calcs)
+        scope3_by_provider = _group_sum(scope3_calcs, lambda c: c.provider)
+        scope3_by_service = _group_sum(scope3_calcs, lambda c: c.service)
 
         # Totals
-        total_kgco2e = s2_location_total + s3_total
+        total_kgco2e = scope2_location_total + scope3_total
         total_energy = sum(c.energy_kwh for c in calculations)
         all_regions = {f"{c.provider}/{c.region}" for c in calculations}
         all_providers = {c.provider for c in calculations}
@@ -116,15 +125,15 @@ class ReportingEngine:
             period_start=period_start,
             period_end=period_end,
             generated_at=datetime.now(timezone.utc),
-            scope2_location_kgco2e=round(s2_location_total, 4),
-            scope2_location_by_provider=_round_dict(s2_by_provider),
-            scope2_location_by_region=_round_dict(s2_by_region),
-            scope2_market_kgco2e=round(s2_market_total, 4),
-            scope2_market_by_provider=_round_dict(s2_by_provider),
-            scope2_market_by_region=_round_dict(s2_by_region),
-            scope3_cat1_kgco2e=round(s3_total, 4),
-            scope3_cat1_by_provider=_round_dict(s3_by_provider),
-            scope3_cat1_by_service=_round_dict(s3_by_service),
+            scope2_location_kgco2e=round(scope2_location_total, 4),
+            scope2_location_by_provider=_round_dict(scope2_location_by_provider),
+            scope2_location_by_region=_round_dict(scope2_location_by_region),
+            scope2_market_kgco2e=round(scope2_market_total, 4),
+            scope2_market_by_provider=_round_dict(scope2_market_by_provider),
+            scope2_market_by_region=_round_dict(scope2_market_by_region),
+            scope3_cat1_kgco2e=round(scope3_total, 4),
+            scope3_cat1_by_provider=_round_dict(scope3_by_provider),
+            scope3_cat1_by_service=_round_dict(scope3_by_service),
             total_kgco2e=round(total_kgco2e, 4),
             total_energy_kwh=round(total_energy, 4),
             avg_renewable_percentage=round(avg_renewable, 1),
@@ -136,7 +145,7 @@ class ReportingEngine:
             data_quality_summary=dict(quality_counts),
             calculation_count=len(calculations),
             eu_taxonomy_eligible=True,
-            eu_taxonomy_aligned=avg_renewable >= 80,  # Simplified: aligned if >80% renewable
+            eu_taxonomy_aligned=avg_renewable >= 80,  # Simplified: aligned at 80%+ renewable
             taxonomy_notes=(
                 "Substantially contributes to climate change mitigation via carbon-aware compute scheduling. "
                 "EU Taxonomy alignment requires >80% renewable energy and Do No Significant Harm assessment."
@@ -158,12 +167,12 @@ class ReportingEngine:
 
 def _group_sum(
     calcs: list[EmissionsCalculation],
-    key_fn: object,
+    key_fn: Callable[[EmissionsCalculation], str],
 ) -> dict[str, float]:
     """Group calculations by key function and sum emissions."""
     groups: dict[str, float] = defaultdict(float)
     for c in calcs:
-        groups[key_fn(c)] += c.emissions_kgco2e  # type: ignore[operator]
+        groups[key_fn(c)] += c.emissions_kgco2e
     return dict(groups)
 
 

@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 import httpx
 
@@ -44,17 +44,11 @@ class ElectricityMapsCarbonSource:
         )
 
     async def get_carbon_intensity_batch(self, grid_zones: list[str]) -> dict[str, CarbonIntensity]:
-        results = {}
+        results: dict[str, CarbonIntensity] = {}
         for zone in grid_zones:
             try:
                 results[zone] = await self.get_carbon_intensity(zone)
             except httpx.HTTPError:
-                # Skip zones that fail — caller handles missing data
-                results[zone] = CarbonIntensity(
-                    grid_zone=zone,
-                    carbon_intensity_gco2_kwh=999,
-                    renewable_percentage=0,
-                    timestamp=datetime.now(timezone.utc),
-                    source="electricity_maps_error",
-                )
+                # Omit the failed zone; the hybrid chain fills it from mock
+                continue
         return results

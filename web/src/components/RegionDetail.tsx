@@ -6,6 +6,7 @@ import {
   useForecastSnapshot,
   useRegionHistoryArchive,
   useSignal,
+  useSnapshotOrApi,
   useWeatherSnapshot,
 } from "../api/snapshot";
 import { relativeToUsual } from "../lib/anomaly";
@@ -157,19 +158,13 @@ export function RegionHistory({
 // call); otherwise fetched on-demand from /carbon/weather when a region is opened.
 export function RegionWeather({ provider, region }: { provider: string; region: string }) {
   const snap = useWeatherSnapshot(provider, region);
-  const {
-    data: apiData,
-    isLoading,
-    isError,
-  } = useQuery({
-    queryKey: ["weather", provider, region],
-    queryFn: () => api.regionWeather(provider, region),
-    staleTime: 10 * 60_000,
-    retry: 1,
-    enabled: !snap && !snapshotEnabled, // snapshot has the weather; never wake the API in prod
-  });
+  const { data, isLoading, isError } = useSnapshotOrApi(
+    snap,
+    ["weather", provider, region],
+    () => api.regionWeather(provider, region),
+    { staleTime: 10 * 60_000, retry: 1 },
+  );
 
-  const data = snap ?? apiData;
   // Stay quiet on load/error: weather is a nice-to-have driver, not core data.
   if ((!snap && (isLoading || isError)) || !data) return null;
 
@@ -211,19 +206,13 @@ export function RegionWeather({ provider, region }: { provider: string; region: 
 // curve as a fallback). Hidden when there's no usable signal yet.
 export function RegionBestTime({ provider, region }: { provider: string; region: string }) {
   const snap = useBestTimeSnapshot(provider, region);
-  const {
-    data: apiData,
-    isLoading,
-    isError,
-  } = useQuery({
-    queryKey: ["best-time", provider, region],
-    queryFn: () => api.bestTime(provider, region),
-    staleTime: 30 * 60_000,
-    retry: 1,
-    enabled: !snap && !snapshotEnabled, // snapshot has the greenest hour; never wake the API in prod
-  });
+  const { data, isLoading, isError } = useSnapshotOrApi(
+    snap,
+    ["best-time", provider, region],
+    () => api.bestTime(provider, region),
+    { staleTime: 30 * 60_000, retry: 1 },
+  );
 
-  const data = snap ?? apiData;
   if ((!snap && (isLoading || isError)) || !data || data.cleanest_hour_utc == null) return null;
   const hh = String(data.cleanest_hour_utc).padStart(2, "0");
   const savings = data.shift_savings_pct;
@@ -272,6 +261,8 @@ export function RegionBestTime({ provider, region }: { provider: string; region:
 // elsewhere it's the labelled time-of-day model.
 export function RegionForecast({ provider, region }: { provider: string; region: string }) {
   const snap = useForecastSnapshot(provider, region);
+  // Snapshot curve and API forecast carry different point shapes, so keep them
+  // separate here (the hook would type them as one) and normalize below.
   const { data, isLoading, isError } = useQuery({
     queryKey: ["forecast", provider, region],
     queryFn: () => api.carbonForecast(provider, region, 24),

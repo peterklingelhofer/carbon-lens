@@ -78,7 +78,6 @@ class EmissionsCalculator:
                 logger.warning("No carbon data for zone %s — skipping", zone)
                 continue
 
-            # GHG Protocol formula: kgCO2e = kWh × gCO2/kWh / 1000
             emissions_kgco2e = rec.energy_kwh * ci.carbon_intensity_gco2_kwh / 1000.0
 
             calculations.append(

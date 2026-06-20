@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { dataBranchUrl } from "./snapshot";
 import type { SitingOption, SitingRecommendation } from "./types";
 
 // The "state of clean compute" report, published to the data branch every 30 min by
@@ -33,9 +34,8 @@ export interface CleanComputeReport {
 const HOURS_PER_YEAR = 8760;
 
 // Build the same SitingRecommendation the /carbon/siting endpoint returns, but from the
-// published greenest-regions report: filter by provider and compute annual kg client-side
-// (typical gCO2/kWh x kW x 8760 / 1000), matching the server formula exactly. Lets the
-// siting picker run fully static off the CDN report instead of waking the API.
+// published greenest-regions report, so the siting picker runs fully static off the CDN
+// report instead of waking the API.
 export function sitingFromGreenest(
   greenest: GreenRegion[],
   providers: string[],
@@ -85,11 +85,8 @@ export interface ForecastCalibration {
   days: number;
 }
 
-const SNAPSHOT_URL = import.meta.env.VITE_SNAPSHOT_URL || "";
 // The report sits next to snapshot.json on the data branch.
-export const REPORT_URL = SNAPSHOT_URL
-  ? SNAPSHOT_URL.replace("snapshot.json", "clean_compute_report.json")
-  : "";
+export const REPORT_URL = dataBranchUrl("clean_compute_report.json");
 
 export function useCleanComputeReport() {
   return useQuery({
@@ -115,9 +112,7 @@ export interface CleanComputeHistory {
   days: ReportHistoryDay[];
 }
 
-export const HISTORY_URL = SNAPSHOT_URL
-  ? SNAPSHOT_URL.replace("snapshot.json", "clean_compute_history.json")
-  : "";
+export const HISTORY_URL = dataBranchUrl("clean_compute_history.json");
 
 export function useCleanComputeHistory() {
   return useQuery({

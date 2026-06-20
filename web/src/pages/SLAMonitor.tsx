@@ -2,9 +2,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "../api/client";
 import { InfoTip } from "../components/InfoTip";
-import { card, section as sectionFn } from "../styles";
+import { StatCard } from "../components/StatCard";
+import { intensityVarColor } from "../lib/intensity";
+import { card, inputStyle, labelStyle, sectionStyle, td, th } from "../styles";
 
-const section = sectionFn(1100);
+const section = sectionStyle(1100);
 
 export function SLAMonitor() {
   const queryClient = useQueryClient();
@@ -266,12 +268,7 @@ export function SLAMonitor() {
                 style={{
                   fontSize: "0.8rem",
                   textAlign: "center",
-                  color:
-                    maxCarbon <= 50
-                      ? "var(--green-text)"
-                      : maxCarbon <= 200
-                        ? "var(--green-500)"
-                        : "var(--orange-400)",
+                  color: intensityVarColor(maxCarbon),
                   fontWeight: 600,
                 }}
               >
@@ -632,69 +629,6 @@ function StatusBadge({ status, style }: { status: string; style?: React.CSSPrope
     </span>
   );
 }
-
-function StatCard({
-  label,
-  value,
-  unit,
-  positive,
-}: {
-  label: string;
-  value: string;
-  unit?: string;
-  positive?: boolean;
-}) {
-  return (
-    <div
-      style={{
-        padding: "0.75rem",
-        borderRadius: 8,
-        border: "1px solid var(--gray-200)",
-        background: "var(--surface-alt)",
-      }}
-    >
-      <div style={{ fontSize: "0.7rem", color: "var(--gray-500)" }}>{label}</div>
-      <div
-        style={{
-          fontSize: "1.3rem",
-          fontWeight: 700,
-          color: positive ? "var(--green-700)" : "inherit",
-        }}
-      >
-        {value}
-        {unit && (
-          <span style={{ fontSize: "0.75rem", fontWeight: 400, marginLeft: 4 }}>{unit}</span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-const labelStyle: React.CSSProperties = {
-  fontSize: "0.8rem",
-  color: "var(--gray-500)",
-  display: "block",
-  marginBottom: 4,
-};
-
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "0.5rem",
-  borderRadius: 6,
-  border: "1px solid var(--gray-200)",
-  fontSize: "0.9rem",
-  boxSizing: "border-box",
-};
-
-const th: React.CSSProperties = {
-  textAlign: "left",
-  padding: "0.5rem",
-  fontSize: "0.75rem",
-  fontWeight: 600,
-  color: "var(--gray-500)",
-};
-
-const td: React.CSSProperties = { padding: "0.5rem", fontSize: "0.85rem" };
 
 const smallButton: React.CSSProperties = {
   padding: "0.25rem 0.5rem",

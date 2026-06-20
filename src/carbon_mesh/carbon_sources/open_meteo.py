@@ -7,8 +7,7 @@ Docs: https://open-meteo.com/
 
 from datetime import datetime, timezone
 
-import httpx
-
+from carbon_mesh.carbon_sources.base import SingleZoneCarbonSource
 from carbon_mesh.carbon_sources.http_pool import shared_client
 from carbon_mesh.models.carbon import CarbonIntensity
 
@@ -69,6 +68,11 @@ ZONE_COORDINATES: dict[str, tuple[float, float]] = {
     "PL": (52.2, 21.0),
     "AT": (48.2, 16.4),
 }
+
+# Divisor in the renewable -> intensity reduction. Deliberately > 100 so even a
+# 100%-renewable weather reading only knocks ~2/3 off the baseline, never to zero:
+# one weather point can't represent a whole zone, and there's always a fossil floor
+_RENEWABLE_REDUCTION_DIVISOR = 150
 
 # Typical grid base carbon intensity for regions (when weather data isn't available)
 # This represents the non-weather-dependent fossil baseline
@@ -133,7 +137,7 @@ def weather_renewable_fraction(radiation: float, wind_speed: float) -> float:
     return min(100.0, solar_pct + wind_pct) / 100.0
 
 
-class OpenMeteoCarbonSource:
+class OpenMeteoCarbonSource(SingleZoneCarbonSource):
     def can_handle(self, grid_zone: str) -> bool:
         return grid_zone in ZONE_COORDINATES
 
@@ -150,8 +154,8 @@ class OpenMeteoCarbonSource:
 
         # Use baseline if known, otherwise estimate from weather
         baseline = _BASELINE_INTENSITY.get(grid_zone, 350)
-        # Higher renewables → lower intensity
-        intensity = baseline * (1 - renewable_pct / 150)
+        # Higher renewables mean lower intensity
+        intensity = baseline * (1 - renewable_pct / _RENEWABLE_REDUCTION_DIVISOR)
         intensity = max(10, intensity)
 
         return CarbonIntensity(
@@ -161,16 +165,6 @@ class OpenMeteoCarbonSource:
             timestamp=datetime.now(timezone.utc),
             source="open_meteo",
         )
-
-    async def get_carbon_intensity_batch(self, grid_zones: list[str]) -> dict[str, CarbonIntensity]:
-        results: dict[str, CarbonIntensity] = {}
-        for zone in grid_zones:
-            if self.can_handle(zone):
-                try:
-                    results[zone] = await self.get_carbon_intensity(zone)
-                except (httpx.HTTPError, ValueError):
-                    pass
-        return results
 
 
 class OpenMeteoForecastSource:

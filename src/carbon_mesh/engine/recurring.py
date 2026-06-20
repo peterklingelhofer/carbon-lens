@@ -9,7 +9,24 @@ forecast curve as a fallback -- a pure function so it's easy to test.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
+
+
+def _parse_utc(ts: str | None) -> datetime | None:
+    """Parse an ISO-8601 timestamp to a UTC-aware datetime, or None if unparseable.
+
+    Handles a trailing Z, treats naive timestamps as UTC, and normalizes any
+    tz-aware value to UTC so callers can compare or bucket consistently
+    """
+    if not ts:
+        return None
+    try:
+        t = datetime.fromisoformat(ts.replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    if t.tzinfo is None:
+        return t.replace(tzinfo=timezone.utc)
+    return t.astimezone(timezone.utc)
 
 
 def rank_hours_utc(points: list[dict]) -> list[dict]:
@@ -22,13 +39,12 @@ def rank_hours_utc(points: list[dict]) -> list[dict]:
     buckets: dict[int, list[float]] = {}
     for p in points:
         t, c = p.get("t"), p.get("c")
-        if t is None or c is None:
+        if c is None:
             continue
-        try:
-            hour = datetime.fromisoformat(t).hour
-        except (TypeError, ValueError):
+        parsed = _parse_utc(t)
+        if parsed is None:
             continue
-        buckets.setdefault(hour, []).append(float(c))
+        buckets.setdefault(parsed.hour, []).append(float(c))
 
     ranked = [
         {"hour": h, "mean_gco2_kwh": round(sum(vals) / len(vals), 1), "samples": len(vals)}

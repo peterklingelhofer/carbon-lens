@@ -1,10 +1,13 @@
 """CarbonLens CLI — Find the greenest cloud region for your workload."""
 
+import glob
+import json
 import os
 import subprocess
 import time
 from datetime import datetime, timezone
-from typing import Optional
+from pathlib import Path
+from typing import Callable, Optional, TypeVar
 
 import typer
 from rich.console import Console
@@ -12,6 +15,7 @@ from rich.table import Table
 
 from carbon_mesh.cli import client, energy, ledger
 from carbon_mesh.cli.green_run import choose_run_index, choose_run_plan
+from carbon_mesh.cli.ledger import verdict
 from carbon_mesh.cli.plan import plan_estimate
 
 app = typer.Typer(
@@ -22,6 +26,59 @@ app = typer.Typer(
 console = Console()
 config_app = typer.Typer(help="Manage CLI configuration")
 app.add_typer(config_app, name="config")
+
+_T = TypeVar("_T")
+
+
+def _emit_json(data) -> None:
+    """Print a value as pretty JSON (the --json output path)."""
+    console.print_json(json.dumps(data))
+
+
+def _call(fn: Callable[..., _T], *args, **kwargs) -> _T:
+    """Call an API client function, turning any error into a clean Exit(1)."""
+    try:
+        return fn(*args, **kwargs)
+    except Exception as e:
+        console.print(f"[red]Error:[/red] {e}")
+        raise typer.Exit(1)
+
+
+def _intensity_color(gco2: float) -> str:
+    """Carbon-intensity color ladder: green clean, yellow moderate, red dirty."""
+    return "green" if gco2 <= 50 else ("yellow" if gco2 <= 200 else "red")
+
+
+def _region_table(regions: list[dict], title: str = "By region") -> Table:
+    """A Region/Jobs/Shifted/kg-avoided breakdown table."""
+    table = Table(title=title)
+    table.add_column("Region")
+    table.add_column("Jobs", justify="right")
+    table.add_column("Shifted", justify="right")
+    table.add_column("kg avoided", justify="right", style="green")
+    for r in regions:
+        table.add_row(r["region"], str(r["jobs"]), str(r["shifted"]), f"{r['kg_avoided']:.1f}")
+    return table
+
+
+def _load_fleet_entries(directory: str) -> list[tuple[str, list[dict]]]:
+    """Glob a directory of per-host *.jsonl ledgers; Exit(1) if none are found."""
+    files = sorted(glob.glob(str(Path(directory) / "*.jsonl")))
+    if not files:
+        console.print(f"[red]Error:[/red] no *.jsonl ledger files in {directory}")
+        raise typer.Exit(1)
+    return [(f, ledger.read_file(Path(f))) for f in files]
+
+
+def _parse_region_labels(region: str) -> list[str]:
+    """Split a comma-separated region option into validated provider/region labels."""
+    labels = [r.strip() for r in region.split(",") if r.strip()]
+    for lbl in labels:
+        provider, _, reg = lbl.partition("/")
+        if not provider or not reg:
+            console.print(f"[red]Error:[/red] region must be provider/region (got '{lbl}')")
+            raise typer.Exit(1)
+    return labels
 
 
 @app.command()
@@ -42,16 +99,10 @@ def route(
     provider_list = [p.strip() for p in providers.split(",")]
     residency_list = [r.strip() for r in residency.split(",")] if residency else None
 
-    try:
-        data = client.route(provider_list, residency_list, carbon_weight, cost_weight)
-    except Exception as e:
-        console.print(f"[red]Error:[/red] {e}")
-        raise typer.Exit(1)
+    data = _call(client.route, provider_list, residency_list, carbon_weight, cost_weight)
 
     if json_output:
-        import json
-
-        console.print_json(json.dumps(data))
+        _emit_json(data)
         return
 
     rec = data["recommended"]
@@ -75,11 +126,7 @@ def route(
         table.add_column("Score", justify="right")
 
         for i, alt in enumerate(data["alternatives"][:10], start=2):
-            color = (
-                "green"
-                if alt["carbon_intensity_gco2_kwh"] <= 50
-                else ("yellow" if alt["carbon_intensity_gco2_kwh"] <= 200 else "red")
-            )
+            color = _intensity_color(alt["carbon_intensity_gco2_kwh"])
             table.add_row(
                 str(i),
                 f"{alt['provider']}/{alt['region']}",
@@ -104,23 +151,13 @@ def intensity(
         )
         raise typer.Exit(1)
 
-    try:
-        data = client.intensity(parts[0], parts[1])
-    except Exception as e:
-        console.print(f"[red]Error:[/red] {e}")
-        raise typer.Exit(1)
+    data = _call(client.intensity, parts[0], parts[1])
 
     if json_output:
-        import json
-
-        console.print_json(json.dumps(data))
+        _emit_json(data)
         return
 
-    color = (
-        "green"
-        if data["carbon_intensity_gco2_kwh"] <= 50
-        else ("yellow" if data["carbon_intensity_gco2_kwh"] <= 200 else "red")
-    )
+    color = _intensity_color(data["carbon_intensity_gco2_kwh"])
     console.print()
     console.print(f"[bold]{region}[/bold]")
     console.print(f"  Grid Zone:        {data['grid_zone']}")
@@ -139,16 +176,10 @@ def regions(
     json_output: bool = typer.Option(False, "--json", help="Output raw JSON"),
 ):
     """List all supported cloud regions."""
-    try:
-        data = client.regions(provider)
-    except Exception as e:
-        console.print(f"[red]Error:[/red] {e}")
-        raise typer.Exit(1)
+    data = _call(client.regions, provider)
 
     if json_output:
-        import json
-
-        console.print_json(json.dumps(data))
+        _emit_json(data)
         return
 
     table = Table(title=f"Cloud Regions ({len(data)} total)")
@@ -167,16 +198,10 @@ def report(
     json_output: bool = typer.Option(False, "--json", help="Output raw JSON"),
 ):
     """View carbon savings report."""
-    try:
-        data = client.savings()
-    except Exception as e:
-        console.print(f"[red]Error:[/red] {e}")
-        raise typer.Exit(1)
+    data = _call(client.savings)
 
     if json_output:
-        import json
-
-        console.print_json(json.dumps(data))
+        _emit_json(data)
         return
 
     console.print()
@@ -249,18 +274,11 @@ def run(
     dry_run: bool = typer.Option(False, "--dry-run", help="Show the plan; don't wait or run"),
 ):
     """Run a command at the cleanest time (and, with several regions, the cleanest place)."""
-    labels = [r.strip() for r in region.split(",") if r.strip()]
+    labels = _parse_region_labels(region)
     fetched: dict[str, dict] = {}
     for lbl in labels:
         provider, _, reg = lbl.partition("/")
-        if not provider or not reg:
-            console.print(f"[red]Error:[/red] --region must be provider/region (got '{lbl}')")
-            raise typer.Exit(1)
-        try:
-            fetched[lbl] = client.forecast(provider, reg, max_wait_hours)
-        except Exception as e:
-            console.print(f"[red]Error:[/red] {e}")
-            raise typer.Exit(1)
+        fetched[lbl] = _call(client.forecast, provider, reg, max_wait_hours)
 
     multi = len(labels) > 1
     if not multi:
@@ -287,27 +305,27 @@ def run(
         forecast = fetched[chosen_label]
         intensities = [p["carbon_intensity_gco2_kwh"] for p in forecast.get("points", [])]
 
-    now_v = intensities[0] if intensities else None
-    chosen_v = intensities[idx] if intensities else None
+    now_intensity = intensities[0] if intensities else None
+    chosen_intensity = intensities[idx] if intensities else None
     where = f" in [bold]{chosen_label}[/bold]" if multi else ""
 
     if idx == 0:
         if reason == "surplus_now":
             console.print(
-                f"[green]Clean surplus now[/green]{where} (~{now_v:.0f} gCO2/kWh, renewables "
+                f"[green]Clean surplus now[/green]{where} (~{now_intensity:.0f} gCO2/kWh, renewables "
                 "abundant) — the highest-value time to run. Running immediately."
             )
-        elif reason == "now_no_benefit" and now_v is not None:
+        elif reason == "now_no_benefit" and now_intensity is not None:
             console.print(
-                f"[green]Now is about as clean as it gets[/green]{where} (~{now_v:.0f} gCO2/kWh); "
+                f"[green]Now is about as clean as it gets[/green]{where} (~{now_intensity:.0f} gCO2/kWh); "
                 "waiting would save little, so running now (delay has its own cost)."
             )
-        elif now_v is not None:
+        elif now_intensity is not None:
             console.print(
-                f"[green]Grid is green now[/green]{where} (~{now_v:.0f} gCO2/kWh) — running now."
+                f"[green]Grid is green now[/green]{where} (~{now_intensity:.0f} gCO2/kWh) — running now."
             )
-    elif now_v is not None and chosen_v is not None:
-        saved = (now_v - chosen_v) / now_v * 100 if now_v else 0.0
+    elif now_intensity is not None and chosen_intensity is not None:
+        saved = (now_intensity - chosen_intensity) / now_intensity * 100 if now_intensity else 0.0
         when = forecast["points"][idx]["timestamp"][:16].replace("T", " ")
         note = {
             "surplus": "clean-surplus window (renewables abundant), the highest-value time to run",
@@ -315,7 +333,7 @@ def run(
         }.get(reason, "cleanest upcoming hour")
         console.print(
             f"[cyan]Deferring {idx}h[/cyan] to {when} UTC{where} "
-            f"(~{chosen_v:.0f} vs ~{now_v:.0f} gCO2/kWh now, {saved:.0f}% cleaner) — {note}."
+            f"(~{chosen_intensity:.0f} vs ~{now_intensity:.0f} gCO2/kWh now, {saved:.0f}% cleaner) — {note}."
         )
 
     if dry_run:
@@ -326,34 +344,41 @@ def run(
         console.print(f"Waiting {idx}h before running… (Ctrl-C to cancel)")
         time.sleep(idx * 3600)
 
-    # Measured impact: re-read the ACTUAL intensity now, at execution time, and
-    # compare to the real reading when we started (now_v). That's a verified avoided
-    # intensity, not the forecast we used to pick the window. Fall back to the
-    # forecast if the live read fails.
-    run_v = now_v
+    # Measured impact: the avoided intensity is a live read at execution time vs the
+    # real reading at start, not the forecast we picked the window with. Fall back to
+    # the forecast if the live read fails.
+    run_intensity = now_intensity
     basis = "now" if idx == 0 else "forecast"
     if idx > 0:
         cprov, _, creg = chosen_label.partition("/")
         try:
-            run_v = client.intensity(cprov, creg)["carbon_intensity_gco2_kwh"]
+            run_intensity = client.intensity(cprov, creg)["carbon_intensity_gco2_kwh"]
             basis = "measured"
         except Exception:
-            run_v = chosen_v
-    have_shift = idx > 0 and now_v is not None
-    predicted = max(0.0, now_v - chosen_v) if (have_shift and chosen_v is not None) else 0.0
-    measured = max(0.0, now_v - run_v) if (have_shift and run_v is not None) else 0.0
+            run_intensity = chosen_intensity
+    have_shift = idx > 0 and now_intensity is not None
+    predicted = (
+        max(0.0, now_intensity - chosen_intensity)
+        if (have_shift and chosen_intensity is not None)
+        else 0.0
+    )
+    measured = (
+        max(0.0, now_intensity - run_intensity)
+        if (have_shift and run_intensity is not None)
+        else 0.0
+    )
 
     # Self-correcting forecast: nudge the prediction by how this host's past forecasts
     # actually landed (rolling calibration ratio from the local ledger). We keep the raw
     # prediction too, so the adjustment never feeds back into the calibration that made it.
     # Prefer the chosen region's own track record (grids differ); fall back to the fleet.
-    _entries = ledger.read()
-    _now = datetime.now(timezone.utc)
-    region_cal = ledger.calibration_by_region(_entries, _now, 30).get(chosen_label)
+    entries = ledger.read()
+    now = datetime.now(timezone.utc)
+    region_cal = ledger.calibration_by_region(entries, now, 30).get(chosen_label)
     if region_cal and region_cal["samples"] >= 3:
         cal, cal_scope = region_cal, chosen_label
     else:
-        cal, cal_scope = ledger.calibration(_entries, _now, 30), "across regions"
+        cal, cal_scope = ledger.calibration(entries, now, 30), "across regions"
     ratio = (
         cal["calibration_ratio"] if cal["samples"] >= 3 and cal["calibration_ratio"] > 0 else None
     )
@@ -366,7 +391,6 @@ def run(
             f"actual over {cal['samples']} runs)[/dim]"
         )
 
-    # Tell the command which region was chosen, so it can target it.
     env = {**os.environ, "CARBONLENS_REGION": chosen_label} if multi else None
 
     # Optionally measure the job's actual CPU-package energy (RAPL) around the run,
@@ -391,9 +415,9 @@ def run(
         "region": chosen_label,
         "reason": reason,
         "deferred_hours": idx,
-        "now_gco2_kwh": now_v,
-        "chosen_gco2_kwh": chosen_v,
-        "run_gco2_kwh": run_v,
+        "now_gco2_kwh": now_intensity,
+        "chosen_gco2_kwh": chosen_intensity,
+        "run_gco2_kwh": run_intensity,
         "basis": basis,
         "predicted_reduction_gco2_kwh": round(predicted, 1),
         "predicted_reduction_calibrated_gco2_kwh": predicted_calibrated,
@@ -431,9 +455,7 @@ def calibration(
     cal = ledger.calibration(entries, now, days)
     by_region = ledger.calibration_by_region(entries, now, days)
     if json_output:
-        import json
-
-        console.print_json(json.dumps({"overall": cal, "by_region": by_region}))
+        _emit_json({"overall": cal, "by_region": by_region})
         return
     if cal["samples"] == 0:
         console.print(f"No re-measured shifted runs in the last {days} days to calibrate against.")
@@ -443,20 +465,13 @@ def calibration(
         )
         return
 
-    def _verdict(r: float) -> str:
-        return (
-            "well-calibrated"
-            if 0.85 <= r <= 1.15
-            else ("over-promised" if r < 0.85 else "under-promised")
-        )
-
     ratio = cal["calibration_ratio"]
     console.print(f"[bold green]Forecast calibration — last {days} days[/bold green]")
     console.print(f"  Samples:           {cal['samples']} re-measured shifted run(s)")
     console.print(f"  Mean predicted:    {cal['mean_predicted_gco2_kwh']} gCO2/kWh")
     console.print(f"  Mean actual:       {cal['mean_actual_gco2_kwh']} gCO2/kWh")
     console.print(f"  Mean abs error:    {cal['mean_abs_error_gco2_kwh']} gCO2/kWh")
-    console.print(f"  Calibration ratio: {ratio} ([bold]{_verdict(ratio)}[/bold])")
+    console.print(f"  Calibration ratio: {ratio} ([bold]{verdict(ratio)}[/bold])")
 
     if len(by_region) > 1:
         table = Table(title="By region (grids differ in forecastability)")
@@ -471,7 +486,7 @@ def calibration(
                 str(rc["samples"]),
                 f"{rc['calibration_ratio']}",
                 f"{rc['mean_abs_error_gco2_kwh']} gCO2/kWh",
-                _verdict(rc["calibration_ratio"]),
+                verdict(rc["calibration_ratio"]),
             )
         console.print(table)
 
@@ -556,26 +571,16 @@ def fleet_impact(
     json_output: bool = typer.Option(False, "--json", help="Output raw JSON"),
 ):
     """Org-level verified carbon impact across a fleet of hosts' impact ledgers."""
-    import glob
-    from pathlib import Path
-
-    files = sorted(glob.glob(str(Path(directory) / "*.jsonl")))
-    if not files:
-        console.print(f"[red]Error:[/red] no *.jsonl ledger files in {directory}")
-        raise typer.Exit(1)
-    entries: list[dict] = []
-    for f in files:
-        entries.extend(ledger.read_file(Path(f)))
+    loaded = _load_fleet_entries(directory)
+    entries = [e for _, host_entries in loaded for e in host_entries]
     summary = ledger.fleet_summary(entries, datetime.now(timezone.utc), days)
 
     if json_output:
-        import json
-
-        console.print_json(json.dumps(summary))
+        _emit_json(summary)
         return
 
     console.print(
-        f"[bold green]Fleet carbon impact — last {days} days[/bold green] ({len(files)} hosts)"
+        f"[bold green]Fleet carbon impact — last {days} days[/bold green] ({len(loaded)} hosts)"
     )
     console.print(f"  Jobs run:           {summary['jobs']}")
     console.print(
@@ -586,14 +591,7 @@ def fleet_impact(
         f"(from {summary['jobs_with_energy']} jobs run with --energy-kwh)"
     )
     if summary["regions"]:
-        table = Table(title="By region")
-        table.add_column("Region")
-        table.add_column("Jobs", justify="right")
-        table.add_column("Shifted", justify="right")
-        table.add_column("kg avoided", justify="right", style="green")
-        for r in summary["regions"]:
-            table.add_row(r["region"], str(r["jobs"]), str(r["shifted"]), f"{r['kg_avoided']:.1f}")
-        console.print(table)
+        console.print(_region_table(summary["regions"]))
 
 
 @app.command(name="org-statement")
@@ -606,26 +604,16 @@ def org_statement(
     json_output: bool = typer.Option(False, "--json", help="Output raw JSON"),
 ):
     """A methodology-stated, org-level carbon-aware-compute statement (for disclosure)."""
-    import glob
-    from pathlib import Path
-
-    files = sorted(glob.glob(str(Path(directory) / "*.jsonl")))
-    if not files:
-        console.print(f"[red]Error:[/red] no *.jsonl ledger files in {directory}")
-        raise typer.Exit(1)
-    entries: list[dict] = []
-    for f in files:
-        entries.extend(ledger.read_file(Path(f)))
+    loaded = _load_fleet_entries(directory)
+    entries = [e for _, host_entries in loaded for e in host_entries]
     stmt = ledger.org_statement(entries, datetime.now(timezone.utc), days, org)
 
     if json_output:
-        import json
-
-        console.print_json(json.dumps(stmt))
+        _emit_json(stmt)
         return
 
     console.print(f"\n## Carbon-aware compute statement — {stmt['org']}")
-    console.print(f"Period: last {stmt['period_days']} days · {len(files)} host(s)\n")
+    console.print(f"Period: last {stmt['period_days']} days · {len(loaded)} host(s)\n")
     console.print(f"- Jobs run: {stmt['jobs']}")
     console.print(
         f"- Shifted to cleaner windows: {stmt['shifted']} "
@@ -638,14 +626,7 @@ def org_statement(
     console.print(f"\n[dim]Counterfactual:[/dim] {stmt['counterfactual']}")
     console.print(f"[dim]Accounting:[/dim] {stmt['accounting']}")
     if stmt["regions"]:
-        table = Table(title="By region")
-        table.add_column("Region")
-        table.add_column("Jobs", justify="right")
-        table.add_column("Shifted", justify="right")
-        table.add_column("kg avoided", justify="right", style="green")
-        for r in stmt["regions"]:
-            table.add_row(r["region"], str(r["jobs"]), str(r["shifted"]), f"{r['kg_avoided']:.1f}")
-        console.print(table)
+        console.print(_region_table(stmt["regions"]))
     console.print()
 
 
@@ -669,30 +650,17 @@ def verify(
     calibration into one Markdown artifact a sustainability team can attach to a report.
     """
     if directory:
-        import glob
-        from pathlib import Path
-
-        files = sorted(glob.glob(str(Path(directory) / "*.jsonl")))
-        if not files:
-            console.print(f"[red]Error:[/red] no *.jsonl ledger files in {directory}")
-            raise typer.Exit(1)
-        entries: list[dict] = []
-        for f in files:
-            entries.extend(ledger.read_file(Path(f)))
+        entries = [e for _, host_entries in _load_fleet_entries(directory) for e in host_entries]
     else:
         entries = ledger.read()
 
     stmt = ledger.org_statement(entries, datetime.now(timezone.utc), days, org)
     if json_output:
-        import json
-
-        console.print_json(json.dumps(stmt))
+        _emit_json(stmt)
         return
 
     md = ledger.disclosure_markdown(stmt)
     if out:
-        from pathlib import Path
-
         Path(out).write_text(md)
         console.print(f"[green]Wrote disclosure to {out}[/green]")
     else:
@@ -712,23 +680,14 @@ def best_time(
     json_output: bool = typer.Option(False, "--json", help="Output raw JSON"),
 ):
     """Find the greenest hour-of-day (and, with several regions, the greenest place)."""
-    labels = [r.strip() for r in region.split(",") if r.strip()]
+    labels = _parse_region_labels(region)
     results: dict[str, dict] = {}
     for lbl in labels:
         provider, _, reg = lbl.partition("/")
-        if not provider or not reg:
-            console.print(f"[red]Error:[/red] region must be provider/region (got '{lbl}')")
-            raise typer.Exit(1)
-        try:
-            results[lbl] = client.best_time(provider, reg, days, energy_kwh)
-        except Exception as e:
-            console.print(f"[red]Error:[/red] {e}")
-            raise typer.Exit(1)
+        results[lbl] = _call(client.best_time, provider, reg, days, energy_kwh)
 
     if json_output:
-        import json
-
-        console.print_json(json.dumps(results if len(labels) > 1 else results[labels[0]]))
+        _emit_json(results if len(labels) > 1 else results[labels[0]])
         return
 
     console.print()
@@ -760,16 +719,10 @@ def siting(
     json_output: bool = typer.Option(False, "--json", help="Output raw JSON"),
 ):
     """Pick the greenest region to permanently host a 24/7 workload (typical intensity)."""
-    try:
-        data = client.siting(providers, power_watts, days, limit)
-    except Exception as e:
-        console.print(f"[red]Error:[/red] {e}")
-        raise typer.Exit(1)
+    data = _call(client.siting, providers, power_watts, days, limit)
 
     if json_output:
-        import json
-
-        console.print_json(json.dumps(data))
+        _emit_json(data)
         return
 
     rec = data["recommended"]
@@ -813,21 +766,18 @@ def plan(
     json_output: bool = typer.Option(False, "--json"),
 ):
     """Estimate the annual carbon opportunity: naive vs greenest-region + time-shifting."""
-    try:
-        siting_data = client.siting(providers, power_watts, days)
-        shift_data = client.shiftability(days, 200)
-    except Exception as e:
-        console.print(f"[red]Error:[/red] {e}")
-        raise typer.Exit(1)
+    siting_data = _call(client.siting, providers, power_watts, days)
+    # Want every zone's shiftability for the plan, not a top-N leaderboard, so ask for a
+    # limit well above the region count
+    all_zones_limit = 200
+    shift_data = _call(client.shiftability, days, all_zones_limit)
 
     est = plan_estimate(siting_data, shift_data, power_watts, flexible)
     if not est.get("available"):
         console.print("Not enough data to plan right now.")
         return
     if json_output:
-        import json
-
-        console.print_json(json.dumps(est))
+        _emit_json(est)
         return
 
     console.print()
@@ -854,16 +804,10 @@ def shiftability(
     json_output: bool = typer.Option(False, "--json", help="Output raw JSON"),
 ):
     """Rank grid zones by how much carbon-aware scheduling helps (intra-day swing)."""
-    try:
-        data = client.shiftability(days, limit)
-    except Exception as e:
-        console.print(f"[red]Error:[/red] {e}")
-        raise typer.Exit(1)
+    data = _call(client.shiftability, days, limit)
 
     if json_output:
-        import json
-
-        console.print_json(json.dumps(data))
+        _emit_json(data)
         return
 
     zones = data.get("zones", [])
@@ -890,9 +834,7 @@ def shiftability(
 def _render_doctor(api: str, checks: dict, ok: bool, json_output: bool) -> None:
     """Print the doctor result as JSON (for CI gating) or a human checklist."""
     if json_output:
-        import json
-
-        console.print_json(json.dumps({"api_url": api, "ok": ok, "checks": checks}))
+        _emit_json({"api_url": api, "ok": ok, "checks": checks})
         return
 
     console.print(f"[bold]CarbonLens doctor[/bold] — checking {api}\n")

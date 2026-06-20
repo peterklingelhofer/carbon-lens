@@ -52,6 +52,15 @@ def _within(ts: str | None, cutoff: float) -> bool:
     return t is None or t >= cutoff
 
 
+def verdict(ratio: float) -> str:
+    """Plain-English read of a calibration ratio (actual/predicted)."""
+    return (
+        "well-calibrated"
+        if 0.85 <= ratio <= 1.15
+        else ("over-promised" if ratio < 0.85 else "under-promised")
+    )
+
+
 def fleet_summary(entries: list[dict], now: datetime, days: int, top: int = 20) -> dict:
     """Org-level rollup across many hosts' ledgers, broken down by region.
 
@@ -235,13 +244,8 @@ def disclosure_markdown(stmt: dict) -> str:
     cal = stmt.get("forecast_calibration") or {}
     if cal.get("samples"):
         ratio = cal["calibration_ratio"]
-        verdict = (
-            "well-calibrated"
-            if 0.85 <= ratio <= 1.15
-            else ("over-promised" if ratio < 0.85 else "under-promised")
-        )
         lines.append(
-            f"- Forecast accuracy: ratio {ratio} ({verdict}); predicted "
+            f"- Forecast accuracy: ratio {ratio} ({verdict(ratio)}); predicted "
             f"{round(cal['mean_predicted_gco2_kwh'])} vs actual "
             f"{round(cal['mean_actual_gco2_kwh'])} gCO2/kWh across {cal['samples']} verified runs"
         )
@@ -274,15 +278,7 @@ def summarize(entries: list[dict], now: datetime, days: int) -> dict:
     without it. Everything else is reported as an average rate, not a fake total.
     """
     cutoff = now.timestamp() - days * 86_400
-    recent: list[dict] = []
-    for e in entries:
-        ts = e.get("ts")
-        try:
-            t = datetime.fromisoformat(ts).timestamp() if ts else None
-        except (TypeError, ValueError):
-            t = None
-        if t is None or t >= cutoff:
-            recent.append(e)
+    recent = [e for e in entries if _within(e.get("ts"), cutoff)]
 
     shifted = [e for e in recent if (e.get("deferred_hours") or 0) > 0]
     reductions = [e.get("reduction_gco2_kwh", 0.0) or 0.0 for e in shifted]

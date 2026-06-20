@@ -79,7 +79,6 @@ class Settings(BaseSettings):
 
     # Rate limiting
     rate_limit_default: str = "100/minute"
-    rate_limit_route: str = "30/minute"
 
     # Logging
     log_format: str = "text"  # "text" or "json"

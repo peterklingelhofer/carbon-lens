@@ -6,27 +6,22 @@ Data from Grid India real-time reports.
 
 from datetime import datetime, timezone
 
+from carbon_mesh.carbon_sources.base import SingleZoneCarbonSource
 from carbon_mesh.carbon_sources.http_pool import shared_client
+from carbon_mesh.carbon_sources.mock import _MOCK_DATA
 
 from carbon_mesh.models.carbon import CarbonIntensity
 
 INDIA_ZONES = {"IN-NO", "IN-SO", "IN-EA", "IN-WE", "IN-NE"}
 
-# Typical carbon intensity estimates by region (gCO2/kWh)
-# India's grid is ~70% coal, varying by region and time of day
-_REGION_DEFAULTS: dict[str, tuple[float, float]] = {
-    # (intensity, renewable_pct)
-    "IN-NO": (650, 18),  # Northern — coal heavy, growing solar
-    "IN-SO": (500, 30),  # Southern — more solar + wind + hydro
-    "IN-EA": (750, 10),  # Eastern — very coal heavy
-    "IN-WE": (550, 25),  # Western — mixed, Rajasthan solar
-    "IN-NE": (400, 40),  # North-Eastern — hydro dominated
-}
+# (intensity gCO2/kWh, renewable_pct) per region, read from the canonical mock
+# table so the heuristic baseline can't drift from it. India's grid is ~70% coal
+_REGION_DEFAULTS: dict[str, tuple[float, float]] = {z: _MOCK_DATA[z] for z in INDIA_ZONES}
 
 API_URL = "https://report.grid-india.in/api/data/current-generation"
 
 
-class GridIndiaCarbonSource:
+class GridIndiaCarbonSource(SingleZoneCarbonSource):
     def __init__(self) -> None:
         self._client = shared_client(timeout=10.0)
 
@@ -109,13 +104,3 @@ class GridIndiaCarbonSource:
             timestamp=datetime.now(timezone.utc),
             source="grid_india_heuristic",
         )
-
-    async def get_carbon_intensity_batch(self, grid_zones: list[str]) -> dict[str, CarbonIntensity]:
-        results: dict[str, CarbonIntensity] = {}
-        for zone in grid_zones:
-            if self.can_handle(zone):
-                try:
-                    results[zone] = await self.get_carbon_intensity(zone)
-                except Exception:
-                    pass
-        return results

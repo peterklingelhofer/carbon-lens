@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import * as THREE from "three";
 import { api } from "../api/client";
 import { qualityFromSource, snapshotEnabled, useSnapshot } from "../api/snapshot";
+import type { CarbonIntensity, CloudRegion } from "../api/types";
 import { InfoTip } from "../components/InfoTip";
 import { PowerMix } from "../components/PowerMix";
 import {
@@ -15,7 +16,7 @@ import {
   RegionWeather,
 } from "../components/RegionDetail";
 import { DATA_QUALITY_TIP_RICH, MARGINAL_TIP, SURPLUS_TIP } from "../copy";
-import { niceKm, timeAgo } from "../lib/format";
+import { formatLoad, niceKm, timeAgo } from "../lib/format";
 import { intensityColor, intensityRGB, renewableRGB } from "../lib/intensity";
 import { subsolarPoint } from "../lib/sun";
 import { isCleanSurplus } from "../lib/surplus";
@@ -114,10 +115,26 @@ interface GlobePoint {
   powerBreakdown?: Record<string, number>;
 }
 
-// Total grid load (whole balancing authority, all consumers), formatted.
-function formatLoad(mw?: number | null): string | null {
-  if (mw == null) return null;
-  return mw >= 1000 ? `${(mw / 1000).toFixed(1)} GW` : `${Math.round(mw)} MW`;
+// Map a region + its carbon reading to the flat GlobePoint the layers consume.
+// Returns null when the reading is missing, so the caller can drop the point.
+function toGlobePoint(region: CloudRegion, i: CarbonIntensity | undefined): GlobePoint | null {
+  if (!i) return null;
+  return {
+    provider: region.provider,
+    region: region.region,
+    location: region.location,
+    grid_zone: region.grid_zone,
+    lat: region.latitude,
+    lng: region.longitude,
+    intensity: i.carbon_intensity_gco2_kwh,
+    renewable: i.renewable_percentage,
+    source: i.source,
+    quality: i.quality ?? qualityFromSource(i.source),
+    gridLoadMw: i.grid_load_mw,
+    consumptionIntensity: i.consumption_intensity_gco2_kwh,
+    marginalIntensity: i.marginal_intensity_gco2_kwh ?? undefined,
+    powerBreakdown: i.power_breakdown_mw,
+  };
 }
 
 type Metric = "renewable" | "intensity";
@@ -132,12 +149,15 @@ function beamAltitude(p: GlobePoint, metric: Metric): number {
   return 0.04 + frac * 0.5;
 }
 
+// A beam's cylinder radius as a fraction of the globe radius.
+const BEAM_RADIUS_FRAC = 0.0075;
+
 // A tapered, open-ended beam of UNIT height whose color fades to transparent at
 // the tip - it reads as a glowing light shaft, not a solid blocky cylinder. The
 // height is applied per-frame via mesh.scale.y so the metric toggle just
 // rescales existing meshes (no geometry rebuild).
 function buildBeam(p: GlobePoint, globeRadius: number, colorMetric: Metric): THREE.Mesh {
-  const radius = globeRadius * 0.0075;
+  const radius = globeRadius * BEAM_RADIUS_FRAC;
   // Straight cylinder (no taper), unit height (scaled per-frame). Capped ends
   // (not open) so it reads as a filled volume: looking down from above, the
   // line of sight passes the transparent tip and lands on the full-color base
@@ -211,50 +231,12 @@ function useGlobePoints() {
   return useMemo<GlobePoint[]>(() => {
     if (snapshot) {
       return snapshot.regions
-        .map((r): GlobePoint | null => {
-          const i = snapshot.intensities[`${r.provider}/${r.region}`];
-          if (!i) return null;
-          return {
-            provider: r.provider,
-            region: r.region,
-            location: r.location,
-            grid_zone: r.grid_zone,
-            lat: r.latitude,
-            lng: r.longitude,
-            intensity: i.carbon_intensity_gco2_kwh,
-            renewable: i.renewable_percentage,
-            source: i.source,
-            quality: i.quality ?? qualityFromSource(i.source),
-            gridLoadMw: i.grid_load_mw,
-            consumptionIntensity: i.consumption_intensity_gco2_kwh,
-            marginalIntensity: i.marginal_intensity_gco2_kwh ?? undefined,
-            powerBreakdown: i.power_breakdown_mw,
-          };
-        })
+        .map((r) => toGlobePoint(r, snapshot.intensities[`${r.provider}/${r.region}`]))
         .filter((p): p is GlobePoint => p !== null);
     }
     if (apiRegions && apiIntensities) {
       return apiRegions
-        .map((r): GlobePoint | null => {
-          const i = apiIntensities[`${r.provider}/${r.region}`];
-          if (!i) return null;
-          return {
-            provider: r.provider,
-            region: r.region,
-            location: r.location,
-            grid_zone: r.grid_zone,
-            lat: r.latitude,
-            lng: r.longitude,
-            intensity: i.carbon_intensity_gco2_kwh,
-            renewable: i.renewable_percentage,
-            source: i.source,
-            quality: i.quality ?? qualityFromSource(i.source),
-            gridLoadMw: i.grid_load_mw,
-            consumptionIntensity: i.consumption_intensity_gco2_kwh,
-            marginalIntensity: i.marginal_intensity_gco2_kwh ?? undefined,
-            powerBreakdown: i.power_breakdown_mw,
-          };
-        })
+        .map((r) => toGlobePoint(r, apiIntensities[`${r.provider}/${r.region}`]))
         .filter((p): p is GlobePoint => p !== null);
     }
     return [];
@@ -267,7 +249,6 @@ const EARTH_KM = 6371; // mean Earth radius - globe radius (world units) maps to
 // Radial height of a full (max-value) beam, in globe-radius units (= beamAltitude max).
 const MAX_BEAM_ALT = 0.04 + 0.5;
 
-// Round to a "nice" 1 / 2 / 5 × 10^n value for the map scale bar.
 function MetricToggle({
   label,
   value,

@@ -2,9 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "../api/client";
 import { REPORT_URL, sitingFromGreenest, useCleanComputeReport } from "../api/report";
+import { HYPERSCALERS as PROVIDERS } from "../lib/providers";
 import { InfoTip } from "./InfoTip";
-
-const PROVIDERS = ["aws", "gcp", "azure"];
 
 // "Greenest region to deploy" — picks where to PERMANENTLY host a 24/7 workload by
 // typical (history-mean) carbon intensity, and, given a continuous load, the annual

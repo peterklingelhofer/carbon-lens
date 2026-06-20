@@ -32,7 +32,7 @@ router = APIRouter(
     dependencies=[Depends(require_api_key)],
 )
 
-# In-memory store for MVP (DB persistence when use_database=True)
+# Process-local stores; state is lost on restart
 _usage_store: dict[str, list[CloudUsageRecord]] = {}  # org_id -> records
 _calculation_store: dict[str, list[EmissionsCalculation]] = {}  # org_id -> calculations
 _report_store: dict[str, list[ComplianceReport]] = {}  # org_id -> reports
@@ -75,6 +75,28 @@ class CalculationResponse(BaseModel):
     scope2_kgco2e: float
     scope3_kgco2e: float
     data_sources_used: list[str]
+
+
+# --- Helpers ---
+
+
+def _store_and_summarize(org_id: str, records: list[CloudUsageRecord]) -> UsageIngestionResponse:
+    """Persist ingested usage records and summarize the batch."""
+    _usage_store.setdefault(org_id, []).extend(records)
+    return UsageIngestionResponse(
+        records_ingested=len(records),
+        total_energy_kwh=round(sum(r.energy_kwh for r in records), 4),
+        providers_covered=sorted({r.provider for r in records}),
+        regions_covered=sorted({f"{r.provider}/{r.region}" for r in records}),
+    )
+
+
+def _find_report(org_id: str, report_id: str) -> ComplianceReport:
+    """Look up a report by ID for an org, raising 404 if absent."""
+    for r in _report_store.get(org_id, []):
+        if r.id == report_id:
+            return r
+    raise HTTPException(404, f"Report {report_id} not found")
 
 
 # --- Endpoints ---
@@ -124,21 +146,7 @@ async def ingest_usage(req: UsageIngestionRequest) -> UsageIngestionResponse:
         # Missing SDK (cloud extra) or upstream credential/permission/API failure.
         raise HTTPException(status_code=502, detail=str(e)) from e
 
-    # Store
-    if req.org_id not in _usage_store:
-        _usage_store[req.org_id] = []
-    _usage_store[req.org_id].extend(records)
-
-    providers = sorted({r.provider for r in records})
-    regions = sorted({f"{r.provider}/{r.region}" for r in records})
-    total_energy = sum(r.energy_kwh for r in records)
-
-    return UsageIngestionResponse(
-        records_ingested=len(records),
-        total_energy_kwh=round(total_energy, 4),
-        providers_covered=providers,
-        regions_covered=regions,
-    )
+    return _store_and_summarize(req.org_id, records)
 
 
 @router.post("/usage/upload-csv", response_model=UsageIngestionResponse)
@@ -172,20 +180,7 @@ async def upload_csv(
     if not records:
         raise HTTPException(400, "No usage rows found in the CSV.")
 
-    if org_id not in _usage_store:
-        _usage_store[org_id] = []
-    _usage_store[org_id].extend(records)
-
-    providers = sorted({r.provider for r in records})
-    regions = sorted({f"{r.provider}/{r.region}" for r in records})
-    total_energy = sum(r.energy_kwh for r in records)
-
-    return UsageIngestionResponse(
-        records_ingested=len(records),
-        total_energy_kwh=round(total_energy, 4),
-        providers_covered=providers,
-        regions_covered=regions,
-    )
+    return _store_and_summarize(org_id, records)
 
 
 @router.post("/calculate", response_model=CalculationResponse)
@@ -264,11 +259,7 @@ async def list_reports(org_id: str = Query(...)) -> list[ComplianceReportSummary
 @router.get("/reports/{report_id}", response_model=ComplianceReport)
 async def get_report(report_id: str, org_id: str = Query(...)) -> ComplianceReport:
     """Get a specific compliance report by ID."""
-    reports = _report_store.get(org_id, [])
-    for r in reports:
-        if r.id == report_id:
-            return r
-    raise HTTPException(404, f"Report {report_id} not found")
+    return _find_report(org_id, report_id)
 
 
 @router.get("/reports/{report_id}/export")
@@ -280,14 +271,7 @@ async def export_report(
     """Export a compliance report as JSON or CSV."""
     from fastapi.responses import Response
 
-    reports = _report_store.get(org_id, [])
-    report = None
-    for r in reports:
-        if r.id == report_id:
-            report = r
-            break
-    if not report:
-        raise HTTPException(404, f"Report {report_id} not found")
+    report = _find_report(org_id, report_id)
 
     if format == "csv":
         lines = [

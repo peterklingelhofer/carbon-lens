@@ -118,18 +118,40 @@ def get_marginal_source() -> MarginalSource | None:
     return _marginal_source
 
 
+def _maybe_snapshot(source: CarbonDataSource) -> CarbonDataSource:
+    """Wrap a source so current intensity is read from the published CDN snapshot
+    (one cached fetch of all zones) when configured, instead of live-fetching each
+    zone. Pass-through for the mock source or when no snapshot is set."""
+    from carbon_mesh.carbon_sources.snapshot_source import SnapshotBackedSource
+
+    if settings.snapshot_url and settings.carbon_source != "mock":
+        return SnapshotBackedSource(settings.snapshot_url, source)
+    return source
+
+
+def group_regions_by_zone(
+    mapper: GridMapper, regions: list[dict[str, str]]
+) -> dict[str, list[dict[str, str]]]:
+    """Group ``{"provider", "region"}`` dicts by grid zone, preserving order and
+    skipping any region that doesn't map to a known zone. Multiple regions can share
+    one zone (e.g. aws/us-east-1 and aws/us-east-2 are both US-MIDA-PJM)."""
+    by_zone: dict[str, list[dict[str, str]]] = {}
+    for r in regions:
+        zone = mapper.get_grid_zone(r["provider"], r["region"])
+        if zone is not None:
+            by_zone.setdefault(zone, []).append(r)
+    return by_zone
+
+
 def get_scheduling_engine() -> "SchedulingEngine":
     """Build a scheduling engine wired to the cached source (snapshot-backed for
     current intensity when configured) and the ENTSO-E day-ahead forecast. Shared
     by the scheduler routes and the public /carbon/forecast endpoint."""
     from carbon_mesh.carbon_sources.entsoe_forecast import ENTSOEForecastSource
     from carbon_mesh.carbon_sources.open_meteo import OpenMeteoForecastSource
-    from carbon_mesh.carbon_sources.snapshot_source import SnapshotBackedSource
     from carbon_mesh.scheduler.engine import SchedulingEngine
 
-    source: CarbonDataSource = _cached_source
-    if settings.snapshot_url and settings.carbon_source != "mock":
-        source = SnapshotBackedSource(settings.snapshot_url, source)
+    source = _maybe_snapshot(_cached_source)
 
     return SchedulingEngine(
         carbon_source=source,

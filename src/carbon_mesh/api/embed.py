@@ -14,24 +14,13 @@ from fastapi import APIRouter, Depends, Response
 
 from carbon_mesh.api.deps import get_carbon_source, get_grid_mapper
 from carbon_mesh.carbon_sources.base import CarbonDataSource
+from carbon_mesh.colors import GRAY, intensity_color
 from carbon_mesh.grid.mapper import GridMapper
 
 embed_router = APIRouter(tags=["Embed"])
 
 _CACHE_CONTROL = "public, max-age=600"
 _SITE = "https://carbonlens.peterklingelhofer.workers.dev"
-
-
-def _color(value: float) -> str:
-    if value <= 50:
-        return "#22c55e"
-    if value <= 150:
-        return "#84cc16"
-    if value <= 300:
-        return "#eab308"
-    if value <= 500:
-        return "#f97316"
-    return "#ef4444"
 
 
 def _state(value: float) -> str:
@@ -45,12 +34,12 @@ def _state(value: float) -> str:
 def render_embed(label: str, intensity: float, renewable: float, *, unknown: bool = False) -> str:
     safe = html.escape(label)
     if unknown:
-        color = "#9ca3af"
+        color = GRAY
         big = "—"
         meta = f"{safe} · region not found"
         state = "Unknown region"
     else:
-        color = _color(intensity)
+        color = intensity_color(intensity)
         big = f'{round(intensity)}<span class="u"> gCO₂/kWh</span>'
         meta = f"{safe} · {round(renewable)}% renewable"
         state = _state(intensity)
@@ -86,8 +75,8 @@ def _html(markup: str) -> Response:
     )
 
 
-# Zone route first so "/embed/zone/DE" isn't captured by the same-arity
-# "/embed/{provider}/{region}" route (provider="zone").
+# Zone-first route (declared before the same-arity region route so "zone" isn't
+# matched as a provider)
 @embed_router.get("/embed/zone/{grid_zone}", include_in_schema=False)
 async def zone_embed(
     grid_zone: str,

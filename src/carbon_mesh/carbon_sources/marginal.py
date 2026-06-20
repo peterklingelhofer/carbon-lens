@@ -26,15 +26,23 @@ def moer_to_gco2_kwh(lbs_per_mwh: float) -> float:
     return round(lbs_per_mwh * _LBS_PER_MWH_TO_G_PER_KWH, 1)
 
 
-def parse_moer_forecast(data: list[dict], now: datetime, hours: int) -> dict[int, float]:
-    """Turn WattTime forecast points into ``{hour_offset: g CO2/kWh}`` from ``now``.
+def _parse_forecast(
+    data: list[dict],
+    now: datetime,
+    hours: int,
+    *,
+    time_key: str,
+    value_key: str,
+    convert,
+) -> dict[int, float]:
+    """Turn provider forecast points into ``{hour_offset: g CO2/kWh}`` from ``now``.
 
-    Each point is ``{"point_time": iso8601, "value": lbs/MWh}``. Pure, so the parsing
-    and conversion are testable without the network.
+    time_key / value_key name the per-point fields; convert maps a raw value to
+    g CO2/kWh. Pure, so parsing and conversion are testable without the network.
     """
     curve: dict[int, float] = {}
     for pt in data:
-        t, v = pt.get("point_time"), pt.get("value")
+        t, v = pt.get(time_key), pt.get(value_key)
         if not t or v is None:
             continue
         try:
@@ -45,8 +53,15 @@ def parse_moer_forecast(data: list[dict], now: datetime, hours: int) -> dict[int
             ts = ts.replace(tzinfo=timezone.utc)
         offset = round((ts - now).total_seconds() / 3600)
         if 0 <= offset <= hours:
-            curve[offset] = moer_to_gco2_kwh(float(v))
+            curve[offset] = convert(float(v))
     return curve
+
+
+def parse_moer_forecast(data: list[dict], now: datetime, hours: int) -> dict[int, float]:
+    """WattTime points (``{"point_time", "value": lbs/MWh}``) into a g CO2/kWh curve."""
+    return _parse_forecast(
+        data, now, hours, time_key="point_time", value_key="value", convert=moer_to_gco2_kwh
+    )
 
 
 def parse_zone_map(spec: str) -> dict[str, str]:
@@ -59,8 +74,12 @@ def parse_zone_map(spec: str) -> dict[str, str]:
     return out
 
 
-class WattTimeMarginalSource:
-    """Measured marginal (MOER) from WattTime v3, for the zones an operator has mapped."""
+class _MeasuredMarginalSource:
+    """Shared scaffolding for a token + zone-map measured-marginal provider.
+
+    Subclasses supply the endpoint, headers, and per-payload parsing; the base
+    holds the credentials, zone gate, and the request/error template.
+    """
 
     def __init__(self, token: str, zone_map: dict[str, str]) -> None:
         self._token = token
@@ -70,21 +89,35 @@ class WattTimeMarginalSource:
     def can_handle(self, grid_zone: str) -> bool:
         return grid_zone in self._zone_map
 
+    async def _get(self, url: str, params: dict, headers: dict) -> dict | None:
+        """GET returning parsed JSON, or None on any network/decode failure."""
+        try:
+            resp = await self._client.get(url, params=params, headers=headers)
+            resp.raise_for_status()
+            return resp.json()
+        except (httpx.HTTPError, ValueError, KeyError):
+            return None
+
+
+class WattTimeMarginalSource(_MeasuredMarginalSource):
+    """Measured marginal (MOER) from WattTime v3, for the zones an operator has mapped."""
+
+    _URL = "https://api.watttime.org/v3/forecast"
+
+    def _headers(self) -> dict:
+        return {"Authorization": f"Bearer {self._token}"}
+
     async def marginal_intensity(self, grid_zone: str) -> float | None:
         """Current measured marginal for a mapped zone (g CO2/kWh), or None."""
         region = self._zone_map.get(grid_zone)
         if not region:
             return None
-        try:
-            resp = await self._client.get(
-                "https://api.watttime.org/v3/forecast",
-                params={"region": region, "signal_type": "co2_moer"},
-                headers={"Authorization": f"Bearer {self._token}"},
-            )
-            resp.raise_for_status()
-            data = resp.json().get("data", [])
-        except (httpx.HTTPError, ValueError, KeyError):
-            return None
+        body = await self._get(
+            self._URL,
+            params={"region": region, "signal_type": "co2_moer"},
+            headers=self._headers(),
+        )
+        data = (body or {}).get("data", [])
         if not data:
             return None
         value = data[0].get("value")
@@ -95,43 +128,30 @@ class WattTimeMarginalSource:
         region = self._zone_map.get(grid_zone)
         if not region:
             return {}
-        try:
-            resp = await self._client.get(
-                "https://api.watttime.org/v3/forecast",
-                params={"region": region, "signal_type": "co2_moer", "horizon_hours": hours},
-                headers={"Authorization": f"Bearer {self._token}"},
-            )
-            resp.raise_for_status()
-            data = resp.json().get("data", [])
-        except (httpx.HTTPError, ValueError, KeyError):
+        body = await self._get(
+            self._URL,
+            params={"region": region, "signal_type": "co2_moer", "horizon_hours": hours},
+            headers=self._headers(),
+        )
+        if body is None:
             return {}
-        return parse_moer_forecast(data, datetime.now(timezone.utc), hours)
+        return parse_moer_forecast(body.get("data", []), datetime.now(timezone.utc), hours)
 
 
 def parse_em_forecast(data: list[dict], now: datetime, hours: int) -> dict[int, float]:
-    """Turn an Electricity Maps marginal forecast into ``{hour_offset: g CO2/kWh}``.
-
-    Each point is ``{"datetime": iso8601, "marginalCarbonIntensity": gco2_kwh}`` --
-    already in g/kWh, so no conversion. Pure, for testing without the network.
-    """
-    curve: dict[int, float] = {}
-    for pt in data:
-        t, v = pt.get("datetime"), pt.get("marginalCarbonIntensity")
-        if not t or v is None:
-            continue
-        try:
-            ts = datetime.fromisoformat(str(t).replace("Z", "+00:00"))
-        except (TypeError, ValueError):
-            continue
-        if ts.tzinfo is None:
-            ts = ts.replace(tzinfo=timezone.utc)
-        offset = round((ts - now).total_seconds() / 3600)
-        if 0 <= offset <= hours:
-            curve[offset] = round(float(v), 1)
-    return curve
+    """Electricity Maps points (``{"datetime", "marginalCarbonIntensity": g/kWh}``,
+    already g/kWh) into a g CO2/kWh curve."""
+    return _parse_forecast(
+        data,
+        now,
+        hours,
+        time_key="datetime",
+        value_key="marginalCarbonIntensity",
+        convert=lambda v: round(v, 1),
+    )
 
 
-class ElectricityMapsMarginalSource:
+class ElectricityMapsMarginalSource(_MeasuredMarginalSource):
     """Measured marginal from Electricity Maps (gCO2eq/kWh directly), for mapped zones.
 
     Their marginal endpoints are commercial, so this only runs when an operator
@@ -140,45 +160,31 @@ class ElectricityMapsMarginalSource:
 
     _BASE = "https://api.electricitymap.org/v3/marginal-carbon-intensity"
 
-    def __init__(self, token: str, zone_map: dict[str, str]) -> None:
-        self._token = token
-        self._zone_map = zone_map
-        self._client = shared_client(timeout=10.0)
-
-    def can_handle(self, grid_zone: str) -> bool:
-        return grid_zone in self._zone_map
+    def _headers(self) -> dict:
+        return {"auth-token": self._token}
 
     async def marginal_intensity(self, grid_zone: str) -> float | None:
         zone = self._zone_map.get(grid_zone)
         if not zone:
             return None
-        try:
-            resp = await self._client.get(
-                f"{self._BASE}/latest",
-                params={"zone": zone},
-                headers={"auth-token": self._token},
-            )
-            resp.raise_for_status()
-            value = resp.json().get("marginalCarbonIntensity")
-        except (httpx.HTTPError, ValueError, KeyError):
+        body = await self._get(
+            f"{self._BASE}/latest", params={"zone": zone}, headers=self._headers()
+        )
+        if body is None:
             return None
+        value = body.get("marginalCarbonIntensity")
         return round(float(value), 1) if value is not None else None
 
     async def marginal_forecast(self, grid_zone: str, hours: int) -> dict[int, float]:
         zone = self._zone_map.get(grid_zone)
         if not zone:
             return {}
-        try:
-            resp = await self._client.get(
-                f"{self._BASE}/forecast",
-                params={"zone": zone},
-                headers={"auth-token": self._token},
-            )
-            resp.raise_for_status()
-            data = resp.json().get("forecast", [])
-        except (httpx.HTTPError, ValueError, KeyError):
+        body = await self._get(
+            f"{self._BASE}/forecast", params={"zone": zone}, headers=self._headers()
+        )
+        if body is None:
             return {}
-        return parse_em_forecast(data, datetime.now(timezone.utc), hours)
+        return parse_em_forecast(body.get("forecast", []), datetime.now(timezone.utc), hours)
 
 
 # Either measured-marginal provider; both share the can_handle / marginal_intensity /
@@ -187,10 +193,8 @@ MarginalSource = WattTimeMarginalSource | ElectricityMapsMarginalSource
 
 
 def marginal_source_from_settings(settings):
-    """Build the configured measured-marginal source, or None when none is enabled.
-
-    WattTime takes precedence (a dedicated marginal provider); Electricity Maps is the
-    alternative. Both need the operator's own token AND an explicit zone map.
+    """Build the configured measured-marginal source, or None. WattTime wins over
+    Electricity Maps; both need the operator's own token AND an explicit zone map.
     """
     wt_map = parse_zone_map(getattr(settings, "watttime_zone_map", ""))
     if getattr(settings, "watttime_token", "") and wt_map:
@@ -202,11 +206,8 @@ def marginal_source_from_settings(settings):
 
 
 def marginal_unmapped(settings) -> bool:
-    """True when a marginal credential is configured but no zone is mapped.
-
-    The silent-heuristic trap: an operator set a WattTime / Electricity Maps key but no
-    zone map, so no source gets built and the signal quietly stays heuristic. A
-    misconfiguration to surface (honesty probe) and alert on (Prometheus), not a choice.
+    """True when a marginal credential is set but no zone is mapped, so no source
+    builds and the signal silently stays heuristic, a misconfiguration worth alerting on.
     """
     if marginal_source_from_settings(settings) is not None:
         return False

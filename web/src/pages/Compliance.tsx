@@ -1,12 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { api } from "../api/client";
+import { API_BASE, api } from "../api/client";
 import type { ComplianceReport } from "../api/types";
 import { InfoTip } from "../components/InfoTip";
+import { StatCard } from "../components/StatCard";
 import { DATA_QUALITY_TIP_RICH } from "../copy";
-import { card, providerChip, section as sectionFn } from "../styles";
+import { card, providerChip, sectionStyle } from "../styles";
 
-const section = sectionFn(1100);
+const section = sectionStyle(1100);
 
 // A ready-to-edit example matching the exact columns the upload expects, so users can
 // shape their own spreadsheet to match instead of guessing. Rows mirror the demo data.
@@ -349,8 +350,7 @@ export function Compliance() {
               {reports.map((r) => (
                 <tr key={r.id} style={{ borderBottom: "1px solid var(--gray-100)" }}>
                   <td style={{ padding: "0.5rem", fontSize: "0.85rem" }}>
-                    {/* A real button so the row is keyboard-operable; the row-level
-                        onClick it replaces was mouse-only. */}
+                    {/* A real button so the row is keyboard-operable */}
                     <button
                       type="button"
                       onClick={async () => {
@@ -405,9 +405,6 @@ export function Compliance() {
 }
 
 function ReportView({ report }: { report: ComplianceReport }) {
-  // Same-origin (proxied) base for the export download links.
-  const BASE_URL =
-    import.meta.env.VITE_API_URL || (typeof window !== "undefined" ? window.location.origin : "");
   // Demo reports are built from a synthetic usage fixture (not a real CSV upload).
   const isDemo = !report.report_name.toLowerCase().includes("csv");
 
@@ -464,7 +461,7 @@ function ReportView({ report }: { report: ComplianceReport }) {
         </div>
         <div style={{ display: "flex", gap: "0.5rem" }}>
           <a
-            href={`${BASE_URL}/api/v1/compliance/reports/${report.id}/export?org_id=${report.org_id}&format=json`}
+            href={`${API_BASE}/api/v1/compliance/reports/${report.id}/export?org_id=${report.org_id}&format=json`}
             style={{
               padding: "0.4rem 0.8rem",
               borderRadius: 6,
@@ -478,7 +475,7 @@ function ReportView({ report }: { report: ComplianceReport }) {
             Export JSON
           </a>
           <a
-            href={`${BASE_URL}/api/v1/compliance/reports/${report.id}/export?org_id=${report.org_id}&format=csv`}
+            href={`${API_BASE}/api/v1/compliance/reports/${report.id}/export?org_id=${report.org_id}&format=csv`}
             style={{
               padding: "0.4rem 0.8rem",
               borderRadius: 6,
@@ -731,49 +728,6 @@ function ReportView({ report }: { report: ComplianceReport }) {
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  unit,
-  positive,
-}: {
-  label: string;
-  value: string;
-  unit: string;
-  positive?: boolean;
-}) {
-  return (
-    <div
-      style={{
-        padding: "0.75rem",
-        borderRadius: 8,
-        border: "1px solid var(--gray-200)",
-        background: "var(--surface-alt)",
-      }}
-    >
-      <div
-        style={{
-          fontSize: "0.7rem",
-          color: "var(--gray-500)",
-          marginBottom: 2,
-        }}
-      >
-        {label}
-      </div>
-      <div
-        style={{
-          fontSize: "1.5rem",
-          fontWeight: 700,
-          color: positive ? "var(--green-700)" : "inherit",
-        }}
-      >
-        {value}
-        <span style={{ fontSize: "0.75rem", fontWeight: 400, marginLeft: 4 }}>{unit}</span>
-      </div>
     </div>
   );
 }

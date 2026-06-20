@@ -35,9 +35,9 @@ _SURPLUS_DISCOUNT = 0.4
 class ScheduleStrategy(str, Enum):
     """How to optimize the schedule."""
 
-    LOWEST_CARBON = "lowest_carbon"  # Pick time with lowest gCO2/kWh
-    HIGHEST_RENEWABLE = "highest_renewable"  # Pick time with highest renewable %
-    BALANCED = "balanced"  # Weighted combination
+    LOWEST_CARBON = "lowest_carbon"
+    HIGHEST_RENEWABLE = "highest_renewable"
+    BALANCED = "balanced"  # weighted carbon + renewable combination
 
 
 class TimeSlot(BaseModel):
@@ -181,9 +181,8 @@ class SchedulingEngine:
 
         # Build time slots: current + projected slots at intervals
         slots: list[TimeSlot] = []
-        slot_interval_hours = max(
-            1, max_delay_hours // 24
-        )  # 1-hour slots for 24h, larger for longer windows
+        # 1-hour slots for a 24h window, coarser for longer windows
+        slot_interval_hours = max(1, max_delay_hours // 24)
 
         # A job runs ACROSS hours, so score each candidate by the AVERAGE projected
         # intensity over its whole run window, not just the start hour -- a long job
@@ -191,20 +190,9 @@ class SchedulingEngine:
         # actually emits. (A sub-hour job -> a single hour, so behaviour is unchanged.)
         duration_hours = max(1, (job_duration_minutes + 59) // 60)
 
-        def _project_at(zone: str, current: CarbonIntensity, curve: dict | None, h: int):
-            projected = None
-            if curve and h in curve and 0 in curve:
-                projected = self._project_with_forecast(current, curve[0], curve[h], h)
-            if projected is None:
-                projected = self._project_intensity(current, h, zone_lng.get(zone, 0.0))
-            return projected
-
         for hour_offset in range(0, max_delay_hours, slot_interval_hours):
             slot_start = now + timedelta(hours=hour_offset)
             slot_end = slot_start + timedelta(minutes=job_duration_minutes)
-
-            if slot_end > window_end + timedelta(minutes=job_duration_minutes):
-                break
 
             for zone, (provider, region) in zone_map.items():
                 current = current_intensities.get(zone)
@@ -213,7 +201,7 @@ class SchedulingEngine:
 
                 curve = zone_curve.get(zone)
                 window = [
-                    _project_at(zone, current, curve, hour_offset + d)
+                    self._project_at(current, curve, hour_offset + d, zone_lng.get(zone, 0.0))
                     for d in range(duration_hours)
                 ]
                 avg_carbon = round(
@@ -276,14 +264,14 @@ class SchedulingEngine:
                 marginal_basis=self._marginal_basis_for(first_zone),
             )
 
-        # Sort by score (lower is better for carbon, we want lowest carbon)
+        # Sort by score
         if strategy == ScheduleStrategy.HIGHEST_RENEWABLE:
             slots.sort(key=lambda s: -s.score)  # Higher renewable = better
         else:
             slots.sort(key=lambda s: s.score)  # Lower carbon = better
 
         recommended = slots[0]
-        alternatives = slots[1:10]  # Top 10 alternatives
+        alternatives = slots[1:10]  # up to 9 runners-up (recommended + these = top 10)
 
         # The recommended region's full hourly curve over the window, so the UI
         # can plot how its intensity evolves and where the chosen slot sits.
@@ -360,14 +348,7 @@ class SchedulingEngine:
 
         points: list[CarbonIntensity] = [current]
         for hour_offset in range(1, hours + 1):
-            projected: CarbonIntensity | None = None
-            if curve and hour_offset in curve and 0 in curve:
-                projected = self._project_with_forecast(
-                    current, curve[0], curve[hour_offset], hour_offset
-                )
-            if projected is None:
-                projected = self._project_intensity(current, hour_offset, longitude)
-            points.append(projected)
+            points.append(self._project_at(current, curve, hour_offset, longitude))
 
         # Stamp MEASURED marginal across the forecast where an operator-configured
         # source has it, so surplus/decisions use measured marginal -- not the
@@ -382,6 +363,24 @@ class SchedulingEngine:
                     point.marginal_intensity_gco2_kwh = mcurve[h]
 
         return method, points
+
+    def _project_at(
+        self,
+        current: CarbonIntensity,
+        curve: dict | None,
+        hour_offset: int,
+        longitude: float = 0.0,
+    ) -> CarbonIntensity:
+        """Project intensity at ``hour_offset``: the real forecast curve if available,
+        else the local time-of-day model. Shared by find_optimal_window and forecast_zone."""
+        projected: CarbonIntensity | None = None
+        if curve and hour_offset in curve and 0 in curve:
+            projected = self._project_with_forecast(
+                current, curve[0], curve[hour_offset], hour_offset
+            )
+        if projected is None:
+            projected = self._project_intensity(current, hour_offset, longitude)
+        return projected
 
     def _project_with_forecast(
         self,

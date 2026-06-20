@@ -57,6 +57,33 @@ from carbon_mesh.scheduler.engine import SchedulingEngine
 
 router = APIRouter()
 
+# Several endpoints have a zone-first sibling (e.g. /carbon/zone/{grid_zone})
+# declared BEFORE the same-arity /carbon/{provider}/{region} route, so a path like
+# "/carbon/zone/DE" isn't captured as provider="zone". The zone *list* lives at a
+# 2-segment path (/carbon/zones), which can't clash with the 3-segment region route.
+
+
+def _require_zone(mapper: GridMapper, grid_zone: str) -> CloudRegion:
+    """Representative cloud region for a known grid zone, or a 404. Gives the zone
+    its coordinates and a history key for on-prem / colo (non-cloud-region) lookups."""
+    rep = _zone_representative(mapper, grid_zone)
+    if rep is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Unknown grid zone: {grid_zone}. See /api/v1/carbon/zones for valid IDs.",
+        )
+    return rep
+
+
+def _resolve_zone(mapper: GridMapper, provider: str, region: str) -> tuple[str, float]:
+    """Grid zone and longitude for a cloud region, or a 404. Longitude defaults to
+    0.0 when the region has no recorded coordinates."""
+    zone = mapper.get_grid_zone(provider, region)
+    if zone is None:
+        raise HTTPException(status_code=404, detail=f"Unknown region: {provider}/{region}")
+    info = mapper.get_region(provider, region)
+    return zone, info.longitude if info else 0.0
+
 
 @router.post("/route", response_model=RouteResponse, tags=["Routing"])
 async def route_workload(
@@ -101,10 +128,7 @@ async def list_regions(
     return response
 
 
-# On-prem / non-cloud zone lookup. Declared BEFORE /carbon/{provider}/{region} so
-# "/carbon/zone/DE" isn't captured by that same-arity route (provider="zone").
-# (The zone *list* lives at /carbon/zones, defined further below -- 2 segments, no
-# clash with the 3-segment region route.)
+# On-prem / non-cloud zone lookup (see the zone-first route note at the top of the file)
 @router.get("/carbon/zone/{grid_zone}", response_model=CarbonIntensity, tags=["Carbon Data"])
 async def get_zone_carbon_intensity(
     grid_zone: str,
@@ -113,12 +137,7 @@ async def get_zone_carbon_intensity(
 ) -> CarbonIntensity:
     """Carbon intensity for a grid zone directly (no cloud region needed) -- for
     on-prem / colocation workloads. Use the zone IDs from /carbon/zones."""
-    known = {r.grid_zone for r in mapper.grid_zones()}
-    if grid_zone not in known:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Unknown grid zone: {grid_zone}. See /api/v1/carbon/zones for valid IDs.",
-        )
+    _require_zone(mapper, grid_zone)
     return await source.get_carbon_intensity(grid_zone)
 
 
@@ -130,9 +149,7 @@ async def get_carbon_intensity(
     source: CarbonDataSource = Depends(get_carbon_source),
 ) -> CarbonIntensity:
     """Get current carbon intensity for a specific cloud region."""
-    zone = mapper.get_grid_zone(provider, region)
-    if zone is None:
-        raise HTTPException(status_code=404, detail=f"Unknown region: {provider}/{region}")
+    zone, _ = _resolve_zone(mapper, provider, region)
     return await source.get_carbon_intensity(zone)
 
 
@@ -186,11 +203,7 @@ async def get_carbon_forecast(
     local time-of-day model is used (named in ``method``). The first point is the
     current reading.
     """
-    zone = mapper.get_grid_zone(provider, region)
-    if zone is None:
-        raise HTTPException(status_code=404, detail=f"Unknown region: {provider}/{region}")
-    info = mapper.get_region(provider, region)
-    longitude = info.longitude if info else 0.0
+    zone, longitude = _resolve_zone(mapper, provider, region)
     method, points = await engine.forecast_zone(zone, longitude, hours)
     return CarbonForecast(
         grid_zone=zone,
@@ -212,14 +225,7 @@ def _zone_representative(mapper: GridMapper, grid_zone: str) -> CloudRegion | No
     return None
 
 
-# The run-now/wait decision lives in carbon_mesh.engine.signal so the static snapshot
-# builder can precompute the exact same signal the API serves. Aliased to the former
-# private name to keep the call sites below unchanged.
-_build_signal = build_signal
-
-
-# Zone-first route, declared BEFORE /carbon/signal/{provider}/{region} so
-# "/carbon/signal/zone/FR" isn't captured as provider="zone".
+# Zone-first route (see the zone-first route note at the top of the file)
 @router.get("/carbon/signal/zone/{grid_zone}", response_model=CarbonSignal, tags=["Carbon Data"])
 async def get_zone_signal(
     grid_zone: str,
@@ -230,13 +236,8 @@ async def get_zone_signal(
 ) -> CarbonSignal:
     """Run-now/wait decision for a grid zone directly -- for on-prem / colo workloads
     that sit on a grid we cover but aren't a cloud region. Use IDs from /carbon/zones."""
-    rep = _zone_representative(mapper, grid_zone)
-    if rep is None:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Unknown grid zone: {grid_zone}. See /api/v1/carbon/zones for valid IDs.",
-        )
-    return await _build_signal(
+    rep = _require_zone(mapper, grid_zone)
+    return await build_signal(
         "zone", grid_zone, grid_zone, rep.longitude, engine, source, marginal_source
     )
 
@@ -256,12 +257,8 @@ async def get_carbon_signal(
     coming, how many hours until that window. The minimal primitive for the
     carbon-aware-dispatcher or any script — loosely coupled via a stable contract.
     """
-    zone = mapper.get_grid_zone(provider, region)
-    if zone is None:
-        raise HTTPException(status_code=404, detail=f"Unknown region: {provider}/{region}")
-    info = mapper.get_region(provider, region)
-    longitude = info.longitude if info else 0.0
-    return await _build_signal(provider, region, zone, longitude, engine, source, marginal_source)
+    zone, longitude = _resolve_zone(mapper, provider, region)
+    return await build_signal(provider, region, zone, longitude, engine, source, marginal_source)
 
 
 @router.get(
@@ -277,9 +274,7 @@ async def get_carbon_anomaly(
     """How this region's intensity compares to its own recent baseline — a
     'cleaner/dirtier than usual right now' read from the published history archive.
     Returns ``insufficient_history`` until enough has accumulated."""
-    zone = mapper.get_grid_zone(provider, region)
-    if zone is None:
-        raise HTTPException(status_code=404, detail=f"Unknown region: {provider}/{region}")
+    zone, _ = _resolve_zone(mapper, provider, region)
     current = await source.get_carbon_intensity(zone)
     now = datetime.now(timezone.utc)
     points = await store.series_for(f"{provider}/{region}", now - timedelta(days=14))
@@ -310,9 +305,7 @@ async def get_carbon_history(
     Oldest first. The archive is accumulated by the scheduled snapshot builder, so
     a region returns points only once it has been observed (empty until then).
     """
-    zone = mapper.get_grid_zone(provider, region)
-    if zone is None:
-        raise HTTPException(status_code=404, detail=f"Unknown region: {provider}/{region}")
+    zone, _ = _resolve_zone(mapper, provider, region)
     since = datetime.now(timezone.utc) - timedelta(hours=hours)
     raw = await store.series_for(f"{provider}/{region}", since)
     points = [
@@ -382,7 +375,7 @@ async def _build_best_time(
     return build_best_time(provider, region, zone, raw, forecast_points, days, energy_kwh)
 
 
-# Zone-first route, before /carbon/best-time/{provider}/{region}.
+# Zone-first route (see the zone-first route note at the top of the file)
 @router.get("/carbon/best-time/zone/{grid_zone}", response_model=BestTime, tags=["Carbon Data"])
 async def get_zone_best_time(
     grid_zone: str,
@@ -396,12 +389,7 @@ async def get_zone_best_time(
 ) -> BestTime:
     """Greenest hour-of-day to schedule a recurring job on a grid zone directly -- for
     on-prem / colo workloads. History is read from a representative region on the zone."""
-    rep = _zone_representative(mapper, grid_zone)
-    if rep is None:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Unknown grid zone: {grid_zone}. See /api/v1/carbon/zones for valid IDs.",
-        )
+    rep = _require_zone(mapper, grid_zone)
     history_key = f"{rep.provider}/{rep.region}"
     return await _build_best_time(
         "zone", grid_zone, grid_zone, rep.longitude, history_key, days, energy_kwh, store, engine
@@ -427,11 +415,7 @@ async def get_best_time(
     proxy (labelled in ``basis``). Moving a fixed daily job to ``cleanest_hour_utc``
     is a one-time change with permanent savings.
     """
-    zone = mapper.get_grid_zone(provider, region)
-    if zone is None:
-        raise HTTPException(status_code=404, detail=f"Unknown region: {provider}/{region}")
-    info = mapper.get_region(provider, region)
-    longitude = info.longitude if info else 0.0
+    zone, longitude = _resolve_zone(mapper, provider, region)
     return await _build_best_time(
         provider, region, zone, longitude, f"{provider}/{region}", days, energy_kwh, store, engine
     )
@@ -694,8 +678,6 @@ async def source_health(
     import asyncio
     import time
 
-    from carbon_mesh.config import settings
-
     # Test zones — one per major source
     test_zones = {
         "UK Carbon Intensity": "GB",
@@ -707,8 +689,6 @@ async def source_health(
         "Open-Meteo (weather)": "DE",
     }
 
-    if settings.eia_api_key:
-        test_zones["EIA (US grid)"] = "US-MIDA-PJM"
     if settings.grid_status_api_key:
         test_zones["GridStatus (US ISOs)"] = "US-CAL-CISO"
     if settings.entsoe_token:

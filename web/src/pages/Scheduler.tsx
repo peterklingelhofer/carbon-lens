@@ -1,21 +1,14 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { type ReactNode, useState } from "react";
+import { useState } from "react";
 import { api } from "../api/client";
 import { greenestRegion, snapshotEnabled, useSnapshot } from "../api/snapshot";
 import type { TimeSlot } from "../api/types";
 import { CleanWindowHeatmap } from "../components/CleanWindowHeatmap";
 import { InfoTip } from "../components/InfoTip";
+import { StatCard } from "../components/StatCard";
 import { RENEWABLE_TIP, SURPLUS_TIP } from "../copy";
-import { card, section as sectionFn } from "../styles";
-
-// Carbon-intensity colour ramp (green clean -> red dirty), matching the globe.
-function intensityColor(v: number): string {
-  if (v <= 50) return "#22c55e";
-  if (v <= 150) return "#84cc16";
-  if (v <= 300) return "#eab308";
-  if (v <= 500) return "#f97316";
-  return "#ef4444";
-}
+import { intensityColor } from "../lib/intensity";
+import { card, labelStyle, sectionStyle, td, th } from "../styles";
 
 // Inline SVG line chart of the recommended region's intensity across the window,
 // with the chosen slot marked. No chart dependency; hand-drawn to match the app.
@@ -133,7 +126,7 @@ function ForecastChart({
   );
 }
 
-const section = sectionFn(1100);
+const section = sectionStyle(1100);
 
 type Strategy = "lowest_carbon" | "highest_renewable" | "balanced";
 
@@ -715,81 +708,12 @@ print(f"in {window['recommended']['region']}")`}</pre>
   );
 }
 
-function StatCard({
-  label,
-  value,
-  unit,
-  positive,
-  mono,
-  tip,
-}: {
-  label: string;
-  value: string;
-  unit?: string;
-  positive?: boolean;
-  mono?: boolean;
-  tip?: ReactNode;
-}) {
-  return (
-    <div
-      style={{
-        padding: "0.75rem",
-        borderRadius: 8,
-        border: "1px solid var(--gray-200)",
-        background: "var(--surface-alt)",
-      }}
-    >
-      <div
-        style={{
-          fontSize: "0.7rem",
-          color: "var(--gray-500)",
-          display: "inline-flex",
-          alignItems: "center",
-        }}
-      >
-        {label}
-        {tip && <InfoTip label={label.toLowerCase()} text={tip} />}
-      </div>
-      <div
-        style={{
-          fontSize: mono ? "0.85rem" : "1.3rem",
-          fontWeight: 700,
-          color: positive ? "var(--green-700)" : "inherit",
-          fontFamily: mono ? "var(--mono)" : "inherit",
-        }}
-      >
-        {value}
-        {unit && (
-          <span style={{ fontSize: "0.75rem", fontWeight: 400, marginLeft: 4 }}>{unit}</span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-const labelStyle: React.CSSProperties = {
-  fontSize: "0.8rem",
-  color: "var(--gray-500)",
-  display: "block",
-  marginBottom: 4,
-};
-
 const sliderValue: React.CSSProperties = {
   fontSize: "0.8rem",
   textAlign: "center",
   color: "var(--green-text)",
   fontWeight: 600,
 };
-
-const th: React.CSSProperties = {
-  textAlign: "left",
-  padding: "0.5rem",
-  fontSize: "0.75rem",
-  fontWeight: 600,
-  color: "var(--gray-500)",
-};
-
-const td: React.CSSProperties = { padding: "0.5rem", fontSize: "0.85rem" };
 
 const codeBlock: React.CSSProperties = {
   background: "var(--surface-alt)",
