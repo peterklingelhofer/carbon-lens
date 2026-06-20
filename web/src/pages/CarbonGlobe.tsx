@@ -608,7 +608,7 @@ export default function CarbonGlobe() {
           }
           cloudTex = tex;
           cloudMat = new THREE.ShaderMaterial({
-            uniforms: { uClouds: { value: tex }, uOpacity: { value: 0.08 } },
+            uniforms: { uClouds: { value: tex }, uOpacity: { value: 0.04 } },
             vertexShader: `
               varying vec2 vUv;
               void main() {
