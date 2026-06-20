@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { type ReactNode, useState } from "react";
 import { api } from "../api/client";
+import { greenestRegion, snapshotEnabled, useSnapshot } from "../api/snapshot";
 import type { TimeSlot } from "../api/types";
 import { CleanWindowHeatmap } from "../components/CleanWindowHeatmap";
 import { InfoTip } from "../components/InfoTip";
@@ -167,11 +168,16 @@ export function Scheduler() {
   const [strategy, setStrategy] = useState<Strategy>("lowest_carbon");
   const [selectedProviders, setSelectedProviders] = useState<string[]>(["aws", "gcp", "azure"]);
 
-  // Best-now query
+  // "Greenest region now" is just the lowest-intensity region among the selected
+  // providers, which the snapshot already carries -- derive it client-side so this
+  // page never wakes the API. The API best-now query is the self-hosted fallback
+  // only (no snapshot); it's disabled in production so the 60s poll never runs.
+  const { data: snapshot } = useSnapshot();
   const bestNow = useQuery({
     queryKey: ["scheduler-now"],
     queryFn: () => api.scheduler.bestNow(30, selectedProviders.join(",")),
     refetchInterval: 60000,
+    enabled: !snapshotEnabled,
   });
 
   // Find window mutation
@@ -192,7 +198,9 @@ export function Scheduler() {
   const recommendation = findWindow.data;
   const recommended = recommendation?.recommended;
   const alternatives = recommendation?.alternatives ?? [];
-  const nowRecommended = bestNow.data?.recommended;
+  const nowRecommended = greenestRegion(snapshot, selectedProviders) ?? bestNow.data?.recommended;
+  // Snapshot mode: loading until the snapshot lands. Self-hosted: the API query.
+  const nowLoading = snapshotEnabled ? !snapshot : bestNow.isLoading;
 
   return (
     <div style={section}>
@@ -227,7 +235,7 @@ export function Scheduler() {
       >
         <div style={card}>
           <h2 style={{ margin: "0 0 0.75rem", fontSize: "1.1rem" }}>Greenest Region Now</h2>
-          {bestNow.isLoading ? (
+          {nowLoading ? (
             <div style={{ color: "var(--gray-400)", fontSize: "0.85rem" }}>Loading...</div>
           ) : nowRecommended ? (
             <>
