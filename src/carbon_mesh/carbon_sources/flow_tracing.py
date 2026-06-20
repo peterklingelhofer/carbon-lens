@@ -19,11 +19,9 @@ from __future__ import annotations
 import asyncio
 from datetime import datetime, timedelta, timezone
 
-from carbon_mesh.carbon_sources.entsoe import ENTSOE_ZONE_MAP, ENTSOECarbonSource
+from carbon_mesh.carbon_sources.entsoe import API_URL, ENTSOE_ZONE_MAP, ENTSOECarbonSource
 from carbon_mesh.carbon_sources.http_pool import ENTSOE_SEMAPHORE, get_with_retry, shared_client
-from carbon_mesh.carbon_sources.xml_safe import parse_xml
-
-A11_URL = "https://web-api.tp.entsoe.eu/api"
+from carbon_mesh.carbon_sources.xml_safe import entsoe_ns, safe_parse_xml
 
 # A connected slice of the European grid covering our cloud-region zones plus the
 # key neighbours they trade with, so imports are attributed to a real source
@@ -124,11 +122,10 @@ def trace_consumption_intensity(
 
 def _parse_flow_latest(xml_text: str) -> float | None:
     """Most recent physical-flow value (MW) from an ENTSO-E A11 document."""
-    try:
-        root = parse_xml(xml_text)
-    except Exception:
+    root = safe_parse_xml(xml_text)
+    if root is None:
         return None
-    ns = {"ns": root.tag.split("}")[0].strip("{")}
+    ns = entsoe_ns(root)
     latest: float | None = None
     for ts in root.findall(".//ns:TimeSeries", ns):
         for pt in ts.findall(".//ns:Point", ns):
@@ -153,7 +150,7 @@ class ConsumptionIntensitySource:
         try:
             resp = await get_with_retry(
                 self._client,
-                A11_URL,
+                API_URL,
                 params={
                     "securityToken": self._token,
                     "documentType": "A11",

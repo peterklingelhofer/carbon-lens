@@ -198,7 +198,7 @@ class ComplianceReportDB(Base):
     reporting_standard: Mapped[str] = mapped_column(
         String(100), nullable=False, default="CSRD / ESRS E1"
     )
-    report_json: Mapped[str | None] = mapped_column(nullable=True)  # Full report as JSON for export
+    report_json: Mapped[str | None] = mapped_column(nullable=True)
 
 
 # --- Green SLA tables ---

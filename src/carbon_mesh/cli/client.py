@@ -108,12 +108,6 @@ def health() -> dict:
     return resp.json()
 
 
-def methodology() -> dict:
-    resp = httpx.get(f"{get_api_url()}/api/v1/carbon/methodology", headers=_headers(), timeout=15)
-    resp.raise_for_status()
-    return resp.json()
-
-
 def honesty() -> dict:
     resp = httpx.get(f"{get_api_url()}/api/v1/healthz/honesty", headers=_headers(), timeout=10)
     resp.raise_for_status()

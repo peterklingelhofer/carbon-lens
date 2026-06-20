@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 import { InfoTip } from "../components/InfoTip";
-import { badge, card as baseCard, grid3, section as sectionFn } from "../styles";
+import { badge, card as baseCard, grid3, sectionStyle } from "../styles";
 
-const section: React.CSSProperties = { ...sectionFn(), padding: "3rem 2rem" };
+const section: React.CSSProperties = { ...sectionStyle(), padding: "3rem 2rem" };
 const card: React.CSSProperties = { ...baseCard, padding: "2rem" };
 
 export function Landing() {

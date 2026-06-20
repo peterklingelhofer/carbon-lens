@@ -6,17 +6,11 @@ Docs: https://transparency.entsoe.eu/content/static_content/Static%20content/web
 
 from datetime import datetime, timezone, timedelta
 
-import httpx
-
+from carbon_mesh.carbon_sources.base import SingleZoneCarbonSource
 from carbon_mesh.carbon_sources.http_pool import ENTSOE_SEMAPHORE, get_with_retry, shared_client
-from carbon_mesh.carbon_sources.xml_safe import parse_xml
+from carbon_mesh.carbon_sources.xml_safe import entsoe_ns, safe_parse_xml
 
-from carbon_mesh.carbon_sources.emission_factors import (
-    calculate_carbon_intensity,
-    calculate_marginal_intensity,
-    calculate_renewable_percentage,
-    power_breakdown,
-)
+from carbon_mesh.carbon_sources.emission_factors import intensity_from_fuel_mix
 from carbon_mesh.models.carbon import CarbonIntensity
 
 API_URL = "https://web-api.tp.entsoe.eu/api"
@@ -90,7 +84,7 @@ _PRODUCTION_TYPE_MAP = {
 }
 
 
-class ENTSOECarbonSource:
+class ENTSOECarbonSource(SingleZoneCarbonSource):
     def __init__(self, security_token: str) -> None:
         self._token = security_token
         self._client = shared_client(timeout=15.0)
@@ -127,50 +121,28 @@ class ENTSOECarbonSource:
         if not fuel_mix:
             raise ValueError(f"No generation data for {grid_zone}")
 
-        return CarbonIntensity(
-            grid_zone=grid_zone,
-            carbon_intensity_gco2_kwh=round(calculate_carbon_intensity(fuel_mix), 1),
-            renewable_percentage=round(calculate_renewable_percentage(fuel_mix), 1),
-            timestamp=now,
-            source="entsoe",
-            grid_load_mw=round(sum(fuel_mix.values())),
-            marginal_intensity_gco2_kwh=round(calculate_marginal_intensity(fuel_mix), 1),
-            power_breakdown_mw=power_breakdown(fuel_mix),
-        )
+        return intensity_from_fuel_mix(grid_zone, fuel_mix, "entsoe", now)
 
     def _parse_generation_xml(self, xml_text: str) -> dict[str, float]:
         """Parse ENTSO-E XML response into fuel mix dict."""
         fuel_mix: dict[str, float] = {}
-        try:
-            root = parse_xml(xml_text)
-            ns = {"ns": "urn:iec62325.351:tc57wg16:451-6:generationloaddocument:3:0"}
+        root = safe_parse_xml(xml_text)
+        if root is None:
+            return fuel_mix
+        ns = entsoe_ns(root)
 
-            for ts in root.findall(".//ns:TimeSeries", ns):
-                psr_type_elem = ts.find(".//ns:MktPSRType/ns:psrType", ns)
-                if psr_type_elem is None:
-                    continue
-                psr_type = psr_type_elem.text or ""
-                normalized = _PRODUCTION_TYPE_MAP.get(psr_type, "other")
+        for ts in root.findall(".//ns:TimeSeries", ns):
+            psr_type_elem = ts.find(".//ns:MktPSRType/ns:psrType", ns)
+            if psr_type_elem is None:
+                continue
+            psr_type = psr_type_elem.text or ""
+            normalized = _PRODUCTION_TYPE_MAP.get(psr_type, "other")
 
-                # Get the last point (most recent)
-                points = ts.findall(".//ns:Point", ns)
-                if points:
-                    last_point = points[-1]
-                    qty_elem = last_point.find("ns:quantity", ns)
-                    if qty_elem is not None and qty_elem.text:
-                        mw = float(qty_elem.text)
-                        fuel_mix[normalized] = fuel_mix.get(normalized, 0) + mw
-        except Exception:
-            pass
+            # Last point is the most recent
+            points = ts.findall(".//ns:Point", ns)
+            if points:
+                qty_elem = points[-1].find("ns:quantity", ns)
+                if qty_elem is not None and qty_elem.text:
+                    fuel_mix[normalized] = fuel_mix.get(normalized, 0) + float(qty_elem.text)
 
         return fuel_mix
-
-    async def get_carbon_intensity_batch(self, grid_zones: list[str]) -> dict[str, CarbonIntensity]:
-        results: dict[str, CarbonIntensity] = {}
-        for zone in grid_zones:
-            if self.can_handle(zone):
-                try:
-                    results[zone] = await self.get_carbon_intensity(zone)
-                except (httpx.HTTPError, ValueError):
-                    pass
-        return results

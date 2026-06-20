@@ -10,6 +10,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from statistics import median
 
+from carbon_mesh.engine.recurring import _parse_utc
+
 _MIN_HOUR_SAMPLES = 3
 _MIN_RECENT_SAMPLES = 6
 _DEADBAND_PCT = 10.0
@@ -41,11 +43,9 @@ def compute_anomaly(current: float, points: list[dict], now: datetime) -> dict:
         if c is None or not t:
             continue
         all_values.append(c)
-        try:
-            ts = datetime.fromisoformat(t)
-        except ValueError:
+        ts = _parse_utc(t)
+        if ts is None:
             continue
-        ts = ts.replace(tzinfo=timezone.utc) if ts.tzinfo is None else ts.astimezone(timezone.utc)
         if ts.hour == target_hour:
             same_hour.append(c)
 

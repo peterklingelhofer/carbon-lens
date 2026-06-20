@@ -76,6 +76,18 @@ def choose_by_state(signal: dict, green, yellow, red):
     return red
 
 
+def soonest_clean_window_hours(signal: dict, default: float = 0.0) -> float:
+    """Hours until the soonest clean window: surplus first, then merely-cleaner, else ``default``.
+
+    Shared by the integrations and the Kubernetes controller so they agree on which
+    horizon to defer toward
+    """
+    hours = (
+        signal.get("surplus_window_in_hours") or signal.get("cleaner_window_in_hours") or default
+    )
+    return float(hours)
+
+
 def impact_from_signal(region: str, signal: dict, deferred_hours: float) -> dict:
     """Build an org-ledger impact entry from a signal and a chosen deferral.
 

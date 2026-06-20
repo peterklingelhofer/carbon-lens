@@ -11,12 +11,7 @@ Updates every 5 minutes.
 
 from datetime import datetime, timezone
 
-from carbon_mesh.carbon_sources.emission_factors import (
-    calculate_carbon_intensity,
-    calculate_marginal_intensity,
-    calculate_renewable_percentage,
-    power_breakdown,
-)
+from carbon_mesh.carbon_sources.emission_factors import intensity_from_fuel_mix
 from carbon_mesh.carbon_sources.http_pool import shared_client
 from carbon_mesh.models.carbon import CarbonIntensity
 
@@ -101,15 +96,6 @@ class AEMOCarbonSource:
             fuel_mix = region_fuel.get(zone)
             if not fuel_mix:
                 continue
-            results[zone] = CarbonIntensity(
-                grid_zone=zone,
-                carbon_intensity_gco2_kwh=round(calculate_carbon_intensity(fuel_mix), 1),
-                renewable_percentage=round(calculate_renewable_percentage(fuel_mix), 1),
-                timestamp=now,
-                source="openelectricity",
-                grid_load_mw=round(sum(fuel_mix.values())),
-                marginal_intensity_gco2_kwh=round(calculate_marginal_intensity(fuel_mix), 1),
-                power_breakdown_mw=power_breakdown(fuel_mix),
-            )
+            results[zone] = intensity_from_fuel_mix(zone, fuel_mix, "openelectricity", now)
 
         return results

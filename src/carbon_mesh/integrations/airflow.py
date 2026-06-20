@@ -28,6 +28,7 @@ from typing import Any
 
 import httpx
 
+from carbon_mesh.integrations import _require
 from carbon_mesh.sdk import DEFAULT_API_URL, is_good_time
 
 try:
@@ -40,13 +41,6 @@ except ImportError:  # pragma: no cover - exercised only without Airflow install
     BaseTrigger = object  # type: ignore[assignment,misc]
     TriggerEvent = None  # type: ignore[assignment,misc]
     _HAS_AIRFLOW = False
-
-
-def _require_airflow() -> None:
-    if not _HAS_AIRFLOW:
-        raise ImportError(
-            "The Airflow integration needs Apache Airflow installed (pip install apache-airflow)."
-        )
 
 
 def _signal_url(api_url: str, region: str) -> str:
@@ -127,7 +121,7 @@ class CarbonAwareSensor(BaseSensorOperator):
         poll_seconds: float = 600.0,
         **kwargs: Any,
     ) -> None:
-        _require_airflow()
+        _require(_HAS_AIRFLOW, "Airflow", "apache-airflow")
         super().__init__(**kwargs)
         self.region = region
         self.api_url = api_url

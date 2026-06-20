@@ -8,23 +8,11 @@ import { InfoTip } from "../components/InfoTip";
 import { ShiftabilityPanel } from "../components/ShiftabilityPanel";
 import { SitingPicker } from "../components/SitingPicker";
 import { DATA_QUALITY_TIP, DATA_QUALITY_TIP_RICH, MARGINAL_TIP } from "../copy";
-import { timeAgo } from "../lib/format";
-import { card, providerChip, section as sectionFn } from "../styles";
+import { formatLoad, timeAgo } from "../lib/format";
+import { intensityVarColor } from "../lib/intensity";
+import { card, providerChip, sectionStyle } from "../styles";
 
-const section = sectionFn(1100);
-
-function formatLoad(mw?: number | null): string | null {
-  if (mw == null) return null;
-  return mw >= 1000 ? `${(mw / 1000).toFixed(1)} GW` : `${Math.round(mw)} MW`;
-}
-
-function intensityColor(val: number): string {
-  if (val <= 50) return "var(--green-500)";
-  if (val <= 150) return "var(--green-400)";
-  if (val <= 300) return "var(--amber)";
-  if (val <= 500) return "var(--orange-400)";
-  return "var(--red-400)";
-}
+const section = sectionStyle(1100);
 
 function QualityTag({ quality }: { quality?: CarbonIntensity["quality"] }) {
   if (quality !== "estimated") return null;
@@ -119,7 +107,7 @@ function IntensityBar({ value, max = 800 }: { value: number; max?: number }) {
           height: "100%",
           width: `${pct}%`,
           borderRadius: 4,
-          background: intensityColor(value),
+          background: intensityVarColor(value),
           transition: "width 0.3s",
         }}
       />
@@ -333,10 +321,12 @@ export function Dashboard() {
   const allRegions = regions ?? [];
   const apiIntensities = useRegionIntensities(usingSnapshot ? [] : allRegions);
   const intensities = usingSnapshot ? snapshot.intensities : apiIntensities;
-  const q = search.trim().toLowerCase();
-  const filteredRegions = q
+  const searchQuery = search.trim().toLowerCase();
+  const filteredRegions = searchQuery
     ? allRegions.filter((r) =>
-        `${r.provider} ${r.region} ${r.grid_zone} ${r.location}`.toLowerCase().includes(q),
+        `${r.provider} ${r.region} ${r.grid_zone} ${r.location}`
+          .toLowerCase()
+          .includes(searchQuery),
       )
     : allRegions;
   const sortedRegions = sortKey
@@ -655,8 +645,8 @@ export function Dashboard() {
             }}
           >
             Showing 20 of {sortedRegions.length}
-            {q ? " matching" : ""} regions{q ? "" : " (sorted)"}. Refine your search or use the API
-            for the full set.
+            {searchQuery ? " matching" : ""} regions{searchQuery ? "" : " (sorted)"}. Refine your
+            search or use the API for the full set.
           </p>
         )}
       </div>
@@ -676,7 +666,6 @@ function useCarbonStream() {
 
     ws.onopen = () => {
       setConnected(true);
-      // Subscribe with a 30-second interval for the demo
       ws.send(JSON.stringify({ interval_seconds: 30 }));
     };
     ws.onmessage = (event) => {
@@ -820,7 +809,6 @@ function LivePanel() {
 function useRegionIntensities(regions: CloudRegion[]) {
   const [data, setData] = useState<Record<string, CarbonIntensity>>({});
 
-  // Batch fetch all regions in a single request
   useEffect(() => {
     if (regions.length === 0) return;
     let cancelled = false;

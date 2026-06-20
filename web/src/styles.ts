@@ -1,6 +1,6 @@
 /** Shared style constants used across pages. */
 
-export const section = (maxWidth = 900): React.CSSProperties => ({
+export const sectionStyle = (maxWidth = 900): React.CSSProperties => ({
   maxWidth,
   margin: "0 auto",
   padding: "2rem 1rem",
@@ -49,3 +49,38 @@ export const badge: React.CSSProperties = {
   background: "var(--green-100)",
   color: "var(--green-800)",
 };
+
+// Dimmed secondary text, used for captions and helper copy across components
+export const muted: React.CSSProperties = {
+  color: "var(--gray-500)",
+  fontSize: "0.8rem",
+};
+
+// Form-field label above an input/select
+export const labelStyle: React.CSSProperties = {
+  fontSize: "0.8rem",
+  color: "var(--gray-500)",
+  display: "block",
+  marginBottom: 4,
+};
+
+// Full-width text/select input
+export const inputStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "0.5rem",
+  borderRadius: 6,
+  border: "1px solid var(--gray-200)",
+  fontSize: "0.9rem",
+  boxSizing: "border-box",
+};
+
+// Table header / body cells shared by the result tables
+export const th: React.CSSProperties = {
+  textAlign: "left",
+  padding: "0.5rem",
+  fontSize: "0.75rem",
+  fontWeight: 600,
+  color: "var(--gray-500)",
+};
+
+export const td: React.CSSProperties = { padding: "0.5rem", fontSize: "0.85rem" };

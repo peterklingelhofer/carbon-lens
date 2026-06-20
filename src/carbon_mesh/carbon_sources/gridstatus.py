@@ -28,9 +28,6 @@ _GRID_ZONE_TO_ISO: dict[str, str] = {
     "CA-QC": "ieso",
 }
 
-# ISOs where we have known fuel mix datasets
-_SUPPORTED_ISOS = {"caiso", "ercot", "isone", "miso", "nyiso", "pjm", "spp", "ieso"}
-
 
 class GridStatusCarbonSource:
     def __init__(self, api_key: str) -> None:
@@ -70,7 +67,6 @@ class GridStatusCarbonSource:
         values = data_rows[1]
         row = dict(zip(headers, values))
 
-        # Parse fuel mix from column names
         fuel_mix_mw: dict[str, float] = {}
         skip_cols = {
             "interval_start_utc",
@@ -95,7 +91,6 @@ class GridStatusCarbonSource:
         intensity = calculate_carbon_intensity(fuel_mix_mw)
         renewable_pct = calculate_renewable_percentage(fuel_mix_mw)
 
-        # Parse timestamp
         ts_str = row.get("interval_start_utc", "")
         try:
             ts = datetime.fromisoformat(ts_str).replace(tzinfo=timezone.utc)

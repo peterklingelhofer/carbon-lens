@@ -13,7 +13,7 @@ from datetime import datetime, timedelta, timezone
 
 from carbon_mesh.carbon_sources.entsoe import ENTSOE_ZONE_MAP
 from carbon_mesh.carbon_sources.http_pool import ENTSOE_SEMAPHORE, get_with_retry, shared_client
-from carbon_mesh.carbon_sources.xml_safe import parse_xml
+from carbon_mesh.carbon_sources.xml_safe import entsoe_ns, safe_parse_xml
 
 API_URL = "https://web-api.tp.entsoe.eu/api"
 
@@ -35,11 +35,10 @@ def _series_by_hour(xml_text: str, psr_filter: set[str] | None) -> dict[datetime
     for load documents. Sub-hourly resolutions are averaged within the hour, and
     multiple matching TimeSeries (e.g. wind + solar) are summed per hour.
     """
-    try:
-        root = parse_xml(xml_text)
-    except Exception:
+    root = safe_parse_xml(xml_text)
+    if root is None:
         return {}
-    ns = {"ns": root.tag.split("}")[0].strip("{")}
+    ns = entsoe_ns(root)
 
     totals: dict[datetime, float] = defaultdict(float)
     for ts in root.findall(".//ns:TimeSeries", ns):

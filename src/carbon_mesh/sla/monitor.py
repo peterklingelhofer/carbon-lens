@@ -14,18 +14,13 @@ from carbon_mesh.models.sla import (
     AlertEvent,
     GreenSLA,
     SLACheck,
-    SLACheckFrequency,
     SLAStatus,
 )
-from carbon_mesh.sla.engine import SLAEngine
+from carbon_mesh.sla.engine import FREQUENCY_SECONDS, SLAEngine, is_due
 
 logger = logging.getLogger(__name__)
 
-FREQUENCY_SECONDS: dict[SLACheckFrequency, int] = {
-    SLACheckFrequency.HOURLY: 3600,
-    SLACheckFrequency.DAILY: 86400,
-    SLACheckFrequency.WEEKLY: 604800,
-}
+__all__ = ["FREQUENCY_SECONDS", "SLAMonitor"]
 
 
 class SLAMonitor:
@@ -93,9 +88,7 @@ class SLAMonitor:
                         continue
 
                     # Check if this SLA is due for a check
-                    last = self._last_check.get(sla.id)
-                    interval = FREQUENCY_SECONDS[sla.check_frequency]
-                    if last and (now - last).total_seconds() < interval:
+                    if not is_due(self._last_check.get(sla.id), sla.check_frequency, now):
                         continue
 
                     # Run the check

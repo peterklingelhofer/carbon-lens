@@ -68,15 +68,15 @@ async def build_signal(
     if points is None:
         _, points = await engine.forecast_zone(zone, longitude, 24)
     intensities = [p.carbon_intensity_gco2_kwh for p in points]
-    now_v = intensities[0]
-    state = signal_state(now_v)
+    current_intensity = intensities[0]
+    state = signal_state(current_intensity)
 
     # Soonest upcoming hour that's notably cleaner (>= 15% lower) than now.
-    best_i, best_v = 0, now_v
+    cleanest_ahead_idx, cleanest_ahead = 0, current_intensity
     for i in range(1, len(intensities)):
-        if intensities[i] < best_v:
-            best_i, best_v = i, intensities[i]
-    notably_cleaner = best_i >= 1 and best_v <= now_v * 0.85
+        if intensities[i] < cleanest_ahead:
+            cleanest_ahead_idx, cleanest_ahead = i, intensities[i]
+    notably_cleaner = cleanest_ahead_idx >= 1 and cleanest_ahead <= current_intensity * 0.85
 
     # Marginal is what actually responds to shifting load, so surface it (and an
     # honest caveat) alongside the average-based traffic light. Clean surplus is the
@@ -90,19 +90,19 @@ async def build_signal(
         measured = await marginal_source.marginal_intensity(zone)
         if measured is not None:
             marginal, marginal_basis = measured, "measured"
-    surplus = is_clean_surplus(current.renewable_percentage, now_v, marginal)
+    surplus = is_clean_surplus(current.renewable_percentage, current_intensity, marginal)
 
     # Soonest upcoming clean-surplus window (the highest-value time to shift into).
     surplus_window = next((h for h in surplus_offsets(points) if h >= 1), None)
 
     if surplus:
-        advice, window_h, window_v = "run_now", None, None
+        advice, window_hours, window_intensity = "run_now", None, None
         note = (
             "Renewables are abundant right now (likely surplus): extra load is largely served "
             "by clean power that might otherwise be curtailed. Ideal time to run flexible jobs."
         )
     elif surplus_window is not None:
-        advice, window_h, window_v = (
+        advice, window_hours, window_intensity = (
             "wait_for_cleaner",
             surplus_window,
             round(intensities[surplus_window]),
@@ -112,17 +112,21 @@ async def build_signal(
             f"the highest-value time to run a flexible job."
         )
     elif state == "green" or not notably_cleaner:
-        advice, window_h, window_v = "run_now", None, None
-        note = marginal_note(now_v, marginal)
+        advice, window_hours, window_intensity = "run_now", None, None
+        note = marginal_note(current_intensity, marginal)
     else:
-        advice, window_h, window_v = "wait_for_cleaner", best_i, round(best_v)
-        note = marginal_note(now_v, marginal)
+        advice, window_hours, window_intensity = (
+            "wait_for_cleaner",
+            cleanest_ahead_idx,
+            round(cleanest_ahead),
+        )
+        note = marginal_note(current_intensity, marginal)
 
     return CarbonSignal(
         provider=provider,
         region=region,
         grid_zone=zone,
-        intensity_gco2_kwh=round(now_v),
+        intensity_gco2_kwh=round(current_intensity),
         state=state,
         advice=advice,
         marginal_intensity_gco2_kwh=marginal,
@@ -130,6 +134,6 @@ async def build_signal(
         marginal_basis=marginal_basis,
         clean_surplus=surplus,
         surplus_window_in_hours=surplus_window,
-        cleaner_window_in_hours=window_h,
-        cleaner_window_intensity_gco2_kwh=window_v,
+        cleaner_window_in_hours=window_hours,
+        cleaner_window_intensity_gco2_kwh=window_intensity,
     )
