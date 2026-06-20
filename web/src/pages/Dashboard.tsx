@@ -293,7 +293,11 @@ export function Dashboard() {
   } = useQuery({
     queryKey: ["regions", provider],
     queryFn: () => api.regions(provider || undefined),
-    enabled: !usingSnapshot,
+    // Gate on the config flag, not the runtime `usingSnapshot`: the snapshot
+    // resolves a tick after mount, so `!usingSnapshot` was briefly true and fired
+    // a regions request that woke the API. When a snapshot is configured, regions
+    // always come from it -- never hit the API.
+    enabled: !snapshotEnabled,
   });
 
   const regions = usingSnapshot
@@ -303,11 +307,6 @@ export function Dashboard() {
     : apiRegions;
   const regionsLoading = usingSnapshot ? false : apiRegionsLoading;
 
-  const { data: savings } = useQuery({
-    queryKey: ["savings"],
-    queryFn: () => api.savings(),
-  });
-
   const queryClient = useQueryClient();
   const routeSample = useMutation({
     mutationFn: () =>
@@ -315,6 +314,17 @@ export function Dashboard() {
         constraints: { providers: ["aws", "gcp", "azure"], carbon_weight: 1.0 },
       }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["savings"] }),
+  });
+
+  // The public snapshot deployment runs against a scale-to-zero API, so don't wake
+  // it just to show a stats counter on page load -- regions already come from the
+  // CDN snapshot. Fetch the savings ledger only when there's no snapshot (self-
+  // hosted, always-on API) or after the user deliberately routes a sample, which
+  // hits the API anyway. That keeps Grid Data fully CDN-backed on first view.
+  const { data: savings } = useQuery({
+    queryKey: ["savings"],
+    queryFn: () => api.savings(),
+    enabled: !snapshotEnabled || routeSample.isSuccess,
   });
 
   // Fetch intensities for ALL regions (in snapshot mode they're already present),
@@ -520,6 +530,7 @@ export function Dashboard() {
             type="button"
             key={p}
             onClick={() => setProvider(p)}
+            aria-pressed={provider === p}
             style={{
               padding: "0.4rem 1rem",
               borderRadius: 6,

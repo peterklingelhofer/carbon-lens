@@ -55,8 +55,9 @@ describe("CleanWindowHeatmap", () => {
     renderWithClient(<CleanWindowHeatmap />);
 
     expect(await screen.findByText(/Projection from/)).toBeTruthy();
-    // Each populated hour renders a coloured cell with a gCO2 tooltip.
-    expect(screen.getAllByTitle(/gCO₂\/kWh/).length).toBeGreaterThanOrEqual(24);
+    // Each populated hour renders a coloured cell labelled with its gCO2 value
+    // (read on hover/tap as a tooltip; exposed to AT via aria-label).
+    expect(screen.getAllByLabelText(/gCO₂\/kWh/).length).toBeGreaterThanOrEqual(24);
     expect(mockForecast).toHaveBeenCalledWith("aws", "us-east-1", 168);
     // Provider switcher + region selector are present.
     expect(screen.getByRole("button", { name: "gcp" })).toBeTruthy();

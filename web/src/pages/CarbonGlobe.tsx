@@ -310,6 +310,7 @@ function MetricToggle({
             type="button"
             key={m}
             onClick={() => onChange(m)}
+            aria-pressed={value === m}
             style={{
               flex: 1,
               textAlign: "center",
@@ -607,7 +608,7 @@ export default function CarbonGlobe() {
           }
           cloudTex = tex;
           cloudMat = new THREE.ShaderMaterial({
-            uniforms: { uClouds: { value: tex }, uOpacity: { value: 0.08 } },
+            uniforms: { uClouds: { value: tex }, uOpacity: { value: 0.04 } },
             vertexShader: `
               varying vec2 vUv;
               void main() {
@@ -1011,7 +1012,9 @@ export default function CarbonGlobe() {
           </p>
         )}
         {snapshot && (
-          <p style={{ margin: "3px 0 0", fontSize: "0.7rem", color: "#64748b" }}>
+          // #94a3b8 (not #64748b) so this small timestamp clears AA 4.5:1 on the
+          // dark globe -- #64748b measured 4.41:1, just under.
+          <p style={{ margin: "3px 0 0", fontSize: "0.7rem", color: "#94a3b8" }}>
             Data updated {timeAgo(snapshot.generated_at)}
           </p>
         )}
@@ -1279,6 +1282,8 @@ export default function CarbonGlobe() {
       {/* Empty / loading / error state - distinguish a failed fetch from loading */}
       {!webglError && points.length === 0 && (
         <div
+          role="status"
+          aria-live="polite"
           style={{
             position: "absolute",
             inset: 0,
