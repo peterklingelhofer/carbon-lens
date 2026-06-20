@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api/client";
 import {
+  snapshotEnabled,
   useBestTimeSnapshot,
   useForecastSnapshot,
   useRegionHistoryArchive,
@@ -96,7 +97,11 @@ export function RegionHistory({
     queryFn: () => api.carbonHistory(provider, region, 168),
     staleTime: 10 * 60_000,
     retry: 1,
-    enabled: !archive, // the CDN archive already has it -> skip the API
+    // Only ever fall back to the live API when snapshots are off (self-hosted).
+    // With a snapshot configured, the archive is a separate lazy fetch, so during
+    // the gap before it loads `!archive` was briefly true and woke the API -- the
+    // source of the "waking the API" banner on the globe. Never hit it in prod.
+    enabled: !archive && !snapshotEnabled,
   });
 
   // Normalize either source to points with timestamp + carbon (+ renewable).
@@ -111,7 +116,11 @@ export function RegionHistory({
   const label = (
     <div style={{ fontSize: "0.72rem", color: "#9ca3af", marginBottom: 4 }}>Past 7 days</div>
   );
-  if (!archive && isLoading) return null;
+  // Render nothing while the source is still loading: the API query when self-
+  // hosted, or the shared history archive (a separate lazy fetch with no per-call
+  // isLoading) in snapshot mode -- otherwise we'd flash the "accumulating" copy
+  // before the archive lands.
+  if (!points && (isLoading || snapshotEnabled)) return null;
   if (!points || points.length < 2) {
     return (
       <div style={{ marginTop: 10 }}>
@@ -157,7 +166,7 @@ export function RegionWeather({ provider, region }: { provider: string; region: 
     queryFn: () => api.regionWeather(provider, region),
     staleTime: 10 * 60_000,
     retry: 1,
-    enabled: !snap, // snapshot already has the weather -> skip the API
+    enabled: !snap && !snapshotEnabled, // snapshot has the weather; never wake the API in prod
   });
 
   const data = snap ?? apiData;
@@ -211,7 +220,7 @@ export function RegionBestTime({ provider, region }: { provider: string; region:
     queryFn: () => api.bestTime(provider, region),
     staleTime: 30 * 60_000,
     retry: 1,
-    enabled: !snap, // snapshot already has the greenest hour -> skip the API
+    enabled: !snap && !snapshotEnabled, // snapshot has the greenest hour; never wake the API in prod
   });
 
   const data = snap ?? apiData;
@@ -268,7 +277,7 @@ export function RegionForecast({ provider, region }: { provider: string; region:
     queryFn: () => api.carbonForecast(provider, region, 24),
     staleTime: 5 * 60_000,
     retry: 1,
-    enabled: !snap, // snapshot already has the curve -> skip the API
+    enabled: !snap && !snapshotEnabled, // snapshot has the curve; never wake the API in prod
   });
 
   const label = (
