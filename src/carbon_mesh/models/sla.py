@@ -24,12 +24,9 @@ class SLACheckFrequency(str, Enum):
 
 
 class AlertChannel(str, Enum):
-    """Where to send SLA breach alerts."""
+    """Where to send SLA breach alerts (webhook for now; email/slack need account setup)."""
 
     WEBHOOK = "webhook"
-    # EMAIL and SLACK require account setup — add later
-    # EMAIL = "email"
-    # SLACK = "slack"
 
 
 class GreenSLA(BaseModel):

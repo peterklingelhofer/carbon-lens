@@ -20,8 +20,8 @@ from carbon_mesh.models.sla import (
     SLAReport,
     SLASummary,
 )
-from carbon_mesh.sla.engine import SLAEngine
-from carbon_mesh.sla.monitor import FREQUENCY_SECONDS, SLAMonitor
+from carbon_mesh.sla.engine import SLAEngine, is_due
+from carbon_mesh.sla.monitor import SLAMonitor
 from carbon_mesh.sla.repository import SLARepository
 
 logger = logging.getLogger(__name__)
@@ -47,6 +47,14 @@ def _get_monitor() -> SLAMonitor:
     if _monitor is None:
         _monitor = SLAMonitor(engine=_get_engine())
     return _monitor
+
+
+async def _require_sla(sla_id: str, repo: SLARepository) -> GreenSLA:
+    """Load an SLA or raise 404 if it doesn't exist."""
+    sla = await repo.get_sla(sla_id)
+    if not sla:
+        raise HTTPException(404, f"SLA {sla_id} not found")
+    return sla
 
 
 # --- Request models ---
@@ -187,8 +195,7 @@ async def run_due_checks(
     checks_run = 0
     for sla in slas:
         last = await repo.latest_check(sla.id)
-        interval = FREQUENCY_SECONDS[sla.check_frequency]
-        if last is not None and (now - last.checked_at).total_seconds() < interval:
+        if not is_due(last.checked_at if last else None, sla.check_frequency, now):
             continue  # not due yet
         try:
             check = await engine.check_sla(sla)
@@ -205,10 +212,7 @@ async def get_sla(
     repo: SLARepository = Depends(get_sla_repository),
 ) -> GreenSLA:
     """Get an SLA definition by ID."""
-    sla = await repo.get_sla(sla_id)
-    if not sla:
-        raise HTTPException(404, f"SLA {sla_id} not found")
-    return sla
+    return await _require_sla(sla_id, repo)
 
 
 @router.put("/{sla_id}", response_model=GreenSLA)
@@ -218,9 +222,7 @@ async def update_sla(
     repo: SLARepository = Depends(get_sla_repository),
 ) -> GreenSLA:
     """Update an existing SLA."""
-    sla = await repo.get_sla(sla_id)
-    if not sla:
-        raise HTTPException(404, f"SLA {sla_id} not found")
+    sla = await _require_sla(sla_id, repo)
 
     update_data = req.model_dump(exclude_none=True)
     update_data["updated_at"] = datetime.now(timezone.utc)
@@ -251,9 +253,7 @@ async def check_sla(
     Fetches live carbon data for all monitored regions and evaluates
     against the SLA thresholds.
     """
-    sla = await repo.get_sla(sla_id)
-    if not sla:
-        raise HTTPException(404, f"SLA {sla_id} not found")
+    sla = await _require_sla(sla_id, repo)
 
     engine = _get_engine()
     check = await engine.check_sla(sla)
@@ -267,8 +267,7 @@ async def get_sla_status(
     repo: SLARepository = Depends(get_sla_repository),
 ) -> SLACheck | None:
     """Get the most recent compliance check for an SLA."""
-    if not await repo.get_sla(sla_id):
-        raise HTTPException(404, f"SLA {sla_id} not found")
+    await _require_sla(sla_id, repo)
     return await repo.latest_check(sla_id)
 
 
@@ -279,8 +278,7 @@ async def list_checks(
     repo: SLARepository = Depends(get_sla_repository),
 ) -> list[SLACheck]:
     """List recent compliance checks for an SLA."""
-    if not await repo.get_sla(sla_id):
-        raise HTTPException(404, f"SLA {sla_id} not found")
+    await _require_sla(sla_id, repo)
     return await repo.list_checks(sla_id, limit=limit)
 
 
@@ -295,9 +293,7 @@ async def generate_report(
     Uses stored compliance checks to build the report. If no checks exist
     for the period, runs a fresh check first.
     """
-    sla = await repo.get_sla(sla_id)
-    if not sla:
-        raise HTTPException(404, f"SLA {sla_id} not found")
+    sla = await _require_sla(sla_id, repo)
 
     now = datetime.now(timezone.utc)
     period_start = now - timedelta(days=req.period_days)
@@ -331,6 +327,5 @@ async def list_reports(
     repo: SLARepository = Depends(get_sla_repository),
 ) -> list[SLAReport]:
     """List all attestation reports for an SLA."""
-    if not await repo.get_sla(sla_id):
-        raise HTTPException(404, f"SLA {sla_id} not found")
+    await _require_sla(sla_id, repo)
     return await repo.list_reports(sla_id)

@@ -18,7 +18,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from carbon_mesh.sdk import DEFAULT_API_URL, CarbonClient, impact_from_signal, is_good_time
+from carbon_mesh.sdk import (
+    DEFAULT_API_URL,
+    CarbonClient,
+    impact_from_signal,
+    is_good_time,
+    soonest_clean_window_hours,
+)
 
 
 def defer_seconds(
@@ -28,12 +34,8 @@ def defer_seconds(
     clean window (surplus first, then merely-cleaner), capped at ``max_wait_hours``."""
     if is_good_time(signal, max_intensity):
         return 0.0
-    hours = (
-        signal.get("surplus_window_in_hours")
-        or signal.get("cleaner_window_in_hours")
-        or max_wait_hours
-    )
-    return min(float(hours), max_wait_hours) * 3600
+    hours = soonest_clean_window_hours(signal, max_wait_hours)
+    return min(hours, max_wait_hours) * 3600
 
 
 def apply_when_clean(

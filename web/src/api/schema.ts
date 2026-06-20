@@ -1159,7 +1159,7 @@ export interface components {
         AccountingMethod: "location_based" | "market_based";
         /**
          * AlertChannel
-         * @description Where to send SLA breach alerts.
+         * @description Where to send SLA breach alerts (webhook for now; email/slack need account setup).
          * @enum {string}
          */
         AlertChannel: "webhook";

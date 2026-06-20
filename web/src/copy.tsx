@@ -48,6 +48,27 @@ const pill = (bg: string, fg: string): CSSProperties => ({
   color: fg,
 });
 
+// Tooltip copy for the alternatives/result tables shared by the API explorer and
+// route demo. Kept here so both pages stay in sync.
+export const EMISSIONS_TIP =
+  "Carbon emitted per kilowatt-hour of electricity, in gCO₂/kWh - an intensity (emissions per " +
+  "unit of power), not a total. Lower is cleaner.";
+
+export const TABLE_RENEWABLE_TIP =
+  "Share of the grid's power from renewables (wind, solar, hydro) right now. Low-carbon grids that " +
+  "lean on nuclear (e.g. France, Sweden) can show a low renewable % while still emitting very " +
+  "little CO₂ - and where no live fuel-mix feed is configured, this falls back to a weather " +
+  "estimate that only sees solar and wind.";
+
+export const GRID_ZONE_TIP =
+  "The electricity grid (balancing authority) powering this region - e.g. US-NW-BPAT for Oregon, " +
+  "SE-SE3 for southern Sweden. Carbon is measured at the grid, not the datacenter.";
+
+export const SOURCE_TIP =
+  "Where the reading came from: a live grid-operator feed (eia, entsoe, uk, aemo, …) or a " +
+  "clearly-labelled estimate (e.g. the open_meteo weather model) when no live feed is configured " +
+  "for that zone.";
+
 export const DATA_QUALITY_TIP_RICH = (
   <>
     <span style={pill("#4ade80", "#052e16")}>Live</span> = measured from the grid operator's

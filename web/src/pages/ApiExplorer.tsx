@@ -1,11 +1,15 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { api } from "../api/client";
+import { API_BASE, api } from "../api/client";
 import type { CarbonIntensity, RouteResponse } from "../api/types";
 import { InfoTip } from "../components/InfoTip";
-import { card, section as sectionFn } from "../styles";
+import { StatCard } from "../components/StatCard";
+import { TableHeadCell } from "../components/TableHeadCell";
+import { EMISSIONS_TIP, GRID_ZONE_TIP, SOURCE_TIP, TABLE_RENEWABLE_TIP } from "../copy";
+import { intensityVarColor } from "../lib/intensity";
+import { card, inputStyle, labelStyle, sectionStyle, td } from "../styles";
 
-const section = sectionFn(1100);
+const section = sectionStyle(1100);
 
 const PROVIDERS = ["aws", "gcp", "azure"] as const;
 
@@ -20,24 +24,6 @@ const POPULAR_REGIONS: Record<string, string[]> = {
     "australia-southeast1",
   ],
   azure: ["eastus", "westeurope", "norwayeast", "uksouth", "australiaeast", "canadacentral"],
-};
-
-// The deployed API base - used for the Swagger link and the copy-pasteable curls.
-// For display (curl snippets, Swagger link): the page's own origin, which the
-// Worker proxies to the backend - so copy-pasted commands hit a same-origin URL.
-const API_BASE =
-  import.meta.env.VITE_API_URL || (typeof window !== "undefined" ? window.location.origin : "");
-
-// Shared tooltip copy, reused across the result cards and table headers.
-const TIP = {
-  emissions:
-    "Carbon emitted per kilowatt-hour of electricity, in gCO₂/kWh - an intensity (emissions per unit of power), not a total. Lower is cleaner.",
-  renewable:
-    "Share of the grid's electricity from renewables (wind, solar, hydro) right now. Note: low-carbon grids that lean on nuclear (e.g. France, Sweden) can show a low renewable % while still emitting very little CO₂.",
-  gridZone:
-    "The electricity grid (balancing authority) powering this region - e.g. US-NW-BPAT for Oregon, SE-SE3 for southern Sweden. Carbon is measured at the grid, not the datacenter.",
-  source:
-    "Where the reading came from: a live grid-operator feed (eia, entsoe, uk, aemo, …) or a clearly-labelled estimate (e.g. the open_meteo weather model) when no live feed is configured for that zone.",
 };
 
 export function ApiExplorer() {
@@ -323,10 +309,10 @@ export function ApiExplorer() {
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
                     <tr style={{ borderBottom: "2px solid var(--gray-200)" }}>
-                      <HeadCell label="Region" />
-                      <HeadCell label="gCO₂/kWh" tip={TIP.emissions} align="right" />
-                      <HeadCell label="Renewable %" tip={TIP.renewable} align="right" />
-                      <HeadCell label="Source" tip={TIP.source} />
+                      <TableHeadCell label="Region" />
+                      <TableHeadCell label="gCO₂/kWh" tip={EMISSIONS_TIP} align="right" />
+                      <TableHeadCell label="Renewable %" tip={TABLE_RENEWABLE_TIP} align="right" />
+                      <TableHeadCell label="Source" tip={SOURCE_TIP} />
                     </tr>
                   </thead>
                   <tbody>
@@ -350,12 +336,7 @@ export function ApiExplorer() {
                               ...td,
                               textAlign: "right",
                               fontWeight: 600,
-                              color:
-                                val.carbon_intensity_gco2_kwh <= 50
-                                  ? "var(--green-text)"
-                                  : val.carbon_intensity_gco2_kwh <= 200
-                                    ? "var(--green-500)"
-                                    : "var(--orange-400)",
+                              color: intensityVarColor(val.carbon_intensity_gco2_kwh),
                             }}
                           >
                             {val.carbon_intensity_gco2_kwh}
@@ -401,22 +382,22 @@ export function ApiExplorer() {
               marginBottom: "1rem",
             }}
           >
-            <ResultCard
+            <StatCard
               label="Carbon emissions"
               value={`${intensityResult.carbon_intensity_gco2_kwh}`}
               unit="gCO₂/kWh"
               positive={intensityResult.carbon_intensity_gco2_kwh <= 100}
-              tip={TIP.emissions}
+              tip={EMISSIONS_TIP}
             />
-            <ResultCard
+            <StatCard
               label="Renewable"
               value={`${intensityResult.renewable_percentage}`}
               unit="%"
               positive={intensityResult.renewable_percentage >= 50}
-              tip={TIP.renewable}
+              tip={TABLE_RENEWABLE_TIP}
             />
-            <ResultCard label="Grid Zone" value={intensityResult.grid_zone} tip={TIP.gridZone} />
-            <ResultCard label="Data Source" value={intensityResult.source} tip={TIP.source} />
+            <StatCard label="Grid Zone" value={intensityResult.grid_zone} tip={GRID_ZONE_TIP} />
+            <StatCard label="Data Source" value={intensityResult.source} tip={SOURCE_TIP} />
           </div>
           <div style={codeBlockStyle}>
             <code style={{ whiteSpace: "pre", fontSize: "0.8rem" }}>
@@ -490,10 +471,10 @@ export function ApiExplorer() {
                 <table style={{ width: "100%", borderCollapse: "collapse" }}>
                   <thead>
                     <tr style={{ borderBottom: "2px solid var(--gray-200)" }}>
-                      <HeadCell label="Provider" />
-                      <HeadCell label="Region" />
-                      <HeadCell label="gCO₂/kWh" tip={TIP.emissions} align="right" />
-                      <HeadCell label="Renewable %" tip={TIP.renewable} align="right" />
+                      <TableHeadCell label="Provider" />
+                      <TableHeadCell label="Region" />
+                      <TableHeadCell label="gCO₂/kWh" tip={EMISSIONS_TIP} align="right" />
+                      <TableHeadCell label="Renewable %" tip={TABLE_RENEWABLE_TIP} align="right" />
                     </tr>
                   </thead>
                   <tbody>
@@ -526,12 +507,7 @@ export function ApiExplorer() {
                             ...td,
                             textAlign: "right",
                             fontWeight: 600,
-                            color:
-                              alt.carbon_intensity_gco2_kwh <= 50
-                                ? "var(--green-text)"
-                                : alt.carbon_intensity_gco2_kwh <= 200
-                                  ? "var(--green-500)"
-                                  : "var(--orange-400)",
+                            color: intensityVarColor(alt.carbon_intensity_gco2_kwh),
                           }}
                         >
                           {alt.carbon_intensity_gco2_kwh}
@@ -558,71 +534,6 @@ export function ApiExplorer() {
   );
 }
 
-function ResultCard({
-  label,
-  value,
-  unit,
-  positive,
-  tip,
-}: {
-  label: string;
-  value: string | number;
-  unit?: string;
-  positive?: boolean;
-  tip?: string;
-}) {
-  return (
-    <div
-      style={{
-        padding: "0.75rem",
-        borderRadius: 8,
-        border: "1px solid var(--gray-200)",
-        background: "var(--surface-alt)",
-      }}
-    >
-      <div
-        style={{
-          fontSize: "0.7rem",
-          color: "var(--gray-500)",
-          display: "flex",
-          alignItems: "center",
-        }}
-      >
-        {label}
-        {tip && <InfoTip label={label} text={tip} />}
-      </div>
-      <div
-        style={{
-          fontSize: "1.3rem",
-          fontWeight: 700,
-          color: positive ? "var(--green-700)" : "inherit",
-        }}
-      >
-        {value}
-        {unit && (
-          <span style={{ fontSize: "0.75rem", fontWeight: 400, marginLeft: 4 }}>{unit}</span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-const labelStyle: React.CSSProperties = {
-  fontSize: "0.8rem",
-  color: "var(--gray-500)",
-  display: "block",
-  marginBottom: 4,
-};
-
-const inputStyle: React.CSSProperties = {
-  width: "100%",
-  padding: "0.5rem",
-  borderRadius: 6,
-  border: "1px solid var(--gray-200)",
-  fontSize: "0.9rem",
-  boxSizing: "border-box",
-};
-
 const codeBlockStyle: React.CSSProperties = {
   fontFamily: "var(--mono)",
   fontSize: "0.8rem",
@@ -644,39 +555,3 @@ function buttonStyle(pending: boolean): React.CSSProperties {
     cursor: pending ? "wait" : "pointer",
   };
 }
-
-const th: React.CSSProperties = {
-  textAlign: "left",
-  padding: "0.5rem",
-  fontSize: "0.75rem",
-  fontWeight: 600,
-  color: "var(--gray-500)",
-};
-
-// A table header cell with an optional info tooltip.
-function HeadCell({
-  label,
-  tip,
-  align = "left",
-}: {
-  label: string;
-  tip?: string;
-  align?: "left" | "right";
-}) {
-  return (
-    <th style={{ ...th, textAlign: align }}>
-      <span
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: align === "right" ? "flex-end" : "flex-start",
-        }}
-      >
-        {label}
-        {tip && <InfoTip label={label} text={tip} />}
-      </span>
-    </th>
-  );
-}
-
-const td: React.CSSProperties = { padding: "0.5rem", fontSize: "0.85rem" };

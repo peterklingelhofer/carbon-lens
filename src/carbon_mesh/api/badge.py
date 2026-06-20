@@ -12,24 +12,12 @@ from fastapi import APIRouter, Depends, Response
 
 from carbon_mesh.api.deps import get_carbon_source, get_grid_mapper
 from carbon_mesh.carbon_sources.base import CarbonDataSource
+from carbon_mesh.colors import GRAY, intensity_color
 from carbon_mesh.grid.mapper import GridMapper
 
 badge_router = APIRouter(tags=["Badge"])
 
 _CACHE_CONTROL = "public, max-age=600, s-maxage=600"
-_GRAY = "#9ca3af"
-
-
-def _color(value: float) -> str:
-    if value <= 50:
-        return "#22c55e"  # green
-    if value <= 150:
-        return "#84cc16"  # lime
-    if value <= 300:
-        return "#eab308"  # amber
-    if value <= 500:
-        return "#f97316"  # orange
-    return "#ef4444"  # red
 
 
 def _seg_width(text: str) -> int:
@@ -70,11 +58,11 @@ def _svg(svg: str) -> Response:
 async def _intensity_badge(zone: str, source: CarbonDataSource) -> Response:
     ci = await source.get_carbon_intensity(zone)
     value = round(ci.carbon_intensity_gco2_kwh)
-    return _svg(render_badge("carbon", f"{value} gCO₂/kWh", _color(value)))
+    return _svg(render_badge("carbon", f"{value} gCO₂/kWh", intensity_color(value)))
 
 
-# Zone badge first so "/badge/zone/DE.svg" isn't captured by the same-arity
-# "/badge/{provider}/{region}.svg" route below (provider="zone").
+# Zone-first route (declared before the same-arity region route so "zone" isn't
+# matched as a provider)
 @badge_router.get("/badge/zone/{grid_zone}.svg", include_in_schema=False)
 async def zone_badge(
     grid_zone: str,
@@ -83,7 +71,7 @@ async def zone_badge(
 ) -> Response:
     known = {r.grid_zone for r in mapper.grid_zones()}
     if grid_zone not in known:
-        return _svg(render_badge("carbon", "unknown zone", _GRAY))
+        return _svg(render_badge("carbon", "unknown zone", GRAY))
     return await _intensity_badge(grid_zone, source)
 
 
@@ -96,5 +84,5 @@ async def region_badge(
 ) -> Response:
     zone = mapper.get_grid_zone(provider, region)
     if zone is None:
-        return _svg(render_badge("carbon", "unknown region", _GRAY))
+        return _svg(render_badge("carbon", "unknown region", GRAY))
     return await _intensity_badge(zone, source)

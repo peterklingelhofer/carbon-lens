@@ -1,56 +1,14 @@
 import { useState } from "react";
-import { api } from "../api/client";
+import { API_BASE, api } from "../api/client";
 import type { RouteResponse } from "../api/types";
 import { InfoTip } from "../components/InfoTip";
 import { RegionComparison } from "../components/RegionComparison";
-import { card, section as sectionFn } from "../styles";
+import { TableHeadCell } from "../components/TableHeadCell";
+import { EMISSIONS_TIP, GRID_ZONE_TIP, TABLE_RENEWABLE_TIP } from "../copy";
+import { intensityLabel } from "../lib/intensity";
+import { card, sectionStyle } from "../styles";
 
-const section = sectionFn();
-const API_BASE =
-  import.meta.env.VITE_API_URL || (typeof window !== "undefined" ? window.location.origin : "");
-
-// Shared tooltip copy for the alternatives table headers.
-const TIP = {
-  emissions:
-    "Carbon emitted per kilowatt-hour of electricity, in gCO₂/kWh - an intensity, not a total. Lower is cleaner.",
-  renewable:
-    "Share of the grid's power from renewables (wind, solar, hydro) right now. Low-carbon grids that lean on nuclear (e.g. France, Sweden) can show a low renewable % while still emitting very little CO₂ - and where no live fuel-mix feed is configured, this falls back to a weather estimate that only sees solar and wind.",
-  gridZone:
-    "The electricity grid (balancing authority) powering this region - e.g. SE-SE3 for southern Sweden. Carbon is measured at the grid, not the datacenter.",
-};
-
-function Th({
-  label,
-  tip,
-  align = "left",
-}: {
-  label: string;
-  tip?: string;
-  align?: "left" | "right";
-}) {
-  return (
-    <th style={{ textAlign: align, padding: "0.5rem" }}>
-      <span
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: align === "right" ? "flex-end" : "flex-start",
-        }}
-      >
-        {label}
-        {tip && <InfoTip label={label} text={tip} />}
-      </span>
-    </th>
-  );
-}
-
-function intensityLabel(val: number): { label: string; color: string } {
-  if (val <= 50) return { label: "Very Clean", color: "var(--green-text)" };
-  if (val <= 150) return { label: "Clean", color: "var(--green-500)" };
-  if (val <= 300) return { label: "Moderate", color: "var(--amber)" };
-  if (val <= 500) return { label: "Dirty", color: "var(--orange-400)" };
-  return { label: "Very Dirty", color: "var(--red-500)" };
-}
+const section = sectionStyle();
 
 export function RouteDemo() {
   const [providers, setProviders] = useState<string[]>(["aws", "gcp", "azure"]);
@@ -300,7 +258,7 @@ export function RouteDemo() {
                   }}
                 >
                   Carbon emissions
-                  <InfoTip label="Carbon emissions" text={TIP.emissions} />
+                  <InfoTip label="Carbon emissions" text={EMISSIONS_TIP} />
                 </div>
                 <div style={{ fontWeight: 600 }}>
                   {result.recommended.carbon_intensity_gco2_kwh} gCO₂/kWh
@@ -315,7 +273,7 @@ export function RouteDemo() {
                     alignItems: "center",
                   }}
                 >
-                  Renewable %<InfoTip label="Renewable %" text={TIP.renewable} />
+                  Renewable %<InfoTip label="Renewable %" text={TABLE_RENEWABLE_TIP} />
                 </div>
                 <div
                   style={{
@@ -365,18 +323,18 @@ export function RouteDemo() {
                 >
                   <thead>
                     <tr style={{ borderBottom: "2px solid var(--gray-200)" }}>
-                      <Th
+                      <TableHeadCell
                         label="#"
                         tip="Rank by your carbon/cost priority. #1 is the recommended region above; these are the next-best."
                       />
-                      <Th
+                      <TableHeadCell
                         label="Region"
                         tip="The cloud provider and region - e.g. aws / eu-north-1."
                       />
-                      <Th label="Grid Zone" tip={TIP.gridZone} />
-                      <Th label="gCO₂/kWh" tip={TIP.emissions} align="right" />
-                      <Th label="Renewable" tip={TIP.renewable} align="right" />
-                      <Th
+                      <TableHeadCell label="Grid Zone" tip={GRID_ZONE_TIP} />
+                      <TableHeadCell label="gCO₂/kWh" tip={EMISSIONS_TIP} align="right" />
+                      <TableHeadCell label="Renewable" tip={TABLE_RENEWABLE_TIP} align="right" />
+                      <TableHeadCell
                         label="Score"
                         tip="Ranking score derived from carbon intensity (lower = greener). It's a relative ordering within this result set, not a physical unit, and isn't comparable across different queries. Cost is not yet a factor."
                         align="right"

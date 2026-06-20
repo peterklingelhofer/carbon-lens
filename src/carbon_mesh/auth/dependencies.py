@@ -4,6 +4,7 @@ from fastapi import Depends, HTTPException, Security
 from fastapi.security import APIKeyHeader
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from carbon_mesh.api.deps import get_session
 from carbon_mesh.config import settings
 from carbon_mesh.db.models import ApiKeyRecord
 
@@ -11,12 +12,12 @@ api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 
 async def _get_session_for_auth():
-    if not settings.use_database or not settings.api_key_required:
+    # No key validation needed -> no session needed; otherwise reuse the shared
+    # request-scoped session dependency (which yields None when no DB is configured)
+    if not settings.api_key_required:
         yield None
         return
-    from carbon_mesh.db.engine import AsyncSessionLocal
-
-    async with AsyncSessionLocal() as session:
+    async for session in get_session():
         yield session
 
 

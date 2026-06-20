@@ -11,7 +11,7 @@
         "type": "string"
       },
       "AlertChannel": {
-        "description": "Where to send SLA breach alerts.",
+        "description": "Where to send SLA breach alerts (webhook for now; email/slack need account setup).",
         "enum": [
           "webhook"
         ],

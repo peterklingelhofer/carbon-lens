@@ -1,7 +1,7 @@
 """Cloud usage ingestion — pull billing/usage data from AWS, GCP, Azure.
 
 Each provider adapter implements the CloudUsageAdapter protocol.
-For MVP, we also support manual CSV upload and a mock adapter for demos.
+We also support manual CSV upload and a mock adapter for demos.
 """
 
 from __future__ import annotations
@@ -491,9 +491,7 @@ def _aws_service_to_unit(service: str) -> str:
         return "gb_hours"
     if any(k in s for k in ("cloudfront", "data transfer", "vpc")):
         return "gb_transferred"
-    if any(k in s for k in ("rds", "relational database", "dynamodb", "elasticache")):
-        return "vcpu_hours"
-    return "vcpu_hours"  # Conservative default
+    return "vcpu_hours"  # Conservative default (covers compute-like DB services too)
 
 
 def _normalize_aws_service(service: str) -> str:

@@ -12,6 +12,7 @@ import logging
 
 from prometheus_client import Gauge
 
+from carbon_mesh.colors import intensity_tier
 from carbon_mesh.config import settings
 from carbon_mesh.engine.surplus import is_clean_surplus
 
@@ -53,15 +54,6 @@ CARBON_TIER = Gauge(
     "capturing the yellow-zone savings an on/off surplus signal misses.",
     _LABELS,
 )
-
-
-def intensity_tier(intensity_gco2_kwh: float) -> int:
-    """0 green (<=150), 1 yellow (<=400), 2 red -- same thresholds as the signal state."""
-    if intensity_gco2_kwh <= 150:
-        return 0
-    if intensity_gco2_kwh <= 400:
-        return 1
-    return 2
 
 
 IMPACT_KG_AVOIDED = Gauge(
@@ -118,21 +110,23 @@ async def refresh_impact_metrics() -> None:
 async def refresh_carbon_metrics() -> None:
     """Repopulate the carbon gauges from the current snapshot/cached data. Called
     on each scrape; best-effort so /metrics never errors."""
-    from carbon_mesh.api.deps import get_carbon_source, get_grid_mapper
-    from carbon_mesh.carbon_sources.snapshot_source import SnapshotBackedSource
+    from carbon_mesh.api.deps import (
+        _maybe_snapshot,
+        get_carbon_source,
+        get_grid_mapper,
+        group_regions_by_zone,
+    )
 
     try:
         mapper = get_grid_mapper()
-        source = get_carbon_source()
-        if settings.snapshot_url and settings.carbon_source != "mock":
-            source = SnapshotBackedSource(settings.snapshot_url, source)
+        source = _maybe_snapshot(get_carbon_source())
 
         # One representative region per zone (multiple regions can share a zone).
-        zone_to_region: dict[str, tuple[str, str]] = {}
-        for r in mapper.list_regions():
-            zone = mapper.get_grid_zone(r.provider, r.region)
-            if zone:
-                zone_to_region.setdefault(zone, (r.provider, r.region))
+        all_regions = [{"provider": r.provider, "region": r.region} for r in mapper.list_regions()]
+        zone_to_region = {
+            zone: (regions[0]["provider"], regions[0]["region"])
+            for zone, regions in group_regions_by_zone(mapper, all_regions).items()
+        }
 
         intensities = await source.get_carbon_intensity_batch(list(zone_to_region))
         for zone, ci in intensities.items():

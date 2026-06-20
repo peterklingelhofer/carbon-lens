@@ -11,12 +11,26 @@ from carbon_mesh.grid.mapper import GridMapper
 from carbon_mesh.models.sla import (
     GreenSLA,
     SLACheck,
+    SLACheckFrequency,
     SLAReport,
     SLAStatus,
     SLASummary,
 )
 
 logger = logging.getLogger(__name__)
+
+FREQUENCY_SECONDS: dict[SLACheckFrequency, int] = {
+    SLACheckFrequency.HOURLY: 3600,
+    SLACheckFrequency.DAILY: 86400,
+    SLACheckFrequency.WEEKLY: 604800,
+}
+
+
+def is_due(last: datetime | None, frequency: SLACheckFrequency, now: datetime) -> bool:
+    """Return True when a check at the given frequency is due relative to now."""
+    if last is None:
+        return True
+    return (now - last).total_seconds() >= FREQUENCY_SECONDS[frequency]
 
 
 class SLAEngine:
@@ -99,6 +113,7 @@ class SLAEngine:
                         "renewable_percentage": intensity.renewable_percentage,
                         "carbon_breached": not is_carbon_ok,
                         "renewable_breached": not is_renewable_ok,
+                        "source": intensity.source,
                     }
                 )
 
@@ -206,16 +221,18 @@ class SLAEngine:
         for check in checks:
             for region_info in check.breached_regions:
                 key = f"{region_info['provider']}/{region_info['region']}"
-                if key not in all_breached or region_info[
-                    "carbon_intensity_gco2_kwh"
-                ] > all_breached[key].get("max_carbon", 0):
+                carbon = region_info["carbon_intensity_gco2_kwh"]
+                existing = all_breached.get(key)
+                if existing is None:
                     all_breached[key] = {
                         **region_info,
-                        "max_carbon": region_info["carbon_intensity_gco2_kwh"],
-                        "breach_count": all_breached.get(key, {}).get("breach_count", 0) + 1,
+                        "max_carbon": carbon,
+                        "breach_count": 1,
                     }
                 else:
-                    all_breached[key]["breach_count"] = all_breached[key].get("breach_count", 0) + 1
+                    existing["breach_count"] += 1
+                    if carbon > existing["max_carbon"]:
+                        existing["max_carbon"] = carbon
 
         worst_regions = sorted(
             all_breached.values(),

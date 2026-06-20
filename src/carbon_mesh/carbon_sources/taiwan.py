@@ -12,12 +12,7 @@ from datetime import datetime, timezone
 
 import httpx
 
-from carbon_mesh.carbon_sources.emission_factors import (
-    calculate_carbon_intensity,
-    calculate_marginal_intensity,
-    calculate_renewable_percentage,
-    power_breakdown,
-)
+from carbon_mesh.carbon_sources.emission_factors import intensity_from_fuel_mix
 from carbon_mesh.models.carbon import CarbonIntensity
 
 API_URL = "https://www.taipower.com.tw/d006/loadGraph/loadGraph/data/genary.json"
@@ -117,14 +112,5 @@ class TaiwanCarbonSource:
         if sum(fuel_mix.values()) <= 0:
             return {}
         return {
-            "TW": CarbonIntensity(
-                grid_zone="TW",
-                carbon_intensity_gco2_kwh=round(calculate_carbon_intensity(fuel_mix), 1),
-                renewable_percentage=round(calculate_renewable_percentage(fuel_mix), 1),
-                timestamp=datetime.now(timezone.utc),
-                source="taipower",
-                grid_load_mw=round(sum(fuel_mix.values())),
-                marginal_intensity_gco2_kwh=round(calculate_marginal_intensity(fuel_mix), 1),
-                power_breakdown_mw=power_breakdown(fuel_mix),
-            )
+            "TW": intensity_from_fuel_mix("TW", fuel_mix, "taipower", datetime.now(timezone.utc))
         }

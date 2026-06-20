@@ -8,7 +8,7 @@ from typing import Any
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 
-from carbon_mesh.api.deps import get_carbon_source, get_grid_mapper
+from carbon_mesh.api.deps import get_carbon_source, get_grid_mapper, group_regions_by_zone
 
 logger = logging.getLogger("carbon_mesh.ws")
 
@@ -47,16 +47,9 @@ async def _build_update(
     source = get_carbon_source()
     mapper = get_grid_mapper()
 
-    # Map regions to grid zones, batch-fetch, then reassemble
-    zone_to_regions: dict[str, list[dict[str, str]]] = {}
-    for r in regions:
-        try:
-            zone = mapper.get_grid_zone(r["provider"], r["region"])
-            if zone is None:
-                continue
-            zone_to_regions.setdefault(zone, []).append(r)
-        except Exception:
-            logger.warning("Unknown region %s/%s, skipping", r["provider"], r["region"])
+    # Map regions to grid zones, batch-fetch, then reassemble. Unknown regions are
+    # silently skipped (the globe sends a fixed, valid list).
+    zone_to_regions = group_regions_by_zone(mapper, regions)
 
     if not zone_to_regions:
         return {

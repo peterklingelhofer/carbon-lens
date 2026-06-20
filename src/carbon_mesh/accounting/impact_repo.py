@@ -13,6 +13,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from carbon_mesh.db.models import ImpactRecordDB
 
+# Cap on recent impact rows pulled for a summary, to bound query/memory cost
+_RECENT_IMPACT_LIMIT = 10000
+
 
 async def record_impact(
     session: AsyncSession, entry: dict, api_key_id: str | None = None
@@ -36,7 +39,7 @@ async def recent_impacts(session: AsyncSession, since: datetime) -> list[dict]:
         select(ImpactRecordDB)
         .where(ImpactRecordDB.ts >= since)
         .order_by(ImpactRecordDB.ts.desc())
-        .limit(10000)
+        .limit(_RECENT_IMPACT_LIMIT)
     )
     rows = (await session.execute(query)).scalars().all()
     return [

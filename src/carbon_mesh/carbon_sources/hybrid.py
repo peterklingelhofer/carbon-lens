@@ -1,17 +1,7 @@
 """Hybrid carbon source — cascading provider chain with automatic fallback.
 
-Priority order:
-1. UK Carbon Intensity API (GB zones, free, no key)
-2. EIA API (US zones, free, real-time hourly)
-3. AEMO (Australian zones, free, 5-min)
-4. Grid India (Indian zones, free)
-5. ONS Brazil (Brazilian zones, free)
-6. Eskom (South Africa, heuristic)
-7. GridStatus.io (US ISOs, 5-min — paid tier for real-time)
-8. ENTSO-E (EU zones, requires free token)
-9. Open-Meteo (weather-based, worldwide, free)
-10. Electricity Maps (global, paid API key)
-11. Mock (static fallback for anything remaining)
+_build_provider_chain is the source of truth for the priority order; the first
+provider covering a zone wins, with Mock as the static last resort.
 """
 
 import asyncio

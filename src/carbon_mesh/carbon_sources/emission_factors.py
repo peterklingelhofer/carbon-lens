@@ -12,6 +12,10 @@ provider's fuel codes onto these normalized types -- they are not a second
 source of emission numbers.
 """
 
+from datetime import datetime
+
+from carbon_mesh.models.carbon import CarbonIntensity
+
 # gCO2e per kWh, lifecycle (IPCC AR5 2014 medians unless a note says otherwise)
 EMISSION_FACTORS: dict[str, float] = {
     # Fossil fuels
@@ -79,14 +83,7 @@ GRIDSTATUS_FUEL_MAP: dict[str, str] = {
 
 
 def calculate_carbon_intensity(fuel_mix_mw: dict[str, float]) -> float:
-    """Calculate weighted average carbon intensity from fuel mix in MW.
-
-    Args:
-        fuel_mix_mw: dict of normalized fuel type → MW generation
-
-    Returns:
-        Carbon intensity in gCO2/kWh
-    """
+    """Weighted-average carbon intensity (gCO2/kWh) from a fuel mix in MW."""
     total_mw = sum(max(0, v) for v in fuel_mix_mw.values())
     if total_mw == 0:
         return 0.0
@@ -127,14 +124,7 @@ def calculate_marginal_intensity(fuel_mix_mw: dict[str, float]) -> float:
 
 
 def calculate_renewable_percentage(fuel_mix_mw: dict[str, float]) -> float:
-    """Calculate percentage of generation from renewable sources.
-
-    Args:
-        fuel_mix_mw: dict of normalized fuel type → MW generation
-
-    Returns:
-        Renewable percentage (0-100)
-    """
+    """Percentage of generation (0-100) from renewable sources."""
     total_mw = sum(max(0, v) for v in fuel_mix_mw.values())
     if total_mw == 0:
         return 0.0
@@ -151,3 +141,25 @@ def power_breakdown(fuel_mix_mw: dict[str, float]) -> dict[str, float] | None:
     """
     breakdown = {fuel: float(round(mw)) for fuel, mw in fuel_mix_mw.items() if mw > 0}
     return breakdown or None
+
+
+def intensity_from_fuel_mix(
+    grid_zone: str,
+    fuel_mix: dict[str, float],
+    source: str,
+    timestamp: datetime,
+) -> CarbonIntensity:
+    """Build a full CarbonIntensity from a fuel mix (MW), running the average,
+    renewable, marginal, and per-fuel breakdown calcs in one place so the fuel-mix
+    adapters (AEMO, Canada, ENTSO-E, EIA, Taiwan) stay in sync.
+    """
+    return CarbonIntensity(
+        grid_zone=grid_zone,
+        carbon_intensity_gco2_kwh=round(calculate_carbon_intensity(fuel_mix), 1),
+        renewable_percentage=round(calculate_renewable_percentage(fuel_mix), 1),
+        timestamp=timestamp,
+        source=source,
+        grid_load_mw=round(sum(fuel_mix.values())),
+        marginal_intensity_gco2_kwh=round(calculate_marginal_intensity(fuel_mix), 1),
+        power_breakdown_mw=power_breakdown(fuel_mix),
+    )

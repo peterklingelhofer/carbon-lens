@@ -7,11 +7,9 @@ import {
   useSnapshot,
   zoneIntensityFromSnapshot,
 } from "../api/snapshot";
-import { intensityColor } from "../lib/intensity";
-import { card } from "../styles";
+import { card, muted } from "../styles";
 import { InfoTip } from "./InfoTip";
-
-const muted: React.CSSProperties = { color: "var(--gray-500)", fontSize: "0.82rem" };
+import { IntensityValue } from "./IntensityValue";
 
 // Look up carbon intensity for any covered grid zone directly -- for on-prem /
 // colocation workloads that aren't a cloud region but sit on a grid we cover. Reads the
@@ -87,19 +85,7 @@ export function CustomZoneLookup() {
       {isError && <p style={{ ...muted, marginTop: "0.75rem" }}>Couldn't load this zone.</p>}
       {ci && !isLoading && (
         <div style={{ marginTop: "1rem" }}>
-          <span
-            style={{
-              fontSize: "1.6rem",
-              fontWeight: 700,
-              color: intensityColor(ci.carbon_intensity_gco2_kwh),
-            }}
-          >
-            {ci.carbon_intensity_gco2_kwh}
-            <span style={{ fontSize: "0.8rem", fontWeight: 400, color: "var(--gray-500)" }}>
-              {" "}
-              gCO₂/kWh
-            </span>
-          </span>
+          <IntensityValue value={ci.carbon_intensity_gco2_kwh} />
           <span style={{ marginLeft: "1rem", color: "var(--green-text)", fontWeight: 600 }}>
             {ci.renewable_percentage}% renewable
           </span>

@@ -21,6 +21,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from carbon_mesh.integrations import _require
 from carbon_mesh.sdk import DEFAULT_API_URL, CarbonClient
 
 try:
@@ -51,7 +52,6 @@ def wait_for_clean_window(
 
 def clean_window_task(**task_kwargs: Any):
     """``wait_for_clean_window`` wrapped as a Prefect ``@task`` (needs Prefect)."""
-    if not _HAS_PREFECT:
-        raise ImportError("The Prefect integration needs Prefect installed (pip install prefect).")
+    _require(_HAS_PREFECT, "Prefect", "prefect")
     task_kwargs.setdefault("name", "wait_for_clean_grid")
     return _prefect_task(**task_kwargs)(wait_for_clean_window)

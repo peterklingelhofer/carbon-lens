@@ -7,7 +7,9 @@ Data from ONS (Operador Nacional do Sistema Elétrico).
 
 from datetime import datetime, timezone
 
+from carbon_mesh.carbon_sources.base import SingleZoneCarbonSource
 from carbon_mesh.carbon_sources.http_pool import shared_client
+from carbon_mesh.carbon_sources.mock import _MOCK_DATA
 
 from carbon_mesh.models.carbon import CarbonIntensity
 
@@ -15,14 +17,9 @@ BRAZIL_ZONES = {"BR-S", "BR-SE", "BR-NE", "BR-N", "BR-CS"}
 
 API_URL = "https://integra.ons.org.br/api/energiaagora/Get"
 
-# Typical defaults (Brazil is ~60-70% hydro)
-_REGION_DEFAULTS: dict[str, tuple[float, float]] = {
-    "BR-S": (80, 85),  # South — heavy hydro
-    "BR-SE": (120, 70),  # Southeast — hydro + thermal
-    "BR-NE": (100, 75),  # Northeast — wind + hydro
-    "BR-N": (60, 90),  # North — almost all hydro
-    "BR-CS": (110, 72),  # Centro-South — mixed
-}
+# (intensity, renewable_pct) per region, read from the canonical mock table so the
+# heuristic baseline can't drift from it. Brazil is ~60-70% hydro
+_REGION_DEFAULTS: dict[str, tuple[float, float]] = {z: _MOCK_DATA[z] for z in BRAZIL_ZONES}
 
 # ONS subsystem name → zone mapping
 _SUBSYSTEM_MAP = {
@@ -35,7 +32,7 @@ _SUBSYSTEM_MAP = {
 }
 
 
-class ONSBrazilCarbonSource:
+class ONSBrazilCarbonSource(SingleZoneCarbonSource):
     def __init__(self) -> None:
         self._client = shared_client(timeout=10.0)
 
@@ -112,13 +109,3 @@ class ONSBrazilCarbonSource:
             timestamp=datetime.now(timezone.utc),
             source="ons_brazil_heuristic",
         )
-
-    async def get_carbon_intensity_batch(self, grid_zones: list[str]) -> dict[str, CarbonIntensity]:
-        results: dict[str, CarbonIntensity] = {}
-        for zone in grid_zones:
-            if self.can_handle(zone):
-                try:
-                    results[zone] = await self.get_carbon_intensity(zone)
-                except Exception:
-                    pass
-        return results

@@ -92,14 +92,6 @@ class GridMapper:
         region_obj = self.get_region(provider, region)
         return region_obj.grid_zone if region_obj else None
 
-    def get_eia_respondent(self, provider: str, region: str) -> str | None:
-        region_obj = self.get_region(provider, region)
-        return region_obj.eia_respondent if region_obj else None
-
-    def get_gridstatus_iso(self, provider: str, region: str) -> str | None:
-        region_obj = self.get_region(provider, region)
-        return region_obj.gridstatus_iso if region_obj else None
-
     def get_eia_respondents(self) -> dict[str, str]:
-        """Return mapping of EIA respondent → grid_zone for all regions that have one."""
+        """Return mapping of EIA respondent -> grid_zone for all regions that have one."""
         return dict(self._eia_respondents)

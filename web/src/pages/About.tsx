@@ -3,9 +3,9 @@ import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { snapshotEnabled, useSnapshot } from "../api/snapshot";
 import { timeAgo } from "../lib/format";
-import { card as baseCard, section as sectionFn } from "../styles";
+import { card as baseCard, sectionStyle } from "../styles";
 
-const section = sectionFn(820);
+const section = sectionStyle(820);
 const card: React.CSSProperties = { ...baseCard, padding: "2rem" };
 
 // The API runs on Render's Oregon region, which draws from the Pacific

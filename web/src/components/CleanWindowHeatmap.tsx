@@ -3,20 +3,10 @@ import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import { FORECAST_WEEK_URL, snapshotEnabled, useSnapshot, useWeekForecast } from "../api/snapshot";
 import { intensityColor } from "../lib/intensity";
-import { card } from "../styles";
+import { DEFAULT_REGION } from "../lib/providers";
+import { card, muted } from "../styles";
 import { InfoTip } from "./InfoTip";
-
-const PROVIDERS = ["aws", "gcp", "azure", "scaleway", "ovh", "hetzner"];
-const DEFAULT_REGION: Record<string, string> = {
-  aws: "us-east-1",
-  gcp: "us-central1",
-  azure: "eastus",
-  scaleway: "fr-par",
-  ovh: "gra",
-  hetzner: "fsn1",
-};
-
-const muted: React.CSSProperties = { color: "var(--gray-500)", fontSize: "0.78rem" };
+import { ProviderRegionPicker } from "./ProviderRegionPicker";
 
 // Grid of the next ~7 days x 24 hours, each cell coloured by projected carbon
 // intensity, so the cleanest hours to run a job jump out at a glance.
@@ -243,54 +233,18 @@ export function CleanWindowHeatmap() {
           text="Projected carbon intensity for each hour over the next week, so you can pick the greenest time to run flexible jobs. EU zones use ENTSO-E's real day-ahead forecast for ~48h; beyond that (and elsewhere) it's a local time-of-day model."
         />
       </h2>
-      <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", margin: "0.75rem 0" }}>
-        {PROVIDERS.map((p) => (
-          <button
-            type="button"
-            key={p}
-            onClick={() => {
-              setProvider(p);
-              setRegion(DEFAULT_REGION[p]);
-            }}
-            aria-pressed={provider === p}
-            style={{
-              padding: "0.3rem 0.9rem",
-              borderRadius: 6,
-              border: "1px solid var(--gray-200)",
-              background: provider === p ? "var(--btn-green)" : "var(--surface)",
-              color: provider === p ? "white" : "var(--gray-700)",
-              cursor: "pointer",
-              fontSize: "0.8rem",
-            }}
-          >
-            {p}
-          </button>
-        ))}
-        <select
-          value={region}
-          onChange={(e) => setRegion(e.target.value)}
-          aria-label="Region"
-          style={{
-            padding: "0.3rem 0.6rem",
-            borderRadius: 6,
-            border: "1px solid var(--gray-200)",
-            background: "var(--surface)",
-            color: "inherit",
-            fontSize: "0.8rem",
-          }}
-        >
-          {regions ? (
-            regions.map((r) => (
-              <option key={r.region} value={r.region}>
-                {r.region}
-                {r.location ? ` — ${r.location}` : ""}
-              </option>
-            ))
-          ) : (
-            <option value={region}>{region}</option>
-          )}
-        </select>
-      </div>
+      <ProviderRegionPicker
+        provider={provider}
+        region={region}
+        regions={regions}
+        onSelectProvider={(p) => {
+          setProvider(p);
+          setRegion(DEFAULT_REGION[p]);
+        }}
+        onSelectRegion={setRegion}
+        regionLabel="Region"
+        showLocation
+      />
       <Heatmap provider={provider} region={region} />
     </div>
   );

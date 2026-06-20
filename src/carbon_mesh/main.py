@@ -119,6 +119,7 @@ async def lifespan(app: FastAPI):
     _check_security_posture()
     _log_provider_status()
 
+    async_engine = None
     if settings.use_database:
         # Auto-run Alembic migrations if configured (great for PaaS deploys)
         if settings.auto_migrate:
@@ -151,17 +152,16 @@ async def lifespan(app: FastAPI):
                     raise
                 logger.warning("Database not ready, retrying in %ds: %s", attempt * 2, e)
                 await asyncio.sleep(attempt * 2)
-
-        await _warmup_cache()
-        await _seed_demo_sla()
-        yield
-        await async_engine.dispose()
-        logger.info("Database connection closed.")
     else:
         logger.info("Running without database (in-memory mode).")
-        await _warmup_cache()
-        await _seed_demo_sla()
-        yield
+
+    await _warmup_cache()
+    await _seed_demo_sla()
+    yield
+
+    if async_engine is not None:
+        await async_engine.dispose()
+        logger.info("Database connection closed.")
 
 
 app = FastAPI(
@@ -220,10 +220,9 @@ app = FastAPI(
     ],
 )
 
-# GZip compression for responses > 500 bytes
 app.add_middleware(GZipMiddleware, minimum_size=500)
 
-# CORS — configurable origins, locked down in production
+# CORS: configurable origins, locked down in production
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,
@@ -269,6 +268,14 @@ async def request_id_and_logging(request: Request, call_next):
         response.status_code,
         elapsed_ms,
         request_id,
+        # Structured fields for the JSON log formatter (ignored by the text formatter)
+        extra={
+            "request_id": request_id,
+            "method": request.method,
+            "path": request.url.path,
+            "status_code": response.status_code,
+            "duration_ms": round(elapsed_ms, 1),
+        },
     )
     response.headers["X-Request-ID"] = request_id
 
@@ -284,57 +291,42 @@ async def request_id_and_logging(request: Request, call_next):
     return response
 
 
-@app.exception_handler(ValidationError)
-async def validation_error_handler(request: Request, exc: ValidationError):
+def _error_response(status: int, error: str, detail: object, request: Request) -> JSONResponse:
+    """Uniform JSON error body (error code, detail, and the per-request id)."""
     return JSONResponse(
-        status_code=422,
+        status_code=status,
         content={
-            "error": "validation_error",
-            "detail": exc.errors(),
+            "error": error,
+            "detail": detail,
             "request_id": getattr(request.state, "request_id", None),
         },
     )
+
+
+@app.exception_handler(ValidationError)
+async def validation_error_handler(request: Request, exc: ValidationError):
+    return _error_response(422, "validation_error", exc.errors(), request)
 
 
 @app.exception_handler(ValueError)
 async def value_error_handler(request: Request, exc: ValueError):
-    return JSONResponse(
-        status_code=400,
-        content={
-            "error": "bad_request",
-            "detail": str(exc),
-            "request_id": getattr(request.state, "request_id", None),
-        },
-    )
+    return _error_response(400, "bad_request", str(exc), request)
 
 
 @app.exception_handler(Exception)
 async def generic_error_handler(request: Request, exc: Exception):
     logger.exception("Unhandled error on %s %s", request.method, request.url.path)
-    return JSONResponse(
-        status_code=500,
-        content={
-            "error": "internal_server_error",
-            "detail": "An unexpected error occurred.",
-            "request_id": getattr(request.state, "request_id", None),
-        },
-    )
+    return _error_response(500, "internal_server_error", "An unexpected error occurred.", request)
 
 
 app.state.limiter = limiter
-# Enforce the default rate limit (settings.rate_limit_default) on every route
 app.add_middleware(SlowAPIMiddleware)
 
 
 @app.exception_handler(RateLimitExceeded)
 async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
-    return JSONResponse(
-        status_code=429,
-        content={
-            "error": "rate_limit_exceeded",
-            "detail": f"Rate limit exceeded: {exc.detail}",
-            "request_id": getattr(request.state, "request_id", None),
-        },
+    return _error_response(
+        429, "rate_limit_exceeded", f"Rate limit exceeded: {exc.detail}", request
     )
 
 

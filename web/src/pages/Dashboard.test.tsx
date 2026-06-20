@@ -50,6 +50,7 @@ const { snapshotFixture } = vi.hoisted(() => {
 vi.mock("../api/snapshot", () => ({
   snapshotEnabled: false,
   qualityFromSource: () => "live",
+  dataBranchUrl: () => "",
   useSnapshot: () => ({ data: snapshotFixture }),
   // Derive-from-snapshot helpers used by the panels Dashboard renders (CustomZoneLookup,
   // RegionComparison). Stubbed empty -- this suite only asserts the regions table.

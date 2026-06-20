@@ -35,7 +35,19 @@ import type {
 // to an absolute origin only if you intentionally want cross-origin calls.
 const BASE_URL = import.meta.env.VITE_API_URL || "";
 
+// Absolute base for display/links (curl snippets, Swagger, export hrefs): the
+// page's own origin, which the Worker proxies to the backend, so copy-pasted
+// commands and links hit a same-origin URL. Falls back to "" during SSR.
+export const API_BASE =
+  import.meta.env.VITE_API_URL || (typeof window !== "undefined" ? window.location.origin : "");
+
 const API_KEY_STORAGE_KEY = "carbon_mesh_api_key";
+
+// Turn a non-OK response into an Error, preferring the API's `detail` field
+async function parseError(res: Response): Promise<Error> {
+  const body = await res.json().catch(() => ({ detail: res.statusText }));
+  return new Error(body.detail || `API error ${res.status}`);
+}
 
 // Timestamp (ms) of the last time the API server returned ANY HTTP response.
 // A response - even a 4xx/5xx - means the server is awake, so the cold-start
@@ -76,10 +88,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   if (apiKey) headers["X-API-Key"] = apiKey;
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
   lastApiResponseAt = Date.now(); // server answered → it's awake
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(body.detail || `API error ${res.status}`);
-  }
+  if (!res.ok) throw await parseError(res);
   return res.json();
 }
 
@@ -271,10 +280,7 @@ export const api = {
         },
       );
       lastApiResponseAt = Date.now();
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({ detail: res.statusText }));
-        throw new Error(body.detail || `API error ${res.status}`);
-      }
+      if (!res.ok) throw await parseError(res);
       return res.json();
     },
 

@@ -19,6 +19,9 @@ def score_candidates(
 ) -> list[ScoredCandidate]:
     """Score and rank candidates by carbon intensity.
 
+    Lower score = greener; the returned list is sorted cleanest-first, so the
+    router relies on ``scored[0]`` being the best pick.
+
     candidates: list of dicts with keys:
         provider, region, grid_zone, carbon_intensity, renewable_percentage
     """
@@ -37,8 +40,8 @@ def score_candidates(
         else:
             normalized_carbon = 0.0
 
-        # For MVP, cost is not yet available — score purely on carbon
-        # When cost data is added, it gets factored in via cost_weight
+        # cost_weight is a no-op placeholder for now: cost data isn't wired in, so
+        # the score is carbon-only
         score = carbon_weight * normalized_carbon
 
         if max_intensity > 0:

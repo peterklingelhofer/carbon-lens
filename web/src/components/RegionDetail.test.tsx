@@ -25,14 +25,34 @@ vi.mock("../api/client", () => ({
 // The region components read precomputed snapshot/CDN data (no API call); mock them.
 // snapshotEnabled: false exercises the self-hosted path where the components are
 // allowed to fall back to the live API (in production it's true and they never do).
-vi.mock("../api/snapshot", () => ({
-  snapshotEnabled: false,
-  useSignal: vi.fn(),
-  useForecastSnapshot: vi.fn(),
-  useBestTimeSnapshot: vi.fn(),
-  useRegionHistoryArchive: vi.fn(),
-  useWeatherSnapshot: vi.fn(),
-}));
+vi.mock("../api/snapshot", async () => {
+  const { useQuery } = await import("@tanstack/react-query");
+  return {
+    snapshotEnabled: false,
+    useSignal: vi.fn(),
+    useForecastSnapshot: vi.fn(),
+    useBestTimeSnapshot: vi.fn(),
+    useRegionHistoryArchive: vi.fn(),
+    useWeatherSnapshot: vi.fn(),
+    // Faithful re-implementation of the real helper for the snapshotEnabled:false
+    // path: prefer the snapshot value, else run the query (no snapshot configured).
+    useSnapshotOrApi: <T,>(
+      snap: T | undefined,
+      queryKey: unknown[],
+      queryFn: () => Promise<T>,
+      options?: { staleTime?: number; retry?: number },
+    ) => {
+      const { data, isLoading, isError } = useQuery({
+        queryKey,
+        queryFn,
+        enabled: !snap,
+        staleTime: options?.staleTime,
+        retry: options?.retry,
+      });
+      return { data: snap ?? data, isLoading, isError };
+    },
+  };
+});
 
 import { api } from "../api/client";
 import {

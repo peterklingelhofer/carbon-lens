@@ -21,6 +21,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from carbon_mesh.integrations import _require
 from carbon_mesh.sdk import DEFAULT_API_URL, CarbonClient
 
 try:
@@ -45,8 +46,7 @@ def clean_window_op(
 
     With ``report=True``, the shifted run's predicted impact is posted to the org
     ledger (best-effort) so Dagster jobs feed org-statement like ``carbonlens run``."""
-    if not _HAS_DAGSTER:
-        raise ImportError("The Dagster integration needs Dagster installed (pip install dagster).")
+    _require(_HAS_DAGSTER, "Dagster", "dagster")
     op_kwargs.setdefault("name", "wait_for_clean_grid")
 
     @_dagster_op(**op_kwargs)

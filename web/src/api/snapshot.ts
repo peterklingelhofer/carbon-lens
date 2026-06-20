@@ -1,6 +1,31 @@
 import { useQuery } from "@tanstack/react-query";
 import type { BestTime, CarbonIntensity, CloudRegion, GridZoneSummary } from "./types";
 
+// Prefer a precomputed snapshot value; fall back to the live API only when there's
+// no snapshot value AND snapshots are disabled (self-hosted). Collapses the
+// "snap ?? apiData" + enabled-gating + loading/error boilerplate the region-detail
+// panels all repeat. `snap` is the snapshot value (undefined if unavailable); the
+// rest mirror a `useQuery` call.
+export function useSnapshotOrApi<T>(
+  snap: T | undefined,
+  queryKey: unknown[],
+  queryFn: () => Promise<T>,
+  options?: { staleTime?: number; retry?: number },
+): { data: T | undefined; isLoading: boolean; isError: boolean } {
+  const {
+    data: apiData,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey,
+    queryFn,
+    enabled: !snap && !snapshotEnabled,
+    staleTime: options?.staleTime,
+    retry: options?.retry,
+  });
+  return { data: snap ?? apiData, isLoading, isError };
+}
+
 // Static carbon snapshot published to a CDN by the `snapshot` GitHub Action.
 // When VITE_SNAPSHOT_URL is set, the dashboard reads real data from here
 // instead of calling the live API, so viewer traffic never hits upstream
@@ -71,6 +96,12 @@ const SNAPSHOT_URL = import.meta.env.VITE_SNAPSHOT_URL || "";
 
 export const snapshotEnabled = !!SNAPSHOT_URL;
 
+// URL of a sibling file next to snapshot.json on the data branch (history.json,
+// forecast_week.json, clean_compute_report.json, …). Empty when no snapshot is set.
+export function dataBranchUrl(filename: string): string {
+  return SNAPSHOT_URL ? SNAPSHOT_URL.replace("snapshot.json", filename) : "";
+}
+
 // Derive data quality from a provider's source string. The snapshot builder
 // stamps `quality` server-side, but the live API does not - so the live-API
 // fallback (local dev without a snapshot) derives it here. Mirrors the Python
@@ -136,9 +167,7 @@ export interface HistoryArchivePoint {
 }
 
 // The rolling history archive sits next to snapshot.json on the data branch.
-export const HISTORY_ARCHIVE_URL = SNAPSHOT_URL
-  ? SNAPSHOT_URL.replace("snapshot.json", "history.json")
-  : "";
+export const HISTORY_ARCHIVE_URL = dataBranchUrl("history.json");
 
 // One region's rolling carbon history from the published archive (history.json on the
 // CDN) -- the same data /carbon/history returns, but static. The whole archive is a
@@ -166,9 +195,7 @@ export function useRegionHistoryArchive(
 // The 7-day forecast archive sits next to snapshot.json on the data branch. It's large
 // and only the clean-window heatmap needs it, so it's published separately and fetched
 // lazily (never part of the site-wide snapshot).
-export const FORECAST_WEEK_URL = SNAPSHOT_URL
-  ? SNAPSHOT_URL.replace("snapshot.json", "forecast_week.json")
-  : "";
+export const FORECAST_WEEK_URL = dataBranchUrl("forecast_week.json");
 
 // One region's precomputed 7-day forecast curve from the CDN (forecast_week.json). The
 // whole file is a single cached fetch; only components that mount it (the Scheduler

@@ -37,16 +37,15 @@ class IntensityCache:
         now = time.monotonic()
         age = self._age(zone, now)
 
-        # Fresh hit
         if age is not None and age < self._ttl:
             return self._store[zone][1]
 
-        # Stale hit — return immediately, refresh in background
+        # Stale: return immediately, refresh in background
         if age is not None and age < self._ttl * 2:
             self._schedule_refresh_single(zone, fetcher)
             return self._store[zone][1]
 
-        # Miss or expired — block on fetch
+        # Miss or expired: block on the fetch since we have nothing to return
         value = await fetcher(zone)
         self._store[zone] = (time.monotonic(), value)
         return value
@@ -64,17 +63,15 @@ class IntensityCache:
         for zone in zones:
             age = self._age(zone, now)
             if age is not None and age < self._ttl:
-                # Fresh
                 results[zone] = self._store[zone][1]
             elif age is not None and age < self._ttl * 2:
-                # Stale — use cached value, mark for background refresh
+                # Stale: serve the cached value, refresh in background
                 results[zone] = self._store[zone][1]
                 stale.append(zone)
             else:
-                # Miss or expired
                 missing.append(zone)
 
-        # Fetch missing zones (blocking — we have no data to return)
+        # Fetch missing zones (blocking: we have no data to return)
         if missing:
             fetched = await batch_fetcher(missing)
             fetch_time = time.monotonic()
@@ -82,7 +79,6 @@ class IntensityCache:
                 self._store[zone] = (fetch_time, value)
                 results[zone] = value
 
-        # Refresh stale zones in the background
         if stale:
             self._schedule_refresh_batch(stale, batch_fetcher)
 
