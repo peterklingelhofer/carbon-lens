@@ -8,7 +8,7 @@ import { card, sectionStyle } from "../styles";
 
 const section = sectionStyle();
 
-// The free Render server sleeps when idle and can take 1–2 min to wake. The
+// The free Render server sleeps when idle and takes ~50s to wake. The
 // requests are same-origin (proxied by the Worker), so they never fail to CORS
 // or get blocked - they just wait while the server boots. Retry patiently so a
 // cold start resolves instead of giving up.
@@ -78,7 +78,7 @@ function Waking({ fetching }: { fetching: boolean }) {
   return (
     <p style={{ color: "var(--gray-400)", fontSize: "0.9rem", margin: 0 }}>
       {fetching
-        ? "Waking the API… a free server that sleeps when idle can take up to ~2 min on the first request. This keeps trying."
+        ? "Waking the API… a free server that sleeps when idle takes ~50s to wake on the first request. This keeps trying."
         : "Loading…"}
     </p>
   );
