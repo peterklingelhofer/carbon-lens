@@ -29,7 +29,10 @@ export default function App() {
       </a>
       <ScrollToTop />
       <RouteAnnouncer />
-      <header>
+      {/* The nav's own `position: sticky` resolves against its containing block,
+          so once it's wrapped in <header> the header must carry the sticky (a
+          nav-height box can't keep its child pinned past its own bottom). */}
+      <header style={{ position: "sticky", top: 0, zIndex: 20 }}>
         <Nav />
       </header>
       <ColdStartBanner />
