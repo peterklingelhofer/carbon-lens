@@ -7,13 +7,16 @@ per request via ``get_sla_repository``; everything else is backend-agnostic.
 
 from __future__ import annotations
 
-from typing import Protocol
+from typing import Protocol, TypeVar
 
-from sqlalchemy import delete, select
+from pydantic import BaseModel
+from sqlalchemy import Select, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from carbon_mesh.db.models import GreenSLADB, SLACheckDB, SLAReportDB
 from carbon_mesh.models.sla import GreenSLA, SLACheck, SLAReport
+
+_M = TypeVar("_M", bound=BaseModel)
 
 # Cap per-SLA check history so an in-memory instance can't grow unbounded.
 _MAX_CHECKS = 10_000
@@ -92,10 +95,15 @@ class DBSLARepository:
     column, with a few indexed columns for filtering and ordering."""
 
     def __init__(self, session: AsyncSession) -> None:
-        self._s = session
+        self._session = session
+
+    async def _load_all(self, stmt: Select, model_cls: type[_M]) -> list[_M]:
+        """Run a select and validate each row's JSON payload into the model."""
+        rows = (await self._session.execute(stmt)).scalars().all()
+        return [model_cls.model_validate_json(r.payload) for r in rows]
 
     async def create_sla(self, sla: GreenSLA) -> None:
-        self._s.add(
+        self._session.add(
             GreenSLADB(
                 id=sla.id,
                 org_id=sla.org_id,
@@ -104,48 +112,42 @@ class DBSLARepository:
                 payload=sla.model_dump_json(),
             )
         )
-        await self._s.commit()
+        await self._session.commit()
 
     async def get_sla(self, sla_id: str) -> GreenSLA | None:
-        row = await self._s.get(GreenSLADB, sla_id)
+        row = await self._session.get(GreenSLADB, sla_id)
         return GreenSLA.model_validate_json(row.payload) if row else None
 
     async def list_slas(self, org_id: str) -> list[GreenSLA]:
-        rows = (
-            (await self._s.execute(select(GreenSLADB).where(GreenSLADB.org_id == org_id)))
-            .scalars()
-            .all()
-        )
-        return [GreenSLA.model_validate_json(r.payload) for r in rows]
+        return await self._load_all(select(GreenSLADB).where(GreenSLADB.org_id == org_id), GreenSLA)
 
     async def list_active_slas(self, org_id: str | None = None) -> list[GreenSLA]:
         stmt = select(GreenSLADB).where(GreenSLADB.active.is_(True))
         if org_id is not None:
             stmt = stmt.where(GreenSLADB.org_id == org_id)
-        rows = (await self._s.execute(stmt)).scalars().all()
-        return [GreenSLA.model_validate_json(r.payload) for r in rows]
+        return await self._load_all(stmt, GreenSLA)
 
     async def update_sla(self, sla: GreenSLA) -> None:
-        row = await self._s.get(GreenSLADB, sla.id)
+        row = await self._session.get(GreenSLADB, sla.id)
         if row is None:
             return
         row.payload = sla.model_dump_json()
         row.active = sla.active
         row.updated_at = sla.updated_at
-        await self._s.commit()
+        await self._session.commit()
 
     async def delete_sla(self, sla_id: str) -> bool:
-        row = await self._s.get(GreenSLADB, sla_id)
+        row = await self._session.get(GreenSLADB, sla_id)
         if row is None:
             return False
-        await self._s.delete(row)
-        await self._s.execute(delete(SLACheckDB).where(SLACheckDB.sla_id == sla_id))
-        await self._s.execute(delete(SLAReportDB).where(SLAReportDB.sla_id == sla_id))
-        await self._s.commit()
+        await self._session.delete(row)
+        await self._session.execute(delete(SLACheckDB).where(SLACheckDB.sla_id == sla_id))
+        await self._session.execute(delete(SLAReportDB).where(SLAReportDB.sla_id == sla_id))
+        await self._session.commit()
         return True
 
     async def add_check(self, check: SLACheck) -> None:
-        self._s.add(
+        self._session.add(
             SLACheckDB(
                 id=check.id,
                 sla_id=check.sla_id,
@@ -153,12 +155,11 @@ class DBSLARepository:
                 payload=check.model_dump_json(),
             )
         )
-        await self._s.commit()
+        await self._session.commit()
 
     async def list_checks(self, sla_id: str, limit: int | None = None) -> list[SLACheck]:
         stmt = select(SLACheckDB).where(SLACheckDB.sla_id == sla_id).order_by(SLACheckDB.checked_at)
-        rows = (await self._s.execute(stmt)).scalars().all()
-        checks = [SLACheck.model_validate_json(r.payload) for r in rows]
+        checks = await self._load_all(stmt, SLACheck)
         return checks[-limit:] if limit else checks
 
     async def latest_check(self, sla_id: str) -> SLACheck | None:
@@ -168,11 +169,11 @@ class DBSLARepository:
             .order_by(SLACheckDB.checked_at.desc())
             .limit(1)
         )
-        row = (await self._s.execute(stmt)).scalars().first()
+        row = (await self._session.execute(stmt)).scalars().first()
         return SLACheck.model_validate_json(row.payload) if row else None
 
     async def add_report(self, report: SLAReport) -> None:
-        self._s.add(
+        self._session.add(
             SLAReportDB(
                 id=report.id,
                 sla_id=report.sla_id,
@@ -180,7 +181,7 @@ class DBSLARepository:
                 payload=report.model_dump_json(),
             )
         )
-        await self._s.commit()
+        await self._session.commit()
 
     async def list_reports(self, sla_id: str) -> list[SLAReport]:
         stmt = (
@@ -188,5 +189,4 @@ class DBSLARepository:
             .where(SLAReportDB.sla_id == sla_id)
             .order_by(SLAReportDB.generated_at)
         )
-        rows = (await self._s.execute(stmt)).scalars().all()
-        return [SLAReport.model_validate_json(r.payload) for r in rows]
+        return await self._load_all(stmt, SLAReport)

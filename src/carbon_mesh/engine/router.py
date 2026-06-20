@@ -46,7 +46,6 @@ class RoutingEngine:
         self._cache = cache
 
     async def route(self, constraints: JobConstraints) -> RouteResponse:
-        # 1. Gather candidate regions
         candidates: list[CloudRegion] = []
         for provider in constraints.providers:
             regions = self._grid_mapper.list_regions(provider)
@@ -66,13 +65,12 @@ class RoutingEngine:
                 f"data_residency={constraints.data_residency}"
             )
 
-        # 2. Deduplicate grid zones and fetch carbon data
+        # Deduplicate grid zones so we fetch each zone's carbon data only once
         zone_set = list({c.grid_zone for c in candidates})
         intensities = await self._cache.get_or_fetch_batch(
             zone_set, self._carbon_source.get_carbon_intensity_batch
         )
 
-        # 3. Build scorer input
         scorer_input = []
         for c in candidates:
             ci = intensities.get(c.grid_zone)
@@ -88,7 +86,6 @@ class RoutingEngine:
                 }
             )
 
-        # 4. Score
         scored = score_candidates(
             scorer_input,
             carbon_weight=constraints.carbon_weight,

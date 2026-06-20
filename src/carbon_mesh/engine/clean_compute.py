@@ -8,23 +8,21 @@ the script wrapper handles I/O.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime
 
-from carbon_mesh.engine.recurring import mean_intensity, rank_hours_utc, shiftability_pct
+from carbon_mesh.engine.recurring import (
+    _parse_utc,
+    mean_intensity,
+    rank_hours_utc,
+    shiftability_pct,
+)
 
 _MIN_SAMPLES = 8
 
 
 def _within(ts: str | None, cutoff: datetime) -> bool:
-    if not ts:
-        return False
-    try:
-        t = datetime.fromisoformat(ts.replace("Z", "+00:00"))
-    except (TypeError, ValueError):
-        return False
-    if t.tzinfo is None:
-        t = t.replace(tzinfo=timezone.utc)
-    return t >= cutoff
+    t = _parse_utc(ts)
+    return t is not None and t >= cutoff
 
 
 def update_clean_compute_history(

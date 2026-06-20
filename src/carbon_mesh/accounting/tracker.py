@@ -13,12 +13,32 @@ from carbon_mesh.models.routing import RouteResponse
 # overstate the benefit.
 _BASELINE = "mean carbon intensity of the candidate regions considered (a carbon-blind pick)"
 
+# Cap on how many recent records a report aggregates, to bound query/memory cost
+_REPORT_RECORD_LIMIT = 1000
+
 
 def _baseline_intensity(response: RouteResponse) -> float:
     """Mean carbon intensity across all candidates (chosen + alternatives)."""
     candidates = [response.recommended.carbon_intensity_gco2_kwh]
     candidates += [a.carbon_intensity_gco2_kwh for a in response.alternatives]
     return sum(candidates) / len(candidates)
+
+
+def _reduction(response: RouteResponse) -> tuple[float, float]:
+    """Baseline intensity and the reduction the carbon-aware pick achieves vs it."""
+    baseline = _baseline_intensity(response)
+    reduction = baseline - response.recommended.carbon_intensity_gco2_kwh
+    return baseline, reduction
+
+
+def _summarize(records: list[EmissionsRecord]) -> tuple[float, float]:
+    """Average intensity reduction and average renewable share across records."""
+    n = len(records)
+    if not n:
+        return 0.0, 0.0
+    avg_reduction = round(sum(r.intensity_reduction_gco2_kwh for r in records) / n, 2)
+    avg_renewable = round(sum(r.chosen_renewable_pct for r in records) / n, 1)
+    return avg_reduction, avg_renewable
 
 
 class CarbonTracker:
@@ -29,8 +49,7 @@ class CarbonTracker:
 
     def record(self, response: RouteResponse) -> EmissionsRecord:
         chosen = response.recommended
-        baseline = _baseline_intensity(response)
-        reduction = baseline - chosen.carbon_intensity_gco2_kwh
+        baseline, reduction = _reduction(response)
 
         rec = EmissionsRecord(
             request_id=response.request_id,
@@ -47,15 +66,9 @@ class CarbonTracker:
         return rec
 
     def report(self) -> CarbonSavingsReport:
-        n = len(self._records)
-        avg_reduction = (
-            round(sum(r.intensity_reduction_gco2_kwh for r in self._records) / n, 2) if n else 0.0
-        )
-        avg_renewable = (
-            round(sum(r.chosen_renewable_pct for r in self._records) / n, 1) if n else 0.0
-        )
+        avg_reduction, avg_renewable = _summarize(self._records)
         return CarbonSavingsReport(
-            total_requests=n,
+            total_requests=len(self._records),
             avg_intensity_reduction_gco2_kwh=avg_reduction,
             baseline=_BASELINE,
             avg_renewable_percentage=avg_renewable,
@@ -70,8 +83,7 @@ class DBCarbonTracker:
         self, session: AsyncSession, response: RouteResponse, api_key_id: str | None = None
     ) -> EmissionsRecordDB:
         chosen = response.recommended
-        baseline = _baseline_intensity(response)
-        reduction = baseline - chosen.carbon_intensity_gco2_kwh
+        baseline, reduction = _reduction(response)
 
         db_record = EmissionsRecordDB(
             request_id=response.request_id,
@@ -94,7 +106,7 @@ class DBCarbonTracker:
         query = select(EmissionsRecordDB)
         if api_key_id:
             query = query.where(EmissionsRecordDB.api_key_id == api_key_id)
-        query = query.order_by(EmissionsRecordDB.timestamp.desc()).limit(1000)
+        query = query.order_by(EmissionsRecordDB.timestamp.desc()).limit(_REPORT_RECORD_LIMIT)
 
         result = await session.execute(query)
         db_records = result.scalars().all()
@@ -114,14 +126,10 @@ class DBCarbonTracker:
             for r in db_records
         ]
 
-        n = len(records)
-        avg_reduction = (
-            round(sum(r.intensity_reduction_gco2_kwh for r in records) / n, 2) if n else 0.0
-        )
-        avg_renewable = round(sum(r.chosen_renewable_pct for r in db_records) / n, 1) if n else 0.0
+        avg_reduction, avg_renewable = _summarize(records)
 
         return CarbonSavingsReport(
-            total_requests=n,
+            total_requests=len(records),
             avg_intensity_reduction_gco2_kwh=avg_reduction,
             baseline=_BASELINE,
             avg_renewable_percentage=avg_renewable,

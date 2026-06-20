@@ -9,15 +9,10 @@ Three provinces, three very different public feeds:
 
 import asyncio
 import re
-import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
+from xml.etree.ElementTree import Element
 
-from carbon_mesh.carbon_sources.emission_factors import (
-    calculate_carbon_intensity,
-    calculate_marginal_intensity,
-    calculate_renewable_percentage,
-    power_breakdown,
-)
+from carbon_mesh.carbon_sources.emission_factors import intensity_from_fuel_mix
 from carbon_mesh.carbon_sources.http_pool import shared_client
 from carbon_mesh.carbon_sources.xml_safe import parse_xml
 from carbon_mesh.models.carbon import CarbonIntensity
@@ -61,7 +56,7 @@ _AESO_ROW = re.compile(
 )
 
 
-def _localname(el: ET.Element) -> str:
+def _localname(el: Element) -> str:
     return el.tag.rsplit("}", 1)[-1]
 
 
@@ -154,13 +149,4 @@ class CanadaCarbonSource:
         )
 
     def _build(self, zone: str, fuel_mix: dict[str, float], source: str) -> CarbonIntensity:
-        return CarbonIntensity(
-            grid_zone=zone,
-            carbon_intensity_gco2_kwh=round(calculate_carbon_intensity(fuel_mix), 1),
-            renewable_percentage=round(calculate_renewable_percentage(fuel_mix), 1),
-            timestamp=datetime.now(timezone.utc),
-            source=source,
-            grid_load_mw=round(sum(fuel_mix.values())),
-            marginal_intensity_gco2_kwh=round(calculate_marginal_intensity(fuel_mix), 1),
-            power_breakdown_mw=power_breakdown(fuel_mix),
-        )
+        return intensity_from_fuel_mix(zone, fuel_mix, source, datetime.now(timezone.utc))
