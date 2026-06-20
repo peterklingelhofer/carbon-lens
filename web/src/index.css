@@ -112,6 +112,48 @@ body {
   margin: 0;
 }
 
+/* Visually hidden but available to screen readers (skip links, status text that
+   shouldn't be conveyed by colour alone, off-screen labels). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Skip-to-content link: off-screen until focused, then pinned top-left so a
+   keyboard user can jump past the nav on every page. */
+.skip-link {
+  position: absolute;
+  left: 0.5rem;
+  top: -3rem;
+  z-index: 100;
+  padding: 0.5rem 0.9rem;
+  border-radius: 6px;
+  background: var(--green-600);
+  color: #fff;
+  font-weight: 600;
+  transition: top 0.15s ease;
+}
+.skip-link:focus {
+  top: 0.5rem;
+  text-decoration: none;
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* <main> only receives focus programmatically (skip link / route change) and
+   isn't in the tab order, so it shouldn't draw a focus ring around the whole
+   content region. Interactive controls keep their own focus styles. */
+main:focus {
+  outline: none;
+}
+
 a {
   color: var(--green-text);
   text-decoration: none;
