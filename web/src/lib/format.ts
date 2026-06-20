@@ -10,6 +10,12 @@ export function timeAgo(iso: string): string {
   return `${hrs} hr${hrs > 1 ? "s" : ""} ago`;
 }
 
+/** Total grid load (whole balancing authority, all consumers), formatted as MW/GW. */
+export function formatLoad(mw?: number | null): string | null {
+  if (mw == null) return null;
+  return mw >= 1000 ? `${(mw / 1000).toFixed(1)} GW` : `${Math.round(mw)} MW`;
+}
+
 /** Round to a "nice" 1/2/5 × 10ⁿ value - used for the globe's km scale bar. */
 export function niceKm(x: number): number {
   if (x <= 0) return 0;

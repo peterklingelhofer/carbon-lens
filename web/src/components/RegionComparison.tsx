@@ -2,46 +2,32 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "../api/client";
 import { greenestRegion, snapshotEnabled, useSnapshot } from "../api/snapshot";
-import { intensityColor } from "../lib/intensity";
-import { card } from "../styles";
+import { DEFAULT_REGION, PROVIDERS } from "../lib/providers";
+import { card, muted } from "../styles";
 import { InfoTip } from "./InfoTip";
-
-const PROVIDERS = ["aws", "gcp", "azure", "scaleway", "ovh", "hetzner"];
-const DEFAULT_REGION: Record<string, string> = {
-  aws: "us-east-1",
-  gcp: "us-central1",
-  azure: "eastus",
-  scaleway: "fr-par",
-  ovh: "gra",
-  hetzner: "fsn1",
-};
-
-const muted: React.CSSProperties = { color: "var(--gray-500)", fontSize: "0.8rem" };
+import { IntensityValue } from "./IntensityValue";
+import { ProviderRegionPicker } from "./ProviderRegionPicker";
 
 function Stat({
   title,
-  who,
+  subject,
   intensity,
   renewable,
 }: {
   title: string;
-  who: string;
+  subject: string;
   intensity?: number;
   renewable?: number;
 }) {
   return (
     <div style={{ flex: "1 1 180px", minWidth: 0 }}>
       <div style={{ ...muted, textTransform: "uppercase", fontSize: "0.68rem" }}>{title}</div>
-      <div style={{ fontWeight: 600, fontFamily: "var(--mono)", margin: "0.15rem 0" }}>{who}</div>
+      <div style={{ fontWeight: 600, fontFamily: "var(--mono)", margin: "0.15rem 0" }}>
+        {subject}
+      </div>
       {intensity != null ? (
         <>
-          <span style={{ fontSize: "1.4rem", fontWeight: 700, color: intensityColor(intensity) }}>
-            {intensity}
-            <span style={{ fontSize: "0.7rem", fontWeight: 400, color: "var(--gray-500)" }}>
-              {" "}
-              gCO₂/kWh
-            </span>
-          </span>
+          <IntensityValue value={intensity} size="1.4rem" />
           {renewable != null && (
             <div style={{ ...muted, color: "var(--green-text)" }}>{renewable}% renewable</div>
           )}
@@ -107,64 +93,28 @@ export function RegionComparison() {
         />
       </h2>
 
-      <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", margin: "0.75rem 0" }}>
-        {PROVIDERS.map((p) => (
-          <button
-            type="button"
-            key={p}
-            onClick={() => {
-              setProvider(p);
-              setRegion(DEFAULT_REGION[p]);
-            }}
-            aria-pressed={provider === p}
-            style={{
-              padding: "0.3rem 0.8rem",
-              borderRadius: 6,
-              border: "1px solid var(--gray-200)",
-              background: provider === p ? "var(--btn-green)" : "var(--surface)",
-              color: provider === p ? "white" : "var(--gray-700)",
-              cursor: "pointer",
-              fontSize: "0.8rem",
-            }}
-          >
-            {p}
-          </button>
-        ))}
-        <select
-          value={region}
-          onChange={(e) => setRegion(e.target.value)}
-          aria-label="Your region"
-          style={{
-            padding: "0.3rem 0.6rem",
-            borderRadius: 6,
-            border: "1px solid var(--gray-200)",
-            background: "var(--surface)",
-            color: "inherit",
-            fontSize: "0.8rem",
-          }}
-        >
-          {regions ? (
-            regions.map((r) => (
-              <option key={r.region} value={r.region}>
-                {r.region}
-              </option>
-            ))
-          ) : (
-            <option value={region}>{region}</option>
-          )}
-        </select>
-      </div>
+      <ProviderRegionPicker
+        provider={provider}
+        region={region}
+        regions={regions}
+        onSelectProvider={(p) => {
+          setProvider(p);
+          setRegion(DEFAULT_REGION[p]);
+        }}
+        onSelectRegion={setRegion}
+        regionLabel="Your region"
+      />
 
       <div style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
         <Stat
           title="Your region"
-          who={`${provider}/${region}`}
+          subject={`${provider}/${region}`}
           intensity={curV}
           renewable={current?.renewable_percentage}
         />
         <Stat
           title="Greenest available"
-          who={greenest ? `${greenest.provider}/${greenest.region}` : "…"}
+          subject={greenest ? `${greenest.provider}/${greenest.region}` : "…"}
           intensity={greenV}
           renewable={greenest?.renewable_percentage}
         />

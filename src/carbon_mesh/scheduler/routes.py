@@ -22,7 +22,6 @@ router = APIRouter(
     dependencies=[Depends(require_api_key)],
 )
 
-# In-memory store for scheduled jobs
 _schedule_store: dict[str, CronSchedule] = {}
 
 
@@ -37,7 +36,9 @@ def _get_engine() -> SchedulingEngine:
 # --- Request models ---
 
 
-class FindWindowRequest(BaseModel):
+class _JobWindowParams(BaseModel):
+    """The job-window knobs shared by the find-window and create-schedule requests."""
+
     job_duration_minutes: int = Field(ge=1, le=1440, default=30)
     providers: list[str] = Field(default_factory=lambda: ["aws", "gcp", "azure"])
     preferred_regions: list[str] = Field(default_factory=list)
@@ -45,14 +46,13 @@ class FindWindowRequest(BaseModel):
     max_delay_hours: int = Field(ge=1, le=168, default=24)
 
 
-class CreateScheduleRequest(BaseModel):
+class FindWindowRequest(_JobWindowParams):
+    pass
+
+
+class CreateScheduleRequest(_JobWindowParams):
     name: str
     org_id: str
-    job_duration_minutes: int = Field(ge=1, le=1440, default=30)
-    providers: list[str] = Field(default_factory=lambda: ["aws", "gcp", "azure"])
-    preferred_regions: list[str] = Field(default_factory=list)
-    strategy: ScheduleStrategy = ScheduleStrategy.LOWEST_CARBON
-    max_delay_hours: int = Field(ge=1, le=168, default=24)
 
 
 # --- Endpoints ---

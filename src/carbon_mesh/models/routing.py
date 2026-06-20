@@ -22,7 +22,7 @@ class JobConstraints(BaseModel):
     cost_weight: float = Field(default=0.3, ge=0, le=1, description="Weight for cost score")
 
     @model_validator(mode="after")
-    def validate_constraints(self) -> "JobConstraints":
+    def validate_providers_and_weights(self) -> "JobConstraints":
         unknown = set(self.providers) - VALID_PROVIDERS
         if unknown:
             raise ValueError(f"Unknown providers: {unknown}. Valid: {sorted(VALID_PROVIDERS)}")

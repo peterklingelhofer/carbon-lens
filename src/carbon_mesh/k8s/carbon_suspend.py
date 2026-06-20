@@ -29,7 +29,7 @@ from pathlib import Path
 
 import httpx
 
-from carbon_mesh.sdk import impact_from_signal
+from carbon_mesh.sdk import impact_from_signal, soonest_clean_window_hours
 
 logger = logging.getLogger("carbon_suspend")
 
@@ -115,7 +115,7 @@ def report_on_suspend(region: str, want: bool, signal: dict) -> dict | None:
     """
     if not want:
         return None
-    hours = signal.get("surplus_window_in_hours") or signal.get("cleaner_window_in_hours") or 0
+    hours = soonest_clean_window_hours(signal)
     return impact_from_signal(region, signal, hours)
 
 

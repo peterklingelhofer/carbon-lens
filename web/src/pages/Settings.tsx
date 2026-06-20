@@ -1,15 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import { api } from "../api/client";
+import { API_BASE, api } from "../api/client";
 import { snapshotEnabled, useSnapshot } from "../api/snapshot";
 import { InfoTip } from "../components/InfoTip";
 import { DATA_QUALITY_TIP_RICH } from "../copy";
 import { timeAgo } from "../lib/format";
-import { card, section as sectionFn } from "../styles";
+import { card, sectionStyle } from "../styles";
 
-const section = sectionFn();
-// Same-origin (proxied) base for the Swagger docs link.
-const API_BASE =
-  import.meta.env.VITE_API_URL || (typeof window !== "undefined" ? window.location.origin : "");
+const section = sectionStyle();
 
 // The free Render server sleeps when idle and can take 1–2 min to wake. The
 // requests are same-origin (proxied by the Worker), so they never fail to CORS

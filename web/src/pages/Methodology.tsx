@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
-import { card as baseCard, section as sectionFn } from "../styles";
+import { card as baseCard, sectionStyle } from "../styles";
 
-const section = sectionFn(820);
+const section = sectionStyle(820);
 const card: React.CSSProperties = { ...baseCard, padding: "2rem" };
 const h2: React.CSSProperties = { marginTop: 0, fontSize: "1.2rem" };
 const p: React.CSSProperties = {
