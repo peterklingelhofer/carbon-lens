@@ -843,7 +843,7 @@ export default function CarbonGlobe() {
           /* Detail panel: full-width sheet near the top instead of a floating box */
           .globe-detail {
             left: 12px !important; right: 12px !important; width: auto !important;
-            max-height: 55vh; overflow: auto;
+            max-height: 55vh !important; overflow-y: auto !important;
           }
         }
       `}</style>
@@ -1305,6 +1305,14 @@ export default function CarbonGlobe() {
             padding: "16px 18px",
             color: "#fff",
             backdropFilter: "blur(8px)",
+            // Cap to the viewport and scroll the panel's own contents when the detail
+            // runs longer than the screen. The globe's wheel listener is bound to its
+            // canvas (a sibling node, not an ancestor), so scrolling here never reaches
+            // it, while a wheel over the globe still zooms. overscroll-contain stops the
+            // scroll from chaining to the page once the panel hits its end
+            maxHeight: "calc(100vh - 40px)",
+            overflowY: "auto",
+            overscrollBehavior: "contain",
             // Sit above the cold-start banner (z 15, fixed at the top) so on mobile the
             // panel and its close button aren't covered by it; stays below the nav (20).
             zIndex: 16,
