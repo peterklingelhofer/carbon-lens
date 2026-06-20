@@ -29,7 +29,7 @@ export function Methodology() {
       >
         How every number on this site is produced - and, just as importantly, where it's an estimate
         rather than a measurement. The short version: we read public grid-operator data, tag every
-        reading with its source, and never hide an estimate behind a real one.
+        reading with its source, and never present an estimate as if it were a measured value.
       </p>
 
       <div style={card}>
