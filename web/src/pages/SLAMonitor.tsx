@@ -163,6 +163,7 @@ export function SLAMonitor() {
           )}
           {monitorMutation.isError && (
             <div
+              role="alert"
               style={{
                 fontSize: "0.78rem",
                 color: "var(--red-400, #f87171)",
@@ -321,6 +322,7 @@ export function SLAMonitor() {
           </button>
           {createMutation.isError && (
             <div
+              role="alert"
               style={{
                 fontSize: "0.8rem",
                 color: "var(--red-400, #f87171)",
@@ -334,6 +336,7 @@ export function SLAMonitor() {
       )}
       {(checkMutation.isError || reportMutation.isError) && (
         <div
+          role="alert"
           style={{
             ...card,
             marginBottom: "2rem",

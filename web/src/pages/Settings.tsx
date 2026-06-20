@@ -21,19 +21,26 @@ const COLD_START_RETRY = {
   staleTime: 60_000,
 } as const;
 
-function StatusDot({ ok }: { ok: boolean }) {
+// The dot conveys state by colour, so where there's no adjacent text saying the
+// same thing (the provider lists), pass `label` to add a screen-reader-only word
+// like "configured" / "not configured". Without it the dot is decorative.
+function StatusDot({ ok, label }: { ok: boolean; label?: string }) {
   return (
-    <span
-      style={{
-        display: "inline-block",
-        width: 10,
-        height: 10,
-        borderRadius: "50%",
-        background: ok ? "var(--green-500)" : "var(--gray-300)",
-        marginRight: 8,
-        verticalAlign: "middle",
-      }}
-    />
+    <>
+      <span
+        aria-hidden
+        style={{
+          display: "inline-block",
+          width: 10,
+          height: 10,
+          borderRadius: "50%",
+          background: ok ? "var(--green-500)" : "var(--gray-300)",
+          marginRight: 8,
+          verticalAlign: "middle",
+        }}
+      />
+      {label ? <span className="sr-only">{label}</span> : null}
+    </>
   );
 }
 
@@ -319,7 +326,7 @@ export function Settings() {
                   alignItems: "center",
                 }}
               >
-                <StatusDot ok={true} />
+                <StatusDot ok={true} label="configured:" />
                 <span style={{ fontSize: "0.9rem" }}>{name}</span>
               </div>
             ))}
@@ -332,7 +339,7 @@ export function Settings() {
                   alignItems: "center",
                 }}
               >
-                <StatusDot ok={false} />
+                <StatusDot ok={false} label="not configured:" />
                 <span style={{ fontSize: "0.9rem", color: "var(--gray-500)" }}>{name}</span>
               </div>
             ))}
