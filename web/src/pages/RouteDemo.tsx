@@ -230,7 +230,11 @@ export function RouteDemo() {
           <div
             style={{
               ...card,
-              background: "linear-gradient(135deg, var(--green-50), var(--surface))",
+              // A translucent green wash over the theme-aware --card-bg, NOT the
+              // fixed light --green-50 (which doesn't remap for dark mode and left
+              // the adaptive light text invisible on a near-white corner).
+              background:
+                "linear-gradient(135deg, rgba(34,197,94,0.12), transparent), var(--card-bg)",
               borderColor: "var(--green-200)",
             }}
           >
