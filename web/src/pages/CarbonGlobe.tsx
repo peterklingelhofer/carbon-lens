@@ -452,12 +452,15 @@ export default function CarbonGlobe() {
       })
       .ringLat("lat")
       .ringLng("lng")
-      .ringMaxRadius((d) => 2 + ((d as GlobePoint).renewable / 100) * 3)
-      .ringPropagationSpeed(1.4)
-      .ringRepeatPeriod((d: object) => 2400 - ((d as GlobePoint).renewable / 100) * 1400)
+      // Rings are subtle pulse animations per region. At far zoom, 60+ rings overlap
+      // in screen space and create visual noise -- keep them small, slow, and fading
+      // fast so they read as a gentle pulse when zoomed in but don't pile up when out.
+      .ringMaxRadius((d) => 1 + ((d as GlobePoint).renewable / 100) * 1.5)
+      .ringPropagationSpeed(0.9)
+      .ringRepeatPeriod((d: object) => 3000 - ((d as GlobePoint).renewable / 100) * 1000)
       .ringColor((d: object) => {
         const [r, g, b] = metricRGB(d as GlobePoint, colorMetricRef.current);
-        return (t: number) => `rgba(${r},${g},${b},${Math.sqrt(1 - t)})`;
+        return (t: number) => `rgba(${r},${g},${b},${(1 - t) * 0.65})`;
       })
       .onPointClick((d: object) => {
         const p = d as GlobePoint;
@@ -471,7 +474,9 @@ export default function CarbonGlobe() {
       .customThreeObjectUpdate((obj: object, d: object) => {
         const p = d as GlobePoint;
         const mesh = obj as THREE.Mesh;
-        const c = globe.getCoords(p.lat, p.lng, 0); // base on the surface
+        // Lift slightly above the surface to prevent z-fighting with the globe
+        // geometry, which becomes visible as flickering pixels when zoomed far out.
+        const c = globe.getCoords(p.lat, p.lng, 0.002);
         mesh.position.set(c.x, c.y, c.z);
         // Orient the beam (+Y) radially outward from the globe center.
         const radial = new THREE.Vector3(c.x, c.y, c.z).normalize();
@@ -1302,15 +1307,19 @@ export default function CarbonGlobe() {
             background: "rgba(10,15,20,0.92)",
             border: "1px solid rgba(255,255,255,0.15)",
             borderRadius: 12,
-            padding: "16px 18px",
+            padding: "16px 18px 24px",
             color: "#fff",
             backdropFilter: "blur(8px)",
             // Cap to the viewport and scroll the panel's own contents when the detail
             // runs longer than the screen. The globe's wheel listener is bound to its
             // canvas (a sibling node, not an ancestor), so scrolling here never reaches
             // it, while a wheel over the globe still zooms. overscroll-contain stops the
-            // scroll from chaining to the page once the panel hits its end
-            maxHeight: "calc(100vh - 40px)",
+            // scroll from chaining to the page once the panel hits its end.
+            // maxHeight budget: globe container = 100vh - 56px (nav); panel top = 20px;
+            // bottom margin = 20px → 100vh - 56 - 20 - 20 = 100vh - 96px. The old
+            // calc(100vh - 40px) overshot the container bottom by 36px and was clipped
+            // by overflow:hidden on the globe div, hiding the last lines of the panel.
+            maxHeight: "calc(100vh - 96px)",
             overflowY: "auto",
             overscrollBehavior: "contain",
             // Sit above the cold-start banner (z 15, fixed at the top) so on mobile the
