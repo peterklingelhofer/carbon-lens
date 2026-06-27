@@ -13,7 +13,7 @@ cleaner, forever. This makes "pick the clean one" the path of least resistance.
 
 ```hcl
 module "greenest" {
-  source          = "github.com/peterklingelhofer/carbonlens//deploy/terraform/greenest-region"
+  source          = "github.com/peterklingelhofer/carbon-lens//deploy/terraform/greenest-region"
   cloud_providers = "aws"        # restrict to one cloud you deploy on
   power_watts     = 500          # optional: get an annual kg estimate
 }
