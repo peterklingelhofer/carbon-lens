@@ -8,7 +8,7 @@ inputs:
   report-url:
     description: "URL of the published clean_compute_report.json"
     required: false
-    default: "https://raw.githubusercontent.com/peterklingelhofer/carbonlens/data/clean_compute_report.json"
+    default: "https://raw.githubusercontent.com/peterklingelhofer/carbon-lens/data/clean_compute_report.json"
   top:
     description: "How many rows to show in each table"
     required: false
