@@ -5,7 +5,7 @@ import {
   useBestTimeSnapshot,
   useForecastSnapshot,
   useRegionHistoryArchive,
-  useSignal,
+  useSnapshot,
   useSnapshotOrApi,
   useWeatherSnapshot,
 } from "../api/snapshot";
@@ -16,10 +16,28 @@ const SIGNAL_COLOR = { green: "#4ade80", yellow: "#fbbf24", red: "#f87171" } as 
 
 // The run-now/wait decision for a region, read straight from the precomputed snapshot
 // signal on the CDN -- no API call, so it's instant even when the server is asleep.
-// Renders nothing when there's no signal (snapshot disabled, or region not covered).
+// Renders nothing when there's no signal (snapshot disabled, or region not covered),
+// and suppresses "run now" unless the region is in the lowest 2% intensity across all
+// regions or has >= 98% renewable share.
 export function RegionSignal({ provider, region }: { provider: string; region: string }) {
-  const signal = useSignal(provider, region);
+  const { data: snapshot } = useSnapshot();
+  const signal = snapshot?.signals?.[`${provider}/${region}`];
   if (!signal) return null;
+
+  const renewablePct = snapshot?.intensities?.[`${provider}/${region}`]?.renewable_percentage ?? 0;
+  const allIntensities = snapshot?.intensities
+    ? Object.values(snapshot.intensities)
+        .map((i) => i.carbon_intensity_gco2_kwh)
+        .sort((a, b) => a - b)
+    : [];
+  // p2Count: how many regions fall in the lowest 2%. 0 means the pool is too small
+  // to make a meaningful percentile call (< 50 regions), so skip that path.
+  const p2Count = Math.floor(allIntensities.length * 0.02);
+  const isInLowest2Pct = p2Count > 0 && signal.intensity_gco2_kwh < allIntensities[p2Count];
+  const isExceptional = renewablePct >= 98 || isInLowest2Pct;
+
+  if (signal.advice === "run_now" && !isExceptional) return null;
+
   const color = SIGNAL_COLOR[signal.state];
   const runNow = signal.advice === "run_now";
   const window = signal.surplus_window_in_hours ?? signal.cleaner_window_in_hours;
@@ -27,11 +45,13 @@ export function RegionSignal({ provider, region }: { provider: string; region: s
   return (
     <div style={{ marginTop: 10 }}>
       <div style={{ fontSize: "0.72rem", color: "#9ca3af", marginBottom: 4 }}>
-        Run a flexible job now?
+        Shift flexible work here?
       </div>
       <div style={{ fontSize: "0.85rem", fontWeight: 600, color }}>
         {signal.clean_surplus ? "⚡ " : ""}
-        {runNow ? "Yes — run now" : `Wait${window != null ? ` ~${window}h` : ""} for cleaner`}
+        {runNow
+          ? "Yes — exceptionally clean now"
+          : `Wait${window != null ? ` ~${window}h` : ""} for cleaner`}
         {!runNow && signal.cleaner_window_intensity_gco2_kwh != null && (
           <span style={{ color: "#86efac", fontWeight: 400 }}>
             {" "}
