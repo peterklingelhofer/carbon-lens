@@ -29,6 +29,7 @@ vi.mock("../api/snapshot", async () => {
   const { useQuery } = await import("@tanstack/react-query");
   return {
     snapshotEnabled: false,
+    useSnapshot: vi.fn(),
     useSignal: vi.fn(),
     useForecastSnapshot: vi.fn(),
     useBestTimeSnapshot: vi.fn(),
@@ -59,11 +60,11 @@ import {
   useBestTimeSnapshot,
   useForecastSnapshot,
   useRegionHistoryArchive,
-  useSignal,
+  useSnapshot,
   useWeatherSnapshot,
 } from "../api/snapshot";
 
-const mockUseSignal = vi.mocked(useSignal);
+const mockUseSnapshot = vi.mocked(useSnapshot);
 const mockUseForecastSnapshot = vi.mocked(useForecastSnapshot);
 const mockUseBestTimeSnapshot = vi.mocked(useBestTimeSnapshot);
 const mockUseRegionHistoryArchive = vi.mocked(useRegionHistoryArchive);
@@ -285,49 +286,77 @@ describe("RegionForecast", () => {
 });
 
 describe("RegionSignal", () => {
-  function signal(overrides: Partial<ReturnType<typeof useSignal>> = {}) {
-    return {
+  function makeSnapshot(signalOverrides = {}, intensityOverrides = {}) {
+    const sig = {
       provider: "aws",
       region: "us-west-2",
       grid_zone: "US-NW-BPAT",
-      intensity_gco2_kwh: 40,
+      intensity_gco2_kwh: 5,
       state: "green",
       advice: "run_now",
       cleaner_window_in_hours: null,
       cleaner_window_intensity_gco2_kwh: null,
-      marginal_intensity_gco2_kwh: 80,
+      marginal_intensity_gco2_kwh: 5,
       marginal_note: null,
       marginal_basis: "heuristic",
       clean_surplus: true,
       surplus_window_in_hours: null,
-      ...overrides,
-      // biome-ignore lint/suspicious/noExplicitAny: partial signal fixture for the test
+      ...signalOverrides,
+    };
+    return {
+      data: {
+        signals: { "aws/us-west-2": sig },
+        intensities: {
+          "aws/us-west-2": {
+            carbon_intensity_gco2_kwh: sig.intensity_gco2_kwh,
+            renewable_percentage: 99,
+            ...intensityOverrides,
+          },
+        },
+      },
+      // biome-ignore lint/suspicious/noExplicitAny: partial snapshot fixture
     } as any;
   }
 
   it("renders nothing when no precomputed signal exists", () => {
-    mockUseSignal.mockReturnValue(undefined);
-    const { container } = render(<RegionSignal provider="aws" region="us-west-2" />);
+    // biome-ignore lint/suspicious/noExplicitAny: partial snapshot fixture
+    mockUseSnapshot.mockReturnValue({ data: { signals: {}, intensities: {} } } as any);
+    const { container } = renderWithClient(<RegionSignal provider="aws" region="us-west-2" />);
     expect(container.textContent).toBe("");
   });
 
-  it("says run now for a clean-surplus region", () => {
-    mockUseSignal.mockReturnValue(signal());
-    render(<RegionSignal provider="aws" region="us-west-2" />);
-    expect(screen.getByText(/Yes — run now/)).toBeTruthy();
+  it("shows run now for an exceptionally clean region (>=98% renewable)", () => {
+    mockUseSnapshot.mockReturnValue(makeSnapshot());
+    renderWithClient(<RegionSignal provider="aws" region="us-west-2" />);
+    expect(screen.getByText(/Yes — exceptionally clean now/)).toBeTruthy();
+  });
+
+  it("hides run now when not in lowest 2% intensity and renewable < 98%", () => {
+    mockUseSnapshot.mockReturnValue(
+      makeSnapshot(
+        { advice: "run_now", intensity_gco2_kwh: 400 },
+        { carbon_intensity_gco2_kwh: 400, renewable_percentage: 10 },
+      ),
+    );
+    const { container } = renderWithClient(<RegionSignal provider="aws" region="us-west-2" />);
+    expect(container.textContent).toBe("");
   });
 
   it("says wait with the cleaner window when dirty", () => {
-    mockUseSignal.mockReturnValue(
-      signal({
-        state: "red",
-        advice: "wait_for_cleaner",
-        clean_surplus: false,
-        cleaner_window_in_hours: 5,
-        cleaner_window_intensity_gco2_kwh: 120,
-      }),
+    mockUseSnapshot.mockReturnValue(
+      makeSnapshot(
+        {
+          state: "red",
+          advice: "wait_for_cleaner",
+          clean_surplus: false,
+          cleaner_window_in_hours: 5,
+          cleaner_window_intensity_gco2_kwh: 120,
+          intensity_gco2_kwh: 500,
+        },
+        { carbon_intensity_gco2_kwh: 500, renewable_percentage: 5 },
+      ),
     );
-    render(<RegionSignal provider="aws" region="us-west-2" />);
+    renderWithClient(<RegionSignal provider="aws" region="us-west-2" />);
     expect(screen.getByText(/Wait ~5h for cleaner/)).toBeTruthy();
   });
 });
