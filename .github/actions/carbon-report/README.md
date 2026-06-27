@@ -10,7 +10,7 @@ a zero-cost read.
 As a job summary on any workflow:
 
 ```yaml
-- uses: peterklingelhofer/carbonlens/.github/actions/carbon-report@main
+- uses: peterklingelhofer/carbon-lens/.github/actions/carbon-report@main
 ```
 
 Post it as a PR comment (e.g. on infra PRs, to nudge region choice):
@@ -22,7 +22,7 @@ jobs:
   carbon:
     runs-on: ubuntu-latest
     steps:
-      - uses: peterklingelhofer/carbonlens/.github/actions/carbon-report@main
+      - uses: peterklingelhofer/carbon-lens/.github/actions/carbon-report@main
         with:
           comment: "true"
         env:

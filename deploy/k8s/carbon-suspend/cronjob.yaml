@@ -21,7 +21,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: carbon-suspend
-              image: ghcr.io/peterklingelhofer/carbonlens:latest # replace as needed
+              image: ghcr.io/peterklingelhofer/carbon-lens:latest # replace as needed
               command: ["python", "-m", "carbon_mesh.k8s.carbon_suspend"]
               env:
                 # Public instance by default; point at your own deployment if you run one.

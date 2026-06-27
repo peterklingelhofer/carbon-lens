@@ -56,7 +56,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--history-baseline",
-        default="https://raw.githubusercontent.com/peterklingelhofer/carbonlens/data/clean_compute_history.json",
+        default="https://raw.githubusercontent.com/peterklingelhofer/carbon-lens/data/clean_compute_history.json",
         help="Previous report-history (URL or path) to append to; '' to disable",
     )
     args = parser.parse_args()

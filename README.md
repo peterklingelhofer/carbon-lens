@@ -29,8 +29,8 @@ Every major cloud claims "100% renewable" — mostly via **annual REC matching**
 **1. First-time setup** (installs deps, copies `.env`, builds the frontend):
 
 ```bash
-git clone https://github.com/peterklingelhofer/carbonlens.git
-cd carbonlens
+git clone https://github.com/peterklingelhofer/carbon-lens.git
+cd carbon-lens
 make setup
 ```
 
@@ -237,7 +237,7 @@ Gate or annotate a workflow by the live grid — run flexible CI/CD when it's cl
 
 ```yaml
 - id: carbon
-  uses: peterklingelhofer/carbonlens/.github/actions/carbon-signal@main
+  uses: peterklingelhofer/carbon-lens/.github/actions/carbon-signal@main
   with:
     region: aws/us-east-1
     max-intensity: "150"
@@ -264,7 +264,7 @@ Region choice is the highest-leverage carbon decision (a region can be many time
 
 ```hcl
 module "greenest" {
-  source          = "github.com/peterklingelhofer/carbonlens//deploy/terraform/greenest-region"
+  source          = "github.com/peterklingelhofer/carbon-lens//deploy/terraform/greenest-region"
   cloud_providers = "aws"
 }
 provider "aws" {

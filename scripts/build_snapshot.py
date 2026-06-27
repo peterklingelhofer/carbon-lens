@@ -490,7 +490,7 @@ async def _main() -> int:
     )
     parser.add_argument(
         "--baseline",
-        default="https://raw.githubusercontent.com/peterklingelhofer/carbonlens/data/snapshot.json",
+        default="https://raw.githubusercontent.com/peterklingelhofer/carbon-lens/data/snapshot.json",
         help="Previous snapshot (URL or path) to carry forward from; '' to disable",
     )
     parser.add_argument(
@@ -506,7 +506,7 @@ async def _main() -> int:
     )
     parser.add_argument(
         "--history-baseline",
-        default="https://raw.githubusercontent.com/peterklingelhofer/carbonlens/data/history.json",
+        default="https://raw.githubusercontent.com/peterklingelhofer/carbon-lens/data/history.json",
         help="Previous history archive (URL or path) to append to; '' to disable",
     )
     parser.add_argument(

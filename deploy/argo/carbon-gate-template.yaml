@@ -22,7 +22,7 @@ spec:
           - name: api-url
             value: "https://carbonlens-gssa.onrender.com"
       script:
-        image: ghcr.io/peterklingelhofer/carbonlens/api:latest
+        image: ghcr.io/peterklingelhofer/carbon-lens/api:latest
         command: [python]
         source: |
           from carbon_mesh.sdk import CarbonClient

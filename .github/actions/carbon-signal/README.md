@@ -14,7 +14,7 @@ grid is in **clean surplus** (renewables abundant, the highest-value time to run
 Annotate every run (advisory, never fails):
 
 ```yaml
-- uses: peterklingelhofer/carbonlens/.github/actions/carbon-signal@main
+- uses: peterklingelhofer/carbon-lens/.github/actions/carbon-signal@main
   with:
     region: aws/us-east-1
 ```
@@ -30,7 +30,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - id: carbon
-        uses: peterklingelhofer/carbonlens/.github/actions/carbon-signal@main
+        uses: peterklingelhofer/carbon-lens/.github/actions/carbon-signal@main
         with:
           region: aws/us-east-1
           max-intensity: "150"
@@ -42,7 +42,7 @@ Branch on the output instead of failing:
 
 ```yaml
 - id: carbon
-  uses: peterklingelhofer/carbonlens/.github/actions/carbon-signal@main
+  uses: peterklingelhofer/carbon-lens/.github/actions/carbon-signal@main
   with: { region: aws/us-east-1 }
 - if: steps.carbon.outputs.clean-now == 'true'
   run: ./deploy.sh

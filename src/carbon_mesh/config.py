@@ -32,13 +32,13 @@ class Settings(BaseSettings):
     # Published snapshot the scheduler reads current intensity from (one cached
     # fetch of all zones) instead of live-fetching dozens of zones per request.
     snapshot_url: str = (
-        "https://raw.githubusercontent.com/peterklingelhofer/carbonlens/data/snapshot.json"
+        "https://raw.githubusercontent.com/peterklingelhofer/carbon-lens/data/snapshot.json"
     )
 
     # Published rolling history archive (accumulated by the snapshot builder) the
     # /carbon/history endpoint reads. Set to "" to disable history.
     history_url: str = (
-        "https://raw.githubusercontent.com/peterklingelhofer/carbonlens/data/history.json"
+        "https://raw.githubusercontent.com/peterklingelhofer/carbon-lens/data/history.json"
     )
 
     region_map_path: Path = (

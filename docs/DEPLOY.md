@@ -144,7 +144,7 @@ Setup (one time):
 3. Run the workflow once (**Actions → Carbon snapshot → Run workflow**) to
    create the `data` branch.
 4. Confirm `web/.env.production` `VITE_SNAPSHOT_URL` points at your `data` branch
-   (already set for `peterklingelhofer/carbonlens`), then redeploy the frontend.
+   (already set for `peterklingelhofer/carbon-lens`), then redeploy the frontend.
 
 The dashboard banner then reads e.g. *"34 grid zones live from real
 grid-operator APIs · 6 estimated · updated 4 min ago. No mock data."* Mock
@@ -199,7 +199,7 @@ no-ops, so it's safe in forks.
 ```bash
 # 1. Clone and setup
 git clone https://github.com/yourorg/carbonlens.git
-cd carbonlens
+cd carbon-lens
 make setup   # installs deps, copies .env, builds frontend
 
 # 2. Add API keys to .env (all free, no credit card)
