@@ -84,13 +84,13 @@ function Heatmap({ provider, region }: { provider: string; region: string }) {
 
   // Hover (desktop) / tap (mobile) shows the cell's value; toggle off on re-tap.
   const showTip = (
-    e: React.MouseEvent,
+    e: React.SyntheticEvent,
     key: string,
     label: string,
     hour: number,
     v: number | null,
   ) => {
-    const r = e.currentTarget.getBoundingClientRect();
+    const r = (e.currentTarget as Element).getBoundingClientRect();
     setTip({ key, x: r.left + r.width / 2, y: r.top, label, hour, v });
   };
 
@@ -148,25 +148,38 @@ function Heatmap({ provider, region }: { provider: string; region: string }) {
                       ? `${label} ${h}:00 — no data`
                       : `${label} ${h}:00 — ${Math.round(v)} gCO₂/kWh`;
                   return (
-                    // biome-ignore lint/a11y/useKeyWithClickEvents: visual overview grid (168 cells); keyboard/SR users use the "View as a table" alternative and each cell carries an aria-label
                     <td
                       // biome-ignore lint/suspicious/noArrayIndexKey: fixed 24-hour columns, index is the hour
                       key={h}
-                      data-heatcell
-                      aria-label={text}
-                      onMouseEnter={(e) => showTip(e, key, label, h, v)}
-                      onMouseLeave={() => setTip((cur) => (cur?.key === key ? null : cur))}
-                      onClick={(e) =>
-                        tip?.key === key ? setTip(null) : showTip(e, key, label, h, v)
-                      }
-                      style={{
-                        height: 15,
-                        background: v == null ? "var(--gray-100)" : intensityColor(v),
-                        border: "1px solid var(--surface)",
-                        cursor: "pointer",
-                        touchAction: "manipulation",
-                      }}
-                    />
+                      style={{ height: 15, border: "1px solid var(--surface)", padding: 0 }}
+                    >
+                      <button
+                        type="button"
+                        data-heatcell
+                        aria-label={text}
+                        onMouseEnter={(e) => showTip(e, key, label, h, v)}
+                        onMouseLeave={() => setTip((cur) => (cur?.key === key ? null : cur))}
+                        onClick={(e) =>
+                          tip?.key === key ? setTip(null) : showTip(e, key, label, h, v)
+                        }
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            tip?.key === key ? setTip(null) : showTip(e, key, label, h, v);
+                          }
+                        }}
+                        style={{
+                          display: "block",
+                          width: "100%",
+                          height: "100%",
+                          background: v == null ? "var(--gray-100)" : intensityColor(v),
+                          border: "none",
+                          cursor: "pointer",
+                          touchAction: "manipulation",
+                          padding: 0,
+                        }}
+                      />
+                    </td>
                   );
                 })}
               </tr>
