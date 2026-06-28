@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 
 from pydantic import BaseModel, Field
@@ -16,8 +16,8 @@ from pydantic import BaseModel, Field
 from carbon_mesh.carbon_sources.base import CarbonDataSource
 from carbon_mesh.carbon_sources.entsoe_forecast import ENTSOEForecastSource
 from carbon_mesh.carbon_sources.open_meteo import OpenMeteoForecastSource
-from carbon_mesh.grid.mapper import GridMapper
 from carbon_mesh.engine.surplus import is_clean_surplus
+from carbon_mesh.grid.mapper import GridMapper
 from carbon_mesh.models.carbon import CarbonIntensity
 
 # Fetch real day-ahead forecasts only for the cleanest-right-now EU zones (the
@@ -139,7 +139,7 @@ class SchedulingEngine:
         Evaluates carbon intensity across regions right now and estimates
         future windows using time-of-day heuristics.
         """
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         window_end = now + timedelta(hours=max_delay_hours)
 
         # Get all regions for the specified providers
@@ -409,7 +409,7 @@ class SchedulingEngine:
             grid_zone=current.grid_zone,
             carbon_intensity_gco2_kwh=round(carbon, 2),
             renewable_percentage=round(renewable, 1),
-            timestamp=datetime.now(timezone.utc) + timedelta(hours=hours_ahead),
+            timestamp=datetime.now(UTC) + timedelta(hours=hours_ahead),
             source=f"{current.source} (forecast +{hours_ahead}h)",
         )
 
@@ -427,7 +427,7 @@ class SchedulingEngine:
         if hours_ahead == 0:
             return current
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         # 15° of longitude == 1 hour offset from UTC -> approximate local hour.
         local_hour = (now.hour + hours_ahead + longitude / 15.0) % 24
 

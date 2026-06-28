@@ -3,7 +3,6 @@ from datetime import datetime
 import httpx
 
 from carbon_mesh.carbon_sources.http_pool import shared_client
-
 from carbon_mesh.models.carbon import CarbonIntensity
 
 API_BASE = "https://api.electricitymap.org/v3"

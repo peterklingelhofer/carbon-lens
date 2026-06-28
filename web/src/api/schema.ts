@@ -1191,6 +1191,13 @@ export interface components {
             sla_name: string;
             status: components["schemas"]["SLAStatus"];
         };
+        /** BatchRegionRequest */
+        BatchRegionRequest: {
+            /** Provider */
+            provider: string;
+            /** Region */
+            region: string;
+        };
         /**
          * BestTime
          * @description The greenest hour-of-day to run a recurring job, for picking a cron schedule.
@@ -2714,9 +2721,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: string;
-                }[];
+                "application/json": components["schemas"]["BatchRegionRequest"][];
             };
         };
         responses: {

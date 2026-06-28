@@ -72,6 +72,8 @@ export const inputStyle: React.CSSProperties = {
   border: "1px solid var(--gray-200)",
   fontSize: "0.9rem",
   boxSizing: "border-box",
+  color: "inherit",
+  background: "var(--surface)",
 };
 
 // Table header / body cells shared by the result tables

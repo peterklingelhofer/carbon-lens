@@ -8,7 +8,7 @@ not publish a free real-time fuel-mix / carbon-intensity API, so this returns a
 modeled estimate tagged `source="eskom_heuristic"`. Treat it as illustrative.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from carbon_mesh.carbon_sources.base import SingleZoneCarbonSource
 from carbon_mesh.models.carbon import CarbonIntensity
@@ -33,7 +33,7 @@ class EskomCarbonSource(SingleZoneCarbonSource):
         base_renewable = 8.0
 
         # SAST = UTC+2
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         sast_hour = (now.hour + 2) % 24
 
         # Midday solar helps slightly
@@ -49,6 +49,6 @@ class EskomCarbonSource(SingleZoneCarbonSource):
             grid_zone="ZA",
             carbon_intensity_gco2_kwh=round(base_intensity, 1),
             renewable_percentage=round(base_renewable, 1),
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             source="eskom_heuristic",
         )

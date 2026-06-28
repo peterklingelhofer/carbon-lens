@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from carbon_mesh.carbon_sources.base import CarbonDataSource
 from carbon_mesh.grid.mapper import GridMapper
@@ -61,7 +61,7 @@ class SLAEngine:
             return SLACheck(
                 id=str(uuid.uuid4()),
                 sla_id=sla.id,
-                checked_at=datetime.now(timezone.utc),
+                checked_at=datetime.now(UTC),
                 status=SLAStatus.UNKNOWN,
                 avg_carbon_intensity_gco2_kwh=0,
                 max_carbon_intensity_gco2_kwh=0,
@@ -133,7 +133,7 @@ class SLAEngine:
         return SLACheck(
             id=str(uuid.uuid4()),
             sla_id=sla.id,
-            checked_at=datetime.now(timezone.utc),
+            checked_at=datetime.now(UTC),
             status=status,
             avg_carbon_intensity_gco2_kwh=round(sum(carbon_values) / max(len(carbon_values), 1), 2),
             max_carbon_intensity_gco2_kwh=round(max(carbon_values, default=0), 2),
@@ -167,7 +167,7 @@ class SLAEngine:
                 sla_name=sla.name,
                 period_start=period_start,
                 period_end=period_end,
-                generated_at=datetime.now(timezone.utc),
+                generated_at=datetime.now(UTC),
                 total_checks=0,
                 compliant_checks=0,
                 warning_checks=0,
@@ -248,7 +248,7 @@ class SLAEngine:
             sla_name=sla.name,
             period_start=period_start,
             period_end=period_end,
-            generated_at=datetime.now(timezone.utc),
+            generated_at=datetime.now(UTC),
             total_checks=len(checks),
             compliant_checks=compliant,
             warning_checks=warning,

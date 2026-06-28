@@ -142,9 +142,12 @@ describe("Dashboard table", () => {
   it("filters rows by the search box", async () => {
     renderDashboard();
     await screen.findByText("Loc 0");
-    fireEvent.change(screen.getByRole("searchbox", { name: "Search regions" }), {
-      target: { value: "Loc 5" },
-    });
+    fireEvent.change(
+      screen.getByRole("searchbox", { name: "Search region, grid zone, or location" }),
+      {
+        target: { value: "Loc 5" },
+      },
+    );
     expect(screen.getByText("Loc 5")).toBeTruthy();
     expect(screen.queryByText("Loc 0")).toBeNull();
     expect(screen.queryByText(/Showing 20 of/)).toBeNull(); // single match, no cap note
