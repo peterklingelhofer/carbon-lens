@@ -230,8 +230,8 @@ export function Landing() {
               tip: "'Routing' means choosing where to run a job. You set priorities (e.g. favour low carbon, cap cost), it ranks every region and returns the best match. It recommends - it doesn't move anything itself.",
             },
             {
-              title: "6 live grid integrations",
-              desc: "EIA (US), ENTSO-E (Europe), AEMO (Australia), UK Carbon Intensity, GridStatus, and Electricity Maps pull data straight from grid operators. Other regions use clearly-labelled estimates.",
+              title: "8 live grid integrations",
+              desc: "UK, EIA, OpenElectricity/AEMO, IESO/AESO, Taipower, GridStatus, ENTSO-E, and Electricity Maps pull data straight from grid operators. Other regions use clearly-labelled estimates.",
               tip: "A grid operator runs a region's electricity grid and publishes what it's generating right now. 'Live integration' means we read that official feed directly, rather than estimating.",
             },
             {

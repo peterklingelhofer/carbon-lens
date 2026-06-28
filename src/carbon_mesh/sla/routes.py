@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
@@ -98,7 +98,7 @@ async def create_sla(
     repo: SLARepository = Depends(get_sla_repository),
 ) -> GreenSLA:
     """Create a new Green SLA definition."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     sla = GreenSLA(
         id=str(uuid.uuid4()),
         org_id=req.org_id,
@@ -190,7 +190,7 @@ async def run_due_checks(
     the in-process monitor loop, which only runs while the service is awake.
     Admin-only (X-API-Key must match CARBON_LENS_ADMIN_SECRET)."""
     engine = _get_engine()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     slas = await repo.list_active_slas()
     checks_run = 0
     for sla in slas:
@@ -225,7 +225,7 @@ async def update_sla(
     sla = await _require_sla(sla_id, repo)
 
     update_data = req.model_dump(exclude_none=True)
-    update_data["updated_at"] = datetime.now(timezone.utc)
+    update_data["updated_at"] = datetime.now(UTC)
 
     updated = sla.model_copy(update=update_data)
     await repo.update_sla(updated)
@@ -295,7 +295,7 @@ async def generate_report(
     """
     sla = await _require_sla(sla_id, repo)
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     period_start = now - timedelta(days=req.period_days)
     period_end = now
 

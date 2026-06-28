@@ -825,9 +825,9 @@ function useRegionIntensities(regions: CloudRegion[]) {
       .then((result) => {
         if (!cancelled) setData(result);
       })
-      .catch(() => {
+      .catch(async () => {
         // Batch failed - fall back to individual calls
-        regions.forEach(async (r) => {
+        for (const r of regions) {
           try {
             const intensity = await api.carbonIntensity(r.provider, r.region);
             if (!cancelled) {
@@ -839,7 +839,7 @@ function useRegionIntensities(regions: CloudRegion[]) {
           } catch {
             /* swallow */
           }
-        });
+        }
       });
 
     return () => {

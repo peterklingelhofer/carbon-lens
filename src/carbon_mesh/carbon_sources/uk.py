@@ -4,12 +4,11 @@ Covers GB national + 17 regional zones (GB-1 to GB-17).
 Docs: https://carbonintensity.org.uk/
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import httpx
 
 from carbon_mesh.carbon_sources.http_pool import shared_client
-
 from carbon_mesh.models.carbon import CarbonIntensity
 
 API_BASE = "https://api.carbonintensity.org.uk"
@@ -38,7 +37,7 @@ class UKCarbonSource:
                 grid_zone="GB",
                 carbon_intensity_gco2_kwh=float(intensity),
                 renewable_percentage=_estimate_renewable_pct(float(intensity)),
-                timestamp=datetime.fromisoformat(data["from"]).replace(tzinfo=timezone.utc),
+                timestamp=datetime.fromisoformat(data["from"]).replace(tzinfo=UTC),
                 source="uk_carbon_intensity",
             )
 
@@ -56,7 +55,7 @@ class UKCarbonSource:
                     grid_zone=grid_zone,
                     carbon_intensity_gco2_kwh=float(intensity),
                     renewable_percentage=_estimate_renewable_pct(float(intensity)),
-                    timestamp=datetime.now(timezone.utc),
+                    timestamp=datetime.now(UTC),
                     source="uk_carbon_intensity",
                 )
 
@@ -88,7 +87,7 @@ class UKCarbonSource:
                             grid_zone=zone,
                             carbon_intensity_gco2_kwh=float(intensity),
                             renewable_percentage=_estimate_renewable_pct(float(intensity)),
-                            timestamp=datetime.now(timezone.utc),
+                            timestamp=datetime.now(UTC),
                             source="uk_carbon_intensity",
                         )
             except (httpx.HTTPError, ValueError, KeyError):

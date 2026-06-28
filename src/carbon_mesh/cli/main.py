@@ -5,9 +5,10 @@ import json
 import os
 import subprocess
 import time
-from datetime import datetime, timezone
+from collections.abc import Callable
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Callable, Optional, TypeVar
+from typing import TypeVar
 
 import typer
 from rich.console import Console
@@ -86,7 +87,7 @@ def route(
     providers: str = typer.Option(
         "aws,gcp,azure", "--providers", "-p", help="Comma-separated providers"
     ),
-    residency: Optional[str] = typer.Option(
+    residency: str | None = typer.Option(
         None, "--residency", "-r", help="Data residency, e.g. EU, US"
     ),
     carbon_weight: float = typer.Option(
@@ -172,7 +173,7 @@ def intensity(
 
 @app.command()
 def regions(
-    provider: Optional[str] = typer.Option(None, "--provider", "-p", help="Filter by provider"),
+    provider: str | None = typer.Option(None, "--provider", "-p", help="Filter by provider"),
     json_output: bool = typer.Option(False, "--json", help="Output raw JSON"),
 ):
     """List all supported cloud regions."""
@@ -245,7 +246,7 @@ def run(
         help="Target region provider/region (e.g. aws/us-east-1). Comma-separate several "
         "movable candidates to co-optimise region AND time, e.g. aws/us-west-2,gcp/europe-west1",
     ),
-    max_intensity: Optional[float] = typer.Option(
+    max_intensity: float | None = typer.Option(
         None,
         "--max-intensity",
         help="Run as soon as forecast intensity is at/under this (gCO2/kWh); "
@@ -254,7 +255,7 @@ def run(
     max_wait_hours: int = typer.Option(
         24, "--max-wait-hours", help="Most hours to defer before running anyway"
     ),
-    energy_kwh: Optional[float] = typer.Option(
+    energy_kwh: float | None = typer.Option(
         None,
         "--energy-kwh",
         help="Job energy in kWh; enables a real grams-avoided estimate in `carbonlens impact`",
@@ -373,7 +374,7 @@ def run(
     # prediction too, so the adjustment never feeds back into the calibration that made it.
     # Prefer the chosen region's own track record (grids differ); fall back to the fleet.
     entries = ledger.read()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     region_cal = ledger.calibration_by_region(entries, now, 30).get(chosen_label)
     if region_cal and region_cal["samples"] >= 3:
         cal, cal_scope = region_cal, chosen_label
@@ -411,7 +412,7 @@ def run(
         console.print("[yellow]RAPL not available here; using --energy-kwh.[/yellow]")
 
     entry = {
-        "ts": datetime.now(timezone.utc).isoformat(),
+        "ts": datetime.now(UTC).isoformat(),
         "region": chosen_label,
         "reason": reason,
         "deferred_hours": idx,
@@ -451,7 +452,7 @@ def calibration(
     is well-calibrated; <1 means it over-promised, >1 means it under-promised.
     """
     entries = ledger.read()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     cal = ledger.calibration(entries, now, days)
     by_region = ledger.calibration_by_region(entries, now, days)
     if json_output:
@@ -496,7 +497,7 @@ def impact(
     days: int = typer.Option(30, "--days", help="Look back this many days"),
 ):
     """Show the honest carbon impact of your `carbonlens run` jobs (local ledger)."""
-    summary = ledger.summarize(ledger.read(), datetime.now(timezone.utc), days)
+    summary = ledger.summarize(ledger.read(), datetime.now(UTC), days)
     if summary["jobs"] == 0:
         console.print(f"No carbon-aware runs recorded in the last {days} days.")
         console.print(
@@ -573,7 +574,7 @@ def fleet_impact(
     """Org-level verified carbon impact across a fleet of hosts' impact ledgers."""
     loaded = _load_fleet_entries(directory)
     entries = [e for _, host_entries in loaded for e in host_entries]
-    summary = ledger.fleet_summary(entries, datetime.now(timezone.utc), days)
+    summary = ledger.fleet_summary(entries, datetime.now(UTC), days)
 
     if json_output:
         _emit_json(summary)
@@ -606,7 +607,7 @@ def org_statement(
     """A methodology-stated, org-level carbon-aware-compute statement (for disclosure)."""
     loaded = _load_fleet_entries(directory)
     entries = [e for _, host_entries in loaded for e in host_entries]
-    stmt = ledger.org_statement(entries, datetime.now(timezone.utc), days, org)
+    stmt = ledger.org_statement(entries, datetime.now(UTC), days, org)
 
     if json_output:
         _emit_json(stmt)
@@ -632,14 +633,14 @@ def org_statement(
 
 @app.command()
 def verify(
-    directory: Optional[str] = typer.Option(
+    directory: str | None = typer.Option(
         None,
         "--dir",
         help="Directory of per-host *.jsonl ledgers; omit to use this host's local ledger",
     ),
     org: str = typer.Option("Your organization", "--org", help="Organization name for the header"),
     days: int = typer.Option(90, "--days", help="Reporting period (days)"),
-    out: Optional[str] = typer.Option(
+    out: str | None = typer.Option(
         None, "--out", help="Write the disclosure as Markdown to this path"
     ),
     json_output: bool = typer.Option(False, "--json", help="Output raw JSON"),
@@ -654,7 +655,7 @@ def verify(
     else:
         entries = ledger.read()
 
-    stmt = ledger.org_statement(entries, datetime.now(timezone.utc), days, org)
+    stmt = ledger.org_statement(entries, datetime.now(UTC), days, org)
     if json_output:
         _emit_json(stmt)
         return
@@ -674,7 +675,7 @@ def best_time(
         "the greenest place for a recurring job."
     ),
     days: int = typer.Option(14, "--days", help="History window to analyze"),
-    energy_kwh: Optional[float] = typer.Option(
+    energy_kwh: float | None = typer.Option(
         None, "--energy-kwh", help="Daily job energy (kWh) for an annual kg-saved estimate"
     ),
     json_output: bool = typer.Option(False, "--json", help="Output raw JSON"),
@@ -711,7 +712,7 @@ def siting(
     providers: str = typer.Option(
         "aws,gcp,azure", "--providers", "-p", help="Comma-separated providers to consider"
     ),
-    power_watts: Optional[float] = typer.Option(
+    power_watts: float | None = typer.Option(
         None, "--power-watts", help="Continuous load (W) for an annual kg estimate"
     ),
     days: int = typer.Option(30, "--days", help="History window for the typical mean"),

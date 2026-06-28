@@ -16,6 +16,12 @@ export function formatLoad(mw?: number | null): string | null {
   return mw >= 1000 ? `${(mw / 1000).toFixed(1)} GW` : `${Math.round(mw)} MW`;
 }
 
+/** Extract a readable message from a mutation error of unknown type. */
+export function mutationErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
+
 /** Round to a "nice" 1/2/5 × 10ⁿ value - used for the globe's km scale bar. */
 export function niceKm(x: number): number {
   if (x <= 0) return 0;

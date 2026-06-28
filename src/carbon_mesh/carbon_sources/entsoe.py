@@ -4,13 +4,12 @@ Covers 36+ European countries/bidding zones.
 Docs: https://transparency.entsoe.eu/content/static_content/Static%20content/web%20api/Guide.html
 """
 
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 
 from carbon_mesh.carbon_sources.base import SingleZoneCarbonSource
+from carbon_mesh.carbon_sources.emission_factors import intensity_from_fuel_mix
 from carbon_mesh.carbon_sources.http_pool import ENTSOE_SEMAPHORE, get_with_retry, shared_client
 from carbon_mesh.carbon_sources.xml_safe import entsoe_ns, safe_parse_xml
-
-from carbon_mesh.carbon_sources.emission_factors import intensity_from_fuel_mix
 from carbon_mesh.models.carbon import CarbonIntensity
 
 API_URL = "https://web-api.tp.entsoe.eu/api"
@@ -98,7 +97,7 @@ class ENTSOECarbonSource(SingleZoneCarbonSource):
             raise ValueError(f"Unknown ENTSO-E zone: {grid_zone}")
 
         # Request actual generation per type for the last hour
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         period_start = (now - timedelta(hours=1)).strftime("%Y%m%d%H00")
         period_end = now.strftime("%Y%m%d%H00")
 

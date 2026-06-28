@@ -56,6 +56,10 @@ packages = ["src/carbon_mesh"]
 target-version = "py312"
 line-length = 100
 
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = ["E501", "B008", "B904", "B905", "B007", "SIM103", "SIM105", "SIM108", "UP042", "UP047"]
+
 [tool.pyright]
 include = ["src"]
 # Optional framework integrations import third-party packages (e.g. Airflow) that

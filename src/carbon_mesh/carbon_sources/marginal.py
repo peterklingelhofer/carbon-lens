@@ -10,7 +10,7 @@ we never guess a region code (which would risk reporting the wrong grid's number
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import httpx
 
@@ -50,7 +50,7 @@ def _parse_forecast(
         except (TypeError, ValueError):
             continue
         if ts.tzinfo is None:
-            ts = ts.replace(tzinfo=timezone.utc)
+            ts = ts.replace(tzinfo=UTC)
         offset = round((ts - now).total_seconds() / 3600)
         if 0 <= offset <= hours:
             curve[offset] = convert(float(v))
@@ -135,7 +135,7 @@ class WattTimeMarginalSource(_MeasuredMarginalSource):
         )
         if body is None:
             return {}
-        return parse_moer_forecast(body.get("data", []), datetime.now(timezone.utc), hours)
+        return parse_moer_forecast(body.get("data", []), datetime.now(UTC), hours)
 
 
 def parse_em_forecast(data: list[dict], now: datetime, hours: int) -> dict[int, float]:
@@ -184,7 +184,7 @@ class ElectricityMapsMarginalSource(_MeasuredMarginalSource):
         )
         if body is None:
             return {}
-        return parse_em_forecast(body.get("forecast", []), datetime.now(timezone.utc), hours)
+        return parse_em_forecast(body.get("forecast", []), datetime.now(UTC), hours)
 
 
 # Either measured-marginal provider; both share the can_handle / marginal_intensity /

@@ -36,7 +36,8 @@ services:
       - key: CARBON_LENS_LOG_FORMAT
         value: json
       - key: CARBON_LENS_CORS_ORIGINS
-        value: '["https://carbonlens.peterklingelhofer.workers.dev","http://localhost:5173","http://localhost:4173"]'
+        value: '["https://carbonlens.peterklingelhofer.workers.dev"]'
+      # Set to "true" and issue API keys via the CLI before opening to the public
       - key: CARBON_LENS_API_KEY_REQUIRED
         value: "false"
       - key: CARBON_LENS_ADMIN_SECRET
