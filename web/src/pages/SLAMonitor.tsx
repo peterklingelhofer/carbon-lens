@@ -461,62 +461,64 @@ export function SLAMonitor() {
             />
             <StatCard label="Breached" value={`${checkMutation.data.regions_breached}`} />
           </div>
-          {checkMutation.data.breached_regions.length > 0 && (
-            <div style={{ marginTop: "1rem" }}>
-              <h3 style={{ fontSize: "0.9rem", marginBottom: "0.5rem" }}>Breached Regions</h3>
-              <div style={{ overflow: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr style={{ borderBottom: "2px solid var(--gray-200)" }}>
-                      <th style={th}>Provider</th>
-                      <th style={th}>Region</th>
-                      <th style={{ ...th, textAlign: "right" }}>gCO₂/kWh</th>
-                      <th style={{ ...th, textAlign: "right" }}>Renewable %</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {checkMutation.data.breached_regions.map((r) => (
-                      <tr
-                        key={`${r.provider}-${r.region}`}
-                        style={{ borderBottom: "1px solid var(--gray-100)" }}
-                      >
-                        <td
-                          style={{
-                            ...td,
-                            fontWeight: 600,
-                            textTransform: "uppercase",
-                            fontSize: "0.8rem",
-                          }}
-                        >
-                          {r.provider}
-                        </td>
-                        <td
-                          style={{
-                            ...td,
-                            fontFamily: "var(--mono)",
-                            fontSize: "0.8rem",
-                          }}
-                        >
-                          {r.region}
-                        </td>
-                        <td
-                          style={{
-                            ...td,
-                            textAlign: "right",
-                            fontWeight: 600,
-                            color: "var(--red-400, #f87171)",
-                          }}
-                        >
-                          {r.carbon_intensity_gco2_kwh}
-                        </td>
-                        <td style={{ ...td, textAlign: "right" }}>{r.renewable_percentage}%</td>
+          <div aria-live="polite" aria-atomic="true">
+            {checkMutation.data.breached_regions.length > 0 && (
+              <div style={{ marginTop: "1rem" }}>
+                <h3 style={{ fontSize: "0.9rem", marginBottom: "0.5rem" }}>Breached Regions</h3>
+                <div style={{ overflow: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr style={{ borderBottom: "2px solid var(--gray-200)" }}>
+                        <th style={th}>Provider</th>
+                        <th style={th}>Region</th>
+                        <th style={{ ...th, textAlign: "right" }}>gCO₂/kWh</th>
+                        <th style={{ ...th, textAlign: "right" }}>Renewable %</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {checkMutation.data.breached_regions.map((r) => (
+                        <tr
+                          key={`${r.provider}-${r.region}`}
+                          style={{ borderBottom: "1px solid var(--gray-100)" }}
+                        >
+                          <td
+                            style={{
+                              ...td,
+                              fontWeight: 600,
+                              textTransform: "uppercase",
+                              fontSize: "0.8rem",
+                            }}
+                          >
+                            {r.provider}
+                          </td>
+                          <td
+                            style={{
+                              ...td,
+                              fontFamily: "var(--mono)",
+                              fontSize: "0.8rem",
+                            }}
+                          >
+                            {r.region}
+                          </td>
+                          <td
+                            style={{
+                              ...td,
+                              textAlign: "right",
+                              fontWeight: 600,
+                              color: "var(--red-400, #f87171)",
+                            }}
+                          >
+                            {r.carbon_intensity_gco2_kwh}
+                          </td>
+                          <td style={{ ...td, textAlign: "right" }}>{r.renewable_percentage}%</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
 
