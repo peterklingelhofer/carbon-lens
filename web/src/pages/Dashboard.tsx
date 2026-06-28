@@ -129,15 +129,18 @@ function RegionRow({ region, intensity }: { region: CloudRegion; intensity?: Car
           {region.provider}
         </span>
       </td>
-      <td
+      <th
+        scope="row"
         style={{
           padding: "0.5rem",
           fontFamily: "var(--mono)",
           fontSize: "0.85rem",
+          fontWeight: "normal",
+          textAlign: "left",
         }}
       >
         {region.region}
-      </td>
+      </th>
       <td style={{ padding: "0.5rem", fontSize: "0.85rem" }}>{region.grid_zone}</td>
       <td style={{ padding: "0.5rem", fontSize: "0.85rem" }}>{region.location}</td>
       <td style={{ padding: "0.5rem", width: 120 }}>
@@ -540,7 +543,7 @@ export function Dashboard() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search region, grid zone, or location…"
-          aria-label="Search regions"
+          aria-label="Search region, grid zone, or location"
           style={{
             flex: "1 1 220px",
             minWidth: 180,

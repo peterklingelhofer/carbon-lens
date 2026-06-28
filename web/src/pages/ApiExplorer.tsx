@@ -32,6 +32,20 @@ export function ApiExplorer() {
   const [intensityResult, setIntensityResult] = useState<CarbonIntensity | null>(null);
   const [routeResult, setRouteResult] = useState<RouteResponse | null>(null);
   const [activeTab, setActiveTab] = useState<"intensity" | "route" | "batch">("intensity");
+  const TAB_KEYS = ["intensity", "route", "batch"] as const;
+  const handleTabKeyDown = (e: React.KeyboardEvent, tabKey: (typeof TAB_KEYS)[number]) => {
+    const i = TAB_KEYS.indexOf(tabKey);
+    let next = i;
+    if (e.key === "ArrowRight") next = (i + 1) % TAB_KEYS.length;
+    else if (e.key === "ArrowLeft") next = (i - 1 + TAB_KEYS.length) % TAB_KEYS.length;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = TAB_KEYS.length - 1;
+    else return;
+    e.preventDefault();
+    const nextKey = TAB_KEYS[next];
+    setActiveTab(nextKey);
+    document.getElementById(`api-tab-${nextKey}`)?.focus();
+  };
 
   const { data: allRegions } = useQuery({
     queryKey: ["regions"],
@@ -115,7 +129,11 @@ export function ApiExplorer() {
       </p>
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.5rem" }}>
+      <div
+        role="tablist"
+        aria-label="API endpoints"
+        style={{ display: "flex", gap: "0.5rem", marginBottom: "1.5rem" }}
+      >
         {(
           [
             { key: "intensity", label: "GET Carbon Intensity" },
@@ -125,9 +143,13 @@ export function ApiExplorer() {
         ).map((tab) => (
           <button
             type="button"
+            role="tab"
+            id={`api-tab-${tab.key}`}
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            aria-pressed={activeTab === tab.key}
+            aria-selected={activeTab === tab.key}
+            tabIndex={activeTab === tab.key ? 0 : -1}
+            onKeyDown={(e) => handleTabKeyDown(e, tab.key)}
             style={{
               padding: "0.5rem 1.25rem",
               borderRadius: 6,
@@ -146,7 +168,13 @@ export function ApiExplorer() {
 
       {/* Carbon Intensity Tab */}
       {activeTab === "intensity" && (
-        <div style={{ ...card, marginBottom: "2rem" }}>
+        <div
+          role="tabpanel"
+          aria-labelledby="api-tab-intensity"
+          // biome-ignore lint/a11y/noNoninteractiveTabindex: WAI-ARIA tabpanel pattern requires tabIndex=0 so Tab from the tablist moves focus into the panel
+          tabIndex={0}
+          style={{ ...card, marginBottom: "2rem" }}
+        >
           <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.1rem" }}>
             GET /api/v1/carbon/{"{provider}"}/{"{region}"}
           </h2>
@@ -236,7 +264,13 @@ export function ApiExplorer() {
 
       {/* Route Tab */}
       {activeTab === "route" && (
-        <div style={{ ...card, marginBottom: "2rem" }}>
+        <div
+          role="tabpanel"
+          aria-labelledby="api-tab-route"
+          // biome-ignore lint/a11y/noNoninteractiveTabindex: WAI-ARIA tabpanel pattern requires tabIndex=0 so Tab from the tablist moves focus into the panel
+          tabIndex={0}
+          style={{ ...card, marginBottom: "2rem" }}
+        >
           <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.1rem" }}>POST /api/v1/route</h2>
           <p
             style={{
@@ -267,7 +301,13 @@ export function ApiExplorer() {
 
       {/* Batch Tab */}
       {activeTab === "batch" && (
-        <div style={{ ...card, marginBottom: "2rem" }}>
+        <div
+          role="tabpanel"
+          aria-labelledby="api-tab-batch"
+          // biome-ignore lint/a11y/noNoninteractiveTabindex: WAI-ARIA tabpanel pattern requires tabIndex=0 so Tab from the tablist moves focus into the panel
+          tabIndex={0}
+          style={{ ...card, marginBottom: "2rem" }}
+        >
           <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.1rem" }}>POST /api/v1/carbon/batch</h2>
           <p
             style={{
