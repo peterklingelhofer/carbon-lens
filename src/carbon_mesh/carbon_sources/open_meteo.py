@@ -5,7 +5,7 @@ Works for any lat/lon worldwide — used as the ultimate fallback.
 Docs: https://open-meteo.com/
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from carbon_mesh.carbon_sources.base import SingleZoneCarbonSource
 from carbon_mesh.carbon_sources.http_pool import shared_client
@@ -115,7 +115,7 @@ async def fetch_weather(lat: float, lon: float) -> tuple[float, float]:
     hourly = data.get("hourly", {})
     times = hourly.get("time", [])
     radiations = hourly.get("shortwave_radiation", [])
-    now_str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:00")
+    now_str = datetime.now(UTC).strftime("%Y-%m-%dT%H:00")
     solar_radiation = 0.0
     for i, t in enumerate(times):
         if t == now_str and i < len(radiations):
@@ -162,7 +162,7 @@ class OpenMeteoCarbonSource(SingleZoneCarbonSource):
             grid_zone=grid_zone,
             carbon_intensity_gco2_kwh=round(intensity, 1),
             renewable_percentage=round(renewable_pct, 1),
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             source="open_meteo",
         )
 
@@ -200,7 +200,7 @@ class OpenMeteoForecastSource:
         radiation = hourly.get("shortwave_radiation", [])
         wind = hourly.get("windspeed_10m", [])
 
-        now = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
+        now = datetime.now(UTC).replace(minute=0, second=0, microsecond=0)
         curve: dict[int, float] = {}
         for i, t in enumerate(times):
             try:
@@ -208,7 +208,7 @@ class OpenMeteoForecastSource:
             except (TypeError, ValueError):
                 continue
             if ts.tzinfo is None:
-                ts = ts.replace(tzinfo=timezone.utc)
+                ts = ts.replace(tzinfo=UTC)
             offset = round((ts - now).total_seconds() / 3600)
             if 0 <= offset <= max_hours:
                 r = radiation[i] if i < len(radiation) else 0

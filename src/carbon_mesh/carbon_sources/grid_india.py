@@ -4,12 +4,11 @@ Covers 5 Indian power grid regions: Northern, Southern, Eastern, Western, North-
 Data from Grid India real-time reports.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from carbon_mesh.carbon_sources.base import SingleZoneCarbonSource
 from carbon_mesh.carbon_sources.http_pool import shared_client
 from carbon_mesh.carbon_sources.mock import _MOCK_DATA
-
 from carbon_mesh.models.carbon import CarbonIntensity
 
 INDIA_ZONES = {"IN-NO", "IN-SO", "IN-EA", "IN-WE", "IN-NE"}
@@ -77,7 +76,7 @@ class GridIndiaCarbonSource(SingleZoneCarbonSource):
             grid_zone=grid_zone,
             carbon_intensity_gco2_kwh=round(intensity, 1),
             renewable_percentage=round(renewable_pct, 1),
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             source="grid_india",
         )
 
@@ -86,7 +85,7 @@ class GridIndiaCarbonSource(SingleZoneCarbonSource):
         base_intensity, base_renewable = _REGION_DEFAULTS.get(grid_zone, (600, 20))
 
         # Solar zones get cleaner during daytime (IST = UTC+5:30)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         ist_hour = (now.hour + 5) % 24  # Rough IST
         if 10 <= ist_hour <= 16:
             # Peak solar hours — reduce intensity
@@ -101,6 +100,6 @@ class GridIndiaCarbonSource(SingleZoneCarbonSource):
             grid_zone=grid_zone,
             carbon_intensity_gco2_kwh=round(base_intensity, 1),
             renewable_percentage=round(base_renewable, 1),
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             source="grid_india_heuristic",
         )

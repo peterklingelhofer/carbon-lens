@@ -4,17 +4,16 @@ Docs: https://docs.gridstatus.io/
 Endpoint: GET /v1/datasets/{iso}_fuel_mix/query
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import httpx
-
-from carbon_mesh.carbon_sources.http_pool import shared_client
 
 from carbon_mesh.carbon_sources.emission_factors import (
     GRIDSTATUS_FUEL_MAP,
     calculate_carbon_intensity,
     calculate_renewable_percentage,
 )
+from carbon_mesh.carbon_sources.http_pool import shared_client
 from carbon_mesh.models.carbon import CarbonIntensity
 
 API_BASE = "https://api.gridstatus.io/v1"
@@ -93,9 +92,9 @@ class GridStatusCarbonSource:
 
         ts_str = row.get("interval_start_utc", "")
         try:
-            ts = datetime.fromisoformat(ts_str).replace(tzinfo=timezone.utc)
+            ts = datetime.fromisoformat(ts_str).replace(tzinfo=UTC)
         except (ValueError, TypeError):
-            ts = datetime.now(timezone.utc)
+            ts = datetime.now(UTC)
 
         return CarbonIntensity(
             grid_zone=grid_zone,

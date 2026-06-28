@@ -8,6 +8,7 @@ import { InfoTip } from "../components/InfoTip";
 import { StatCard } from "../components/StatCard";
 import { RENEWABLE_TIP, SURPLUS_TIP } from "../copy";
 import { intensityColor } from "../lib/intensity";
+import { PROVIDERS } from "../lib/providers";
 import { card, labelStyle, sectionStyle, td, th } from "../styles";
 
 // Inline SVG line chart of the recommended region's intensity across the window,
@@ -139,8 +140,6 @@ const STRATEGIES: { value: Strategy; label: string; desc: string }[] = [
   },
   { value: "balanced", label: "Balanced", desc: "60% carbon + 40% renewable" },
 ];
-
-const PROVIDERS = ["aws", "gcp", "azure", "scaleway", "ovh", "hetzner"];
 
 // Window times are shown in the viewer's local timezone; label it explicitly
 // (e.g. "EDT", "GMT+1") so the recommended date is never ambiguous.

@@ -9,7 +9,7 @@ forecast curve as a fallback -- a pure function so it's easy to test.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 
 def _parse_utc(ts: str | None) -> datetime | None:
@@ -25,8 +25,8 @@ def _parse_utc(ts: str | None) -> datetime | None:
     except (TypeError, ValueError):
         return None
     if t.tzinfo is None:
-        return t.replace(tzinfo=timezone.utc)
-    return t.astimezone(timezone.utc)
+        return t.replace(tzinfo=UTC)
+    return t.astimezone(UTC)
 
 
 def rank_hours_utc(points: list[dict]) -> list[dict]:

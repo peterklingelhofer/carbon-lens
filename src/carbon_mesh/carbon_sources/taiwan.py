@@ -8,7 +8,7 @@ Updates roughly every 10 minutes.
 import json
 import re
 import ssl
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import httpx
 
@@ -111,6 +111,4 @@ class TaiwanCarbonSource:
         fuel_mix = fuel_mix_from_rows(rows)
         if sum(fuel_mix.values()) <= 0:
             return {}
-        return {
-            "TW": intensity_from_fuel_mix("TW", fuel_mix, "taipower", datetime.now(timezone.utc))
-        }
+        return {"TW": intensity_from_fuel_mix("TW", fuel_mix, "taipower", datetime.now(UTC))}

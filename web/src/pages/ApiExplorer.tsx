@@ -6,6 +6,7 @@ import { InfoTip } from "../components/InfoTip";
 import { StatCard } from "../components/StatCard";
 import { TableHeadCell } from "../components/TableHeadCell";
 import { EMISSIONS_TIP, GRID_ZONE_TIP, SOURCE_TIP, TABLE_RENEWABLE_TIP } from "../copy";
+import { mutationErrorMessage } from "../lib/format";
 import { intensityVarColor } from "../lib/intensity";
 import { card, inputStyle, labelStyle, sectionStyle, td } from "../styles";
 
@@ -259,6 +260,14 @@ export function ApiExplorer() {
           >
             {intensityMutation.isPending ? "Querying..." : "Send Request"}
           </button>
+          {intensityMutation.isError && (
+            <div
+              role="alert"
+              style={{ color: "var(--red-400)", marginTop: "0.75rem", fontSize: "0.85rem" }}
+            >
+              {mutationErrorMessage(intensityMutation.error)}
+            </div>
+          )}
         </div>
       )}
 
@@ -296,6 +305,14 @@ export function ApiExplorer() {
           >
             {routeMutation.isPending ? "Routing..." : "Find Greenest Region"}
           </button>
+          {routeMutation.isError && (
+            <div
+              role="alert"
+              style={{ color: "var(--red-400)", marginTop: "0.75rem", fontSize: "0.85rem" }}
+            >
+              {mutationErrorMessage(routeMutation.error)}
+            </div>
+          )}
         </div>
       )}
 
@@ -340,6 +357,14 @@ export function ApiExplorer() {
           >
             {batchMutation.isPending ? "Querying..." : "Send Batch Request"}
           </button>
+          {batchMutation.isError && (
+            <div
+              role="alert"
+              style={{ color: "var(--red-400)", marginTop: "0.75rem", fontSize: "0.85rem" }}
+            >
+              {mutationErrorMessage(batchMutation.error)}
+            </div>
+          )}
 
           {/* Batch Result */}
           {batchMutation.data && (

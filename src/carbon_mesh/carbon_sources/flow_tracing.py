@@ -17,7 +17,7 @@ Gauss-Seidel iteration converges -- no numpy needed.
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from carbon_mesh.carbon_sources.entsoe import API_URL, ENTSOE_ZONE_MAP, ENTSOECarbonSource
 from carbon_mesh.carbon_sources.http_pool import ENTSOE_SEMAPHORE, get_with_retry, shared_client
@@ -177,7 +177,7 @@ class ConsumptionIntensitySource:
         if not production_mw:
             return {}
 
-        now = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
+        now = datetime.now(UTC).replace(minute=0, second=0, microsecond=0)
         period_start = (now - timedelta(hours=2)).strftime("%Y%m%d%H00")
         period_end = now.strftime("%Y%m%d%H00")
 

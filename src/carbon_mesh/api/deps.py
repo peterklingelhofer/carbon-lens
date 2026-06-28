@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING, AsyncGenerator
+from collections.abc import AsyncGenerator
+from typing import TYPE_CHECKING
 
 from fastapi import Depends
 

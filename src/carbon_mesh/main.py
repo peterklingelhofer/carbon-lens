@@ -3,30 +3,31 @@ import logging
 import time
 import uuid
 from contextlib import asynccontextmanager
+from importlib.metadata import version as _pkg_version
 
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse, Response
+from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import ValidationError
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
 
-from prometheus_fastapi_instrumentator import Instrumentator
-
 from carbon_mesh.api.badge import badge_router
 from carbon_mesh.api.embed import embed_router
 from carbon_mesh.api.routes import router
 from carbon_mesh.api.ws import ws_router
-from carbon_mesh.config import settings
 from carbon_mesh.compliance.routes import router as compliance_router
+from carbon_mesh.config import settings
+from carbon_mesh.logging_config import setup_logging
 from carbon_mesh.scheduler.routes import router as scheduler_router
 from carbon_mesh.sla.routes import router as sla_router
 
-from carbon_mesh.logging_config import setup_logging
+_VERSION = _pkg_version("carbonlens")
 
 setup_logging()
 logger = logging.getLogger("carbon_mesh")
@@ -171,8 +172,9 @@ app = FastAPI(
         "No account or API key required; usage is rate-limited so it stays "
         "responsive for everyone.\n\n"
         "## Carbon Data API\n"
-        "- **6 live grid-operator integrations** (UK, EIA, AEMO, GridStatus, ENTSO-E, "
-        "Electricity Maps) plus labeled heuristic and weather-based estimates, cascading\n"
+        "- **8 live grid-operator integrations** (UK, EIA, OpenElectricity/AEMO, IESO/AESO, "
+        "Taipower, GridStatus, ENTSO-E, Electricity Maps) plus labeled heuristic and "
+        "weather-based estimates, cascading\n"
         "- **Grid carbon intensity** for 75+ cloud regions; every response is tagged with its `source`\n"
         "- **Batch queries** for multiple regions in a single call\n\n"
         "## Compliance Reporting\n"
@@ -189,7 +191,7 @@ app = FastAPI(
         "- **Three strategies** — lowest carbon, highest renewable, balanced\n"
         "- Returns a recommendation — it doesn't run or defer your workload itself"
     ),
-    version="0.1.0",
+    version=_VERSION,
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
@@ -428,5 +430,5 @@ def run() -> None:
         "carbon_mesh.main:app",
         host=settings.host,
         port=settings.port,
-        reload=True,
+        reload=settings.debug,
     )

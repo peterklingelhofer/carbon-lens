@@ -342,7 +342,7 @@ function LayerToggle({
         cursor: "pointer",
         padding: 0,
         whiteSpace: "nowrap",
-        fontSize: "0.62rem",
+        fontSize: "0.75rem",
         lineHeight: 1.1,
         display: "inline-flex",
         alignItems: "center",
@@ -1185,7 +1185,7 @@ export default function CarbonGlobe() {
                 position: "absolute",
                 left: t.pos,
                 transform: t.pos === 0 ? "none" : "translateX(-50%)",
-                fontSize: "0.58rem",
+                fontSize: "0.75rem",
                 color: "#94a3b8",
               }}
             >
@@ -1197,7 +1197,7 @@ export default function CarbonGlobe() {
           style={{
             width: PANEL_W,
             marginTop: 1,
-            fontSize: "0.58rem",
+            fontSize: "0.75rem",
             color: "#94a3b8",
           }}
         >
@@ -1231,7 +1231,7 @@ export default function CarbonGlobe() {
                   boxSizing: "border-box",
                 }}
               />
-              <span style={{ fontSize: "0.62rem", color: "#94a3b8" }}>
+              <span style={{ fontSize: "0.75rem", color: "#94a3b8" }}>
                 ≈ {scale.km.toLocaleString("en-US")} km
               </span>
             </div>

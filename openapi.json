@@ -66,6 +66,24 @@
         "title": "AlertEvent",
         "type": "object"
       },
+      "BatchRegionRequest": {
+        "properties": {
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "region": {
+            "title": "Region",
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "region"
+        ],
+        "title": "BatchRegionRequest",
+        "type": "object"
+      },
       "BestTime": {
         "description": "The greenest hour-of-day to run a recurring job, for picking a cron schedule.",
         "properties": {
@@ -2799,7 +2817,7 @@
     }
   },
   "info": {
-    "description": "A free, open API for the real-time carbon intensity of cloud regions. No account or API key required; usage is rate-limited so it stays responsive for everyone.\n\n## Carbon Data API\n- **6 live grid-operator integrations** (UK, EIA, AEMO, GridStatus, ENTSO-E, Electricity Maps) plus labeled heuristic and weather-based estimates, cascading\n- **Grid carbon intensity** for 75+ cloud regions; every response is tagged with its `source`\n- **Batch queries** for multiple regions in a single call\n\n## Compliance Reporting\n- **GHG-Protocol-structured** Scope 2 (location-based) + Scope 3 Cat 1 reporting\n- Drafts aimed at **CSRD / SEC Climate / SB 253** workflows (not an assured report)\n- **EU Taxonomy** eligibility flag (simplified screening)\n\n## Green SLA Monitoring (Beta)\n- **Define carbon targets** \u2014 max gCO2/kWh, min renewable %\n- **On-demand + background checks** (in-memory state)\n- **Attestation-style summary reports**\n\n## Carbon-Aware Scheduling\n- **Find optimal time windows** for batch jobs, CI/CD, ML training\n- **Multi-region evaluation** across AWS, GCP, Azure\n- **Three strategies** \u2014 lowest carbon, highest renewable, balanced\n- Returns a recommendation \u2014 it doesn't run or defer your workload itself",
+    "description": "A free, open API for the real-time carbon intensity of cloud regions. No account or API key required; usage is rate-limited so it stays responsive for everyone.\n\n## Carbon Data API\n- **8 live grid-operator integrations** (UK, EIA, OpenElectricity/AEMO, IESO/AESO, Taipower, GridStatus, ENTSO-E, Electricity Maps) plus labeled heuristic and weather-based estimates, cascading\n- **Grid carbon intensity** for 75+ cloud regions; every response is tagged with its `source`\n- **Batch queries** for multiple regions in a single call\n\n## Compliance Reporting\n- **GHG-Protocol-structured** Scope 2 (location-based) + Scope 3 Cat 1 reporting\n- Drafts aimed at **CSRD / SEC Climate / SB 253** workflows (not an assured report)\n- **EU Taxonomy** eligibility flag (simplified screening)\n\n## Green SLA Monitoring (Beta)\n- **Define carbon targets** \u2014 max gCO2/kWh, min renewable %\n- **On-demand + background checks** (in-memory state)\n- **Attestation-style summary reports**\n\n## Carbon-Aware Scheduling\n- **Find optimal time windows** for batch jobs, CI/CD, ML training\n- **Multi-region evaluation** across AWS, GCP, Azure\n- **Three strategies** \u2014 lowest carbon, highest renewable, balanced\n- Returns a recommendation \u2014 it doesn't run or defer your workload itself",
     "title": "Carbon Lens",
     "version": "0.1.0"
   },
@@ -3013,10 +3031,7 @@
             "application/json": {
               "schema": {
                 "items": {
-                  "additionalProperties": {
-                    "type": "string"
-                  },
-                  "type": "object"
+                  "$ref": "#/components/schemas/BatchRegionRequest"
                 },
                 "title": "Regions",
                 "type": "array"

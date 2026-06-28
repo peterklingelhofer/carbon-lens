@@ -8,16 +8,16 @@ from __future__ import annotations
 
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from carbon_mesh.carbon_sources.base import CarbonDataSource
 from carbon_mesh.grid.mapper import GridMapper
 from carbon_mesh.models.compliance import (
+    PROVIDER_PUE,
     AccountingMethod,
     CloudUsageRecord,
-    EmissionScope,
     EmissionsCalculation,
-    PROVIDER_PUE,
+    EmissionScope,
 )
 
 logger = logging.getLogger(__name__)
@@ -63,7 +63,7 @@ class EmissionsCalculator:
         intensities = await self._carbon_source.get_carbon_intensity_batch(unique_zones)
 
         # 3. Calculate emissions for each record
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         calculations: list[EmissionsCalculation] = []
 
         for rec in usage_records:

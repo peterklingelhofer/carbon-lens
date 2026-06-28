@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from carbon_mesh.carbon_sources.base import CarbonDataSource
 from carbon_mesh.engine.cache import IntensityCache
@@ -121,5 +121,5 @@ class RoutingEngine:
                 for s in alternatives
             ],
             request_id=str(uuid.uuid4()),
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
         )

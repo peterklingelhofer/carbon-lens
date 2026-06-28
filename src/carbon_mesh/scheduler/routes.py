@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
@@ -112,7 +112,7 @@ async def create_schedule(req: CreateScheduleRequest) -> CronSchedule:
         preferred_regions=req.preferred_regions,
         strategy=req.strategy,
         max_delay_hours=req.max_delay_hours,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     _schedule_store[schedule.id] = schedule
     return schedule

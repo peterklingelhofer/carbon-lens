@@ -9,7 +9,7 @@ rather than a fixed daily curve. EU bidding zones only; needs the free token.
 
 import time
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from carbon_mesh.carbon_sources.entsoe import ENTSOE_ZONE_MAP
 from carbon_mesh.carbon_sources.http_pool import ENTSOE_SEMAPHORE, get_with_retry, shared_client
@@ -95,7 +95,7 @@ class ENTSOEForecastSource:
         if not eic or not self._token:
             return {}
 
-        now = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
+        now = datetime.now(UTC).replace(minute=0, second=0, microsecond=0)
         period_start = now.strftime("%Y%m%d%H00")
         period_end = (now + timedelta(hours=48)).strftime("%Y%m%d%H00")
 
@@ -141,7 +141,7 @@ class ENTSOEForecastSource:
         series = await self._zone_series(grid_zone)
         if not series:
             return {}
-        now = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
+        now = datetime.now(UTC).replace(minute=0, second=0, microsecond=0)
         curve: dict[int, float] = {}
         for offset in range(0, max_hours + 1):
             frac = series.get(now + timedelta(hours=offset))

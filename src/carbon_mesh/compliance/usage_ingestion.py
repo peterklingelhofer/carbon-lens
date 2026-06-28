@@ -9,18 +9,27 @@ from __future__ import annotations
 import csv
 import io
 import logging
-from datetime import datetime, timezone
+import re
+from datetime import UTC, datetime
 from typing import Protocol, runtime_checkable
 
 from carbon_mesh.models.compliance import (
-    CloudUsageRecord,
-    PROVIDER_PUE,
-    VCPU_HOUR_KWH,
-    STORAGE_GB_HOUR_KWH,
     NETWORK_GB_KWH,
+    PROVIDER_PUE,
+    STORAGE_GB_HOUR_KWH,
+    VCPU_HOUR_KWH,
+    CloudUsageRecord,
 )
 
 logger = logging.getLogger(__name__)
+
+_BQ_IDENT_RE = re.compile(r"^[A-Za-z0-9_.\-]+$")
+
+
+def _validate_bq_identifier(value: str, field: str) -> str:
+    if not _BQ_IDENT_RE.match(value):
+        raise ValueError(f"Invalid BigQuery identifier for {field}: {value!r}")
+    return value
 
 
 class CloudIngestionError(Exception):
@@ -191,11 +200,9 @@ class AWSCostExplorerAdapter:
 
                 for result in response.get("ResultsByTime", []):
                     p_start = datetime.fromisoformat(result["TimePeriod"]["Start"]).replace(
-                        tzinfo=timezone.utc
+                        tzinfo=UTC
                     )
-                    p_end = datetime.fromisoformat(result["TimePeriod"]["End"]).replace(
-                        tzinfo=timezone.utc
-                    )
+                    p_end = datetime.fromisoformat(result["TimePeriod"]["End"]).replace(tzinfo=UTC)
 
                     for group in result.get("Groups", []):
                         keys = group.get("Keys", [])
@@ -262,9 +269,13 @@ class GCPBillingAdapter:
             ) from e
 
         creds = credentials or {}
-        project = creds.get("project_id", "")
-        dataset = creds.get("billing_dataset", "billing_export")
-        table = creds.get("billing_table", "gcp_billing_export_v1")
+        project = _validate_bq_identifier(creds.get("project_id", ""), "project_id")
+        dataset = _validate_bq_identifier(
+            creds.get("billing_dataset", "billing_export"), "billing_dataset"
+        )
+        table = _validate_bq_identifier(
+            creds.get("billing_table", "gcp_billing_export_v1"), "billing_table"
+        )
 
         # Standard GCP path: billing data is exported to a BigQuery table; we sum
         # usage per service+region+unit over the period.

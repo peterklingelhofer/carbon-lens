@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import time
-from typing import Awaitable, Callable
+from collections.abc import Awaitable, Callable
 
 from carbon_mesh.models.carbon import CarbonIntensity
 
@@ -103,7 +103,7 @@ class IntensityCache:
             finally:
                 self._refreshing.discard(zone)
 
-        asyncio.ensure_future(_refresh())
+        asyncio.create_task(_refresh())
 
     def _schedule_refresh_batch(
         self,
@@ -128,7 +128,7 @@ class IntensityCache:
             finally:
                 self._refreshing.difference_update(to_refresh)
 
-        asyncio.ensure_future(_refresh())
+        asyncio.create_task(_refresh())
 
     def invalidate(self, zone: str | None = None) -> None:
         if zone is None:

@@ -1,11 +1,12 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import httpx
-
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, Response
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from carbon_mesh.accounting.impact_repo import recent_impacts, record_impact
 from carbon_mesh.accounting.tracker import CarbonTracker, DBCarbonTracker
 from carbon_mesh.api.deps import (
     get_carbon_source,
@@ -23,18 +24,17 @@ from carbon_mesh.carbon_sources.base import CarbonDataSource
 from carbon_mesh.carbon_sources.history_store import HistoryStore
 from carbon_mesh.carbon_sources.marginal import MarginalSource
 from carbon_mesh.carbon_sources.open_meteo import fetch_weather
+from carbon_mesh.cli.ledger import org_statement
 from carbon_mesh.config import settings
 from carbon_mesh.db.models import ApiKeyRecord
+from carbon_mesh.engine.anomaly import compute_anomaly
 from carbon_mesh.engine.besttime import build_best_time
+from carbon_mesh.engine.recurring import mean_intensity, rank_hours_utc, shiftability_pct
 from carbon_mesh.engine.router import RoutingEngine
 from carbon_mesh.engine.signal import build_signal
-from carbon_mesh.grid.mapper import GridMapper
-from carbon_mesh.accounting.impact_repo import record_impact, recent_impacts
-from carbon_mesh.cli.ledger import org_statement
-from carbon_mesh.models.accounting import CarbonSavingsReport, ImpactIngest
-from carbon_mesh.engine.anomaly import compute_anomaly
-from carbon_mesh.engine.recurring import mean_intensity, rank_hours_utc, shiftability_pct
 from carbon_mesh.engine.surplus import surplus_offsets
+from carbon_mesh.grid.mapper import GridMapper
+from carbon_mesh.models.accounting import CarbonSavingsReport, ImpactIngest
 from carbon_mesh.models.carbon import (
     BestTime,
     CarbonAnomaly,
@@ -56,6 +56,12 @@ from carbon_mesh.models.routing import RouteRequest, RouteResponse
 from carbon_mesh.scheduler.engine import SchedulingEngine
 
 router = APIRouter()
+
+
+class BatchRegionRequest(BaseModel):
+    provider: str
+    region: str
+
 
 # Several endpoints have a zone-first sibling (e.g. /carbon/zone/{grid_zone})
 # declared BEFORE the same-arity /carbon/{provider}/{region} route, so a path like
@@ -155,7 +161,7 @@ async def get_carbon_intensity(
 
 @router.post("/carbon/batch", response_model=dict[str, CarbonIntensity], tags=["Carbon Data"])
 async def get_carbon_intensity_batch(
-    regions: list[dict[str, str]],
+    regions: list[BatchRegionRequest],
     mapper: GridMapper = Depends(get_grid_mapper),
     source: CarbonDataSource = Depends(get_carbon_source),
 ) -> dict[str, CarbonIntensity]:
@@ -168,9 +174,9 @@ async def get_carbon_intensity_batch(
     # are both US-MIDA-PJM), so map each zone to ALL of its requested region keys.
     zone_to_keys: dict[str, list[str]] = {}
     for r in regions:
-        zone = mapper.get_grid_zone(r["provider"], r["region"])
+        zone = mapper.get_grid_zone(r.provider, r.region)
         if zone is not None:
-            zone_to_keys.setdefault(zone, []).append(f"{r['provider']}/{r['region']}")
+            zone_to_keys.setdefault(zone, []).append(f"{r.provider}/{r.region}")
 
     if not zone_to_keys:
         raise HTTPException(status_code=400, detail="No valid regions provided")
@@ -209,7 +215,7 @@ async def get_carbon_forecast(
         grid_zone=zone,
         provider=provider,
         region=region,
-        generated_at=datetime.now(timezone.utc),
+        generated_at=datetime.now(UTC),
         method=method,
         points=points,
         clean_surplus_hours=surplus_offsets(points),
@@ -276,7 +282,7 @@ async def get_carbon_anomaly(
     Returns ``insufficient_history`` until enough has accumulated."""
     zone, _ = _resolve_zone(mapper, provider, region)
     current = await source.get_carbon_intensity(zone)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     points = await store.series_for(f"{provider}/{region}", now - timedelta(days=14))
     result = compute_anomaly(current.carbon_intensity_gco2_kwh, points, now)
     return CarbonAnomaly(
@@ -306,7 +312,7 @@ async def get_carbon_history(
     a region returns points only once it has been observed (empty until then).
     """
     zone, _ = _resolve_zone(mapper, provider, region)
-    since = datetime.now(timezone.utc) - timedelta(hours=hours)
+    since = datetime.now(UTC) - timedelta(hours=hours)
     raw = await store.series_for(f"{provider}/{region}", since)
     points = [
         CarbonHistoryPoint(
@@ -344,7 +350,7 @@ async def get_region_weather(
         region=region,
         wind_speed_kmh=round(wind, 1),
         solar_irradiance_w_m2=round(solar),
-        observed_at=datetime.now(timezone.utc),
+        observed_at=datetime.now(UTC),
     )
 
 
@@ -361,7 +367,7 @@ async def _build_best_time(
 ) -> BestTime:
     """Core greenest-hour ranking for a grid zone. Shared by the cloud-region and
     on-prem (zone) endpoints. ``history_key`` is the archive key to read."""
-    since = datetime.now(timezone.utc) - timedelta(days=days)
+    since = datetime.now(UTC) - timedelta(days=days)
     raw = await store.series_for(history_key, since)
 
     # Only pay for the 48h forecast fallback when history is too thin to rank.
@@ -452,7 +458,7 @@ async def get_siting(
     if not regions:
         raise HTTPException(status_code=400, detail="No candidate regions for those providers")
 
-    since = datetime.now(timezone.utc) - timedelta(days=days)
+    since = datetime.now(UTC) - timedelta(days=days)
     current = await source.get_carbon_intensity_batch(list({r.grid_zone for r in regions}))
     power_kw = (power_watts / 1000) if power_watts else None
 
@@ -511,7 +517,7 @@ async def get_shiftability(
     off (variable wind/solar grids); near zero = it barely helps (flat grids). Tells
     you where to spend the effort. Zones without enough history are omitted.
     """
-    since = datetime.now(timezone.utc) - timedelta(days=days)
+    since = datetime.now(UTC) - timedelta(days=days)
     rows: list[ZoneShiftability] = []
     for rep in mapper.grid_zones():
         raw = await store.series_for(f"{rep.provider}/{rep.region}", since)
@@ -770,7 +776,7 @@ async def get_org_statement(
     Returns an empty (zeroed) statement when no database is configured, so the shape
     is stable. Same aggregation/methodology as the `carbonlens org-statement` CLI.
     """
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     rows: list[dict] = []
     if settings.use_database and session is not None:
         rows = await recent_impacts(session, now - timedelta(days=days))

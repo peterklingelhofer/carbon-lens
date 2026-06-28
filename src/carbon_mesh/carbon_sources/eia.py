@@ -5,11 +5,10 @@ Endpoint: /v2/electricity/rto/fuel-type-data/data
 """
 
 import asyncio
-from datetime import datetime, timezone
-
-from carbon_mesh.carbon_sources.http_pool import shared_client
+from datetime import UTC, datetime
 
 from carbon_mesh.carbon_sources.emission_factors import EIA_FUEL_MAP, intensity_from_fuel_mix
+from carbon_mesh.carbon_sources.http_pool import shared_client
 from carbon_mesh.models.carbon import CarbonIntensity
 
 API_BASE = "https://api.eia.gov/v2"
@@ -70,9 +69,9 @@ class EIACarbonSource:
             fuel_mix_mw[normalized] = fuel_mix_mw.get(normalized, 0) + value
 
         try:
-            ts = datetime.strptime(latest_period, "%Y-%m-%dT%H").replace(tzinfo=timezone.utc)
+            ts = datetime.strptime(latest_period, "%Y-%m-%dT%H").replace(tzinfo=UTC)
         except ValueError:
-            ts = datetime.now(timezone.utc)
+            ts = datetime.now(UTC)
 
         return intensity_from_fuel_mix(grid_zone, fuel_mix_mw, "eia", ts)
 
