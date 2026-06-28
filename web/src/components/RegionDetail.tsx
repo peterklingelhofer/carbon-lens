@@ -60,11 +60,11 @@ export function RegionSignal({ provider, region }: { provider: string; region: s
         )}
       </div>
       {signal.marginal_note && (
-        <div style={{ fontSize: "0.62rem", color: "#9ca3af", marginTop: 3 }}>
+        <div style={{ fontSize: "0.75rem", color: "#9ca3af", marginTop: 3 }}>
           {signal.marginal_note}
         </div>
       )}
-      <div style={{ fontSize: "0.58rem", color: "#6b7280", marginTop: 2 }}>
+      <div style={{ fontSize: "0.75rem", color: "#6b7280", marginTop: 2 }}>
         precomputed signal · marginal {signal.marginal_basis}
       </div>
     </div>
@@ -214,7 +214,7 @@ export function RegionWeather({ provider, region }: { provider: string; region: 
         </span>
       </div>
       <div style={{ fontSize: "0.65rem", color: "#9ca3af", marginTop: 3 }}>{read}</div>
-      <div style={{ fontSize: "0.58rem", color: "#6b7280", marginTop: 2 }}>
+      <div style={{ fontSize: "0.75rem", color: "#6b7280", marginTop: 2 }}>
         Single-point estimate · Open-Meteo
       </div>
     </div>
@@ -266,7 +266,7 @@ export function RegionBestTime({ provider, region }: { provider: string; region:
           {data.suggested_cron}
         </code>
       )}
-      <div style={{ fontSize: "0.58rem", color: "#6b7280", marginTop: 2 }}>
+      <div style={{ fontSize: "0.75rem", color: "#6b7280", marginTop: 2 }}>
         {data.basis === "history"
           ? `from ${data.days_analyzed}-day history · for recurring jobs`
           : "from forecast (history still accumulating)"}

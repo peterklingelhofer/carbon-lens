@@ -7,7 +7,7 @@ lib/anomaly.ts so the API and the UI agree.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from statistics import median
 
 from carbon_mesh.engine.recurring import _parse_utc
@@ -34,7 +34,7 @@ def compute_anomaly(current: float, points: list[dict], now: datetime) -> dict:
     recent points; otherwise reports insufficient history. ``status`` is
     cleaner_than_usual / typical / dirtier_than_usual within a ±10% deadband.
     """
-    target_hour = now.astimezone(timezone.utc).hour
+    target_hour = now.astimezone(UTC).hour
     same_hour: list[float] = []
     all_values: list[float] = []
     for p in points:

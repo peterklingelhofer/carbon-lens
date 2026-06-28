@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -53,7 +53,7 @@ class CarbonTracker:
 
         rec = EmissionsRecord(
             request_id=response.request_id,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             chosen_provider=chosen.provider,
             chosen_region=chosen.region,
             chosen_grid_zone=chosen.grid_zone,

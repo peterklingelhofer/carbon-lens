@@ -46,7 +46,7 @@ export function StatCard({
         style={{
           fontSize: mono ? "0.85rem" : "1.3rem",
           fontWeight: 700,
-          color: positive ? "var(--green-700)" : "inherit",
+          color: positive ? "var(--green-text)" : "inherit",
           fontFamily: mono ? "var(--mono)" : "inherit",
         }}
       >

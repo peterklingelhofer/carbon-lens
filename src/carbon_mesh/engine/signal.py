@@ -68,6 +68,8 @@ async def build_signal(
     if points is None:
         _, points = await engine.forecast_zone(zone, longitude, 24)
     intensities = [p.carbon_intensity_gco2_kwh for p in points]
+    if not intensities:
+        raise ValueError(f"No forecast data available for zone {zone!r}")
     current_intensity = intensities[0]
     state = signal_state(current_intensity)
 
@@ -102,10 +104,11 @@ async def build_signal(
             "by clean power that might otherwise be curtailed. Ideal time to run flexible jobs."
         )
     elif surplus_window is not None:
+        _idx = min(surplus_window, len(intensities) - 1)
         advice, window_hours, window_intensity = (
             "wait_for_cleaner",
             surplus_window,
-            round(intensities[surplus_window]),
+            round(intensities[_idx]),
         )
         note = (
             f"A clean-surplus window (renewables abundant) is expected in ~{surplus_window}h -- "

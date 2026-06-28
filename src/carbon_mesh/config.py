@@ -86,6 +86,7 @@ class Settings(BaseSettings):
 
     # Startup
     auto_migrate: bool = False  # Run alembic upgrade head on startup
+    debug: bool = False  # Enable uvicorn auto-reload (dev only)
 
     # Request limits
     max_request_body_bytes: int = 1_048_576  # 1 MB

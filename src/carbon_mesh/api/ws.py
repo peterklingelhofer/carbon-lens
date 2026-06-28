@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
@@ -54,7 +54,7 @@ async def _build_update(
     if not zone_to_regions:
         return {
             "type": "carbon_update",
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "data": [],
         }
 
@@ -80,7 +80,7 @@ async def _build_update(
 
     return {
         "type": "carbon_update",
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
         "data": data,
     }
 
@@ -125,7 +125,7 @@ async def carbon_intensity_stream(websocket: WebSocket) -> None:
                 interval = msg.interval_seconds
         except Exception:
             logger.warning("Invalid subscription message, using defaults")
-    except (asyncio.TimeoutError, WebSocketDisconnect):
+    except (TimeoutError, WebSocketDisconnect):
         # No subscription message — proceed with defaults.
         pass
 
@@ -155,7 +155,7 @@ async def carbon_intensity_stream(websocket: WebSocket) -> None:
                     await websocket.close(code=1001, reason="Server shutting down")
                     logger.info("WebSocket closed for shutdown: %s", websocket.client)
                     return
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     pass  # Normal — interval elapsed, loop again
             else:
                 await asyncio.sleep(interval)

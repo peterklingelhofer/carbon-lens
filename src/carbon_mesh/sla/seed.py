@@ -11,7 +11,7 @@ fills its check history. Everything here is best-effort and never blocks startup
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from carbon_mesh.models.sla import GreenSLA, SLACheckFrequency
 from carbon_mesh.sla.repository import SLARepository
@@ -25,7 +25,7 @@ DEMO_REGIONS = ["us-east-1", "us-west-2", "eu-west-3"]
 
 
 def build_demo_sla() -> GreenSLA:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     return GreenSLA(
         id=DEMO_SLA_ID,
         org_id=DEMO_ORG_ID,

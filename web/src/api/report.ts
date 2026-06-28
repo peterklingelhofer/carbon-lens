@@ -41,7 +41,7 @@ export function sitingFromGreenest(
   providers: string[],
   watts: number,
   daysAnalyzed: number,
-): SitingRecommendation {
+): SitingRecommendation | null {
   const powerKw = watts ? watts / 1000 : null;
   const annualKg = (typical: number) =>
     powerKw != null ? Math.round(((typical * powerKw * HOURS_PER_YEAR) / 1000) * 10) / 10 : null;
@@ -63,6 +63,9 @@ export function sitingFromGreenest(
   if (powerKw != null && options.length > 1) {
     const delta = options[options.length - 1].typical_gco2_kwh - options[0].typical_gco2_kwh;
     saved = Math.round(((delta * powerKw * HOURS_PER_YEAR) / 1000) * 10) / 10;
+  }
+  if (options.length === 0) {
+    return null;
   }
   return {
     recommended: options[0],
