@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import httpx
 
@@ -21,7 +21,7 @@ def _parse_ts(value: str) -> datetime | None:
         ts = datetime.fromisoformat(value)
     except (TypeError, ValueError):
         return None
-    return ts.replace(tzinfo=timezone.utc) if ts.tzinfo is None else ts
+    return ts.replace(tzinfo=UTC) if ts.tzinfo is None else ts
 
 
 class HistoryStore:

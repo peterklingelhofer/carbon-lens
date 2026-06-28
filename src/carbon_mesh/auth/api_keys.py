@@ -1,6 +1,6 @@
 import hashlib
 import secrets
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -54,7 +54,7 @@ async def validate_api_key(session: AsyncSession, raw_key: str) -> ApiKeyRecord 
         await session.execute(
             update(ApiKeyRecord)
             .where(ApiKeyRecord.id == record.id)
-            .values(last_used_at=datetime.now(timezone.utc))
+            .values(last_used_at=datetime.now(UTC))
         )
         await session.commit()
     return record

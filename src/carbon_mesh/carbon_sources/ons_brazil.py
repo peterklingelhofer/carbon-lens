@@ -5,12 +5,11 @@ NE (Northeast), N (North), CS (Centro-South).
 Data from ONS (Operador Nacional do Sistema Elétrico).
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from carbon_mesh.carbon_sources.base import SingleZoneCarbonSource
 from carbon_mesh.carbon_sources.http_pool import shared_client
 from carbon_mesh.carbon_sources.mock import _MOCK_DATA
-
 from carbon_mesh.models.carbon import CarbonIntensity
 
 BRAZIL_ZONES = {"BR-S", "BR-SE", "BR-NE", "BR-N", "BR-CS"}
@@ -96,7 +95,7 @@ class ONSBrazilCarbonSource(SingleZoneCarbonSource):
             grid_zone=grid_zone,
             carbon_intensity_gco2_kwh=round(intensity, 1),
             renewable_percentage=round(renewable_pct, 1),
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             source="ons_brazil",
         )
 
@@ -106,6 +105,6 @@ class ONSBrazilCarbonSource(SingleZoneCarbonSource):
             grid_zone=grid_zone,
             carbon_intensity_gco2_kwh=float(intensity),
             renewable_percentage=float(renewable_pct),
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             source="ons_brazil_heuristic",
         )

@@ -9,7 +9,7 @@ fuel breakdown, so OpenElectricity is the parseable free source for the mix.
 Updates every 5 minutes.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from carbon_mesh.carbon_sources.emission_factors import intensity_from_fuel_mix
 from carbon_mesh.carbon_sources.http_pool import shared_client
@@ -91,7 +91,7 @@ class AEMOCarbonSource:
         region_fuel = region_fuel_from_oe(resp.json(), grid_zones)
 
         results: dict[str, CarbonIntensity] = {}
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         for zone in grid_zones:
             fuel_mix = region_fuel.get(zone)
             if not fuel_mix:

@@ -1,17 +1,17 @@
 import uuid
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 
 from sqlalchemy import (
+    Boolean,
     Date,
     DateTime,
     Float,
     ForeignKey,
     Integer,
     String,
-    Boolean,
     Text,
-    func,
     UniqueConstraint,
+    func,
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
@@ -65,7 +65,7 @@ class EmissionsRecordDB(Base):
     request_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     api_key_id: Mapped[str | None] = mapped_column(String(36), nullable=True, index=True)
     timestamp: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(UTC)
     )
     chosen_provider: Mapped[str] = mapped_column(String(20), nullable=False)
     chosen_region: Mapped[str] = mapped_column(String(50), nullable=False)
@@ -88,7 +88,7 @@ class ImpactRecordDB(Base):
     ts: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        default=lambda: datetime.now(timezone.utc),
+        default=lambda: datetime.now(UTC),
         index=True,
     )
     region: Mapped[str] = mapped_column(String(64), nullable=False)
@@ -131,7 +131,7 @@ class CloudUsageRecordDB(Base):
     period_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     source: Mapped[str] = mapped_column(String(30), nullable=False, default="manual")
     ingested_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(UTC)
     )
 
 
@@ -163,7 +163,7 @@ class EmissionsCalculationDB(Base):
     period_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     period_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     calculated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(UTC)
     )
     methodology_version: Mapped[str] = mapped_column(
         String(50), nullable=False, default="ghg_protocol_2024"
@@ -183,7 +183,7 @@ class ComplianceReportDB(Base):
     period_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     period_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     generated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(UTC)
     )
     total_kgco2e: Mapped[float] = mapped_column(Float, nullable=False)
     total_energy_kwh: Mapped[float] = mapped_column(Float, nullable=False)
@@ -216,7 +216,7 @@ class GreenSLADB(Base):
     org_id: Mapped[str] = mapped_column(String(36), nullable=False, index=True)
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, index=True)
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(timezone.utc)
+        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(UTC)
     )
     payload: Mapped[str] = mapped_column(Text, nullable=False)
 

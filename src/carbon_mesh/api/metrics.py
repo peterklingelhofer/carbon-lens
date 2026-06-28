@@ -9,6 +9,7 @@ cached/snapshot source the API uses, so scraping never hits upstream quotas
 from __future__ import annotations
 
 import logging
+from datetime import UTC
 
 from prometheus_client import Gauge
 
@@ -91,13 +92,13 @@ async def refresh_impact_metrics() -> None:
     if not settings.use_database:
         return
     try:
-        from datetime import datetime, timedelta, timezone
+        from datetime import datetime, timedelta
 
         from carbon_mesh.accounting.impact_repo import recent_impacts
         from carbon_mesh.cli.ledger import fleet_summary
         from carbon_mesh.db.engine import AsyncSessionLocal
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         async with AsyncSessionLocal() as session:
             rows = await recent_impacts(session, now - timedelta(days=30))
         summary = fleet_summary(rows, now, 30)

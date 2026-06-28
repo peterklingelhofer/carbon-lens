@@ -46,11 +46,16 @@ export function InfoTip({
   useEffect(() => {
     if (!open) return;
     const close = () => setOpen(false);
+    const closeOnEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
     window.addEventListener("scroll", close, true);
     window.addEventListener("resize", close);
+    document.addEventListener("keydown", closeOnEscape);
     return () => {
       window.removeEventListener("scroll", close, true);
       window.removeEventListener("resize", close);
+      document.removeEventListener("keydown", closeOnEscape);
     };
   }, [open]);
 

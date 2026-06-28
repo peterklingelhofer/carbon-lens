@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from carbon_mesh.models.carbon import CarbonIntensity
 
@@ -120,7 +120,7 @@ class MockCarbonSource:
             grid_zone=grid_zone,
             carbon_intensity_gco2_kwh=data[0],
             renewable_percentage=data[1],
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             source="mock",
         )
 

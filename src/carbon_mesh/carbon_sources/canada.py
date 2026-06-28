@@ -9,7 +9,7 @@ Three provinces, three very different public feeds:
 
 import asyncio
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from xml.etree.ElementTree import Element
 
 from carbon_mesh.carbon_sources.emission_factors import intensity_from_fuel_mix
@@ -143,10 +143,10 @@ class CanadaCarbonSource:
             grid_zone="CA-QC",
             carbon_intensity_gco2_kwh=30.0,
             renewable_percentage=95.0,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             source="hydro_quebec_heuristic",
             grid_load_mw=None,
         )
 
     def _build(self, zone: str, fuel_mix: dict[str, float], source: str) -> CarbonIntensity:
-        return intensity_from_fuel_mix(zone, fuel_mix, source, datetime.now(timezone.utc))
+        return intensity_from_fuel_mix(zone, fuel_mix, source, datetime.now(UTC))

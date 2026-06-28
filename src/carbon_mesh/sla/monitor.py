@@ -5,7 +5,8 @@ from __future__ import annotations
 import asyncio
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from urllib.parse import urlparse
 
 import httpx
 
@@ -82,7 +83,7 @@ class SLAMonitor:
 
         while self._running:
             try:
-                now = datetime.now(timezone.utc)
+                now = datetime.now(UTC)
                 for sla in slas:
                     if not sla.active:
                         continue
@@ -133,7 +134,7 @@ class SLAMonitor:
                     sla_id=sla.id,
                     sla_name=sla.name,
                     channel=channel,
-                    sent_at=datetime.now(timezone.utc),
+                    sent_at=datetime.now(UTC),
                     status=check.status,
                     details={
                         "avg_carbon": check.avg_carbon_intensity_gco2_kwh,
@@ -167,6 +168,16 @@ class SLAMonitor:
             "target_max_carbon": check.target_max_carbon,
             "target_min_renewable": check.target_min_renewable,
         }
+
+        _parsed = urlparse(sla.webhook_url)
+        if _parsed.scheme not in ("http", "https") or not _parsed.netloc:
+            logger.warning(
+                "Skipping webhook for SLA [%s]: invalid URL %r", sla.name, sla.webhook_url
+            )
+            return
+        if _parsed.hostname in ("localhost", "127.0.0.1", "0.0.0.0", "::1"):
+            logger.warning("Skipping webhook for SLA [%s]: localhost target blocked", sla.name)
+            return
 
         async with httpx.AsyncClient(timeout=10) as client:
             response = await client.post(sla.webhook_url, json=payload)

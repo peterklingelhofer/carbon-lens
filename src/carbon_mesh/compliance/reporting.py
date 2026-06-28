@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from collections import defaultdict
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from carbon_mesh.models.compliance import (
     AccountingMethod,
@@ -27,7 +27,7 @@ class ReportingEngine:
     ) -> ComplianceReport:
         """Aggregate emissions calculations into a CSRD-aligned compliance report."""
         if not calculations:
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             return ComplianceReport(
                 id=str(uuid.uuid4()),
                 org_id=org_id,
@@ -124,7 +124,7 @@ class ReportingEngine:
             report_name=report_name,
             period_start=period_start,
             period_end=period_end,
-            generated_at=datetime.now(timezone.utc),
+            generated_at=datetime.now(UTC),
             scope2_location_kgco2e=round(scope2_location_total, 4),
             scope2_location_by_provider=_round_dict(scope2_location_by_provider),
             scope2_location_by_region=_round_dict(scope2_location_by_region),

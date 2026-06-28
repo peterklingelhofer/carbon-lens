@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import logging
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
@@ -57,7 +57,7 @@ def _hours_since(ts_iso: str | None, now: datetime) -> float | None:
     except (TypeError, ValueError):
         return None
     if ts.tzinfo is None:
-        ts = ts.replace(tzinfo=timezone.utc)
+        ts = ts.replace(tzinfo=UTC)
     return (now - ts).total_seconds() / 3600
 
 
@@ -180,7 +180,7 @@ def reconcile() -> int:
             last_run = item.get("status", {}).get("lastScheduleTime") or meta.get(
                 "creationTimestamp"
             )
-            hours_since = _hours_since(last_run, datetime.now(timezone.utc))
+            hours_since = _hours_since(last_run, datetime.now(UTC))
 
             current = item.get("spec", {}).get("suspend")
             want = desired_suspend_change(ann, current, signal, hours_since)

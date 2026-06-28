@@ -17,11 +17,12 @@ primary_region = "sea"
   CARBON_LENS_PORT = "8000"
   CARBON_LENS_USE_DATABASE = "false"
   CARBON_LENS_LOG_FORMAT = "json"
+  # Set to "true" and issue API keys via the CLI before opening to the public
   CARBON_LENS_API_KEY_REQUIRED = "false"
   CARBON_LENS_CARBON_SOURCE = "hybrid"
   # Allow the Cloudflare Pages frontend to call this API from the browser.
   # Update if your Pages project name differs from "carbon-mesh".
-  CARBON_LENS_CORS_ORIGINS = '["https://carbon-mesh.pages.dev","http://localhost:5173"]'
+  CARBON_LENS_CORS_ORIGINS = '["https://carbon-mesh.pages.dev"]'
 
 [http_service]
   internal_port = 8000
