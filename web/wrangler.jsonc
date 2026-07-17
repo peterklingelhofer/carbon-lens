@@ -7,6 +7,12 @@
   "name": "carbonlens",
   "main": "worker.js",
   "compatibility_date": "2025-01-01",
+  "vars": {
+    // Mirrors web/.env.production's VITE_SNAPSHOT_URL: the CDN-published
+    // snapshot.json the worker reads through for snapshot-derived GET
+    // endpoints (see the "Snapshot read-through" section of worker.js).
+    "SNAPSHOT_URL": "https://raw.githubusercontent.com/peterklingelhofer/carbon-lens/data/snapshot.json"
+  },
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
