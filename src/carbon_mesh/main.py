@@ -2,6 +2,7 @@ import asyncio
 import logging
 import time
 import uuid
+from collections.abc import Coroutine
 from contextlib import asynccontextmanager
 from importlib.metadata import version as _pkg_version
 
@@ -55,11 +56,32 @@ async def _warmup_cache() -> None:
     if not zones:
         return
 
-    try:
-        results = await source.get_carbon_intensity_batch(zones)
-        logger.info("Cache warmup: pre-fetched %d/%d popular zones", len(results), len(zones))
-    except Exception as e:
-        logger.warning("Cache warmup failed (non-fatal): %s", e)
+    results = await source.get_carbon_intensity_batch(zones)
+    logger.info("Cache warmup: pre-fetched %d/%d popular zones", len(results), len(zones))
+
+
+_background_tasks: set[asyncio.Task] = set()
+
+
+def _spawn(name: str, coro: Coroutine) -> None:
+    """Run a best-effort startup job off the critical path.
+
+    uvicorn binds the listening socket only after lifespan startup returns, so
+    awaiting these here would put third-party latency in front of the first
+    request of every cold start -- the grid-operator clients alone allow up to
+    30s. Neither job gates correctness: the cache refills on demand and the demo
+    SLA seeds idempotently.
+    """
+
+    async def _run() -> None:
+        try:
+            await coro
+        except Exception as e:
+            logger.warning("%s failed (non-fatal): %s", name, e)
+
+    task = asyncio.create_task(_run(), name=name)
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
 
 
 async def _seed_demo_sla() -> None:
@@ -156,9 +178,12 @@ async def lifespan(app: FastAPI):
     else:
         logger.info("Running without database (in-memory mode).")
 
-    await _warmup_cache()
-    await _seed_demo_sla()
+    _spawn("Cache warmup", _warmup_cache())
+    _spawn("Demo SLA seed", _seed_demo_sla())
     yield
+
+    for task in list(_background_tasks):
+        task.cancel()
 
     if async_engine is not None:
         await async_engine.dispose()
