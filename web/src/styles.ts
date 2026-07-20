@@ -40,16 +40,6 @@ export const grid3: React.CSSProperties = {
   gap: "1.5rem",
 };
 
-export const badge: React.CSSProperties = {
-  display: "inline-block",
-  padding: "0.25rem 0.75rem",
-  borderRadius: 20,
-  fontSize: "0.8rem",
-  fontWeight: 600,
-  background: "var(--green-100)",
-  color: "var(--green-800)",
-};
-
 // Dimmed secondary text, used for captions and helper copy across components
 export const muted: React.CSSProperties = {
   color: "var(--gray-500)",
