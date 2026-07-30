@@ -1,4 +1,6 @@
-# CarbonLens
+# Carbon Lens
+
+In this day and age, if you're hosting a website, you may as well host it on 100% renewable energy. CarbonLens provides observability into which cloud regions emit the least carbon by aggregating grid data from dozens of sources, making what was an opaque decision a clear one.
 
 **Measure and cut the carbon footprint of your cloud compute.**
 
