@@ -71,6 +71,19 @@ export function Landing() {
             opacity: 0.92,
           }}
         >
+          If you're hosting a website, you may as well host it on 100% renewable energy. Carbon Lens
+          provides observability into which cloud regions emit the least carbon by aggregating grid
+          data from dozens of sources, making what was an opaque decision a clear one.
+        </p>
+        <p
+          className="hero-subtitle"
+          style={{
+            fontSize: "1.25rem",
+            maxWidth: 720,
+            margin: "0 auto 0.75rem",
+            opacity: 0.92,
+          }}
+        >
           Every cloud region runs on a local power grid. Carbon Lens reads how much CO₂ that grid
           emits per kilowatt-hour right now (its <strong>carbon intensity</strong>) from live
           grid-operator data. Lower means greener.
