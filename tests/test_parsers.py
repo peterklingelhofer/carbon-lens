@@ -10,13 +10,13 @@ from datetime import datetime, timezone
 
 import pytest
 
-from carbon_mesh.carbon_sources.aemo import region_fuel_from_oe
-from carbon_mesh.carbon_sources.canada import aeso_fuel_mix, ieso_fuel_mix
-from carbon_mesh.carbon_sources.emission_factors import calculate_marginal_intensity
-from carbon_mesh.carbon_sources.entsoe_forecast import _series_by_hour
-from carbon_mesh.carbon_sources.flow_tracing import _parse_flow_latest
-from carbon_mesh.carbon_sources.taiwan import _fuel_of, fuel_mix_from_rows
-from carbon_mesh.carbon_sources.xml_safe import parse_xml
+from carbonlens.carbon_sources.aemo import region_fuel_from_oe
+from carbonlens.carbon_sources.canada import aeso_fuel_mix, ieso_fuel_mix
+from carbonlens.carbon_sources.emission_factors import calculate_marginal_intensity
+from carbonlens.carbon_sources.entsoe_forecast import _series_by_hour
+from carbonlens.carbon_sources.flow_tracing import _parse_flow_latest
+from carbonlens.carbon_sources.taiwan import _fuel_of, fuel_mix_from_rows
+from carbonlens.carbon_sources.xml_safe import parse_xml
 
 # --- Taiwan (Taipower per-unit JSON rows) ---
 

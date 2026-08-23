@@ -2,15 +2,15 @@ services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: carbon_mesh
-      POSTGRES_PASSWORD: carbon_mesh
-      POSTGRES_DB: carbon_mesh
+      POSTGRES_USER: carbonlens
+      POSTGRES_PASSWORD: carbonlens
+      POSTGRES_DB: carbonlens
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U carbon_mesh"]
+      test: ["CMD-SHELL", "pg_isready -U carbonlens"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -23,7 +23,7 @@ services:
       - .env
     environment:
       CARBON_LENS_USE_DATABASE: "true"
-      CARBON_LENS_DATABASE_URL: postgresql+asyncpg://carbon_mesh:carbon_mesh@db:5432/carbon_mesh
+      CARBON_LENS_DATABASE_URL: postgresql+asyncpg://carbonlens:carbonlens@db:5432/carbonlens
       CARBON_LENS_HOST: "0.0.0.0"
       CARBON_LENS_PORT: "8000"
       CARBON_LENS_LOG_FORMAT: "json"

@@ -8,9 +8,9 @@
 #   2. Run: `terraform init && terraform plan`
 #
 # The output `greenest_region` can be used in other resources:
-#   region = data.external.carbon_mesh_route.result.region
+#   region = data.external.carbonlens_route.result.region
 
-variable "carbon_mesh_api_url" {
+variable "carbonlens_api_url" {
   description = "CarbonLens API base URL"
   type        = string
   default     = "http://localhost:8000"
@@ -35,9 +35,9 @@ variable "carbon_weight" {
 }
 
 # Use the external data source to call the CarbonLens API
-data "external" "carbon_mesh_route" {
+data "external" "carbonlens_route" {
   program = ["bash", "-c", <<-EOT
-    RESPONSE=$(curl -sf -X POST "${var.carbon_mesh_api_url}/api/v1/route" \
+    RESPONSE=$(curl -sf -X POST "${var.carbonlens_api_url}/api/v1/route" \
       -H "Content-Type: application/json" \
       -d '{
         "constraints": {
@@ -63,12 +63,12 @@ data "external" "carbon_mesh_route" {
 output "greenest_region" {
   description = "The greenest cloud region based on current grid conditions"
   value = {
-    provider             = data.external.carbon_mesh_route.result.provider
-    region               = data.external.carbon_mesh_route.result.region
-    grid_zone            = data.external.carbon_mesh_route.result.grid_zone
-    carbon_intensity     = data.external.carbon_mesh_route.result.carbon_intensity
-    renewable_percentage = data.external.carbon_mesh_route.result.renewable_percentage
-    carbon_savings_pct   = data.external.carbon_mesh_route.result.carbon_savings_pct
+    provider             = data.external.carbonlens_route.result.provider
+    region               = data.external.carbonlens_route.result.region
+    grid_zone            = data.external.carbonlens_route.result.grid_zone
+    carbon_intensity     = data.external.carbonlens_route.result.carbon_intensity
+    renewable_percentage = data.external.carbonlens_route.result.renewable_percentage
+    carbon_savings_pct   = data.external.carbonlens_route.result.carbon_savings_pct
   }
 }
 
@@ -79,11 +79,11 @@ output "greenest_region" {
 #   instance_type = "t3.micro"
 #
 #   # Deploy in the greenest region!
-#   provider = aws.${data.external.carbon_mesh_route.result.region}
+#   provider = aws.${data.external.carbonlens_route.result.region}
 #
 #   tags = {
 #     Name       = "green-workload"
-#     GridZone   = data.external.carbon_mesh_route.result.grid_zone
-#     Renewable  = "${data.external.carbon_mesh_route.result.renewable_percentage}%"
+#     GridZone   = data.external.carbonlens_route.result.grid_zone
+#     Renewable  = "${data.external.carbonlens_route.result.renewable_percentage}%"
 #   }
 # }

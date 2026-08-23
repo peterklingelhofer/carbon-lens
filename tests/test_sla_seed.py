@@ -1,7 +1,7 @@
 """Tests for the idempotent, self-healing demo-SLA seeder."""
 
-from carbon_mesh.sla.repository import InMemorySLARepository
-from carbon_mesh.sla.seed import DEMO_SLA_ID, ensure_demo_sla, seed_demo_sla
+from carbonlens.sla.repository import InMemorySLARepository
+from carbonlens.sla.seed import DEMO_SLA_ID, ensure_demo_sla, seed_demo_sla
 
 
 async def test_ensure_demo_sla_is_idempotent_and_self_heals():
@@ -21,7 +21,7 @@ async def test_ensure_demo_sla_is_idempotent_and_self_heals():
 async def test_seed_demo_sla_creates_sla_and_one_initial_check():
     """In-memory mode: seeding creates the SLA and a single initial check, and a
     repeat run adds nothing (idempotent)."""
-    from carbon_mesh.api.deps import _in_memory_sla_repo
+    from carbonlens.api.deps import _in_memory_sla_repo
 
     await _in_memory_sla_repo.delete_sla(DEMO_SLA_ID)
     try:

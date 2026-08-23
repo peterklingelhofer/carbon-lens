@@ -4,7 +4,7 @@ database:
     enabled: true
     auth:
       postgresPassword: change-me-staging
-      database: carbon_mesh
+      database: carbonlens
 
 config:
   carbonSource: hybrid

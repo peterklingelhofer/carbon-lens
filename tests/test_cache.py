@@ -5,8 +5,8 @@ import time
 
 import pytest
 
-from carbon_mesh.engine.cache import IntensityCache
-from carbon_mesh.models.carbon import CarbonIntensity
+from carbonlens.engine.cache import IntensityCache
+from carbonlens.models.carbon import CarbonIntensity
 
 
 def _make_intensity(zone: str, value: float = 100.0) -> CarbonIntensity:

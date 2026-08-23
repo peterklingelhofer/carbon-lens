@@ -1,9 +1,9 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: carbonroutepolicies.carbon-mesh.io
+  name: carbonroutepolicies.carbonlens.io
 spec:
-  group: carbon-mesh.io
+  group: carbonlens.io
   versions:
     - name: v1alpha1
       served: true

@@ -1,4 +1,4 @@
-from carbon_mesh.carbon_sources.flow_tracing import trace_consumption_intensity
+from carbonlens.carbon_sources.flow_tracing import trace_consumption_intensity
 
 
 def test_no_flows_consumption_equals_production():

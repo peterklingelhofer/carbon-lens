@@ -5,8 +5,8 @@
 #
 #   kubectl apply -f deploy/argo/carbon-gate-template.yaml
 #
-# Reuses carbon_mesh.sdk (same marginal/clean-surplus decision as every other
-# surface), so it needs an image with carbon_mesh installed (the API image works).
+# Reuses carbonlens.sdk (same marginal/clean-surplus decision as every other
+# surface), so it needs an image with carbonlens installed (the API image works).
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:
@@ -25,7 +25,7 @@ spec:
         image: ghcr.io/peterklingelhofer/carbon-lens/api:latest
         command: [python]
         source: |
-          from carbon_mesh.sdk import CarbonClient
+          from carbonlens.sdk import CarbonClient
           mi = "{{inputs.parameters.max-intensity}}".strip()
           ok = CarbonClient("{{inputs.parameters.api-url}}").is_good_time(
               "{{inputs.parameters.region}}", float(mi) if mi else None

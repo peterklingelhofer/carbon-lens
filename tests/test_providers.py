@@ -9,16 +9,16 @@ Each provider is tested for:
 
 import pytest
 
-from carbon_mesh.carbon_sources.aemo import AEMOCarbonSource, AEMO_ZONES
-from carbon_mesh.carbon_sources.eia import _GRID_ZONE_TO_EIA
-from carbon_mesh.carbon_sources.entsoe import ENTSOECarbonSource, ENTSOE_ZONES
-from carbon_mesh.carbon_sources.eskom import EskomCarbonSource, ESKOM_ZONES
-from carbon_mesh.carbon_sources.grid_india import GridIndiaCarbonSource, INDIA_ZONES
-from carbon_mesh.carbon_sources.gridstatus import _GRID_ZONE_TO_ISO
-from carbon_mesh.carbon_sources.mock import MockCarbonSource
-from carbon_mesh.carbon_sources.ons_brazil import ONSBrazilCarbonSource, BRAZIL_ZONES
-from carbon_mesh.carbon_sources.open_meteo import OpenMeteoCarbonSource, ZONE_COORDINATES
-from carbon_mesh.carbon_sources.uk import UKCarbonSource
+from carbonlens.carbon_sources.aemo import AEMOCarbonSource, AEMO_ZONES
+from carbonlens.carbon_sources.eia import _GRID_ZONE_TO_EIA
+from carbonlens.carbon_sources.entsoe import ENTSOECarbonSource, ENTSOE_ZONES
+from carbonlens.carbon_sources.eskom import EskomCarbonSource, ESKOM_ZONES
+from carbonlens.carbon_sources.grid_india import GridIndiaCarbonSource, INDIA_ZONES
+from carbonlens.carbon_sources.gridstatus import _GRID_ZONE_TO_ISO
+from carbonlens.carbon_sources.mock import MockCarbonSource
+from carbonlens.carbon_sources.ons_brazil import ONSBrazilCarbonSource, BRAZIL_ZONES
+from carbonlens.carbon_sources.open_meteo import OpenMeteoCarbonSource, ZONE_COORDINATES
+from carbonlens.carbon_sources.uk import UKCarbonSource
 
 
 # ---------------------------------------------------------------------------
@@ -242,7 +242,7 @@ class TestUKSource:
 class TestENTSOE:
     def test_zone_map_complete(self):
         """ENTSO-E should have EIC codes for all major EU countries."""
-        from carbon_mesh.carbon_sources.entsoe import ENTSOE_ZONE_MAP
+        from carbonlens.carbon_sources.entsoe import ENTSOE_ZONE_MAP
 
         required = ["DE", "FR", "ES", "NL", "BE", "PL", "FI", "IE", "NO-NO1", "SE-SE3"]
         for zone in required:
@@ -285,7 +285,7 @@ class TestHybridSource:
     @pytest.mark.asyncio
     async def test_routes_to_correct_provider(self):
         """Hybrid should use specialized providers when available."""
-        from carbon_mesh.carbon_sources.hybrid import HybridCarbonSource
+        from carbonlens.carbon_sources.hybrid import HybridCarbonSource
 
         hybrid = HybridCarbonSource()
 
@@ -304,7 +304,7 @@ class TestHybridSource:
     @pytest.mark.asyncio
     async def test_falls_back_to_mock(self):
         """Unknown zones should fall back to mock."""
-        from carbon_mesh.carbon_sources.hybrid import HybridCarbonSource
+        from carbonlens.carbon_sources.hybrid import HybridCarbonSource
 
         hybrid = HybridCarbonSource()
         result = await hybrid.get_carbon_intensity("TOTALLY-UNKNOWN")
@@ -313,7 +313,7 @@ class TestHybridSource:
     @pytest.mark.asyncio
     async def test_batch_covers_all_zones(self):
         """Batch should return results for all requested zones."""
-        from carbon_mesh.carbon_sources.hybrid import HybridCarbonSource
+        from carbonlens.carbon_sources.hybrid import HybridCarbonSource
 
         hybrid = HybridCarbonSource()
         zones = ["ZA", "IN-NO", "BR-S", "UNKNOWN"]
@@ -326,10 +326,10 @@ class TestHybridSource:
         """A zone with no live source should surface at INFO."""
         import logging
 
-        from carbon_mesh.carbon_sources.hybrid import HybridCarbonSource
+        from carbonlens.carbon_sources.hybrid import HybridCarbonSource
 
         hybrid = HybridCarbonSource()
-        with caplog.at_level(logging.INFO, logger="carbon_mesh.carbon_sources.hybrid"):
+        with caplog.at_level(logging.INFO, logger="carbonlens.carbon_sources.hybrid"):
             await hybrid.get_carbon_intensity("TOTALLY-UNKNOWN")
         assert any(
             "mock fallback" in r.message and "TOTALLY-UNKNOWN" in r.message for r in caplog.records
@@ -340,10 +340,10 @@ class TestHybridSource:
         """The batch fall-through log should name the dark zones for debugging."""
         import logging
 
-        from carbon_mesh.carbon_sources.hybrid import HybridCarbonSource
+        from carbonlens.carbon_sources.hybrid import HybridCarbonSource
 
         hybrid = HybridCarbonSource()
-        with caplog.at_level(logging.INFO, logger="carbon_mesh.carbon_sources.hybrid"):
+        with caplog.at_level(logging.INFO, logger="carbonlens.carbon_sources.hybrid"):
             await hybrid.get_carbon_intensity_batch(["ZA", "UNKNOWN-A", "UNKNOWN-B"])
         msgs = [r.message for r in caplog.records if "mock fallback" in r.message]
         assert msgs and "UNKNOWN-A" in msgs[-1] and "UNKNOWN-B" in msgs[-1]

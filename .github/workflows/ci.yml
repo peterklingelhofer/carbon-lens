@@ -20,13 +20,13 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: carbon_mesh
-          POSTGRES_PASSWORD: carbon_mesh
-          POSTGRES_DB: carbon_mesh
+          POSTGRES_USER: carbonlens
+          POSTGRES_PASSWORD: carbonlens
+          POSTGRES_DB: carbonlens
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U carbon_mesh"
+          --health-cmd "pg_isready -U carbonlens"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -59,7 +59,7 @@ jobs:
       - name: Test
         env:
           CARBON_LENS_CARBON_SOURCE: mock
-          CARBON_LENS_DATABASE_URL: postgresql+asyncpg://carbon_mesh:carbon_mesh@localhost:5432/carbon_mesh
+          CARBON_LENS_DATABASE_URL: postgresql+asyncpg://carbonlens:carbonlens@localhost:5432/carbonlens
         run: uv run pytest tests/ -v
 
   frontend:

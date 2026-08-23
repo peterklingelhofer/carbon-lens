@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 
-from carbon_mesh.k8s.carbon_suspend import (
+from carbonlens.k8s.carbon_suspend import (
     ANNOTATION_MAX_DEFER,
     ANNOTATION_MAX_INTENSITY,
     ANNOTATION_REGION,

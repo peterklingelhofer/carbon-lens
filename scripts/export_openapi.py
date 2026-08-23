@@ -11,7 +11,7 @@ Usage:
 import argparse
 import json
 
-from carbon_mesh.main import app
+from carbonlens.main import app
 
 
 def main() -> int:

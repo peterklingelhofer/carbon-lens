@@ -4,8 +4,8 @@ import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
-from carbon_mesh.models.routing import JobConstraints, VALID_PROVIDERS
-from carbon_mesh.auth.api_keys import generate_api_key, hash_key, key_prefix
+from carbonlens.models.routing import JobConstraints, VALID_PROVIDERS
+from carbonlens.auth.api_keys import generate_api_key, hash_key, key_prefix
 
 
 # ---------------------------------------------------------------------------

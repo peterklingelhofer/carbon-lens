@@ -1,6 +1,6 @@
 """Tests for the carbon-aware Python SDK (pure decision logic + the wait loop)."""
 
-from carbon_mesh.sdk import (
+from carbonlens.sdk import (
     CarbonClient,
     choose_by_carbon,
     choose_by_state,
@@ -94,7 +94,7 @@ def test_signal_reads_from_snapshot_without_calling_api():
 
     # Any API call would explode this, proving the snapshot path is used.
     cl_api_called = []
-    import carbon_mesh.sdk as sdk_mod
+    import carbonlens.sdk as sdk_mod
 
     orig_get = sdk_mod.httpx.get
     sdk_mod.httpx.get = lambda *a, **k: cl_api_called.append(1)  # type: ignore
@@ -123,7 +123,7 @@ def test_signal_falls_back_to_api_when_region_absent_from_snapshot(monkeypatch):
         called["url"] = url
         return _Resp()
 
-    monkeypatch.setattr("carbon_mesh.sdk.httpx.get", fake_get)
+    monkeypatch.setattr("carbonlens.sdk.httpx.get", fake_get)
     # zone/FR isn't in the snapshot -> API fallback.
     sig = cl.signal("zone/FR")
     assert sig == {"advice": "wait_for_cleaner", "from": "api"}
@@ -144,7 +144,7 @@ def test_load_snapshot_caches_and_serves_stale_on_error():
         def json(self):
             return self._body
 
-    import carbon_mesh.sdk as sdk_mod
+    import carbonlens.sdk as sdk_mod
 
     orig = sdk_mod.httpx.get
     sdk_mod.httpx.get = lambda *a, **k: (calls.append(1), _Resp({"signals": {}}))[1]  # type: ignore

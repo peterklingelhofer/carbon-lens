@@ -1,4 +1,4 @@
-from carbon_mesh.carbon_sources.emission_factors import (
+from carbonlens.carbon_sources.emission_factors import (
     calculate_carbon_intensity,
     calculate_renewable_percentage,
     power_breakdown,

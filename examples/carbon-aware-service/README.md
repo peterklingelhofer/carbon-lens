@@ -19,9 +19,9 @@ curl -i -H 'X-Carbon-Optional: 1' localhost:8000/recommendations
 
 ## What it wires together
 
-- **`CarbonAwareShedder`** (`carbon_mesh.middleware`) tags every response with the
+- **`CarbonAwareShedder`** (`carbonlens.middleware`) tags every response with the
   grid mode and sheds optional requests when dirty.
-- **`choose_by_state`** (`carbon_mesh.sdk`) picks model tier / bitrate by the
+- **`choose_by_state`** (`carbonlens.sdk`) picks model tier / bitrate by the
   traffic-light state (green/yellow/red).
 - A browser client can read the same headers with
   [`readCarbonHeaders`](../../web/src/lib/carbonMode.ts) and degrade on its side too.

@@ -6,14 +6,14 @@ import importlib.util
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from carbon_mesh.api.deps import _CachedCarbonSource
-from carbon_mesh.carbon_sources.snapshot_source import (
+from carbonlens.api.deps import _CachedCarbonSource
+from carbonlens.carbon_sources.snapshot_source import (
     SnapshotBackedSource,
     zone_map_from_intensities,
 )
-from carbon_mesh.engine.cache import IntensityCache
-from carbon_mesh.models.carbon import CarbonIntensity
-from carbon_mesh.scheduler.engine import SchedulingEngine
+from carbonlens.engine.cache import IntensityCache
+from carbonlens.models.carbon import CarbonIntensity
+from carbonlens.scheduler.engine import SchedulingEngine
 
 # Load _carry_forward from the snapshot build script (not a package module).
 _spec = importlib.util.spec_from_file_location(
@@ -126,7 +126,7 @@ def test_project_with_forecast_scales_by_vre_change():
 
 
 def test_weather_renewable_fraction_from_irradiance_and_wind():
-    from carbon_mesh.carbon_sources.open_meteo import weather_renewable_fraction
+    from carbonlens.carbon_sources.open_meteo import weather_renewable_fraction
 
     assert weather_renewable_fraction(0, 0) == 0.0
     assert weather_renewable_fraction(0, 5) == 0.0  # below wind cut-in

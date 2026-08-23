@@ -1,7 +1,7 @@
 # Prometheus + Alertmanager for CarbonLens
 
 CarbonLens exposes gauges at `/metrics`, refreshed on each scrape (see
-`src/carbon_mesh/api/metrics.py`). This directory wires alerting on top of them.
+`src/carbonlens/api/metrics.py`). This directory wires alerting on top of them.
 
 | File | Purpose |
 | --- | --- |

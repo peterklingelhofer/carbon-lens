@@ -1,6 +1,6 @@
 """Tests for the RAPL energy meter (pure conversion + wrap-around)."""
 
-from carbon_mesh.cli.energy import energy_kwh_between
+from carbonlens.cli.energy import energy_kwh_between
 
 
 def test_energy_kwh_between_basic():

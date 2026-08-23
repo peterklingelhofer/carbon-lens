@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from carbon_mesh.compliance.usage_ingestion import (
+from carbonlens.compliance.usage_ingestion import (
     AWSCostExplorerAdapter,
     AzureCostManagementAdapter,
     CloudIngestionError,

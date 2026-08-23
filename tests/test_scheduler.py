@@ -5,8 +5,8 @@ from datetime import datetime, timezone
 
 import pytest
 
-from carbon_mesh.models.carbon import CarbonIntensity
-from carbon_mesh.scheduler.engine import (
+from carbonlens.models.carbon import CarbonIntensity
+from carbonlens.scheduler.engine import (
     CronSchedule,
     ScheduleRecommendation,
     ScheduleStrategy,
@@ -63,7 +63,7 @@ class MockGridMapper:
         return self._regions.get((provider, region))
 
     def get_region(self, provider: str, region: str):
-        from carbon_mesh.models.region import CloudRegion
+        from carbonlens.models.region import CloudRegion
 
         zone = self._regions.get((provider, region))
         if zone is None:
@@ -78,7 +78,7 @@ class MockGridMapper:
         )
 
     def list_regions(self, provider: str | None = None):
-        from carbon_mesh.models.region import CloudRegion
+        from carbonlens.models.region import CloudRegion
 
         regions = []
         for (prov, reg), zone in self._regions.items():
