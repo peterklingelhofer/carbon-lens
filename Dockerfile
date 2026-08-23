@@ -10,6 +10,7 @@ RUN uv sync --no-dev --no-install-project
 
 COPY src/ src/
 COPY data/ data/
+COPY docs/CITATIONS.csl.json docs/CITATIONS.csl.json
 COPY README.md ./
 RUN uv sync --no-dev
 
@@ -26,6 +27,7 @@ WORKDIR /app
 COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/src /app/src
 COPY --from=builder /app/data /app/data
+COPY --from=builder /app/docs /app/docs
 
 # Alembic files for auto-migration
 COPY alembic.ini ./

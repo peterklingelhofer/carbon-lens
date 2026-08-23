@@ -1,6 +1,6 @@
 """Tests for the 'state of clean compute' report builder."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from carbonlens.engine.clean_compute import build_clean_compute_report
 
@@ -15,7 +15,7 @@ def _series(now, clean_c, dirty_c, days=7):
 
 
 def test_report_ranks_shiftability_and_greenness():
-    now = datetime(2026, 6, 16, tzinfo=timezone.utc)
+    now = datetime(2026, 6, 16, tzinfo=UTC)
     history = {
         "series": {
             "aws/swingy": _series(now, 40, 400),  # big swing, dirty-ish on average
@@ -76,7 +76,7 @@ def test_update_clean_compute_history_appends_replaces_and_caps():
 
 
 def test_report_skips_thin_history():
-    now = datetime(2026, 6, 16, tzinfo=timezone.utc)
+    now = datetime(2026, 6, 16, tzinfo=UTC)
     history = {"series": {"aws/new": [{"t": now.isoformat(), "c": 100.0, "r": 50.0}]}}
     report = build_clean_compute_report(history, {}, now, days=14)
     assert report["most_shiftable"] == []
@@ -84,7 +84,7 @@ def test_report_skips_thin_history():
 
 
 def test_report_includes_calibration_only_when_it_has_samples():
-    now = datetime(2026, 6, 16, tzinfo=timezone.utc)
+    now = datetime(2026, 6, 16, tzinfo=UTC)
     history = {"series": {}}
 
     # Empty / zero-sample calibration -> omitted entirely (no fabricated accuracy).

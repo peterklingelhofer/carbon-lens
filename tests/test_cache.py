@@ -2,6 +2,7 @@
 
 import asyncio
 import time
+from datetime import UTC
 
 import pytest
 
@@ -10,13 +11,13 @@ from carbonlens.models.carbon import CarbonIntensity
 
 
 def _make_intensity(zone: str, value: float = 100.0) -> CarbonIntensity:
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     return CarbonIntensity(
         grid_zone=zone,
         carbon_intensity_gco2_kwh=value,
         renewable_percentage=50.0,
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         source="test",
     )
 

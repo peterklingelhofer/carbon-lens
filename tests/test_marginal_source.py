@@ -1,5 +1,7 @@
 """Tests for the optional measured-marginal (WattTime) source."""
 
+from datetime import UTC
+
 from carbonlens.carbon_sources.marginal import (
     WattTimeMarginalSource,
     marginal_source_from_settings,
@@ -40,11 +42,11 @@ async def test_watttime_source_converts_and_skips_unmapped(monkeypatch):
 
 
 def test_parse_moer_forecast():
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     from carbonlens.carbon_sources.marginal import moer_to_gco2_kwh, parse_moer_forecast
 
-    now = datetime(2026, 6, 18, 12, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 6, 18, 12, 0, tzinfo=UTC)
     data = [
         {"point_time": "2026-06-18T12:00:00Z", "value": 800},  # offset 0
         {"point_time": "2026-06-18T14:00:00Z", "value": 400},  # offset 2
@@ -55,11 +57,11 @@ def test_parse_moer_forecast():
 
 
 def test_parse_em_forecast():
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     from carbonlens.carbon_sources.marginal import parse_em_forecast
 
-    now = datetime(2026, 6, 18, 12, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 6, 18, 12, 0, tzinfo=UTC)
     data = [
         {"datetime": "2026-06-18T12:00:00Z", "marginalCarbonIntensity": 300},  # offset 0
         {"datetime": "2026-06-18T15:00:00Z", "marginalCarbonIntensity": 120},  # offset 3
