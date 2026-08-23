@@ -27,7 +27,7 @@ Find the greenest cloud region for your deployment by querying the CarbonLens AP
 
 ```yaml
 steps:
-  - uses: carbon-mesh/route@v1
+  - uses: carbonlens/route@v1
     with:
       providers: aws,gcp
       api-url: https://api.carbonlens.io
@@ -37,7 +37,7 @@ steps:
 
 ```yaml
 steps:
-  - uses: carbon-mesh/route@v1
+  - uses: carbonlens/route@v1
     id: green
     with:
       providers: aws,gcp,azure
@@ -62,7 +62,7 @@ jobs:
       provider: ${{ steps.green.outputs.provider }}
       region: ${{ steps.green.outputs.region }}
     steps:
-      - uses: carbon-mesh/route@v1
+      - uses: carbonlens/route@v1
         id: green
         with:
           providers: aws,gcp

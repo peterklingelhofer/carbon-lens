@@ -11,9 +11,9 @@ import pytest_asyncio
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
 
-from carbon_mesh.db.models import Base
-from carbon_mesh.models.sla import GreenSLA, SLACheck, SLAReport, SLAStatus
-from carbon_mesh.sla.repository import DBSLARepository
+from carbonlens.db.models import Base
+from carbonlens.models.sla import GreenSLA, SLACheck, SLAReport, SLAStatus
+from carbonlens.sla.repository import DBSLARepository
 
 
 @pytest_asyncio.fixture

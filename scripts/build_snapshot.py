@@ -21,15 +21,15 @@ from datetime import datetime, timedelta, timezone
 
 import httpx
 
-from carbon_mesh.carbon_sources.eia import EIACarbonSource
-from carbon_mesh.carbon_sources.electricity_maps import ElectricityMapsCarbonSource
-from carbon_mesh.carbon_sources.entsoe import ENTSOECarbonSource
-from carbon_mesh.carbon_sources.flow_tracing import ConsumptionIntensitySource
-from carbon_mesh.carbon_sources.gridstatus import GridStatusCarbonSource
-from carbon_mesh.carbon_sources.hybrid import HybridCarbonSource
-from carbon_mesh.config import settings
-from carbon_mesh.grid.mapper import GridMapper
-from carbon_mesh.models.carbon import CarbonIntensity
+from carbonlens.carbon_sources.eia import EIACarbonSource
+from carbonlens.carbon_sources.electricity_maps import ElectricityMapsCarbonSource
+from carbonlens.carbon_sources.entsoe import ENTSOECarbonSource
+from carbonlens.carbon_sources.flow_tracing import ConsumptionIntensitySource
+from carbonlens.carbon_sources.gridstatus import GridStatusCarbonSource
+from carbonlens.carbon_sources.hybrid import HybridCarbonSource
+from carbonlens.config import settings
+from carbonlens.grid.mapper import GridMapper
+from carbonlens.models.carbon import CarbonIntensity
 
 
 def _quality(source: str) -> str:
@@ -169,11 +169,11 @@ async def compute_region_data(
     None for both) so tests run without network.
 
     Returns ``{"signals": {key: signal}, "forecasts": {key: forecast}}``."""
-    from carbon_mesh.carbon_sources.entsoe_forecast import ENTSOEForecastSource
-    from carbon_mesh.carbon_sources.open_meteo import OpenMeteoForecastSource
-    from carbon_mesh.engine.signal import build_signal
-    from carbon_mesh.engine.surplus import surplus_offsets
-    from carbon_mesh.scheduler.engine import SchedulingEngine
+    from carbonlens.carbon_sources.entsoe_forecast import ENTSOEForecastSource
+    from carbonlens.carbon_sources.open_meteo import OpenMeteoForecastSource
+    from carbonlens.engine.signal import build_signal
+    from carbonlens.engine.surplus import surplus_offsets
+    from carbonlens.scheduler.engine import SchedulingEngine
 
     if forecast_source is _UNSET:
         forecast_source = ENTSOEForecastSource(settings.entsoe_token)
@@ -268,7 +268,7 @@ async def compute_weather(region_meta: dict[str, dict], fetch=_UNSET, concurrenc
     import asyncio
 
     if fetch is _UNSET:
-        from carbon_mesh.carbon_sources.open_meteo import fetch_weather
+        from carbonlens.carbon_sources.open_meteo import fetch_weather
 
         fetch = fetch_weather
 
@@ -448,7 +448,7 @@ def compute_best_times(
     """Precompute the greenest-hour BestTime per region from the rolling history archive
     (with each region's 24h forecast curve as the thin-history fallback), reusing the same
     ``engine.besttime.build_best_time`` the live endpoint uses so the static result matches."""
-    from carbon_mesh.engine.besttime import build_best_time
+    from carbonlens.engine.besttime import build_best_time
 
     series = history.get("series", {})
     out: dict[str, dict] = {}

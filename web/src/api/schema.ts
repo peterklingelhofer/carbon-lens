@@ -2555,7 +2555,7 @@ export interface components {
             shift_savings_pct: number;
         };
         /** GenerateReportRequest */
-        carbon_mesh__compliance__routes__GenerateReportRequest: {
+        carbonlens__compliance__routes__GenerateReportRequest: {
             /** Org Id */
             org_id: string;
             /** Org Name */
@@ -2571,7 +2571,7 @@ export interface components {
             report_name: string;
         };
         /** GenerateReportRequest */
-        carbon_mesh__sla__routes__GenerateReportRequest: {
+        carbonlens__sla__routes__GenerateReportRequest: {
             /** Org Name */
             org_name: string;
             /**
@@ -3268,7 +3268,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["carbon_mesh__compliance__routes__GenerateReportRequest"];
+                "application/json": components["schemas"]["carbonlens__compliance__routes__GenerateReportRequest"];
             };
         };
         responses: {
@@ -4147,7 +4147,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["carbon_mesh__sla__routes__GenerateReportRequest"];
+                "application/json": components["schemas"]["carbonlens__sla__routes__GenerateReportRequest"];
             };
         };
         responses: {

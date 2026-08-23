@@ -1,6 +1,6 @@
 """Tests for the optional measured-marginal (WattTime) source."""
 
-from carbon_mesh.carbon_sources.marginal import (
+from carbonlens.carbon_sources.marginal import (
     WattTimeMarginalSource,
     marginal_source_from_settings,
     moer_to_gco2_kwh,
@@ -42,7 +42,7 @@ async def test_watttime_source_converts_and_skips_unmapped(monkeypatch):
 def test_parse_moer_forecast():
     from datetime import datetime, timezone
 
-    from carbon_mesh.carbon_sources.marginal import moer_to_gco2_kwh, parse_moer_forecast
+    from carbonlens.carbon_sources.marginal import moer_to_gco2_kwh, parse_moer_forecast
 
     now = datetime(2026, 6, 18, 12, 0, tzinfo=timezone.utc)
     data = [
@@ -57,7 +57,7 @@ def test_parse_moer_forecast():
 def test_parse_em_forecast():
     from datetime import datetime, timezone
 
-    from carbon_mesh.carbon_sources.marginal import parse_em_forecast
+    from carbonlens.carbon_sources.marginal import parse_em_forecast
 
     now = datetime(2026, 6, 18, 12, 0, tzinfo=timezone.utc)
     data = [
@@ -69,7 +69,7 @@ def test_parse_em_forecast():
 
 
 async def test_electricity_maps_source_reads_marginal(monkeypatch):
-    from carbon_mesh.carbon_sources.marginal import ElectricityMapsMarginalSource
+    from carbonlens.carbon_sources.marginal import ElectricityMapsMarginalSource
 
     src = ElectricityMapsMarginalSource("tok", {"FR": "FR"})
 
@@ -90,7 +90,7 @@ async def test_electricity_maps_source_reads_marginal(monkeypatch):
 
 
 def test_factory_prefers_watttime_then_electricity_maps():
-    from carbon_mesh.carbon_sources.marginal import (
+    from carbonlens.carbon_sources.marginal import (
         ElectricityMapsMarginalSource,
         WattTimeMarginalSource,
         marginal_source_from_settings,
@@ -131,7 +131,7 @@ def test_factory_is_off_without_token_or_map():
 
 
 def test_marginal_unmapped_flags_only_the_silent_trap():
-    from carbon_mesh.carbon_sources.marginal import marginal_unmapped
+    from carbonlens.carbon_sources.marginal import marginal_unmapped
 
     class KeyNoMap:  # the trap: token set, no zone map
         watttime_token = "tok"

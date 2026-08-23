@@ -5,9 +5,8 @@ from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
-
-from carbon_mesh.config import settings
-from carbon_mesh.db.models import Base
+from carbonlens.config import settings
+from carbonlens.db.models import Base
 
 config = context.config
 
@@ -16,9 +15,7 @@ if config.config_file_name is not None:
 
 # Use the normalized database URL from application settings
 # This handles postgres:// URLs from Render/Railway/Heroku automatically
-config.set_main_option(
-    "sqlalchemy.url", settings.normalized_database_url.replace("+asyncpg", "")
-)
+config.set_main_option("sqlalchemy.url", settings.normalized_database_url.replace("+asyncpg", ""))
 
 target_metadata = Base.metadata
 

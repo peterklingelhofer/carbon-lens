@@ -1,4 +1,4 @@
-from carbon_mesh.engine.scorer import score_candidates
+from carbonlens.engine.scorer import score_candidates
 
 
 def test_score_ranks_by_carbon():

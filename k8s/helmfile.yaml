@@ -14,15 +14,15 @@ environments:
       - environments/production.yaml
 
 releases:
-  - name: carbon-mesh-db
-    namespace: carbon-mesh
+  - name: carbonlens-db
+    namespace: carbonlens
     chart: bitnami/postgresql
     version: "16.*"
     condition: database.bundled.enabled
     values:
       - auth:
-          postgresPassword: {{ .Values | get "database.bundled.auth.postgresPassword" "carbon_mesh" | quote }}
-          database: {{ .Values | get "database.bundled.auth.database" "carbon_mesh" | quote }}
+          postgresPassword: {{ .Values | get "database.bundled.auth.postgresPassword" "carbonlens" | quote }}
+          database: {{ .Values | get "database.bundled.auth.database" "carbonlens" | quote }}
         primary:
           persistence:
             size: 5Gi
@@ -31,15 +31,15 @@ releases:
               cpu: 100m
               memory: 256Mi
 
-  - name: carbon-mesh
-    namespace: carbon-mesh
-    chart: ./helm/carbon-mesh
+  - name: carbonlens
+    namespace: carbonlens
+    chart: ./helm/carbonlens
     needs:
-      - carbon-mesh/carbon-mesh-db
+      - carbonlens/carbonlens-db
     values:
-      - helm/carbon-mesh/values.yaml
+      - helm/carbonlens/values.yaml
       - database:
           enabled: true
-          url: postgresql+asyncpg://postgres:{{ .Values | get "database.bundled.auth.postgresPassword" "carbon_mesh" }}@carbon-mesh-db-postgresql:5432/{{ .Values | get "database.bundled.auth.database" "carbon_mesh" }}
+          url: postgresql+asyncpg://postgres:{{ .Values | get "database.bundled.auth.postgresPassword" "carbonlens" }}@carbonlens-db-postgresql:5432/{{ .Values | get "database.bundled.auth.database" "carbonlens" }}
     secrets:
       - secrets.yaml

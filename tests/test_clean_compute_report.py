@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta, timezone
 
-from carbon_mesh.engine.clean_compute import build_clean_compute_report
+from carbonlens.engine.clean_compute import build_clean_compute_report
 
 
 def _series(now, clean_c, dirty_c, days=7):
@@ -38,7 +38,7 @@ def test_report_ranks_shiftability_and_greenness():
 
 
 def test_trend_pct_detects_direction():
-    from carbon_mesh.engine.clean_compute import _trend_pct
+    from carbonlens.engine.clean_compute import _trend_pct
 
     # Later half cleaner than earlier half -> negative (greening).
     pts = [
@@ -52,7 +52,7 @@ def test_trend_pct_detects_direction():
 
 
 def test_update_clean_compute_history_appends_replaces_and_caps():
-    from carbon_mesh.engine.clean_compute import update_clean_compute_history
+    from carbonlens.engine.clean_compute import update_clean_compute_history
 
     report = {
         "greenest_regions": [{"typical_gco2_kwh": 60}, {"typical_gco2_kwh": 80}],

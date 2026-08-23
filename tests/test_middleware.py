@@ -4,7 +4,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from carbon_mesh.middleware import CarbonAwareShedder, carbon_mode
+from carbonlens.middleware import CarbonAwareShedder, carbon_mode
 
 
 def test_carbon_mode():

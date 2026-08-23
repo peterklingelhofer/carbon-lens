@@ -33,11 +33,11 @@ ingress:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
   hosts:
-    - host: api.carbon-mesh.io
+    - host: api.carbonlens.io
       paths:
         - path: /
           pathType: Prefix
   tls:
-    - secretName: carbon-mesh-tls
+    - secretName: carbonlens-tls
       hosts:
-        - api.carbon-mesh.io
+        - api.carbonlens.io

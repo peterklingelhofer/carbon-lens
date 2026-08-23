@@ -41,7 +41,10 @@ const BASE_URL = import.meta.env.VITE_API_URL || "";
 export const API_BASE =
   import.meta.env.VITE_API_URL || (typeof window !== "undefined" ? window.location.origin : "");
 
-const API_KEY_STORAGE_KEY = "carbon_mesh_api_key";
+const API_KEY_STORAGE_KEY = "carbonlens_api_key";
+// Key used before the carbon_mesh -> carbonlens rename. Read once so an existing
+// visitor's saved key survives the change instead of silently disappearing.
+const LEGACY_API_KEY_STORAGE_KEY = "carbon_mesh_api_key";
 
 // Turn a non-OK response into an Error, preferring the API's `detail` field
 async function parseError(res: Response): Promise<Error> {
@@ -60,7 +63,15 @@ export function getLastApiResponseAt(): number {
 
 export function getApiKey(): string {
   try {
-    return localStorage.getItem(API_KEY_STORAGE_KEY) ?? "";
+    const current = localStorage.getItem(API_KEY_STORAGE_KEY);
+    if (current) return current;
+    const legacy = localStorage.getItem(LEGACY_API_KEY_STORAGE_KEY);
+    if (legacy) {
+      localStorage.setItem(API_KEY_STORAGE_KEY, legacy);
+      localStorage.removeItem(LEGACY_API_KEY_STORAGE_KEY);
+      return legacy;
+    }
+    return "";
   } catch {
     return "";
   }

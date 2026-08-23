@@ -13,7 +13,7 @@ import json
 import urllib.request
 from datetime import datetime, timezone
 
-from carbon_mesh.engine.clean_compute import (
+from carbonlens.engine.clean_compute import (
     build_clean_compute_report,
     update_clean_compute_history,
 )

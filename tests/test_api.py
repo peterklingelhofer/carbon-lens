@@ -348,7 +348,7 @@ def test_zone_signal_unknown_zone(client: TestClient):
 
 
 def test_marginal_note_honesty():
-    from carbon_mesh.engine.signal import marginal_note as _marginal_note
+    from carbonlens.engine.signal import marginal_note as _marginal_note
 
     # Clean on average (120) but fossil on the margin (380): shifting helps more.
     note = _marginal_note(120, 380)
@@ -361,7 +361,7 @@ def test_marginal_note_honesty():
 
 
 def test_clean_surplus_detection():
-    from carbon_mesh.engine.surplus import is_clean_surplus
+    from carbonlens.engine.surplus import is_clean_surplus
 
     # Renewables dominant, very low carbon, clean margin -> surplus.
     assert is_clean_surplus(95, 30, 20) is True
@@ -377,7 +377,7 @@ def test_clean_surplus_detection():
 def test_surplus_offsets_over_forecast():
     from types import SimpleNamespace
 
-    from carbon_mesh.engine.surplus import surplus_offsets
+    from carbonlens.engine.surplus import surplus_offsets
 
     def pt(renewable, intensity, marginal=None):
         return SimpleNamespace(
@@ -396,9 +396,9 @@ def test_carbon_anomaly_insufficient_without_history(client: TestClient):
     # With an empty archive -> honest "insufficient_history". Override the store so
     # the test is hermetic (the real history_url has live data CI would otherwise
     # fetch, making the absent-history case impossible to assert).
-    from carbon_mesh.api.deps import get_history_store
-    from carbon_mesh.carbon_sources.history_store import HistoryStore
-    from carbon_mesh.main import app
+    from carbonlens.api.deps import get_history_store
+    from carbonlens.carbon_sources.history_store import HistoryStore
+    from carbonlens.main import app
 
     app.dependency_overrides[get_history_store] = lambda: HistoryStore("", data={"series": {}})
     try:
@@ -414,9 +414,9 @@ def test_carbon_anomaly_insufficient_without_history(client: TestClient):
 def test_carbon_anomaly_with_seeded_history(client: TestClient):
     from datetime import datetime, timedelta, timezone
 
-    from carbon_mesh.api.deps import get_history_store
-    from carbon_mesh.carbon_sources.history_store import HistoryStore
-    from carbon_mesh.main import app
+    from carbonlens.api.deps import get_history_store
+    from carbonlens.carbon_sources.history_store import HistoryStore
+    from carbonlens.main import app
 
     now = datetime.now(timezone.utc)
     # Five same-UTC-hour readings (one per prior day) -> hour-of-day baseline of 400.
@@ -442,9 +442,9 @@ def test_carbon_anomaly_with_seeded_history(client: TestClient):
 def test_carbon_history(client: TestClient):
     from datetime import datetime, timedelta, timezone
 
-    from carbon_mesh.api.deps import get_history_store
-    from carbon_mesh.carbon_sources.history_store import HistoryStore
-    from carbon_mesh.main import app
+    from carbonlens.api.deps import get_history_store
+    from carbonlens.carbon_sources.history_store import HistoryStore
+    from carbonlens.main import app
 
     now = datetime.now(timezone.utc)
     data = {
@@ -474,7 +474,7 @@ def test_carbon_history_unknown_region(client: TestClient):
 
 
 def test_rank_hours_utc():
-    from carbon_mesh.engine.recurring import rank_hours_utc
+    from carbonlens.engine.recurring import rank_hours_utc
 
     points = [
         {"t": "2026-06-10T03:00:00+00:00", "c": 50.0},
@@ -491,9 +491,9 @@ def test_rank_hours_utc():
 def test_best_time_from_history(client: TestClient):
     from datetime import datetime, timedelta, timezone
 
-    from carbon_mesh.api.deps import get_history_store
-    from carbon_mesh.carbon_sources.history_store import HistoryStore
-    from carbon_mesh.main import app
+    from carbonlens.api.deps import get_history_store
+    from carbonlens.carbon_sources.history_store import HistoryStore
+    from carbonlens.main import app
 
     now = datetime.now(timezone.utc)
     # Build 7 days of two readings per day: a clean 02:00 UTC and a dirty 18:00 UTC.
@@ -531,12 +531,12 @@ def test_best_time_unknown_region(client: TestClient):
 def test_zone_best_time(client: TestClient):
     from datetime import datetime, timedelta, timezone
 
-    from carbon_mesh.api.deps import get_history_store
-    from carbon_mesh.carbon_sources.history_store import HistoryStore
-    from carbon_mesh.main import app
+    from carbonlens.api.deps import get_history_store
+    from carbonlens.carbon_sources.history_store import HistoryStore
+    from carbonlens.main import app
 
-    from carbon_mesh.api.deps import get_grid_mapper
-    from carbon_mesh.api.routes import _zone_representative
+    from carbonlens.api.deps import get_grid_mapper
+    from carbonlens.api.routes import _zone_representative
 
     # History is keyed by the zone's representative region: compute it so the test
     # doesn't depend on dict ordering.
@@ -569,7 +569,7 @@ def test_zone_best_time_unknown_zone(client: TestClient):
 
 
 def test_mean_intensity():
-    from carbon_mesh.engine.recurring import mean_intensity
+    from carbonlens.engine.recurring import mean_intensity
 
     assert mean_intensity([{"c": 100.0}, {"c": 200.0}]) == 150.0
     assert mean_intensity([]) is None
@@ -593,7 +593,7 @@ def test_siting_no_candidates(client: TestClient):
 
 
 def test_shiftability_pct():
-    from carbon_mesh.engine.recurring import shiftability_pct
+    from carbonlens.engine.recurring import shiftability_pct
 
     ranked = [
         {"hour": 2, "mean_gco2_kwh": 40.0, "samples": 7},
@@ -606,9 +606,9 @@ def test_shiftability_pct():
 def test_shiftability_ranking(client: TestClient):
     from datetime import datetime, timedelta, timezone
 
-    from carbon_mesh.api.deps import get_grid_mapper, get_history_store
-    from carbon_mesh.carbon_sources.history_store import HistoryStore
-    from carbon_mesh.main import app
+    from carbonlens.api.deps import get_grid_mapper, get_history_store
+    from carbonlens.carbon_sources.history_store import HistoryStore
+    from carbonlens.main import app
 
     zones = get_grid_mapper().grid_zones()[:2]
     z_var, z_flat = zones[0], zones[1]
@@ -644,7 +644,7 @@ def test_region_weather(client: TestClient, monkeypatch):
     async def fake_weather(lat: float, lon: float) -> tuple[float, float]:
         return 24.0, 480.0
 
-    monkeypatch.setattr("carbon_mesh.api.routes.fetch_weather", fake_weather)
+    monkeypatch.setattr("carbonlens.api.routes.fetch_weather", fake_weather)
     resp = client.get("/api/v1/carbon/weather/aws/us-west-2")
     assert resp.status_code == 200
     body = resp.json()
@@ -678,7 +678,7 @@ def test_metrics_exposes_carbon_gauges(client: TestClient):
 
 
 def test_intensity_tier_thresholds():
-    from carbon_mesh.api.metrics import intensity_tier
+    from carbonlens.api.metrics import intensity_tier
 
     assert intensity_tier(50) == 0  # green
     assert intensity_tier(150) == 0
@@ -714,7 +714,7 @@ def test_sla_crud_and_check_flow(client: TestClient):
 
 
 def test_sla_run_due_checks_is_admin_gated_and_runs(client: TestClient, monkeypatch):
-    from carbon_mesh.config import settings
+    from carbonlens.config import settings
 
     monkeypatch.setattr(settings, "admin_secret", "test-admin")
     sid = client.post(
