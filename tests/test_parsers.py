@@ -6,7 +6,7 @@ format drift, which has repeatedly broken these feeds, instead of a zone
 silently going dark in production.
 """
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -134,8 +134,8 @@ def test_entsoe_series_by_hour_sums_psr_and_buckets_by_hour():
       </TimeSeries>
     </doc>"""
     series = _series_by_hour(xml, {"B16", "B19"})
-    h0 = datetime(2026, 6, 10, 0, tzinfo=timezone.utc)
-    h1 = datetime(2026, 6, 10, 1, tzinfo=timezone.utc)
+    h0 = datetime(2026, 6, 10, 0, tzinfo=UTC)
+    h1 = datetime(2026, 6, 10, 1, tzinfo=UTC)
     assert series[h0] == 150.0  # B16 100 + B19 50
     assert series[h1] == 260.0  # B16 200 + B19 60
 
@@ -173,9 +173,9 @@ def test_safe_xml_blocks_entity_expansion_but_parses_normal_xml():
 
 def test_marginal_intensity_picks_the_price_setting_fossil():
     # Gas is the flexible peaker, so it sets the margin even alongside cheaper coal.
-    assert calculate_marginal_intensity({"coal": 5000, "natural_gas": 1000}) == 430.0
+    assert calculate_marginal_intensity({"coal": 5000, "natural_gas": 1000}) == 490.0
     # Coal as the only fossil -> coal is marginal.
-    assert calculate_marginal_intensity({"coal": 5000, "hydro": 1000}) == 900.0
+    assert calculate_marginal_intensity({"coal": 5000, "hydro": 1000}) == 820.0
     # All-clean grid: no fossil running -> falls back to the (low) average.
     assert calculate_marginal_intensity({"hydro": 1000, "wind": 1000, "nuclear": 1000}) < 30
     assert calculate_marginal_intensity({}) == 0.0

@@ -3,7 +3,7 @@ cached source wrapper, forecast projection, and snapshot carry-forward."""
 
 import asyncio
 import importlib.util
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from carbonlens.api.deps import _CachedCarbonSource
@@ -28,7 +28,7 @@ def _ci(zone: str, carbon: float, renew: float = 50.0) -> CarbonIntensity:
         grid_zone=zone,
         carbon_intensity_gco2_kwh=carbon,
         renewable_percentage=renew,
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         source="test",
     )
 
@@ -171,7 +171,7 @@ def _reading(zone, carbon, quality, ts):
 
 
 def test_carry_forward_replaces_estimate_with_recent_live():
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     region_meta = {"aws/x": {"provider": "aws", "region": "x"}}
     intensities = {"aws/x": _reading("DE", 200.0, "estimated", now.isoformat())}
     baseline = {
@@ -187,7 +187,7 @@ def test_carry_forward_replaces_estimate_with_recent_live():
 
 
 def test_carry_forward_skips_stale_and_keeps_fresh_live():
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     region_meta = {"aws/x": {"provider": "aws", "region": "x"}}
     # Too-old baseline is not carried.
     intensities = {"aws/x": _reading("DE", 200.0, "estimated", now.isoformat())}

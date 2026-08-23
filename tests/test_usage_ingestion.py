@@ -7,7 +7,7 @@ real cloud account. It does NOT verify behavior against live billing APIs.
 
 import sys
 import types
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -22,8 +22,8 @@ from carbonlens.compliance.usage_ingestion import (
     estimate_energy_kwh,
 )
 
-START = datetime(2026, 5, 1, tzinfo=timezone.utc)
-END = datetime(2026, 5, 8, tzinfo=timezone.utc)
+START = datetime(2026, 5, 1, tzinfo=UTC)
+END = datetime(2026, 5, 8, tzinfo=UTC)
 
 
 # --- Energy estimation + helpers ---

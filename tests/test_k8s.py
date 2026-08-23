@@ -1,17 +1,17 @@
 """Tests for the carbon-aware CronJob suspend controller's pure decision logic."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from carbonlens.k8s.carbon_suspend import (
     ANNOTATION_MAX_DEFER,
     ANNOTATION_MAX_INTENSITY,
     ANNOTATION_REGION,
+    _hours_since,
+    _signal_path,
     desired_suspend_change,
     overdue,
     report_on_suspend,
     should_suspend,
-    _hours_since,
-    _signal_path,
 )
 
 
@@ -98,7 +98,7 @@ def test_deadline_forces_run_despite_dirty_grid():
 
 
 def test_hours_since_parses_rfc3339():
-    now = datetime(2026, 6, 16, 12, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 6, 16, 12, 0, tzinfo=UTC)
     assert _hours_since("2026-06-16T06:00:00Z", now) == 6.0
     assert _hours_since(None, now) is None
     assert _hours_since("garbage", now) is None

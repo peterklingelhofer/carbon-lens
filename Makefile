@@ -31,6 +31,7 @@ test-fast: ## Run tests without verbose output
 
 lint: ## Run linters (ruff + biome) and typecheck
 	uv run ruff check src tests
+	uv run python scripts/generate_citations.py --check
 	cd web && npm run lint && npx tsc --noEmit
 
 fix: ## Auto-fix lint errors (ruff + biome)
@@ -40,6 +41,9 @@ fix: ## Auto-fix lint errors (ruff + biome)
 
 hooks: ## Install git hooks (pre-commit + commit-msg)
 	uv run pre-commit install --install-hooks
+
+citations: ## Regenerate the citekey types and docs/CITATIONS.md from the CSL-JSON
+	uv run python scripts/generate_citations.py
 
 openapi: ## Regenerate the checked-in OpenAPI spec + TypeScript client
 	CARBON_LENS_CARBON_SOURCE=mock uv run python scripts/export_openapi.py --out openapi.json

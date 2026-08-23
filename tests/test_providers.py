@@ -9,17 +9,16 @@ Each provider is tested for:
 
 import pytest
 
-from carbonlens.carbon_sources.aemo import AEMOCarbonSource, AEMO_ZONES
+from carbonlens.carbon_sources.aemo import AEMO_ZONES, AEMOCarbonSource
 from carbonlens.carbon_sources.eia import _GRID_ZONE_TO_EIA
-from carbonlens.carbon_sources.entsoe import ENTSOECarbonSource, ENTSOE_ZONES
-from carbonlens.carbon_sources.eskom import EskomCarbonSource, ESKOM_ZONES
-from carbonlens.carbon_sources.grid_india import GridIndiaCarbonSource, INDIA_ZONES
+from carbonlens.carbon_sources.entsoe import ENTSOE_ZONES, ENTSOECarbonSource
+from carbonlens.carbon_sources.eskom import ESKOM_ZONES, EskomCarbonSource
+from carbonlens.carbon_sources.grid_india import INDIA_ZONES, GridIndiaCarbonSource
 from carbonlens.carbon_sources.gridstatus import _GRID_ZONE_TO_ISO
 from carbonlens.carbon_sources.mock import MockCarbonSource
-from carbonlens.carbon_sources.ons_brazil import ONSBrazilCarbonSource, BRAZIL_ZONES
-from carbonlens.carbon_sources.open_meteo import OpenMeteoCarbonSource, ZONE_COORDINATES
+from carbonlens.carbon_sources.ons_brazil import BRAZIL_ZONES, ONSBrazilCarbonSource
+from carbonlens.carbon_sources.open_meteo import ZONE_COORDINATES, OpenMeteoCarbonSource
 from carbonlens.carbon_sources.uk import UKCarbonSource
-
 
 # ---------------------------------------------------------------------------
 # Zone coverage tests
@@ -39,27 +38,27 @@ class TestZoneCoverage:
         assert source.can_handle("AU-NSW")
         assert source.can_handle("AU-TAS")
         assert not source.can_handle("GB")
-        assert AEMO_ZONES == {"AU-NSW", "AU-QLD", "AU-VIC", "AU-SA", "AU-TAS"}
+        assert {"AU-NSW", "AU-QLD", "AU-VIC", "AU-SA", "AU-TAS"} == AEMO_ZONES
 
     def test_india_zones(self):
         source = GridIndiaCarbonSource()
         assert source.can_handle("IN-NO")
         assert source.can_handle("IN-SO")
         assert not source.can_handle("US-MIDA-PJM")
-        assert INDIA_ZONES == {"IN-NO", "IN-SO", "IN-EA", "IN-WE", "IN-NE"}
+        assert {"IN-NO", "IN-SO", "IN-EA", "IN-WE", "IN-NE"} == INDIA_ZONES
 
     def test_brazil_zones(self):
         source = ONSBrazilCarbonSource()
         assert source.can_handle("BR-S")
         assert source.can_handle("BR-NE")
         assert not source.can_handle("IN-NO")
-        assert BRAZIL_ZONES == {"BR-S", "BR-SE", "BR-NE", "BR-N", "BR-CS"}
+        assert {"BR-S", "BR-SE", "BR-NE", "BR-N", "BR-CS"} == BRAZIL_ZONES
 
     def test_eskom_zones(self):
         source = EskomCarbonSource()
         assert source.can_handle("ZA")
         assert not source.can_handle("GB")
-        assert ESKOM_ZONES == {"ZA"}
+        assert {"ZA"} == ESKOM_ZONES
 
     def test_entsoe_zones(self):
         assert "DE" in ENTSOE_ZONES

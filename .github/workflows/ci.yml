@@ -49,6 +49,9 @@ jobs:
       - name: Type check
         run: uv run pyright src
 
+      - name: Citation corpus up to date
+        run: uv run python scripts/generate_citations.py --check
+
       - name: OpenAPI spec up to date
         env:
           CARBON_LENS_CARBON_SOURCE: mock

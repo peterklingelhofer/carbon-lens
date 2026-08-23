@@ -11,7 +11,7 @@ after the snapshot, and published to the data branch alongside it.
 import argparse
 import json
 import urllib.request
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from carbonlens.engine.clean_compute import (
     build_clean_compute_report,
@@ -61,7 +61,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     history = _load(args.history)
     snapshot = _load(args.snapshot)
 
