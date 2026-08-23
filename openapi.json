@@ -487,6 +487,17 @@
             "description": "Live generation breakdown by fuel type in MW (e.g. {\"wind\": 4200, \"natural_gas\": 1800, \"nuclear\": 9500}). Only the fuels actually generating are listed. None for sources without a real fuel mix (heuristic and weather-based estimates).",
             "title": "Power Breakdown Mw"
           },
+          "provenance": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Provenance"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How this number was produced and what backs it. Populated on every reading the API returns."
+          },
           "renewable_percentage": {
             "maximum": 100.0,
             "minimum": 0.0,
@@ -661,6 +672,137 @@
           "advice"
         ],
         "title": "CarbonSignal",
+        "type": "object"
+      },
+      "CitationList": {
+        "properties": {
+          "citations": {
+            "items": {
+              "$ref": "#/components/schemas/CitationSummary"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "corpus_version": {
+            "description": "Version of the emission-factor corpus in use",
+            "title": "Corpus Version",
+            "type": "string"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "corpus_version",
+          "citations"
+        ],
+        "title": "CitationList",
+        "type": "object"
+      },
+      "CitationSummary": {
+        "description": "One corpus entry, flattened for the wire.",
+        "properties": {
+          "access_level": {
+            "title": "Access Level",
+            "type": "string"
+          },
+          "authors": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Authors",
+            "type": "array"
+          },
+          "backs_claims": {
+            "description": "What this source is cited for in this codebase",
+            "items": {
+              "type": "string"
+            },
+            "title": "Backs Claims",
+            "type": "array"
+          },
+          "caveat": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Limits on how far this source can be relied on",
+            "title": "Caveat"
+          },
+          "doi": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Doi"
+          },
+          "evidence_tier": {
+            "description": "A (strongest) to E (assumed, no source)",
+            "title": "Evidence Tier",
+            "type": "string"
+          },
+          "group": {
+            "title": "Group",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "verification": {
+            "description": "How the bibliographic record was checked. primary-read means the document was retrieved and the relevant passage read; crossref-verified means the DOI resolves and the metadata matched; unverified means neither. This describes the CITATION, never the truth of the claim.",
+            "title": "Verification",
+            "type": "string"
+          },
+          "year": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Year"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "group",
+          "verification",
+          "access_level",
+          "evidence_tier"
+        ],
+        "title": "CitationSummary",
         "type": "object"
       },
       "CloudRegion": {
@@ -1721,6 +1863,86 @@
           "notes"
         ],
         "title": "MethodologyField",
+        "type": "object"
+      },
+      "Provenance": {
+        "description": "How a carbon number was produced, and what published work backs it.\n\n`source` says where the number came from. This block says why that is a\ndefensible way to compute it, and who says so. Every citekey here resolves\nagainst `docs/CITATIONS.csl.json`, served live at `/api/v1/citations`.",
+        "properties": {
+          "accounting_basis": {
+            "description": "Which quantity this actually is. production_lifecycle = weighted average over the fuel mix using IPCC AR5 lifecycle factors. production_direct = the operator's own direct-combustion intensity, in which renewables and nuclear score 0. consumption_lifecycle = flow-traced, accounting for imports. none = not a grid-mix computation at all. READ THIS BEFORE COMPARING TWO ZONES: a production_direct number is not the same quantity as a production_lifecycle one.",
+            "title": "Accounting Basis",
+            "type": "string"
+          },
+          "assumed_factors": {
+            "description": "Fuel buckets present in this reading whose emission factor is an assumption rather than a citation. Non-empty means part of this number is a guess.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Assumed Factors",
+            "type": "array"
+          },
+          "caveat": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The most important thing a consumer of this number should know about its limits, or null when there is nothing notable",
+            "title": "Caveat"
+          },
+          "citations": {
+            "description": "Citekeys backing this number. Resolve them at /api/v1/citations/{id}",
+            "items": {
+              "type": "string"
+            },
+            "title": "Citations",
+            "type": "array"
+          },
+          "evidence_tier": {
+            "description": "Weakest evidence tier among the citations (A strongest, E weakest). E means the number rests on an assumption with no published source.",
+            "title": "Evidence Tier",
+            "type": "string"
+          },
+          "factors": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Citekey of the emission-factor table behind the number, or null when no factor table was applied",
+            "title": "Factors"
+          },
+          "method": {
+            "description": "Plain-English description of the computation",
+            "title": "Method",
+            "type": "string"
+          },
+          "source": {
+            "description": "The upstream that produced the reading",
+            "title": "Source",
+            "type": "string"
+          },
+          "source_class": {
+            "description": "live (a real grid-operator response) | modeled (a curve or fixed estimate, no live feed) | estimated (inferred from something that is not generation data) | mock (a labelled fixture)",
+            "title": "Source Class",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "source_class",
+          "accounting_basis",
+          "method",
+          "citations",
+          "evidence_tier"
+        ],
+        "title": "Provenance",
         "type": "object"
       },
       "RegionRecommendation": {
@@ -3850,6 +4072,121 @@
         "tags": [
           "Carbon Routing",
           "Carbon Data"
+        ]
+      }
+    },
+    "/api/v1/citations": {
+      "get": {
+        "description": "The full citation corpus behind every number this API returns.\n\nEach `provenance.citations` entry on a carbon reading is a key into this list.",
+        "operationId": "list_citations_api_v1_citations_get",
+        "parameters": [
+          {
+            "description": "Filter to one group: emission-factors, methodology, grid-data, compute-energy, standards",
+            "in": "query",
+            "name": "group",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter to one group: emission-factors, methodology, grid-data, compute-energy, standards",
+              "title": "Group"
+            }
+          },
+          {
+            "description": "Filter to one evidence tier, A to E",
+            "in": "query",
+            "name": "evidence_tier",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter to one evidence tier, A to E",
+              "title": "Evidence Tier"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CitationList"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Citations",
+        "tags": [
+          "Provenance",
+          "Provenance"
+        ]
+      }
+    },
+    "/api/v1/citations/{citation_id}": {
+      "get": {
+        "description": "Resolve a single citekey from a reading's `provenance.citations`.",
+        "operationId": "get_citation_api_v1_citations__citation_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "citation_id",
+            "required": true,
+            "schema": {
+              "title": "Citation Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CitationSummary"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Citation",
+        "tags": [
+          "Provenance",
+          "Provenance"
         ]
       }
     },

@@ -12,6 +12,15 @@ where P_i is local generation, I_i its production intensity, and F_ji the power
 flowing from j into i. That's a linear system A·c = b. The matrix is diagonally
 dominant (the diagonal P_i + imports_i is >= the off-diagonal import sum), so
 Gauss-Seidel iteration converges; no numpy needed.
+
+The equation rests on PROPORTIONAL SHARING (Bialek 1996): everything leaving a zone
+is assumed to carry that zone's whole consumed mix, so a zone cannot preferentially
+export its clean power. That is a modelling choice rather than a physical fact;
+electrons are not labelled. Kirschen et al. (1997) formulate the same problem
+differently. This module implements the Bialek/Tranberg line, and every consumption
+figure it produces inherits that assumption.
+
+Citekeys: see CITATIONS below; they resolve against docs/CITATIONS.csl.json.
 """
 
 from __future__ import annotations
@@ -22,6 +31,15 @@ from datetime import UTC, datetime, timedelta
 from carbonlens.carbon_sources.entsoe import API_URL, ENTSOE_ZONE_MAP, ENTSOECarbonSource
 from carbonlens.carbon_sources.http_pool import ENTSOE_SEMAPHORE, get_with_retry, shared_client
 from carbonlens.carbon_sources.xml_safe import entsoe_ns, safe_parse_xml
+from carbonlens.citations_generated import CitationId
+
+# The published basis for this module, in the order the docstring introduces them.
+CITATIONS: tuple[CitationId, ...] = (
+    "tranberg-2019-flow-tracing",
+    "bialek-1996-tracing-electricity",
+    "kirschen-1997-contributions",
+    "entsoe-transparency-platform",
+)
 
 # A connected slice of the European grid covering our cloud-region zones plus the
 # key neighbours they trade with, so imports are attributed to a real source

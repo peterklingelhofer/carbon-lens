@@ -27,8 +27,13 @@ web/.cache
 *.swp
 *.swo
 
-# Docs and config not needed in runtime
-docs/
+# Docs and config not needed in runtime. Excluded piece by piece rather than as
+# `docs/` plus a `!docs/CITATIONS.csl.json` exception: re-including a file inside an
+# excluded directory is ambiguous across build backends, and getting it wrong here
+# breaks the image at import (the factor loader resolves citekeys against the CSL
+# JSON, and /api/v1/citations serves it). screenshots is the 11 MB that matters.
+docs/screenshots/
+docs/*.md
 tests/
 # keep README.md: required by pyproject `readme` during the project build
 *.md

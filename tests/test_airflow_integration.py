@@ -7,9 +7,9 @@ that's exercisable without the optional dependency.
 import pytest
 
 from carbonlens.integrations.airflow import (
+    _HAS_AIRFLOW,
     CarbonAwareSensor,
     CarbonCleanTrigger,
-    _HAS_AIRFLOW,
     _signal_url,
 )
 

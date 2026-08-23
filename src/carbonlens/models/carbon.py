@@ -1,6 +1,53 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+
+
+class Provenance(BaseModel):
+    """How a carbon number was produced, and what published work backs it.
+
+    `source` says where the number came from. This block says why that is a
+    defensible way to compute it, and who says so. Every citekey here resolves
+    against `docs/CITATIONS.csl.json`, served live at `/api/v1/citations`.
+    """
+
+    source: str = Field(description="The upstream that produced the reading")
+    source_class: str = Field(
+        description="live (a real grid-operator response) | modeled (a curve or fixed "
+        "estimate, no live feed) | estimated (inferred from something that is not "
+        "generation data) | mock (a labelled fixture)",
+    )
+    accounting_basis: str = Field(
+        description="Which quantity this actually is. production_lifecycle = weighted "
+        "average over the fuel mix using IPCC AR5 lifecycle factors. production_direct = "
+        "the operator's own direct-combustion intensity, in which renewables and nuclear "
+        "score 0. consumption_lifecycle = flow-traced, accounting for imports. none = not "
+        "a grid-mix computation at all. READ THIS BEFORE COMPARING TWO ZONES: a "
+        "production_direct number is not the same quantity as a production_lifecycle one.",
+    )
+    method: str = Field(description="Plain-English description of the computation")
+    factors: str | None = Field(
+        default=None,
+        description="Citekey of the emission-factor table behind the number, or null "
+        "when no factor table was applied",
+    )
+    citations: list[str] = Field(
+        description="Citekeys backing this number. Resolve them at /api/v1/citations/{id}",
+    )
+    evidence_tier: str = Field(
+        description="Weakest evidence tier among the citations (A strongest, E weakest). "
+        "E means the number rests on an assumption with no published source.",
+    )
+    assumed_factors: list[str] = Field(
+        default_factory=list,
+        description="Fuel buckets present in this reading whose emission factor is an "
+        "assumption rather than a citation. Non-empty means part of this number is a guess.",
+    )
+    caveat: str | None = Field(
+        default=None,
+        description="The most important thing a consumer of this number should know "
+        "about its limits, or null when there is nothing notable",
+    )
 
 
 class CarbonIntensity(BaseModel):
@@ -30,6 +77,45 @@ class CarbonIntensity(BaseModel):
         "actually generating are listed. None for sources without a real fuel mix "
         "(heuristic and weather-based estimates).",
     )
+    provenance: Provenance | None = Field(
+        default=None,
+        description="How this number was produced and what backs it. Populated on "
+        "every reading the API returns.",
+    )
+
+    @model_validator(mode="after")
+    def _attach_provenance(self) -> "CarbonIntensity":
+        """Derive the provenance block from `source` unless one was supplied.
+
+        Done here rather than at each call site so that every path that can produce
+        a CarbonIntensity (provider, snapshot, cache, test fixture) carries
+        provenance by construction. A new provider cannot forget to add it.
+        """
+        if self.provenance is not None:
+            return self
+
+        # Imported lazily: the provenance registry reads the factor corpus, which
+        # has no business being pulled in when this module is imported for typing.
+        from carbonlens.provenance import assumed_factor_keys, for_source
+
+        record = for_source(self.source)
+        assumed = sorted(set(self.power_breakdown_mw or ()) & set(assumed_factor_keys()))
+        object.__setattr__(
+            self,
+            "provenance",
+            Provenance(
+                source=record.source,
+                source_class=record.source_class,
+                accounting_basis=record.accounting_basis,
+                method=record.method,
+                factors=record.factors,
+                citations=list(record.citations),
+                evidence_tier=record.evidence_tier,
+                assumed_factors=assumed,
+                caveat=record.caveat,
+            ),
+        )
+        return self
 
 
 class CarbonForecast(BaseModel):

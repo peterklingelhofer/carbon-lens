@@ -1,7 +1,7 @@
 """Tests for carbon-aware scheduling: engine, models, and routes."""
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -13,7 +13,6 @@ from carbonlens.scheduler.engine import (
     SchedulingEngine,
     TimeSlot,
 )
-
 
 # --- Fixtures ---
 
@@ -39,7 +38,7 @@ class MockCarbonSource:
             grid_zone=grid_zone,
             carbon_intensity_gco2_kwh=intensity,
             renewable_percentage=renewable,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             source="mock",
         )
 
@@ -108,8 +107,8 @@ def test_schedule_strategy_enum():
 
 def test_time_slot_model():
     slot = TimeSlot(
-        start=datetime.now(timezone.utc),
-        end=datetime.now(timezone.utc),
+        start=datetime.now(UTC),
+        end=datetime.now(UTC),
         provider="aws",
         region="us-east-1",
         grid_zone="US-MIDA-PJM",
@@ -130,7 +129,7 @@ def test_cron_schedule_model():
         providers=["aws", "gcp"],
         strategy=ScheduleStrategy.BALANCED,
         max_delay_hours=12,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
     )
     assert schedule.name == "Nightly ETL"
     assert schedule.active is True
@@ -138,7 +137,7 @@ def test_cron_schedule_model():
 
 
 def test_schedule_recommendation_model():
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     slot = TimeSlot(
         start=now,
         end=now,
@@ -427,7 +426,7 @@ def test_score_slot_lowest_carbon():
         grid_zone="test",
         carbon_intensity_gco2_kwh=150.0,
         renewable_percentage=50.0,
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         source="test",
     )
     score = SchedulingEngine._score_slot(intensity, ScheduleStrategy.LOWEST_CARBON)
@@ -440,7 +439,7 @@ def test_score_slot_highest_renewable():
         grid_zone="test",
         carbon_intensity_gco2_kwh=150.0,
         renewable_percentage=80.0,
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         source="test",
     )
     score = SchedulingEngine._score_slot(intensity, ScheduleStrategy.HIGHEST_RENEWABLE)
@@ -453,7 +452,7 @@ def test_score_slot_balanced():
         grid_zone="test",
         carbon_intensity_gco2_kwh=250.0,
         renewable_percentage=50.0,
-        timestamp=datetime.now(timezone.utc),
+        timestamp=datetime.now(UTC),
         source="test",
     )
     score = SchedulingEngine._score_slot(intensity, ScheduleStrategy.BALANCED)
@@ -471,7 +470,7 @@ def test_score_slot_surplus_gets_bounded_edge():
             grid_zone="test",
             carbon_intensity_gco2_kwh=carbon,
             renewable_percentage=renewable,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             source="test",
         )
 

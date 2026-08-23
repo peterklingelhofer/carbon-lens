@@ -1,44 +1,57 @@
 """Emission factors for converting fuel mix (MW) to carbon intensity (gCO2e/kWh).
 
-Basis: lifecycle (incl. upstream/construction) median emission factors from the
-IPCC AR5 WG3 (2014), Annex III, Table A.III.2. A couple of values deliberately
-deviate from the IPCC median and are noted inline where they do, so the choice
-is transparent rather than implied. These are global, fuel-type lifecycle medians
-rather than plant- or region-specific operational factors, and not US EPA eGRID
-(eGRID is combustion-only and US-only; we don't use it for the factor values).
+The factor values no longer live here. They come from the versioned corpus at
+``data/emission-factors.json``, which carbon-aware-dispatcher vendors as well, so
+the two projects cannot publish different numbers for the same physical quantity
+under the same citation. Each record there names the citekey it derives from, the
+exact row of the cited table, that row's published range, and the reason for any
+deviation. See ``factor_corpus.py`` for the loader and its validation rules.
+
+Basis: lifecycle (incl. upstream/construction) emission factors, predominantly the
+medians of IPCC AR5 WG3 (2014) Annex III, Table A.III.2. These are global,
+fuel-type lifecycle medians. They are not plant- or region-specific operational factors,
+and not US EPA eGRID (eGRID is combustion-only and US-only; we don't use it).
 
 The EIA_FUEL_MAP / GRIDSTATUS_FUEL_MAP below are *name mappings* from each
 provider's fuel codes onto these normalized types; they are not a second
 source of emission numbers.
+
+Storage (battery, pumped hydro) is excluded from the weighted average rather than
+given a factor of zero. Discharge re-delivers energy whose emissions were already
+attributed at generation, so counting it again in the denominator dilutes
+intensity downward every time storage discharges.
 """
 
 from datetime import datetime
 
+from carbonlens.carbon_sources.factor_corpus import load_corpus
 from carbonlens.models.carbon import CarbonIntensity
 
-# gCO2e per kWh, lifecycle (IPCC AR5 2014 medians unless a note says otherwise)
+_CORPUS = load_corpus()
+
+# gCO2eq per kWh, lifecycle. Derived from the corpus; storage keys are absent
+# because no factor applies to them.
 EMISSION_FACTORS: dict[str, float] = {
-    # Fossil fuels
-    "coal": 900,  # conservative; IPCC median is 820, but subcritical/lignite runs higher
-    "natural_gas": 430,  # efficient CCGT end; IPCC median is 490 (higher w/ methane leakage)
-    "oil": 650,  # no IPCC median row; mid-range diesel/HFO lifecycle estimate
-    "petroleum": 650,
-    # Low-carbon (IPCC AR5 medians)
-    "nuclear": 12,
-    "hydro": 24,  # median; reservoir hydro can be far higher due to methane, and a single value hides this
-    "wind": 11,
-    "solar": 41,  # utility PV median
-    "geothermal": 38,
-    "biomass": 230,  # operational median; biogenic-CO2 accounting is contested
-    "battery": 0,  # storage: discharge emissions belong to the charging source; zero is wrong
-    "other": 300,  # conservative placeholder for unknown/mixed fuels
+    key: factor.value
+    for key, factor in _CORPUS.factors.items()
+    if factor.value is not None and not factor.storage
 }
 
+# Fuel types that store energy instead of generating it: excluded from intensity and
+# renewable-percentage maths entirely.
+STORAGE_TYPES: frozenset[str] = frozenset(
+    key for key, factor in _CORPUS.factors.items() if factor.storage
+)
+
 # Fuel types considered renewable (for renewable percentage calculation)
-RENEWABLE_TYPES = {"wind", "solar", "hydro", "geothermal"}
+RENEWABLE_TYPES: frozenset[str] = frozenset(
+    key for key, factor in _CORPUS.factors.items() if factor.renewable
+)
 
 # Fuel types considered carbon-free (renewables + nuclear)
-CARBON_FREE_TYPES = RENEWABLE_TYPES | {"nuclear", "battery"}
+CARBON_FREE_TYPES: frozenset[str] = frozenset(
+    key for key, factor in _CORPUS.factors.items() if factor.carbon_free
+)
 
 # EIA fuel type codes -> normalized names
 EIA_FUEL_MAP: dict[str, str] = {
@@ -52,6 +65,7 @@ EIA_FUEL_MAP: dict[str, str] = {
     "GEO": "geothermal",
     "OTH": "other",
     "BAT": "battery",
+    "PS": "pumped_storage",
 }
 
 # GridStatus fuel column name patterns -> normalized names
@@ -75,6 +89,7 @@ GRIDSTATUS_FUEL_MAP: dict[str, str] = {
     "battery": "battery",
     "power_storage": "battery",
     "storage": "battery",
+    "pumped_storage": "pumped_storage",
     "other": "other",
     "other_renewables": "other",
     "multiple_fuels": "other",
@@ -82,19 +97,24 @@ GRIDSTATUS_FUEL_MAP: dict[str, str] = {
 }
 
 
+def _generating_mw(fuel_mix_mw: dict[str, float]) -> dict[str, float]:
+    """The mix reduced to actual generation: positive MW, storage removed.
+
+    Storage is dropped rather than zero-weighted so it leaves the denominator
+    too; negative entries (storage charging, or a provider netting a bucket) are
+    dropped because they are not generation.
+    """
+    return {fuel: mw for fuel, mw in fuel_mix_mw.items() if mw > 0 and fuel not in STORAGE_TYPES}
+
+
 def calculate_carbon_intensity(fuel_mix_mw: dict[str, float]) -> float:
     """Weighted-average carbon intensity (gCO2/kWh) from a fuel mix in MW."""
-    total_mw = sum(max(0, v) for v in fuel_mix_mw.values())
+    generating = _generating_mw(fuel_mix_mw)
+    total_mw = sum(generating.values())
     if total_mw == 0:
         return 0.0
 
-    weighted_sum = 0.0
-    for fuel, mw in fuel_mix_mw.items():
-        if mw <= 0:
-            continue
-        factor = EMISSION_FACTORS.get(fuel, EMISSION_FACTORS["other"])
-        weighted_sum += mw * factor
-
+    weighted_sum = sum(mw * _CORPUS.value(fuel) for fuel, mw in generating.items())
     return weighted_sum / total_mw
 
 
@@ -115,21 +135,23 @@ def calculate_marginal_intensity(fuel_mix_mw: dict[str, float]) -> float:
     currently generating, or, on an all-clean grid with no fossil running,
     falls back to the average (extra demand met by ramping clean/flexible units).
     """
-    if not fuel_mix_mw or sum(max(0, v) for v in fuel_mix_mw.values()) == 0:
+    generating = _generating_mw(fuel_mix_mw)
+    if not generating:
         return 0.0
     for fuel in _MARGINAL_MERIT_ORDER:
-        if fuel_mix_mw.get(fuel, 0) > 0:
-            return float(EMISSION_FACTORS.get(fuel, EMISSION_FACTORS["other"]))
+        if generating.get(fuel, 0) > 0:
+            return _CORPUS.value(fuel)
     return round(calculate_carbon_intensity(fuel_mix_mw), 1)
 
 
 def calculate_renewable_percentage(fuel_mix_mw: dict[str, float]) -> float:
     """Percentage of generation (0-100) from renewable sources."""
-    total_mw = sum(max(0, v) for v in fuel_mix_mw.values())
+    generating = _generating_mw(fuel_mix_mw)
+    total_mw = sum(generating.values())
     if total_mw == 0:
         return 0.0
 
-    renewable_mw = sum(max(0, fuel_mix_mw.get(f, 0)) for f in RENEWABLE_TYPES)
+    renewable_mw = sum(mw for fuel, mw in generating.items() if fuel in RENEWABLE_TYPES)
     return (renewable_mw / total_mw) * 100
 
 
@@ -138,6 +160,9 @@ def power_breakdown(fuel_mix_mw: dict[str, float]) -> dict[str, float] | None:
     API response. Keeps only fuels actually generating (positive MW), rounded to
     whole MW, so storage charging (negative) and absent fuels drop out. Returns
     None for an empty/non-generating mix so the field stays absent rather than {}.
+
+    Storage that is discharging is kept here (it is real power on the wire and
+    callers want to see it), even though it is excluded from the intensity maths.
     """
     breakdown = {fuel: float(round(mw)) for fuel, mw in fuel_mix_mw.items() if mw > 0}
     return breakdown or None
@@ -152,7 +177,29 @@ def intensity_from_fuel_mix(
     """Build a full CarbonIntensity from a fuel mix (MW), running the average,
     renewable, marginal, and per-fuel breakdown calcs in one place so the fuel-mix
     adapters (AEMO, Canada, ENTSO-E, EIA, Taiwan) stay in sync.
+
+    Raises ValueError when nothing is generating, rather than publishing 0.0.
+
+    This is not a theoretical guard. A weighted average over a mix that sums to
+    zero is 0.0 gCO2/kWh, which is indistinguishable from a perfectly clean grid
+    and is the *best possible* score a carbon-aware router can see, so a zone
+    whose feed has gone hollow does not merely go dark, it wins every routing
+    decision. Callers already guarded against an EMPTY mix; they did not guard
+    against a mix that is present but all-zero, which is what an upstream feed
+    reporting `<quantity>0</quantity>` for every fuel produces. Measured in the
+    published archive: three Netherlands regions sat at 0.0 for 23 hours before
+    jumping to 460.8. See docs/VALIDATION.md.
+
+    Raising here lets the provider cascade fall through to the next source, which
+    is the behaviour the hybrid chain already implements for a failed fetch.
     """
+    # Must use the same definition of "generating" the average uses, or a mix of
+    # nothing but discharging storage passes the guard and still averages to 0.0.
+    if sum(_generating_mw(fuel_mix).values()) <= 0:
+        raise ValueError(
+            f"{grid_zone}: fuel mix from {source} has no generation; refusing to "
+            "publish 0.0 gCO2/kWh, which would read as a perfectly clean grid"
+        )
     return CarbonIntensity(
         grid_zone=grid_zone,
         carbon_intensity_gco2_kwh=round(calculate_carbon_intensity(fuel_mix), 1),

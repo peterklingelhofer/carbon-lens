@@ -5,6 +5,8 @@ from enum import Enum
 
 from pydantic import BaseModel, Field
 
+from carbonlens.citations_generated import CitationId
+
 
 class EmissionScope(str, Enum):
     """GHG Protocol emission scopes relevant to cloud infrastructure."""
@@ -208,10 +210,28 @@ STORAGE_GB_HOUR_KWH: dict[str, float] = {
 # Networking: GB transferred -> kWh
 NETWORK_GB_KWH = 0.001  # ~1 Wh per GB (Coroama & Hilty estimates)
 
-# Data center PUE by provider (public sustainability reports)
+# Data center PUE by provider, from each vendor's own published figure. Every value
+# here is self-reported and not independently audited, so the citekeys below are all
+# evidence tier D: they may inform a number, they may not headline one.
+#
+# All three were audited on 2026-08-23 against the vendors' current pages and all
+# three had drifted; see docs/VERIFICATION.md. Two limitations remain and are not
+# modelled: these are GLOBAL fleet averages, while AWS and Microsoft both publish
+# per-region PUE that varies materially (Microsoft's FY25 Asia Pacific figure is
+# 1.28 against 1.16 in the Americas), and the reporting periods differ (AWS and
+# Google report calendar 2025, Microsoft reports FY25 ending 30 June 2025).
+PROVIDER_PUE_CITATIONS: dict[str, CitationId] = {
+    "aws": "aws-pue-2025",
+    "gcp": "google-pue-2025",
+    "azure": "microsoft-pue-fy25",
+}
+
 PROVIDER_PUE: dict[str, float] = {
-    "aws": 1.135,  # AWS 2023 sustainability report
-    "gcp": 1.10,  # Google 2023 (best-in-class)
-    "azure": 1.18,  # Microsoft 2023 sustainability report
+    "aws": 1.14,  # AWS: "average global PUE of 1.14" for 2025 (was 1.15 in 2024)
+    "gcp": 1.09,  # Google: 2025 fleet-wide trailing-twelve-month average
+    "azure": 1.17,  # Microsoft: global FY25 (1.16 in FY24)
+    # No citation: an assumed penalty for providers that publish nothing. Kept
+    # above every published figure on the reasoning that a vendor who does not
+    # report is unlikely to beat vendors who do, which is a guess.
     "default": 1.20,
 }
