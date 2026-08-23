@@ -35,7 +35,7 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
-        # The snapshot only needs core deps (httpx + carbon_mesh); the dev/cloud
+        # The snapshot only needs core deps (httpx + carbonlens); the dev/cloud
         # extras aren't imported here, so installing them every run is pure waste.
         run: uv sync
 

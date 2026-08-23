@@ -30,7 +30,7 @@ repos:
         name: openapi + api client up to date
         language: system
         entry: bash -c 'CARBON_LENS_CARBON_SOURCE=mock uv run python scripts/export_openapi.py --out openapi.json && cd web && npm run gen:api'
-        files: ^(src/carbon_mesh/.*\.py|openapi\.json)$
+        files: ^(src/carbonlens/.*\.py|openapi\.json)$
         pass_filenames: false
 
   # Frontend (web/): typecheck + lint on any staged web source. These call the

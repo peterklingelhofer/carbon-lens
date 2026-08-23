@@ -3,8 +3,8 @@ database:
   bundled:
     enabled: true
     auth:
-      postgresPassword: carbon_mesh
-      database: carbon_mesh
+      postgresPassword: carbonlens
+      database: carbonlens
 
 carbonProviders:
   eiaApiKey: ""

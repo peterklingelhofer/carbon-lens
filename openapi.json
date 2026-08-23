@@ -2740,7 +2740,7 @@
         "title": "ZoneShiftability",
         "type": "object"
       },
-      "carbon_mesh__compliance__routes__GenerateReportRequest": {
+      "carbonlens__compliance__routes__GenerateReportRequest": {
         "properties": {
           "org_id": {
             "title": "Org Id",
@@ -2787,7 +2787,7 @@
         "title": "GenerateReportRequest",
         "type": "object"
       },
-      "carbon_mesh__sla__routes__GenerateReportRequest": {
+      "carbonlens__sla__routes__GenerateReportRequest": {
         "properties": {
           "org_name": {
             "title": "Org Name",
@@ -4028,7 +4028,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/carbon_mesh__compliance__routes__GenerateReportRequest"
+                "$ref": "#/components/schemas/carbonlens__compliance__routes__GenerateReportRequest"
               }
             }
           },
@@ -5434,7 +5434,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/carbon_mesh__sla__routes__GenerateReportRequest"
+                "$ref": "#/components/schemas/carbonlens__sla__routes__GenerateReportRequest"
               }
             }
           },

@@ -212,7 +212,7 @@ carbonlens best-time aws/us-west-2,gcp/europe-west1
 Add carbon-awareness to any Python pipeline (Airflow, Prefect, Dagster, Celery, or a plain script) in one import. Reuses the same marginal/clean-surplus decision as everything else; httpx is the only dependency.
 
 ```python
-from carbon_mesh.sdk import CarbonClient
+from carbonlens.sdk import CarbonClient
 
 cl = CarbonClient()  # public instance by default; pass api_url= for your own
 
@@ -224,7 +224,7 @@ def nightly_etl():
     ...
 ```
 
-Works with on-prem grids too (`zone/FR`). `wait_for_clean_window` blocks the calling thread, so for **Airflow** use the deferrable [`CarbonAwareSensor`](src/carbon_mesh/integrations/README.md) instead; it frees the worker slot while waiting for a clean window.
+Works with on-prem grids too (`zone/FR`). `wait_for_clean_window` blocks the calling thread, so for **Airflow** use the deferrable [`CarbonAwareSensor`](src/carbonlens/integrations/README.md) instead; it frees the worker slot while waiting for a clean window.
 
 For **always-on** work that can't defer but can do *less* when the grid is dirty (AI inference, media, batch sizing), pick by the grid instead of waiting:
 
@@ -342,7 +342,7 @@ Each region is mapped to a physical electricity grid zone in `data/region_grid_m
 For the full design (the cascade, snapshot/forecast/history flow, scoring, the SLA repository, and the data-quality philosophy), see **[ARCHITECTURE.md](ARCHITECTURE.md)**. For the engineering story and the decisions behind it, see **[docs/CASE_STUDY.md](docs/CASE_STUDY.md)**. To build and contribute, see **[CONTRIBUTING.md](CONTRIBUTING.md)**.
 
 ```
-src/carbon_mesh/
+src/carbonlens/
   api/              FastAPI routes + dependency injection + WebSocket
   auth/             Optional API key generation, hashing, validation
   carbon_sources/   11 pluggable data providers (Protocol-based)

@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 
 
 def test_rate_limit_enforced(client: TestClient):
-    from carbon_mesh.main import limiter
+    from carbonlens.main import limiter
 
     limiter.enabled = True
     try:

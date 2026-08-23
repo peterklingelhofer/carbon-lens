@@ -13,7 +13,7 @@ from __future__ import annotations
 import sys
 import time
 
-from carbon_mesh.sdk import CarbonClient, is_good_time
+from carbonlens.sdk import CarbonClient, is_good_time
 
 
 def decide(signal: dict, max_intensity: float | None = None) -> dict:

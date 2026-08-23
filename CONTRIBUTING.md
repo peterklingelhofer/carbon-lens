@@ -67,14 +67,14 @@ Valid types: `feat fix docs style refactor perf test build ci chore revert`.
 
 ## How to add a carbon data source
 
-1. Create `src/carbon_mesh/carbon_sources/<name>.py` that produces a
+1. Create `src/carbonlens/carbon_sources/<name>.py` that produces a
    `CarbonIntensity`, ideally by building a normalized fuel mix and passing it
    through `emission_factors` (`calculate_carbon_intensity`,
    `calculate_renewable_percentage`, `calculate_marginal_intensity`,
    `power_breakdown`) so you get intensity, renewable %, marginal, and the
    breakdown for free.
 2. Declare its zones and slot it into the cascade in
-   [`hybrid.py`](src/carbon_mesh/carbon_sources/hybrid.py) at the right priority.
+   [`hybrid.py`](src/carbonlens/carbon_sources/hybrid.py) at the right priority.
 3. Add a **fixture parse test** in `tests/test_parsers.py` against a small sample of
    the real upstream format; this is what catches upstream format drift in CI
    before a zone silently goes dark.
