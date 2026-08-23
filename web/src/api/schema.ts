@@ -414,6 +414,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/citations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Citations
+         * @description The full citation corpus behind every number this API returns.
+         *
+         *     Each `provenance.citations` entry on a carbon reading is a key into this list.
+         */
+        get: operations["list_citations_api_v1_citations_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/citations/{citation_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Citation
+         * @description Resolve a single citekey from a reading's `provenance.citations`.
+         */
+        get: operations["get_citation_api_v1_citations__citation_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/compliance/calculate": {
         parameters: {
             query?: never;
@@ -1386,6 +1428,8 @@ export interface components {
             power_breakdown_mw?: {
                 [key: string]: number;
             } | null;
+            /** @description How this number was produced and what backs it. Populated on every reading the API returns. */
+            provenance?: components["schemas"]["Provenance"] | null;
             /** Renewable Percentage */
             renewable_percentage: number;
             /** Source */
@@ -1475,6 +1519,60 @@ export interface components {
              * @description Hours until the soonest upcoming clean-surplus window in the forecast (null if none ahead, or if now is already surplus). The best time to shift a flexible job to, even when now is merely 'cleaner'.
              */
             surplus_window_in_hours?: number | null;
+        };
+        /** CitationList */
+        CitationList: {
+            /** Citations */
+            citations: components["schemas"]["CitationSummary"][];
+            /**
+             * Corpus Version
+             * @description Version of the emission-factor corpus in use
+             */
+            corpus_version: string;
+            /** Total */
+            total: number;
+        };
+        /**
+         * CitationSummary
+         * @description One corpus entry, flattened for the wire.
+         */
+        CitationSummary: {
+            /** Access Level */
+            access_level: string;
+            /** Authors */
+            authors?: string[];
+            /**
+             * Backs Claims
+             * @description What this source is cited for in this codebase
+             */
+            backs_claims?: string[];
+            /**
+             * Caveat
+             * @description Limits on how far this source can be relied on
+             */
+            caveat?: string | null;
+            /** Doi */
+            doi?: string | null;
+            /**
+             * Evidence Tier
+             * @description A (strongest) to E (assumed, no source)
+             */
+            evidence_tier: string;
+            /** Group */
+            group: string;
+            /** Id */
+            id: string;
+            /** Title */
+            title: string;
+            /** Url */
+            url?: string | null;
+            /**
+             * Verification
+             * @description How the bibliographic record was checked. primary-read means the document was retrieved and the relevant passage read; crossref-verified means the DOI resolves and the metadata matched; unverified means neither. This describes the CITATION, never the truth of the claim.
+             */
+            verification: string;
+            /** Year */
+            year?: number | string | null;
         };
         /** CloudRegion */
         CloudRegion: {
@@ -2055,6 +2153,61 @@ export interface components {
             notes: string;
             /** Source */
             source: string;
+        };
+        /**
+         * Provenance
+         * @description How a carbon number was produced, and what published work backs it.
+         *
+         *     `source` says where the number came from. This block says why that is a
+         *     defensible way to compute it, and who says so. Every citekey here resolves
+         *     against `docs/CITATIONS.csl.json`, served live at `/api/v1/citations`.
+         */
+        Provenance: {
+            /**
+             * Accounting Basis
+             * @description Which quantity this actually is. production_lifecycle = weighted average over the fuel mix using IPCC AR5 lifecycle factors. production_direct = the operator's own direct-combustion intensity, in which renewables and nuclear score 0. consumption_lifecycle = flow-traced, accounting for imports. none = not a grid-mix computation at all. READ THIS BEFORE COMPARING TWO ZONES: a production_direct number is not the same quantity as a production_lifecycle one.
+             */
+            accounting_basis: string;
+            /**
+             * Assumed Factors
+             * @description Fuel buckets present in this reading whose emission factor is an assumption rather than a citation. Non-empty means part of this number is a guess.
+             */
+            assumed_factors?: string[];
+            /**
+             * Caveat
+             * @description The most important thing a consumer of this number should know about its limits, or null when there is nothing notable
+             */
+            caveat?: string | null;
+            /**
+             * Citations
+             * @description Citekeys backing this number. Resolve them at /api/v1/citations/{id}
+             */
+            citations: string[];
+            /**
+             * Evidence Tier
+             * @description Weakest evidence tier among the citations (A strongest, E weakest). E means the number rests on an assumption with no published source.
+             */
+            evidence_tier: string;
+            /**
+             * Factors
+             * @description Citekey of the emission-factor table behind the number, or null when no factor table was applied
+             */
+            factors?: string | null;
+            /**
+             * Method
+             * @description Plain-English description of the computation
+             */
+            method: string;
+            /**
+             * Source
+             * @description The upstream that produced the reading
+             */
+            source: string;
+            /**
+             * Source Class
+             * @description live (a real grid-operator response) | modeled (a curve or fixed estimate, no live feed) | estimated (inferred from something that is not generation data) | mock (a labelled fixture)
+             */
+            source_class: string;
         };
         /** RegionRecommendation */
         RegionRecommendation: {
@@ -3150,6 +3303,71 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CarbonIntensity"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_citations_api_v1_citations_get: {
+        parameters: {
+            query?: {
+                /** @description Filter to one group: emission-factors, methodology, grid-data, compute-energy, standards */
+                group?: string | null;
+                /** @description Filter to one evidence tier, A to E */
+                evidence_tier?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CitationList"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_citation_api_v1_citations__citation_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                citation_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CitationSummary"];
                 };
             };
             /** @description Validation Error */

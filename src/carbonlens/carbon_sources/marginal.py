@@ -15,6 +15,22 @@ from datetime import UTC, datetime
 import httpx
 
 from carbonlens.carbon_sources.http_pool import shared_client
+from carbonlens.citations_generated import CitationId
+
+# A measured marginal rate is what the literature actually argues for when the
+# decision is "should this load run now" (hawkes-2010); the merit-order estimate in
+# emission_factors.py is a cheap substitute for the regression method of
+# siler-evans-2012. wiesner-2025 is in the corpus as the counter-argument that
+# marginal intensity is a poor metric for this purpose at all.
+CITATIONS: tuple[CitationId, ...] = (
+    "hawkes-2010-marginal-emissions",
+    "siler-evans-2012-marginal-factors",
+    "hawkes-2014-long-run-marginal",
+    "wiesner-2025-marginal-poor-metric",
+)
+
+WATTTIME_CITATIONS: tuple[CitationId, ...] = ("watttime-api",)
+ELECTRICITY_MAPS_CITATIONS: tuple[CitationId, ...] = ("electricity-maps-api",)
 
 # WattTime MOER is in lbs CO2 / MWh. Convert to g CO2 / kWh:
 #   1 lb = 453.59237 g;  1 MWh = 1000 kWh.

@@ -1,18 +1,18 @@
 """Tests for the compliance module — emissions calculation, reporting, usage ingestion."""
 
-import pytest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
+import pytest
+
+from carbonlens.compliance.calculator import _data_quality, _scope_for_service
+from carbonlens.compliance.reporting import ReportingEngine
+from carbonlens.compliance.usage_ingestion import MockUsageAdapter, estimate_energy_kwh
 from carbonlens.models.compliance import (
-    AccountingMethod,
-    EmissionScope,
     PROVIDER_PUE,
     VCPU_HOUR_KWH,
+    AccountingMethod,
+    EmissionScope,
 )
-from carbonlens.compliance.usage_ingestion import estimate_energy_kwh, MockUsageAdapter
-from carbonlens.compliance.calculator import _scope_for_service, _data_quality
-from carbonlens.compliance.reporting import ReportingEngine
-
 
 # --- Energy estimation tests ---
 
@@ -76,9 +76,14 @@ def test_scope_managed_is_scope3():
 
 
 def test_data_quality_measured():
-    assert _data_quality("uk") == "measured"
+    # Use the exact strings providers stamp on a reading. This test previously
+    # asserted on "uk", which no provider emits (it is "uk_carbon_intensity"), so it
+    # passed while every real UK reading was graded "estimated".
+    assert _data_quality("uk_carbon_intensity") == "measured"
     assert _data_quality("eia") == "measured"
     assert _data_quality("entsoe") == "measured"
+    assert _data_quality("openelectricity") == "measured"
+    assert _data_quality("taipower") == "measured"
 
 
 def test_data_quality_modeled():
@@ -97,8 +102,8 @@ async def test_mock_usage_adapter():
     adapter = MockUsageAdapter()
     records = await adapter.fetch_usage(
         org_id="test-org",
-        period_start=datetime(2024, 1, 1, tzinfo=timezone.utc),
-        period_end=datetime(2024, 1, 31, tzinfo=timezone.utc),
+        period_start=datetime(2024, 1, 1, tzinfo=UTC),
+        period_end=datetime(2024, 1, 31, tzinfo=UTC),
     )
     assert len(records) == 10  # 10 demo records
     assert all(r.org_id == "test-org" for r in records)
@@ -120,7 +125,7 @@ def test_empty_report():
 def test_report_with_calculations():
     from carbonlens.models.compliance import EmissionsCalculation
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     calcs = [
         EmissionsCalculation(
             id="calc-1",
@@ -188,7 +193,7 @@ def test_report_with_calculations():
 def test_report_summary():
     from carbonlens.models.compliance import EmissionsCalculation
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     calcs = [
         EmissionsCalculation(
             id="c1",

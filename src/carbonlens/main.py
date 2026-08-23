@@ -19,6 +19,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
 
 from carbonlens.api.badge import badge_router
+from carbonlens.api.citations import router as citations_router
 from carbonlens.api.embed import embed_router
 from carbonlens.api.routes import router
 from carbonlens.api.ws import ws_router
@@ -358,6 +359,7 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
 
 
 app.include_router(router, prefix="/api/v1", tags=["Carbon Routing"])
+app.include_router(citations_router, prefix="/api/v1", tags=["Provenance"])
 app.include_router(compliance_router)
 app.include_router(scheduler_router)
 app.include_router(sla_router)

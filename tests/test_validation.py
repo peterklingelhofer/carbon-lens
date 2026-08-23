@@ -4,9 +4,8 @@ import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
-from carbonlens.models.routing import JobConstraints, VALID_PROVIDERS
 from carbonlens.auth.api_keys import generate_api_key, hash_key, key_prefix
-
+from carbonlens.models.routing import VALID_PROVIDERS, JobConstraints
 
 # ---------------------------------------------------------------------------
 # Model-level validation tests
@@ -35,7 +34,7 @@ class TestJobConstraintsValidation:
             JobConstraints(providers=["aws"], carbon_weight=1.5)
 
     def test_valid_providers_constant(self):
-        assert VALID_PROVIDERS == {"aws", "gcp", "azure"}
+        assert {"aws", "gcp", "azure"} == VALID_PROVIDERS
 
     def test_all_weights_carbon(self):
         jc = JobConstraints(providers=["aws"], carbon_weight=1.0, cost_weight=0.0)

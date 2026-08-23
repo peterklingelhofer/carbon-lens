@@ -96,6 +96,11 @@ class AEMOCarbonSource:
             fuel_mix = region_fuel.get(zone)
             if not fuel_mix:
                 continue
-            results[zone] = intensity_from_fuel_mix(zone, fuel_mix, "openelectricity", now)
+            try:
+                results[zone] = intensity_from_fuel_mix(zone, fuel_mix, "openelectricity", now)
+            except ValueError:
+                # A region reporting no generation is dropped so the cascade can
+                # try the next source, rather than taking the whole batch down.
+                continue
 
         return results

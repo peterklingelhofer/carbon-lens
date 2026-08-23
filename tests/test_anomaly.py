@@ -1,10 +1,10 @@
 """Unit tests for the cleaner/dirtier-than-usual baseline computation."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from carbonlens.engine.anomaly import compute_anomaly
 
-NOW = datetime(2026, 6, 20, 14, tzinfo=timezone.utc)  # UTC hour 14
+NOW = datetime(2026, 6, 20, 14, tzinfo=UTC)  # UTC hour 14
 
 
 def _points(hour: int, values: list[float]) -> list[dict]:

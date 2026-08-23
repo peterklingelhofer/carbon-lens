@@ -1,3 +1,5 @@
+from datetime import UTC
+
 from fastapi.testclient import TestClient
 
 
@@ -412,13 +414,13 @@ def test_carbon_anomaly_insufficient_without_history(client: TestClient):
 
 
 def test_carbon_anomaly_with_seeded_history(client: TestClient):
-    from datetime import datetime, timedelta, timezone
+    from datetime import datetime, timedelta
 
     from carbonlens.api.deps import get_history_store
     from carbonlens.carbon_sources.history_store import HistoryStore
     from carbonlens.main import app
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     # Five same-UTC-hour readings (one per prior day) -> hour-of-day baseline of 400.
     data = {
         "series": {
@@ -440,13 +442,13 @@ def test_carbon_anomaly_with_seeded_history(client: TestClient):
 
 
 def test_carbon_history(client: TestClient):
-    from datetime import datetime, timedelta, timezone
+    from datetime import datetime, timedelta
 
     from carbonlens.api.deps import get_history_store
     from carbonlens.carbon_sources.history_store import HistoryStore
     from carbonlens.main import app
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     data = {
         "series": {
             "aws/us-west-2": [
@@ -489,13 +491,13 @@ def test_rank_hours_utc():
 
 
 def test_best_time_from_history(client: TestClient):
-    from datetime import datetime, timedelta, timezone
+    from datetime import datetime, timedelta
 
     from carbonlens.api.deps import get_history_store
     from carbonlens.carbon_sources.history_store import HistoryStore
     from carbonlens.main import app
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     # Build 7 days of two readings per day: a clean 02:00 UTC and a dirty 18:00 UTC.
     series = []
     for d in range(7):
@@ -529,14 +531,12 @@ def test_best_time_unknown_region(client: TestClient):
 
 
 def test_zone_best_time(client: TestClient):
-    from datetime import datetime, timedelta, timezone
+    from datetime import datetime, timedelta
 
-    from carbonlens.api.deps import get_history_store
+    from carbonlens.api.deps import get_grid_mapper, get_history_store
+    from carbonlens.api.routes import _zone_representative
     from carbonlens.carbon_sources.history_store import HistoryStore
     from carbonlens.main import app
-
-    from carbonlens.api.deps import get_grid_mapper
-    from carbonlens.api.routes import _zone_representative
 
     # History is keyed by the zone's representative region -- compute it so the test
     # doesn't depend on dict ordering.
@@ -544,7 +544,7 @@ def test_zone_best_time(client: TestClient):
     assert rep is not None
     key = f"{rep.provider}/{rep.region}"
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     series = []
     for d in range(7):
         day = now - timedelta(days=d)
@@ -604,7 +604,7 @@ def test_shiftability_pct():
 
 
 def test_shiftability_ranking(client: TestClient):
-    from datetime import datetime, timedelta, timezone
+    from datetime import datetime, timedelta
 
     from carbonlens.api.deps import get_grid_mapper, get_history_store
     from carbonlens.carbon_sources.history_store import HistoryStore
@@ -612,7 +612,7 @@ def test_shiftability_ranking(client: TestClient):
 
     zones = get_grid_mapper().grid_zones()[:2]
     z_var, z_flat = zones[0], zones[1]
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     def series(clean_c, dirty_c):
         out = []

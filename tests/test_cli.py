@@ -2,6 +2,7 @@
 
 import inspect
 import json
+from datetime import UTC
 from pathlib import Path
 from unittest.mock import patch
 
@@ -10,7 +11,6 @@ from typer.testing import CliRunner
 from carbonlens.cli import client
 from carbonlens.cli.green_run import choose_run_index, choose_run_plan
 from carbonlens.cli.main import app
-
 
 # ---------------------------------------------------------------------------
 # generate_api_key tests
@@ -123,7 +123,7 @@ class TestConfigIO:
         assert cfg == {}
 
     def test_save_and_load_roundtrip(self, tmp_path: Path):
-        fake_dir = tmp_path / ".carbon-mesh"
+        fake_dir = tmp_path / ".carbonlens"
         fake_file = fake_dir / "config.json"
         with (
             patch.object(client, "CONFIG_DIR", fake_dir),
@@ -135,7 +135,7 @@ class TestConfigIO:
         assert cfg["api_key"] == "cmesh_abc"
 
     def test_save_creates_directory(self, tmp_path: Path):
-        fake_dir = tmp_path / "nested" / ".carbon-mesh"
+        fake_dir = tmp_path / "nested" / ".carbonlens"
         fake_file = fake_dir / "config.json"
         with (
             patch.object(client, "CONFIG_DIR", fake_dir),
@@ -180,11 +180,11 @@ class TestCliApp:
         assert "doctor" in command_names
 
     def test_verify_writes_markdown_disclosure(self, tmp_path: Path, monkeypatch):
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         from carbonlens.cli import ledger as ledger_mod
 
-        now = datetime(2026, 6, 18, tzinfo=timezone.utc)
+        now = datetime(2026, 6, 18, tzinfo=UTC)
         monkeypatch.setattr(
             ledger_mod,
             "read",
@@ -332,11 +332,11 @@ class TestChooseRunIndex:
 
 class TestImpactLedger:
     def test_real_grams_only_from_jobs_with_energy(self):
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         from carbonlens.cli.ledger import summarize
 
-        now = datetime(2026, 6, 16, tzinfo=timezone.utc)
+        now = datetime(2026, 6, 16, tzinfo=UTC)
         entries = [
             # Deferred, 200 gCO2/kWh avoided, 10 kWh -> 2000 g avoided.
             {
@@ -359,11 +359,11 @@ class TestImpactLedger:
         assert s["kg_avoided"] == 2.0
 
     def test_counts_verified_measured_jobs(self):
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         from carbonlens.cli.ledger import summarize
 
-        now = datetime(2026, 6, 16, tzinfo=timezone.utc)
+        now = datetime(2026, 6, 16, tzinfo=UTC)
         entries = [
             {
                 "ts": now.isoformat(),
@@ -383,11 +383,11 @@ class TestImpactLedger:
         assert s["measured"] == 1
 
     def test_calibration_compares_predicted_to_measured_actual(self):
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         from carbonlens.cli.ledger import calibration
 
-        now = datetime(2026, 6, 18, tzinfo=timezone.utc)
+        now = datetime(2026, 6, 18, tzinfo=UTC)
         entries = [
             # Re-measured shifted run: predicted 200, actual 180.
             {
@@ -432,11 +432,11 @@ class TestImpactLedger:
         assert adjusted_prediction(100, 1.2) == 120.0
 
     def test_calibration_by_region_buckets_separately(self):
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         from carbonlens.cli.ledger import calibration_by_region
 
-        now = datetime(2026, 6, 18, tzinfo=timezone.utc)
+        now = datetime(2026, 6, 18, tzinfo=UTC)
         entries = [
             {
                 "ts": now.isoformat(),
@@ -461,21 +461,21 @@ class TestImpactLedger:
         assert by_region["gcp/europe-west1"]["calibration_ratio"] == 0.5
 
     def test_calibration_empty_when_no_measured_runs(self):
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         from carbonlens.cli.ledger import calibration
 
-        now = datetime(2026, 6, 18, tzinfo=timezone.utc)
+        now = datetime(2026, 6, 18, tzinfo=UTC)
         cal = calibration([{"ts": now.isoformat(), "deferred_hours": 0}], now, days=30)
         assert cal["samples"] == 0
         assert cal["calibration_ratio"] == 0.0
 
     def test_disclosure_markdown_includes_accuracy_and_counterfactual(self):
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         from carbonlens.cli.ledger import disclosure_markdown, org_statement
 
-        now = datetime(2026, 6, 18, tzinfo=timezone.utc)
+        now = datetime(2026, 6, 18, tzinfo=UTC)
         entries = [
             {
                 "ts": now.isoformat(),
@@ -494,11 +494,11 @@ class TestImpactLedger:
         assert "| aws/us-east-1 |" in md
 
     def test_org_statement_includes_forecast_calibration(self):
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         from carbonlens.cli.ledger import org_statement
 
-        now = datetime(2026, 6, 18, tzinfo=timezone.utc)
+        now = datetime(2026, 6, 18, tzinfo=UTC)
         entries = [
             {
                 "ts": now.isoformat(),
@@ -515,11 +515,11 @@ class TestImpactLedger:
         assert stmt["forecast_calibration"]["calibration_ratio"] == 1.0
 
     def test_fleet_summary_aggregates_by_region(self):
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         from carbonlens.cli.ledger import fleet_summary
 
-        now = datetime(2026, 6, 17, tzinfo=timezone.utc)
+        now = datetime(2026, 6, 17, tzinfo=UTC)
         entries = [
             {
                 "ts": now.isoformat(),
@@ -548,11 +548,11 @@ class TestImpactLedger:
         assert s["regions"][0]["kg_avoided"] == 2.5
 
     def test_org_statement_states_methodology(self):
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         from carbonlens.cli.ledger import org_statement
 
-        now = datetime(2026, 6, 18, tzinfo=timezone.utc)
+        now = datetime(2026, 6, 18, tzinfo=UTC)
         entries = [
             {
                 "ts": now.isoformat(),
@@ -618,11 +618,11 @@ class TestImpactLedger:
         assert "aws/us-east-1" in result.output
 
     def test_old_entries_drop_out_of_window(self):
-        from datetime import datetime, timedelta, timezone
+        from datetime import datetime, timedelta
 
         from carbonlens.cli.ledger import summarize
 
-        now = datetime(2026, 6, 16, tzinfo=timezone.utc)
+        now = datetime(2026, 6, 16, tzinfo=UTC)
         old = (now - timedelta(days=40)).isoformat()
         entries = [{"ts": old, "deferred_hours": 3, "reduction_gco2_kwh": 100, "energy_kwh": 5}]
         assert summarize(entries, now, days=30)["jobs"] == 0

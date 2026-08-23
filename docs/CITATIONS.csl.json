@@ -1,0 +1,1973 @@
+[
+  {
+    "id": "aeso-current-supply-demand",
+    "type": "webpage",
+    "title": "AESO Current Supply Demand Report",
+    "author": [
+      {
+        "literal": "Alberta Electric System Operator"
+      }
+    ],
+    "issued": {
+      "date-parts": [
+        [
+          2026
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          8,
+          23
+        ]
+      ]
+    },
+    "URL": "https://www.aeso.ca/",
+    "custom": {
+      "group": "grid-data",
+      "verification": "url-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "A",
+      "backsClaims": [
+        "the Alberta generation mix parsed in carbon_sources/canada.py"
+      ],
+      "caveat": "Site root fetched and confirmed on 2026-08-23."
+    }
+  },
+  {
+    "id": "aws-pue-2025",
+    "type": "webpage",
+    "title": "AWS Cloud sustainability: power usage effectiveness",
+    "author": [
+      {
+        "literal": "Amazon Web Services"
+      }
+    ],
+    "issued": {
+      "date-parts": [
+        [
+          2026
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          8,
+          23
+        ]
+      ]
+    },
+    "URL": "https://sustainability.aboutamazon.com/products-services/aws-cloud",
+    "custom": {
+      "group": "compute-energy",
+      "verification": "primary-read",
+      "accessLevel": "open-access",
+      "evidenceTier": "D",
+      "backsClaims": [
+        "the AWS PUE constant in models/compliance.py"
+      ],
+      "caveat": "Page read on 2026-08-23. Verbatim: 'In 2025, our data centers reported an average global PUE of 1.14 which is an improvement compared to 1.15 reported in 2024.' The value in this repo was 1.135 labelled 'AWS 2023 sustainability report', which matches no figure AWS currently publishes; corrected to 1.14. Tier D because it is self-reported by the vendor and not independently audited. AWS also publishes PER-REGION PUE, which this project does not yet use."
+    }
+  },
+  {
+    "id": "bialek-1996-tracing-electricity",
+    "type": "article-journal",
+    "title": "Tracing the flow of electricity",
+    "author": [
+      {
+        "family": "Bialek",
+        "given": "Janusz"
+      }
+    ],
+    "container-title": "IEE Proceedings - Generation, Transmission and Distribution",
+    "volume": "143",
+    "page": "313-320",
+    "issued": {
+      "date-parts": [
+        [
+          1996
+        ]
+      ]
+    },
+    "DOI": "10.1049/ip-gtd:19960461",
+    "custom": {
+      "group": "methodology",
+      "verification": "crossref-verified",
+      "accessLevel": "paywalled",
+      "evidenceTier": "B",
+      "backsClaims": [
+        "the proportional-sharing assumption underlying the flow-tracing system in flow_tracing.py"
+      ],
+      "caveat": "DOI re-resolved against the Crossref REST API on 2026-08-23 from this project; title, year, container, volume and pages matched the record below. Cited as the origin of proportional sharing, the assumption that makes the tracing system solvable. flow_tracing.py inherits this assumption without stating it: a zone's exports are assumed to carry its whole consumed mix, which is a modelling choice, not a physical fact."
+    }
+  },
+  {
+    "id": "dodge-2022-carbon-intensity-ai",
+    "type": "paper-conference",
+    "title": "Measuring the Carbon Intensity of AI in Cloud Instances",
+    "author": [
+      {
+        "family": "Dodge",
+        "given": "Jesse"
+      },
+      {
+        "family": "Prewitt",
+        "given": "Taylor"
+      },
+      {
+        "literal": "Tachet des Combes,Remi"
+      },
+      {
+        "family": "Odmark",
+        "given": "Erika"
+      },
+      {
+        "family": "Schwartz",
+        "given": "Roy"
+      },
+      {
+        "family": "Strubell",
+        "given": "Emma"
+      },
+      {
+        "family": "Luccioni",
+        "given": "Alexandra Sasha"
+      },
+      {
+        "family": "Smith",
+        "given": "Noah A."
+      },
+      {
+        "family": "DeCario",
+        "given": "Nicole"
+      },
+      {
+        "family": "Buchanan",
+        "given": "Will"
+      }
+    ],
+    "container-title": "Proceedings of the 2022 ACM Conference on Fairness, Accountability, and Transparency",
+    "page": "1877-1894",
+    "issued": {
+      "date-parts": [
+        [
+          2022
+        ]
+      ]
+    },
+    "DOI": "10.1145/3531146.3533234",
+    "custom": {
+      "group": "methodology",
+      "verification": "crossref-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "B",
+      "backsClaims": [
+        "measured emissions variation across cloud regions and hours, the premise of carbon-aware routing"
+      ],
+      "caveat": "DOI re-resolved against the Crossref REST API on 2026-08-23 from this project; title, year, container, volume and pages matched the record below."
+    }
+  },
+  {
+    "id": "eia-electric-power-operational-data",
+    "type": "dataset",
+    "title": "Electric Power Operational Data (electricity/electric-power-operational-data)",
+    "author": [
+      {
+        "literal": "U.S. Energy Information Administration"
+      }
+    ],
+    "publisher": "U.S. Energy Information Administration",
+    "issued": {
+      "date-parts": [
+        [
+          2024
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          8,
+          23
+        ]
+      ]
+    },
+    "URL": "https://api.eia.gov/v2/electricity/electric-power-operational-data/data/",
+    "custom": {
+      "group": "grid-data",
+      "verification": "url-verified",
+      "accessLevel": "public-domain",
+      "evidenceTier": "A",
+      "backsClaims": [
+        "US 2023 all-sector net generation by fuel, used to weight the US fossil mix",
+        "onshore wind is 421,007 GWh of US 2023 wind generation against 134 GWh offshore, which is why the corpus takes the IPCC onshore row for wind",
+        "utility-scale PV is 162,683 GWh against 73,406 GWh small-scale distributed PV, which is why the corpus takes the IPCC utility row for solar"
+      ],
+      "caveat": "Queried directly with the project's own EIA key on 2026-08-23 for period 2023, sectorid 99 (all sectors), location US. The response is archived in docs/VERIFICATION.md. Figures are 'thousand megawatthours' (= GWh)."
+    }
+  },
+  {
+    "id": "eia-hourly-grid-monitor",
+    "type": "dataset",
+    "title": "Hourly Electric Grid Monitor",
+    "author": [
+      {
+        "literal": "U.S. Energy Information Administration"
+      }
+    ],
+    "publisher": "U.S. Energy Information Administration",
+    "issued": {
+      "date-parts": [
+        [
+          2026
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          8,
+          23
+        ]
+      ]
+    },
+    "URL": "https://www.eia.gov/electricity/gridmonitor/about",
+    "custom": {
+      "group": "grid-data",
+      "verification": "url-verified",
+      "accessLevel": "public-domain",
+      "evidenceTier": "A",
+      "backsClaims": [
+        "the hourly fuel-mix feed behind every US balancing-authority zone in carbon_sources/eia.py",
+        "that the reported mix is utility-scale generation, which is why the corpus takes the IPCC utility PV row"
+      ],
+      "caveat": "About page fetched on 2026-08-23. This is the feed the code reads; the annual dataset cited separately as eia-electric-power-operational-data is what the fossil-mix and wind/solar row checks were run against."
+    }
+  },
+  {
+    "id": "electricity-maps-api",
+    "type": "webpage",
+    "title": "Electricity Maps API documentation",
+    "author": [
+      {
+        "literal": "Electricity Maps"
+      }
+    ],
+    "issued": {
+      "date-parts": [
+        [
+          2026
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          8,
+          23
+        ]
+      ]
+    },
+    "URL": "https://static.electricitymaps.com/api/docs/index.html",
+    "custom": {
+      "group": "grid-data",
+      "verification": "url-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "D",
+      "backsClaims": [
+        "the commercial carbon-intensity and marginal endpoints in carbon_sources/electricity_maps.py and marginal.py"
+      ],
+      "caveat": "Fetched on 2026-08-23. Commercial product: the values are not independently auditable, so tier D even though the vendor is a serious one."
+    }
+  },
+  {
+    "id": "electricity-maps-default-factors",
+    "type": "webpage",
+    "title": "Default emission factors",
+    "author": [
+      {
+        "literal": "Electricity Maps"
+      }
+    ],
+    "container-title": "electricitymaps-contrib wiki",
+    "issued": {
+      "date-parts": [
+        [
+          2026
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          8,
+          23
+        ]
+      ]
+    },
+    "URL": "https://github.com/electricitymaps/electricitymaps-contrib/wiki/Default-emission-factors",
+    "custom": {
+      "group": "emission-factors",
+      "verification": "url-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "D",
+      "backsClaims": [
+        "an independent implementation of the same problem also takes IPCC AR5 Annex III as its default factor table",
+        "the oil factor of 650 gCO2eq/kWh is attributed to the UK Parliamentary Office of Science and Technology, not to IPCC AR5",
+        "battery discharge is assigned world-average intensity (301), not zero",
+        "the 'unknown' fuel bucket is assigned 700 on a stated assumption of thermal generation"
+      ],
+      "caveat": "Page fetched and its factor table extracted on 2026-08-23, together with EMISSION_FACTORS_SOURCES.md from the same repository at master. This is a vendor's published default table with a stated method, hence tier D: it is cited as evidence of what another implementation does and of where the 650 oil figure is attributed, never as independent evidence that a number is correct."
+    }
+  },
+  {
+    "id": "ember-yearly-electricity-data",
+    "type": "dataset",
+    "title": "Yearly Electricity Data (full release, long format)",
+    "author": [
+      {
+        "literal": "Ember"
+      }
+    ],
+    "publisher": "Ember",
+    "issued": {
+      "date-parts": [
+        [
+          2026
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          8,
+          23
+        ]
+      ]
+    },
+    "URL": "https://storage.googleapis.com/emb-prod-bkt-publicdata/public-downloads/yearly_full_release_long_format.csv",
+    "custom": {
+      "group": "grid-data",
+      "verification": "url-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "A",
+      "backsClaims": [
+        "world power-sector CO2 intensity by year: 483.19 gCO2/kWh (2023), 471.46 (2024), 458.49 (2025)"
+      ],
+      "caveat": "Downloaded in full (49 MB) and read on 2026-08-23. Ember's CO2 intensity is DIRECT combustion CO2 for the power sector, not a lifecycle figure, so it is not directly comparable to the lifecycle basis of the emission-factor corpus. Do not cite it as a lifecycle number."
+    }
+  },
+  {
+    "id": "energytag-gc-standard-v2",
+    "type": "standard",
+    "title": "Granular Certificate Scheme Standard, Version 2",
+    "author": [
+      {
+        "literal": "EnergyTag Ltd"
+      }
+    ],
+    "publisher": "EnergyTag Ltd",
+    "issued": {
+      "date-parts": [
+        [
+          2024
+        ]
+      ]
+    },
+    "URL": "https://energytag.org/wp-content/uploads/2024/12/EnergyTag_Granular-Certificate-Scheme-Standard-V2.pdf",
+    "custom": {
+      "group": "standards",
+      "verification": "url-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "A",
+      "backsClaims": [
+        "the granular-certificate machinery that makes hourly matching auditable"
+      ],
+      "caveat": "Important limit, carried over and re-checked: this standard does NOT itself argue that annual matching is weaker than hourly. It defines the certificate machinery. The README's argument must cite riepin-2024-247-cfe or google-2021-247-cfe, not this."
+    }
+  },
+  {
+    "id": "entsoe-transparency-platform",
+    "type": "webpage",
+    "title": "ENTSO-E Transparency Platform and RESTful API guide",
+    "author": [
+      {
+        "literal": "European Network of Transmission System Operators for Electricity"
+      }
+    ],
+    "issued": {
+      "date-parts": [
+        [
+          2026
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          8,
+          23
+        ]
+      ]
+    },
+    "URL": "https://transparency.entsoe.eu/",
+    "custom": {
+      "group": "grid-data",
+      "verification": "url-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "A",
+      "backsClaims": [
+        "the A75 generation and A11 physical-flow documents parsed in carbon_sources/entsoe.py and flow_tracing.py",
+        "the IEC 62325 document structure the XML parsers depend on"
+      ],
+      "caveat": "Platform root fetched on 2026-08-23 and confirmed. The API guide URL used in the code (content/static_content/.../Guide.html) returned an application-level error to an automated client on the same date, so the guide itself was not read here; the document types are evidenced by the live responses the parsers handle."
+    }
+  },
+  {
+    "id": "eskom-data-portal",
+    "type": "webpage",
+    "title": "Eskom Data Portal",
+    "author": [
+      {
+        "literal": "Eskom"
+      }
+    ],
+    "issued": {
+      "date-parts": [
+        [
+          2026
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          8,
+          23
+        ]
+      ]
+    },
+    "URL": "https://www.eskom.co.za/dataportal/",
+    "custom": {
+      "group": "grid-data",
+      "verification": "url-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "E",
+      "backsClaims": [
+        "South African grid context for the time-of-day model in carbon_sources/eskom.py"
+      ],
+      "caveat": "Portal fetched and confirmed to exist on 2026-08-23. Tier E because the code does NOT read it: carbon_sources/eskom.py is a fixed time-of-day curve, and no published source states the shape of that curve. The portal is listed as the data that would be needed to replace the heuristic, not as its source."
+    }
+  },
+  {
+    "id": "gagnon-2022-short-run-omits",
+    "type": "article-journal",
+    "title": "Short-run marginal emission rates omit important impacts of electric-sector interventions",
+    "author": [
+      {
+        "family": "Gagnon",
+        "given": "Pieter J."
+      },
+      {
+        "family": "Bistline",
+        "given": "John E. T."
+      },
+      {
+        "family": "Alexander",
+        "given": "Maxwell H."
+      },
+      {
+        "family": "Cole",
+        "given": "Wesley J."
+      }
+    ],
+    "container-title": "Proceedings of the National Academy of Sciences",
+    "volume": "119",
+    "page": "e2211624119",
+    "issued": {
+      "date-parts": [
+        [
+          2022
+        ]
+      ]
+    },
+    "DOI": "10.1073/pnas.2211624119",
+    "custom": {
+      "group": "methodology",
+      "verification": "crossref-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "C",
+      "backsClaims": [
+        "that short-run marginal rates omit induced capacity effects, a stated limitation of the /signal marginal number"
+      ],
+      "caveat": "DOI re-resolved against the Crossref REST API on 2026-08-23 from this project; title, year, container, volume and pages matched the record below."
+    }
+  },
+  {
+    "id": "ghg-protocol-corporate-standard",
+    "type": "report",
+    "title": "The Greenhouse Gas Protocol: A Corporate Accounting and Reporting Standard (Revised Edition)",
+    "author": [
+      {
+        "literal": "World Resources Institute"
+      },
+      {
+        "literal": "World Business Council for Sustainable Development"
+      }
+    ],
+    "publisher": "World Resources Institute",
+    "issued": {
+      "date-parts": [
+        [
+          2004
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          8,
+          23
+        ]
+      ]
+    },
+    "URL": "https://ghgprotocol.org/sites/default/files/standards/ghg-protocol-revised.pdf",
+    "custom": {
+      "group": "standards",
+      "verification": "url-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "A",
+      "backsClaims": [
+        "the scope 1/2/3 framework the EmissionScope enum in models/compliance.py encodes"
+      ],
+      "caveat": "PDF fetched on 2026-08-23 and confirmed to be the revised corporate standard. Not read end to end; cited for the scope framework only."
+    }
+  },
+  {
+    "id": "ghg-protocol-scope2-guidance",
+    "type": "report",
+    "title": "GHG Protocol Scope 2 Guidance: An amendment to the GHG Protocol Corporate Standard",
+    "author": [
+      {
+        "literal": "World Resources Institute"
+      },
+      {
+        "literal": "World Business Council for Sustainable Development"
+      }
+    ],
+    "publisher": "World Resources Institute",
+    "issued": {
+      "date-parts": [
+        [
+          2015
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          8,
+          23
+        ]
+      ]
+    },
+    "URL": "https://ghgprotocol.org/sites/default/files/2023-03/Scope%202%20Guidance.pdf",
+    "custom": {
+      "group": "standards",
+      "verification": "primary-read",
+      "accessLevel": "open-access",
+      "evidenceTier": "A",
+      "backsClaims": [
+        "the location-based and market-based methods distinguished by AccountingMethod in compliance/calculator.py",
+        "the dual-reporting requirement that carbon-lens does not currently satisfy"
+      ],
+      "caveat": "PDF downloaded and read on 2026-08-23 (ghgprotocol.org's HTML pages return 403 to automated clients, but the PDF does not). Glossary, verbatim: 'Location-based method for scope 2 accounting: A method to quantify scope 2 GHG emissions based on average energy generation emission factors for defined locations, including local, subnational, or national boundaries.' and 'Market-based method for scope 2 accounting: A method to quantify scope 2 GHG emissions based on GHG emissions emitted by the generators from which the reporter contractually purchases electricity bundled with instruments, or unbundled instruments on their own.' Section 1.5.1, verbatim: 'Companies with any operations in markets providing product or supplier-specific data in the form of contractual instruments shall report scope 2 emissions in two ways and label each result according to the method... This is also termed “dual reporting.”'"
+    }
+  },
+  {
+    "id": "ghg-protocol-scope3-standard",
+    "type": "report",
+    "title": "Corporate Value Chain (Scope 3) Accounting and Reporting Standard",
+    "author": [
+      {
+        "literal": "World Resources Institute"
+      },
+      {
+        "literal": "World Business Council for Sustainable Development"
+      }
+    ],
+    "publisher": "World Resources Institute",
+    "issued": {
+      "date-parts": [
+        [
+          2011
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          8,
+          23
+        ]
+      ]
+    },
+    "URL": "https://ghgprotocol.org/sites/default/files/standards/Corporate-Value-Chain-Accounting-Reporing-Standard_041613_2.pdf",
+    "custom": {
+      "group": "standards",
+      "verification": "url-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "A",
+      "backsClaims": [
+        "Category 1 (purchased goods and services) as the classification applied to managed cloud services in compliance/calculator.py"
+      ],
+      "caveat": "PDF fetched on 2026-08-23. Not read end to end. Note that carbon-lens's split between Scope 2 and Scope 3 Category 1 rests on a hardcoded list of managed service names, which is this project's own judgement and is not licensed by the standard."
+    }
+  },
+  {
+    "id": "google-2021-247-cfe",
+    "type": "report",
+    "title": "24/7 Carbon-Free Energy: Methodologies and Metrics",
+    "author": [
+      {
+        "literal": "Google LLC"
+      }
+    ],
+    "publisher": "Google LLC",
+    "issued": {
+      "date-parts": [
+        [
+          2021
+        ]
+      ]
+    },
+    "URL": "https://www.gstatic.com/gumdrop/sustainability/24x7-carbon-free-energy-methodologies-metrics.pdf",
+    "custom": {
+      "group": "standards",
+      "verification": "url-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "D",
+      "backsClaims": [
+        "the canonical corporate statement of the 24/7 carbon-free energy argument the README makes"
+      ],
+      "caveat": "A corporate white paper with an obvious interest in the conclusion, hence tier D. Cited for the argument's canonical statement, never as evidence for it."
+    }
+  },
+  {
+    "id": "google-pue-2025",
+    "type": "webpage",
+    "title": "Google data centers: efficiency",
+    "author": [
+      {
+        "literal": "Google"
+      }
+    ],
+    "issued": {
+      "date-parts": [
+        [
+          2026
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          8,
+          23
+        ]
+      ]
+    },
+    "URL": "https://www.google.com/about/datacenters/efficiency/",
+    "custom": {
+      "group": "compute-energy",
+      "verification": "primary-read",
+      "accessLevel": "open-access",
+      "evidenceTier": "D",
+      "backsClaims": [
+        "the GCP PUE constant in models/compliance.py"
+      ],
+      "caveat": "Page read on 2026-08-23. Verbatim: 'In 2025, the average annual power usage effectiveness for our global fleet of data centers was 1.09.' The value in this repo was 1.10 labelled 'Google 2023'; corrected to 1.09. Google reports a trailing-twelve-month fleet-wide figure. Tier D: self-reported."
+    }
+  },
+  {
+    "id": "grid-india-reports",
+    "type": "webpage",
+    "title": "Grid Controller of India real-time generation reports",
+    "author": [
+      {
+        "literal": "Grid Controller of India"
+      }
+    ],
+    "issued": {
+      "date-parts": [
+        [
+          2026
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          8,
+          23
+        ]
+      ]
+    },
+    "URL": "https://report.grid-india.in/",
+    "custom": {
+      "group": "grid-data",
+      "verification": "unverified",
+      "accessLevel": "open-access",
+      "evidenceTier": "C",
+      "backsClaims": [
+        "the Indian regional generation mix parsed in carbon_sources/grid_india.py"
+      ],
+      "caveat": "NOT VERIFIED 2026-08-23: the host did not complete a TLS connection from here. Endpoint identity is taken from the code path only. As with Brazil, the heuristic fallback tagged grid_india_heuristic has no source of its own."
+    }
+  },
+  {
+    "id": "gridstatus-io",
+    "type": "webpage",
+    "title": "GridStatus.io API",
+    "author": [
+      {
+        "literal": "GridStatus"
+      }
+    ],
+    "issued": {
+      "date-parts": [
+        [
+          2026
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          8,
+          23
+        ]
+      ]
+    },
+    "URL": "https://www.gridstatus.io/",
+    "custom": {
+      "group": "grid-data",
+      "verification": "unverified",
+      "accessLevel": "open-access",
+      "evidenceTier": "C",
+      "backsClaims": [
+        "the US ISO fuel-mix feed parsed in carbon_sources/gridstatus.py"
+      ],
+      "caveat": "NOT VERIFIED 2026-08-23: gridstatus.io returned an HTTP 403 Cloudflare interstitial to every automated request from here. The endpoint identity is taken from the code path only."
+    }
+  },
+  {
+    "id": "gsf-sci-specification",
+    "type": "standard",
+    "title": "Software Carbon Intensity (SCI) Specification, version 1.1.0",
+    "author": [
+      {
+        "literal": "Green Software Foundation"
+      }
+    ],
+    "publisher": "Green Software Foundation",
+    "issued": {
+      "date-parts": [
+        [
+          2024
+        ]
+      ]
+    },
+    "URL": "https://github.com/Green-Software-Foundation/sci/blob/main/SPEC.md",
+    "custom": {
+      "group": "standards",
+      "verification": "url-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "A",
+      "backsClaims": [
+        "the software carbon intensity framing (operational energy x intensity) the compliance calculator's arithmetic follows"
+      ],
+      "caveat": "The repository's CITATION.cff is stale, still declaring version 1.0.0 and a 2021 release date; SPEC.md front matter on main says 1.1.0. Cite the spec, not the CITATION.cff."
+    }
+  },
+  {
+    "id": "hawkes-2010-marginal-emissions",
+    "type": "article-journal",
+    "title": "Estimating marginal CO2 emissions rates for national electricity systems",
+    "author": [
+      {
+        "family": "Hawkes",
+        "given": "A.D."
+      }
+    ],
+    "container-title": "Energy Policy",
+    "volume": "38",
+    "page": "5977-5987",
+    "issued": {
+      "date-parts": [
+        [
+          2010
+        ]
+      ]
+    },
+    "DOI": "10.1016/j.enpol.2010.05.053",
+    "custom": {
+      "group": "methodology",
+      "verification": "crossref-verified",
+      "accessLevel": "paywalled",
+      "evidenceTier": "B",
+      "backsClaims": [
+        "marginal emission factors as the correct signal for a load-shifting decision, which is what /signal reports"
+      ],
+      "caveat": "DOI re-resolved against the Crossref REST API on 2026-08-23 from this project; title, year, container, volume and pages matched the record below. Backs the *concept* the merit-order heuristic in emission_factors.calculate_marginal_intensity() approximates. It does NOT back that heuristic, which is a fuel-mix rule of thumb, not the regression method described here."
+    }
+  },
+  {
+    "id": "hawkes-2014-long-run-marginal",
+    "type": "article-journal",
+    "title": "Long-run marginal CO2 emissions factors in national electricity systems",
+    "author": [
+      {
+        "family": "Hawkes",
+        "given": "A.D."
+      }
+    ],
+    "container-title": "Applied Energy",
+    "volume": "125",
+    "page": "197-205",
+    "issued": {
+      "date-parts": [
+        [
+          2014
+        ]
+      ]
+    },
+    "DOI": "10.1016/j.apenergy.2014.03.060",
+    "custom": {
+      "group": "methodology",
+      "verification": "crossref-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "B",
+      "backsClaims": [
+        "the distinction between short-run and long-run marginal factors, which the API does not currently draw"
+      ],
+      "caveat": "DOI re-resolved against the Crossref REST API on 2026-08-23 from this project; title, year, container, volume and pages matched the record below. The marginal number carbon-lens reports is short-run at best. This paper is the reason the provenance block says 'heuristic' rather than 'marginal emission factor'."
+    }
+  },
+  {
+    "id": "holland-2022-marginal-not-decreasing",
+    "type": "article-journal",
+    "title": "Why marginal CO2 emissions are not decreasing for US electricity: Estimates and implications for climate policy",
+    "author": [
+      {
+        "family": "Holland",
+        "given": "Stephen P."
+      },
+      {
+        "family": "Kotchen",
+        "given": "Matthew J."
+      },
+      {
+        "family": "Mansur",
+        "given": "Erin T."
+      },
+      {
+        "family": "Yates",
+        "given": "Andrew J."
+      }
+    ],
+    "container-title": "Proceedings of the National Academy of Sciences",
+    "volume": "119",
+    "page": "e2116632119",
+    "issued": {
+      "date-parts": [
+        [
+          2022
+        ]
+      ]
+    },
+    "DOI": "10.1073/pnas.2116632119",
+    "custom": {
+      "group": "methodology",
+      "verification": "crossref-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "B",
+      "backsClaims": [
+        "that marginal and average intensity can diverge in direction, not just magnitude"
+      ],
+      "caveat": "DOI re-resolved against the Crossref REST API on 2026-08-23 from this project; title, year, container, volume and pages matched the record below."
+    }
+  },
+  {
+    "id": "ieso-data-directory",
+    "type": "webpage",
+    "title": "IESO Data Directory",
+    "author": [
+      {
+        "literal": "Independent Electricity System Operator"
+      }
+    ],
+    "issued": {
+      "date-parts": [
+        [
+          2026
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          8,
+          23
+        ]
+      ]
+    },
+    "URL": "https://www.ieso.ca/en/Power-Data/Data-Directory",
+    "custom": {
+      "group": "grid-data",
+      "verification": "url-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "A",
+      "backsClaims": [
+        "the Ontario hourly generator output by fuel type parsed in carbon_sources/canada.py"
+      ],
+      "caveat": "Fetched on 2026-08-23."
+    }
+  },
+  {
+    "id": "ipcc-ar5-wg3-annex3",
+    "type": "chapter",
+    "title": "Annex III: Technology-specific cost and performance parameters",
+    "container-title": "Climate Change 2014: Mitigation of Climate Change. Contribution of Working Group III to the Fifth Assessment Report of the Intergovernmental Panel on Climate Change",
+    "author": [
+      {
+        "family": "Schlömer",
+        "given": "Steffen"
+      },
+      {
+        "family": "Bruckner",
+        "given": "Thomas"
+      },
+      {
+        "family": "Fulton",
+        "given": "Lew"
+      },
+      {
+        "family": "Hertwich",
+        "given": "Edgar"
+      },
+      {
+        "family": "McKinnon",
+        "given": "Alan"
+      },
+      {
+        "family": "Perczyk",
+        "given": "Daniel"
+      },
+      {
+        "family": "Roy",
+        "given": "Joyashree"
+      },
+      {
+        "family": "Schaeffer",
+        "given": "Roberto"
+      },
+      {
+        "family": "Sims",
+        "given": "Ralph"
+      },
+      {
+        "family": "Smith",
+        "given": "Pete"
+      },
+      {
+        "family": "Wiser",
+        "given": "Ryan"
+      }
+    ],
+    "publisher": "Cambridge University Press",
+    "publisher-place": "Cambridge, United Kingdom and New York, NY, USA",
+    "page": "1329-1356",
+    "issued": {
+      "date-parts": [
+        [
+          2014
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          8,
+          23
+        ]
+      ]
+    },
+    "URL": "https://www.ipcc.ch/site/assets/uploads/2018/02/ipcc_wg3_ar5_annex-iii.pdf",
+    "custom": {
+      "group": "emission-factors",
+      "verification": "primary-read",
+      "accessLevel": "public-domain",
+      "evidenceTier": "A",
+      "backsClaims": [
+        "Table A.III.2 lifecycle emission medians for coal, gas, biomass, geothermal, hydro, nuclear, CSP, solar PV, wind and ocean",
+        "Table A.III.2 has separate rows for onshore and offshore wind, and for rooftop and utility solar PV",
+        "Table A.III.2 contains no row for oil, lignite, waste or an unknown/mixed bucket"
+      ],
+      "caveat": "PDF downloaded in full and Table A.III.2 read directly on 2026-08-23, not taken from secondary citation. Page 1335 of the printed report. Author list and the 'This annex should be cited as' string are transcribed from the annex's own front matter. Values are lifecycle gCO2eq/kWh including the albedo effect."
+    }
+  },
+  {
+    "id": "iso-iec-21031-2024",
+    "type": "standard",
+    "title": "ISO/IEC 21031:2024 Information technology - Software Carbon Intensity (SCI) specification",
+    "author": [
+      {
+        "literal": "International Organization for Standardization"
+      }
+    ],
+    "publisher": "ISO/IEC JTC 1",
+    "number": "ISO/IEC 21031:2024",
+    "issued": {
+      "date-parts": [
+        [
+          2024
+        ]
+      ]
+    },
+    "URL": "https://www.iso.org/standard/86612.html",
+    "custom": {
+      "group": "standards",
+      "verification": "url-verified",
+      "accessLevel": "standard-purchase",
+      "evidenceTier": "A",
+      "backsClaims": [
+        "the ISO-standardised form of the SCI specification"
+      ],
+      "caveat": "NOT VERIFIED BY THIS PROJECT 2026-08-23: iso.org returned HTTP 403 (Cloudflare interstitial) to every automated request from here, with and without a browser User-Agent. The catalogue metadata below is inherited from the companion corpus in carbon-aware-dispatcher and was not independently confirmed. The standard text itself is paywalled and has not been read by anyone on this project."
+    }
+  },
+  {
+    "id": "kirschen-1997-contributions",
+    "type": "article-journal",
+    "title": "Contributions of individual generators to loads and flows",
+    "author": [
+      {
+        "family": "Kirschen",
+        "given": "Daniel"
+      },
+      {
+        "family": "Allan",
+        "given": "Ron"
+      },
+      {
+        "family": "Strbac",
+        "given": "Goran"
+      }
+    ],
+    "container-title": "IEEE Transactions on Power Systems",
+    "volume": "12",
+    "page": "52-60",
+    "issued": {
+      "date-parts": [
+        [
+          1997
+        ]
+      ]
+    },
+    "DOI": "10.1109/59.574923",
+    "custom": {
+      "group": "methodology",
+      "verification": "crossref-verified",
+      "accessLevel": "paywalled",
+      "evidenceTier": "B",
+      "backsClaims": [
+        "the alternative common-generator formulation of the same tracing problem"
+      ],
+      "caveat": "DOI re-resolved against the Crossref REST API on 2026-08-23 from this project; title, year, container, volume and pages matched the record below. Cited for completeness as the competing formulation. This project implements the Bialek/Tranberg proportional-sharing line, not this one, and the choice is not neutral."
+    }
+  },
+  {
+    "id": "maji-2022-carboncast",
+    "type": "paper-conference",
+    "title": "CarbonCast: multi-day forecasting of grid carbon intensity",
+    "author": [
+      {
+        "family": "Maji",
+        "given": "Diptyaroop"
+      },
+      {
+        "family": "Shenoy",
+        "given": "Prashant"
+      },
+      {
+        "family": "Sitaraman",
+        "given": "Ramesh K."
+      }
+    ],
+    "container-title": "Proceedings of the 9th ACM International Conference on Systems for Energy-Efficient Buildings, Cities, and Transportation",
+    "page": "198-207",
+    "issued": {
+      "date-parts": [
+        [
+          2022
+        ]
+      ]
+    },
+    "DOI": "10.1145/3563357.3564079",
+    "custom": {
+      "group": "methodology",
+      "verification": "crossref-verified",
+      "accessLevel": "paywalled",
+      "evidenceTier": "B",
+      "backsClaims": [
+        "multi-day grid carbon-intensity forecasting, the class of method /forecast approximates"
+      ],
+      "caveat": "DOI re-resolved against the Crossref REST API on 2026-08-23 from this project; title, year, container, volume and pages matched the record below. carbon-lens's non-ENTSO-E forecast is a time-of-day heuristic, not a model of this kind. Cited for what the feature approximates, not for what it implements."
+    }
+  },
+  {
+    "id": "microsoft-pue-fy25",
+    "type": "webpage",
+    "title": "Measuring energy and water efficiency for Microsoft datacenters",
+    "author": [
+      {
+        "literal": "Microsoft"
+      }
+    ],
+    "issued": {
+      "date-parts": [
+        [
+          2026
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          8,
+          23
+        ]
+      ]
+    },
+    "URL": "https://datacenters.microsoft.com/sustainability/efficiency/",
+    "custom": {
+      "group": "compute-energy",
+      "verification": "primary-read",
+      "accessLevel": "open-access",
+      "evidenceTier": "D",
+      "backsClaims": [
+        "the Azure PUE constant in models/compliance.py"
+      ],
+      "caveat": "Page read on 2026-08-23. Published table: global PUE 1.16 (FY24) and 1.17 (FY25), covering 1 July 2024 to 30 June 2025 for fully owned and operated datacenters. Regional spread in the same table is material and unmodelled here: Americas 1.16, EMEA 1.16, Asia Pacific 1.28. The value in this repo was 1.18 labelled 'Microsoft 2023'; corrected to 1.17. Tier D: self-reported."
+    }
+  },
+  {
+    "id": "miller-2022-hourly-accounting",
+    "type": "article-journal",
+    "title": "Hourly accounting of carbon emissions from electricity consumption",
+    "author": [
+      {
+        "family": "Miller",
+        "given": "Gregory J."
+      },
+      {
+        "family": "Novan",
+        "given": "Kevin"
+      },
+      {
+        "family": "Jenn",
+        "given": "Alan"
+      }
+    ],
+    "container-title": "Environmental Research Letters",
+    "volume": "17",
+    "page": "044073",
+    "issued": {
+      "date-parts": [
+        [
+          2022
+        ]
+      ]
+    },
+    "DOI": "10.1088/1748-9326/ac6147",
+    "custom": {
+      "group": "methodology",
+      "verification": "crossref-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "B",
+      "backsClaims": [
+        "hourly rather than annual accounting as the basis for the README's REC-matching argument",
+        "the value of an hourly time resolution for consumption-based accounting"
+      ],
+      "caveat": "DOI re-resolved against the Crossref REST API on 2026-08-23 from this project; title, year, container, volume and pages matched the record below."
+    }
+  },
+  {
+    "id": "neso-carbon-intensity-api",
+    "type": "webpage",
+    "title": "Carbon Intensity API",
+    "author": [
+      {
+        "literal": "National Energy System Operator"
+      }
+    ],
+    "issued": {
+      "date-parts": [
+        [
+          2026
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          8,
+          23
+        ]
+      ]
+    },
+    "URL": "https://carbonintensity.org.uk/",
+    "custom": {
+      "group": "grid-data",
+      "verification": "url-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "A",
+      "backsClaims": [
+        "the live source behind every UK zone in carbon_sources/uk.py",
+        "the published per-fuel factor table at /intensity/factors"
+      ],
+      "caveat": "Fetched on 2026-08-23; /intensity/factors returned the live table (Coal 937, Gas CCGT 394, Gas OCGT 651, Oil 935, Other 300, and 0 for hydro, nuclear, solar, wind and pumped storage). Those are direct, not lifecycle, values."
+    }
+  },
+  {
+    "id": "neso-carbon-intensity-methodology",
+    "type": "report",
+    "title": "Carbon Intensity Forecast Methodology",
+    "author": [
+      {
+        "literal": "National Grid ESO"
+      }
+    ],
+    "publisher": "National Grid ESO / carbon-intensity",
+    "issued": {
+      "date-parts": [
+        [
+          2021
+        ]
+      ]
+    },
+    "URL": "https://github.com/carbon-intensity/methodology",
+    "custom": {
+      "group": "emission-factors",
+      "verification": "url-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "A",
+      "backsClaims": [
+        "the emission factors actually behind every UK zone carbon-lens reports, which are NESO's and not this project's",
+        "that those factors are DIRECT gCO2/kWh, scoring hydro, nuclear, solar and wind at exactly 0"
+      ],
+      "caveat": "Central to a limitation this project had not previously stated: UK zones come from the NESO Carbon Intensity API and therefore carry NESO's direct-combustion factors, while every fuel-mix zone carries this project's IPCC lifecycle factors. The two are not the same quantity. Re-fetched and the live factor table read on 2026-08-23 from https://api.carbonintensity.org.uk/intensity/factors."
+    }
+  },
+  {
+    "id": "ons-brazil-open-data",
+    "type": "webpage",
+    "title": "ONS Brazil operational data",
+    "author": [
+      {
+        "literal": "Operador Nacional do Sistema Elétrico"
+      }
+    ],
+    "issued": {
+      "date-parts": [
+        [
+          2026
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          8,
+          23
+        ]
+      ]
+    },
+    "URL": "https://www.ons.org.br/",
+    "custom": {
+      "group": "grid-data",
+      "verification": "url-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "A",
+      "backsClaims": [
+        "the Brazilian subsystem generation mix parsed in carbon_sources/ons_brazil.py"
+      ],
+      "caveat": "Site root fetched on 2026-08-23. Note that the module falls back to a fixed per-region estimate when the live fetch fails, and that fallback is tagged ons_brazil_heuristic and has no source."
+    }
+  },
+  {
+    "id": "open-meteo-api",
+    "type": "webpage",
+    "title": "Open-Meteo Weather Forecast API",
+    "author": [
+      {
+        "literal": "Open-Meteo"
+      }
+    ],
+    "issued": {
+      "date-parts": [
+        [
+          2026
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          8,
+          23
+        ]
+      ]
+    },
+    "URL": "https://open-meteo.com/en/docs",
+    "custom": {
+      "group": "grid-data",
+      "verification": "url-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "E",
+      "backsClaims": [
+        "the irradiance and wind-speed inputs to the weather-based estimate in carbon_sources/open_meteo.py"
+      ],
+      "caveat": "Documentation fetched on 2026-08-23. Tier E deliberately, and the tier is about the CARBON claim, not the weather data: Open-Meteo is a good weather source, but nothing published anywhere licenses the mapping from irradiance and wind speed to a grid carbon intensity that this module performs. That mapping is this project's own invention and has no source. See docs/VERIFICATION.md."
+    }
+  },
+  {
+    "id": "openelectricity-api",
+    "type": "webpage",
+    "title": "OpenElectricity API (AEMO NEM data)",
+    "author": [
+      {
+        "literal": "OpenElectricity"
+      }
+    ],
+    "issued": {
+      "date-parts": [
+        [
+          2026
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          8,
+          23
+        ]
+      ]
+    },
+    "URL": "https://docs.openelectricity.org.au/introduction",
+    "custom": {
+      "group": "grid-data",
+      "verification": "url-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "A",
+      "backsClaims": [
+        "the Australian NEM fuel mix behind the five AEMO zones in carbon_sources/aemo.py"
+      ],
+      "caveat": "Documentation fetched on 2026-08-23."
+    }
+  },
+  {
+    "id": "radovanovic-2023-carbon-aware-datacenters",
+    "type": "article-journal",
+    "title": "Carbon-Aware Computing for Datacenters",
+    "author": [
+      {
+        "family": "Radovanovic",
+        "given": "Ana"
+      },
+      {
+        "family": "Koningstein",
+        "given": "Ross"
+      },
+      {
+        "family": "Schneider",
+        "given": "Ian"
+      },
+      {
+        "family": "Chen",
+        "given": "Bokan"
+      },
+      {
+        "family": "Duarte",
+        "given": "Alexandre"
+      },
+      {
+        "family": "Roy",
+        "given": "Binz"
+      },
+      {
+        "family": "Xiao",
+        "given": "Diyue"
+      },
+      {
+        "family": "Haridasan",
+        "given": "Maya"
+      },
+      {
+        "family": "Hung",
+        "given": "Patrick"
+      },
+      {
+        "family": "Care",
+        "given": "Nick"
+      },
+      {
+        "family": "Talukdar",
+        "given": "Saurav"
+      },
+      {
+        "family": "Mullen",
+        "given": "Eric"
+      },
+      {
+        "family": "Smith",
+        "given": "Kendal"
+      },
+      {
+        "family": "Cottman",
+        "given": "MariEllen"
+      },
+      {
+        "family": "Cirne",
+        "given": "Walfredo"
+      }
+    ],
+    "container-title": "IEEE Transactions on Power Systems",
+    "volume": "38",
+    "page": "1270-1280",
+    "issued": {
+      "date-parts": [
+        [
+          2023
+        ]
+      ]
+    },
+    "DOI": "10.1109/tpwrs.2022.3173250",
+    "custom": {
+      "group": "methodology",
+      "verification": "crossref-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "B",
+      "backsClaims": [
+        "carbon-aware temporal load shifting in datacenters, the mechanism /schedule and /route implement"
+      ],
+      "caveat": "DOI re-resolved against the Crossref REST API on 2026-08-23 from this project; title, year, container, volume and pages matched the record below."
+    }
+  },
+  {
+    "id": "ricks-2023-hourly-matching",
+    "type": "article-journal",
+    "title": "Minimizing emissions from grid-based hydrogen production in the United States",
+    "author": [
+      {
+        "family": "Ricks",
+        "given": "Wilson"
+      },
+      {
+        "family": "Xu",
+        "given": "Qingyu"
+      },
+      {
+        "family": "Jenkins",
+        "given": "Jesse D."
+      }
+    ],
+    "container-title": "Environmental Research Letters",
+    "volume": "18",
+    "page": "014025",
+    "issued": {
+      "date-parts": [
+        [
+          2023
+        ]
+      ]
+    },
+    "DOI": "10.1088/1748-9326/acacb5",
+    "custom": {
+      "group": "standards",
+      "verification": "crossref-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "B",
+      "backsClaims": [
+        "that hourly matching produces materially different emissions outcomes than annual matching"
+      ],
+      "caveat": "DOI re-resolved against the Crossref REST API on 2026-08-23 from this project; title, year, container, volume and pages matched the record below. Note the tension with the marginal-accounting sources in the methodology group: this paper finds hourly matching outperforms marginal accounting. Both positions are in the corpus deliberately."
+    }
+  },
+  {
+    "id": "riepin-2024-247-cfe",
+    "type": "article-journal",
+    "title": "On the means, costs, and system-level impacts of 24/7 carbon-free energy procurement",
+    "author": [
+      {
+        "family": "Riepin",
+        "given": "Iegor"
+      },
+      {
+        "family": "Brown",
+        "given": "Tom"
+      }
+    ],
+    "container-title": "Energy Strategy Reviews",
+    "volume": "54",
+    "page": "101488",
+    "issued": {
+      "date-parts": [
+        [
+          2024
+        ]
+      ]
+    },
+    "DOI": "10.1016/j.esr.2024.101488",
+    "custom": {
+      "group": "standards",
+      "verification": "crossref-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "B",
+      "backsClaims": [
+        "the system-level analysis behind the README's claim that hourly matching is a stronger claim than annual REC matching"
+      ],
+      "caveat": "DOI re-resolved against the Crossref REST API on 2026-08-23 from this project; title, year, container, volume and pages matched the record below."
+    }
+  },
+  {
+    "id": "ryan-2016-comparative-grid-methods",
+    "type": "article-journal",
+    "title": "Comparative Assessment of Models and Methods To Calculate Grid Electricity Emissions",
+    "author": [
+      {
+        "family": "Ryan",
+        "given": "Nicole A."
+      },
+      {
+        "family": "Johnson",
+        "given": "Jeremiah X."
+      },
+      {
+        "family": "Keoleian",
+        "given": "Gregory A."
+      }
+    ],
+    "container-title": "Environmental Science & Technology",
+    "volume": "50",
+    "page": "8937-8953",
+    "issued": {
+      "date-parts": [
+        [
+          2016
+        ]
+      ]
+    },
+    "DOI": "10.1021/acs.est.5b05216",
+    "custom": {
+      "group": "methodology",
+      "verification": "crossref-verified",
+      "accessLevel": "paywalled",
+      "evidenceTier": "B",
+      "backsClaims": [
+        "that average and marginal accounting answer different questions, which is why the API reports both",
+        "that the choice of grid-emissions method materially changes the answer"
+      ],
+      "caveat": "DOI re-resolved against the Crossref REST API on 2026-08-23 from this project; title, year, container, volume and pages matched the record below."
+    }
+  },
+  {
+    "id": "siler-evans-2012-marginal-factors",
+    "type": "article-journal",
+    "title": "Marginal Emissions Factors for the U.S. Electricity System",
+    "author": [
+      {
+        "family": "Siler-Evans",
+        "given": "Kyle"
+      },
+      {
+        "family": "Azevedo",
+        "given": "Ines Lima"
+      },
+      {
+        "family": "Morgan",
+        "given": "M. Granger"
+      }
+    ],
+    "container-title": "Environmental Science & Technology",
+    "volume": "46",
+    "page": "4742-4748",
+    "issued": {
+      "date-parts": [
+        [
+          2012
+        ]
+      ]
+    },
+    "DOI": "10.1021/es300145v",
+    "custom": {
+      "group": "methodology",
+      "verification": "crossref-verified",
+      "accessLevel": "paywalled",
+      "evidenceTier": "B",
+      "backsClaims": [
+        "regression against observed generation as the standard way to estimate marginal factors"
+      ],
+      "caveat": "DOI re-resolved against the Crossref REST API on 2026-08-23 from this project; title, year, container, volume and pages matched the record below. Named here to make explicit what this project does NOT do: carbon-lens estimates marginal intensity from the running merit order, not by regression. Cited as the method the heuristic is a cheap substitute for."
+    }
+  },
+  {
+    "id": "staffell-2017-british-electricity",
+    "type": "article-journal",
+    "title": "Measuring the progress and impacts of decarbonising British electricity",
+    "author": [
+      {
+        "family": "Staffell",
+        "given": "Iain"
+      }
+    ],
+    "container-title": "Energy Policy",
+    "volume": "102",
+    "page": "463-475",
+    "issued": {
+      "date-parts": [
+        [
+          2017
+        ]
+      ]
+    },
+    "DOI": "10.1016/j.enpol.2016.12.037",
+    "custom": {
+      "group": "emission-factors",
+      "verification": "crossref-verified",
+      "accessLevel": "paywalled",
+      "evidenceTier": "B",
+      "backsClaims": [
+        "GB-specific generation emission factors, against which NESO's published direct factors can be sanity-checked"
+      ],
+      "caveat": "DOI re-resolved against the Crossref REST API on 2026-08-23 from this project; title, year, container, volume and pages matched the record below."
+    }
+  },
+  {
+    "id": "taipower-generation-data",
+    "type": "dataset",
+    "title": "Taipower real-time per-unit generation data (genary.json)",
+    "author": [
+      {
+        "literal": "Taiwan Power Company"
+      }
+    ],
+    "issued": {
+      "date-parts": [
+        [
+          2026
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          8,
+          23
+        ]
+      ]
+    },
+    "URL": "https://www.taipower.com.tw/d006/loadGraph/loadGraph/data/genary.json",
+    "custom": {
+      "group": "grid-data",
+      "verification": "url-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "A",
+      "backsClaims": [
+        "the per-unit Taiwanese fuel mix parsed in carbon_sources/taiwan.py"
+      ],
+      "caveat": "Endpoint is the one the code calls; identity confirmed from the code path, not independently re-fetched on 2026-08-23."
+    }
+  },
+  {
+    "id": "tranberg-2019-flow-tracing",
+    "type": "article-journal",
+    "title": "Real-time carbon accounting method for the European electricity markets",
+    "author": [
+      {
+        "family": "Tranberg",
+        "given": "Bo"
+      },
+      {
+        "family": "Corradi",
+        "given": "Olivier"
+      },
+      {
+        "family": "Lajoie",
+        "given": "Bruno"
+      },
+      {
+        "family": "Gibon",
+        "given": "Thomas"
+      },
+      {
+        "family": "Staffell",
+        "given": "Iain"
+      },
+      {
+        "family": "Andresen",
+        "given": "Gorm Bruun"
+      }
+    ],
+    "container-title": "Energy Strategy Reviews",
+    "volume": "26",
+    "page": "100367",
+    "issued": {
+      "date-parts": [
+        [
+          2019
+        ]
+      ]
+    },
+    "DOI": "10.1016/j.esr.2019.100367",
+    "custom": {
+      "group": "methodology",
+      "verification": "crossref-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "B",
+      "backsClaims": [
+        "the flow-tracing linear system implemented in carbon_sources/flow_tracing.py",
+        "consumption-based intensity as the accounting basis for an import-heavy zone"
+      ],
+      "caveat": "DOI re-resolved against the Crossref REST API on 2026-08-23 from this project; title, year, container, volume and pages matched the record below. The module docstring already named this paper; this record makes it resolvable and ties it to the specific linear system in trace_consumption_intensity()."
+    }
+  },
+  {
+    "id": "turconi-2013-lca-electricity",
+    "type": "article-journal",
+    "title": "Life cycle assessment (LCA) of electricity generation technologies: Overview, comparability and limitations",
+    "author": [
+      {
+        "family": "Turconi",
+        "given": "Roberto"
+      },
+      {
+        "family": "Boldrin",
+        "given": "Alessio"
+      },
+      {
+        "family": "Astrup",
+        "given": "Thomas"
+      }
+    ],
+    "container-title": "Renewable and Sustainable Energy Reviews",
+    "volume": "28",
+    "page": "555-565",
+    "issued": {
+      "date-parts": [
+        [
+          2013
+        ]
+      ]
+    },
+    "DOI": "10.1016/j.rser.2013.08.013",
+    "custom": {
+      "group": "emission-factors",
+      "verification": "crossref-verified",
+      "accessLevel": "paywalled",
+      "evidenceTier": "B",
+      "backsClaims": [
+        "the spread of published lifecycle factors per technology, i.e. that the corpus's point estimates hide real ranges"
+      ],
+      "caveat": "DOI re-resolved against the Crossref REST API on 2026-08-23 from this project; title, year, container, volume and pages matched the record below."
+    }
+  },
+  {
+    "id": "uk-post-268-2006",
+    "type": "report",
+    "title": "Carbon Footprint of Electricity Generation",
+    "author": [
+      {
+        "literal": "Parliamentary Office of Science and Technology"
+      }
+    ],
+    "number": "POSTnote 268",
+    "publisher": "Houses of Parliament, United Kingdom",
+    "issued": {
+      "date-parts": [
+        [
+          2006,
+          10
+        ]
+      ]
+    },
+    "URL": "https://www.parliament.uk/globalassets/documents/post/postpn268.pdf",
+    "custom": {
+      "group": "emission-factors",
+      "verification": "primary-read",
+      "accessLevel": "public-domain",
+      "evidenceTier": "C",
+      "backsClaims": [
+        "the emission factor of 650 gCO2eq/kWh used for oil-fired generation"
+      ],
+      "caveat": "Read in full on 2026-08-23. parliament.uk returns HTTP 403 to every automated client (direct, and with a browser User-Agent); the document was retrieved through the Wayback Machine at web.archive.org/web/2019id_/. Verbatim, page 2: 'The average carbon footprint of oil-fired electricity generation plants in the UK is ~650gCO2eq/kWh.' Note what this actually is, because it is much weaker than the use it is put to: a UK-fleet average published in October 2006, for a fuel the same page says supplied 1% of UK generation and ran mainly as peaking back-up. It is not a global median, it is not an IPCC figure, and it is twenty years old."
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          8,
+          23
+        ]
+      ]
+    }
+  },
+  {
+    "id": "watttime-api",
+    "type": "webpage",
+    "title": "WattTime Data API documentation",
+    "author": [
+      {
+        "literal": "WattTime"
+      }
+    ],
+    "issued": {
+      "date-parts": [
+        [
+          2026
+        ]
+      ]
+    },
+    "accessed": {
+      "date-parts": [
+        [
+          2026,
+          8,
+          23
+        ]
+      ]
+    },
+    "URL": "https://docs.watttime.org/",
+    "custom": {
+      "group": "grid-data",
+      "verification": "url-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "B",
+      "backsClaims": [
+        "the measured marginal operating emissions rate (MOER) consumed in carbon_sources/marginal.py",
+        "that MOER is published in lbs CO2/MWh, which is the basis of the unit conversion there"
+      ],
+      "caveat": "Documentation fetched on 2026-08-23. The API itself returns HTTP 401 without credentials, and this project holds none, which is why the WattTime backtest in docs/VALIDATION.md is reported as NOT RUN rather than estimated."
+    }
+  },
+  {
+    "id": "wiesner-2021-lets-wait-awhile",
+    "type": "paper-conference",
+    "title": "Let's wait awhile: how temporal workload shifting can reduce carbon emissions in the cloud",
+    "author": [
+      {
+        "family": "Wiesner",
+        "given": "Philipp"
+      },
+      {
+        "family": "Behnke",
+        "given": "Ilja"
+      },
+      {
+        "family": "Scheinert",
+        "given": "Dominik"
+      },
+      {
+        "family": "Gontarska",
+        "given": "Kordian"
+      },
+      {
+        "family": "Thamsen",
+        "given": "Lauritz"
+      }
+    ],
+    "container-title": "Proceedings of the 22nd International Middleware Conference",
+    "page": "260-272",
+    "issued": {
+      "date-parts": [
+        [
+          2021
+        ]
+      ]
+    },
+    "DOI": "10.1145/3464298.3493399",
+    "custom": {
+      "group": "methodology",
+      "verification": "crossref-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "B",
+      "backsClaims": [
+        "that temporal workload shifting reduces emissions, and by how much, for the scheduler's premise"
+      ],
+      "caveat": "DOI re-resolved against the Crossref REST API on 2026-08-23 from this project; title, year, container, volume and pages matched the record below."
+    }
+  },
+  {
+    "id": "wiesner-2025-marginal-poor-metric",
+    "type": "article-journal",
+    "title": "Moving Beyond Marginal Carbon Intensity: A Poor Metric for Both Carbon Accounting and Grid Flexibility",
+    "author": [
+      {
+        "family": "Wiesner",
+        "given": "Philipp"
+      },
+      {
+        "family": "Kao",
+        "given": "Odej"
+      }
+    ],
+    "container-title": "ACM SIGMETRICS Performance Evaluation Review",
+    "volume": "53",
+    "page": "108-111",
+    "issued": {
+      "date-parts": [
+        [
+          2025
+        ]
+      ]
+    },
+    "DOI": "10.1145/3764944.3764969",
+    "custom": {
+      "group": "methodology",
+      "verification": "crossref-verified",
+      "accessLevel": "open-access",
+      "evidenceTier": "C",
+      "backsClaims": [
+        "the counter-position that marginal intensity is a poor metric for load shifting"
+      ],
+      "caveat": "DOI re-resolved against the Crossref REST API on 2026-08-23 from this project; title, year, container, volume and pages matched the record below. Deliberately included against interest: this project reports a marginal signal and this paper argues the metric is weak for exactly that use. The corpus carries both sides."
+    }
+  }
+]

@@ -1,23 +1,22 @@
 """Tests for Green SLA monitoring — engine, monitor, and models."""
 
 import uuid
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
 from carbonlens.models.sla import (
     AlertChannel,
+    AlertEvent,
     GreenSLA,
     SLACheck,
     SLACheckFrequency,
     SLAReport,
     SLAStatus,
     SLASummary,
-    AlertEvent,
 )
 from carbonlens.sla.engine import SLAEngine
-from carbonlens.sla.monitor import SLAMonitor, FREQUENCY_SECONDS
-
+from carbonlens.sla.monitor import FREQUENCY_SECONDS, SLAMonitor
 
 # --- Fixtures ---
 
@@ -36,7 +35,7 @@ class MockCarbonSource:
             grid_zone=grid_zone,
             carbon_intensity_gco2_kwh=self._intensity,
             renewable_percentage=self._renewable,
-            timestamp=datetime.now(timezone.utc),
+            timestamp=datetime.now(UTC),
             source="mock",
         )
 
@@ -82,7 +81,7 @@ class MockGridMapper:
 
 
 def _make_sla(**kwargs) -> GreenSLA:
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     defaults = dict(
         id=str(uuid.uuid4()),
         org_id="test-org",
@@ -115,7 +114,7 @@ def test_sla_check_model():
     check = SLACheck(
         id="check-1",
         sla_id="sla-1",
-        checked_at=datetime.now(timezone.utc),
+        checked_at=datetime.now(UTC),
         status=SLAStatus.COMPLIANT,
         avg_carbon_intensity_gco2_kwh=50.0,
         max_carbon_intensity_gco2_kwh=80.0,
@@ -147,7 +146,7 @@ def test_sla_summary_model():
         max_carbon_intensity_gco2_kwh=100.0,
         min_renewable_percentage=50.0,
         check_frequency=SLACheckFrequency.DAILY,
-        last_checked=datetime.now(timezone.utc),
+        last_checked=datetime.now(UTC),
         active=True,
     )
     assert summary.name == "Prod SLA"
@@ -160,7 +159,7 @@ def test_alert_event_model():
         sla_id="sla-1",
         sla_name="Test SLA",
         channel=AlertChannel.WEBHOOK,
-        sent_at=datetime.now(timezone.utc),
+        sent_at=datetime.now(UTC),
         status=SLAStatus.BREACHED,
         details={"regions_breached": 3},
         delivery_status="sent",
@@ -176,9 +175,9 @@ def test_sla_report_model():
         org_id="org-1",
         org_name="Test Org",
         sla_name="Test SLA",
-        period_start=datetime.now(timezone.utc) - timedelta(days=30),
-        period_end=datetime.now(timezone.utc),
-        generated_at=datetime.now(timezone.utc),
+        period_start=datetime.now(UTC) - timedelta(days=30),
+        period_end=datetime.now(UTC),
+        generated_at=datetime.now(UTC),
         total_checks=100,
         compliant_checks=95,
         warning_checks=3,
@@ -286,7 +285,7 @@ async def test_generate_report_from_checks():
     engine = SLAEngine(carbon_source=source, grid_mapper=mapper)
 
     sla = _make_sla()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     # Create some mock checks
     checks = []
@@ -344,7 +343,7 @@ async def test_generate_report_empty_checks():
     engine = SLAEngine(carbon_source=source, grid_mapper=mapper)
 
     sla = _make_sla()
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     report = engine.generate_report(
         sla=sla,
@@ -368,7 +367,7 @@ def test_summarize_sla():
     check = SLACheck(
         id="check-1",
         sla_id=sla.id,
-        checked_at=datetime.now(timezone.utc),
+        checked_at=datetime.now(UTC),
         status=SLAStatus.WARNING,
         avg_carbon_intensity_gco2_kwh=90.0,
         max_carbon_intensity_gco2_kwh=110.0,

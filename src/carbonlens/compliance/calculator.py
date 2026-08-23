@@ -1,7 +1,18 @@
 """Emissions calculator — converts cloud usage + carbon intensity into kgCO2e.
 
-Follows GHG Protocol Corporate Standard, Scope 2 Guidance (2015),
-and Scope 3 Category 1 methodology for purchased cloud services.
+Follows GHG Protocol Corporate Standard, Scope 2 Guidance (2015), and Scope 3
+Category 1 methodology for purchased cloud services.
+
+Two conformance limits, both real and neither previously written down:
+
+1. Scope 2 Guidance §1.5.1 requires DUAL REPORTING -- a company with contractual
+   instruments "shall report scope 2 emissions in two ways", location-based and
+   market-based, labelled. This calculator takes a single `method` and returns a
+   single figure, so a caller can produce a one-method report that does not conform.
+   Callers wanting conformance must run it twice and report both.
+2. The Scope 2 / Scope 3 Cat 1 split below keys off a hardcoded list of managed
+   service names. That split is this project's own judgement about where the
+   operational boundary falls; the standard does not enumerate cloud services.
 """
 
 from __future__ import annotations
@@ -11,6 +22,7 @@ import uuid
 from datetime import UTC, datetime
 
 from carbonlens.carbon_sources.base import CarbonDataSource
+from carbonlens.citations_generated import CitationId
 from carbonlens.grid.mapper import GridMapper
 from carbonlens.models.compliance import (
     PROVIDER_PUE,
@@ -19,8 +31,17 @@ from carbonlens.models.compliance import (
     EmissionsCalculation,
     EmissionScope,
 )
+from carbonlens.provenance import data_quality
 
 logger = logging.getLogger(__name__)
+
+# The standards this calculator implements.
+CITATIONS: tuple[CitationId, ...] = (
+    "ghg-protocol-scope2-guidance",
+    "ghg-protocol-corporate-standard",
+    "ghg-protocol-scope3-standard",
+    "gsf-sci-specification",
+)
 
 
 class EmissionsCalculator:
@@ -138,13 +159,14 @@ def _scope_for_service(service: str) -> EmissionScope:
 
 
 def _data_quality(source: str) -> str:
-    """Map carbon data source to data quality level per GHG Protocol."""
-    measured = {"uk", "eia", "aemo", "entsoe", "grid_india", "ons_brazil", "eskom", "gridstatus"}
-    modeled = {"open_meteo"}
-    if source.lower() in measured:
-        return "measured"
-    if source.lower() in modeled:
-        return "modeled"
-    if source.lower() == "mock":
-        return "default"
-    return "estimated"
+    """Map carbon data source to data quality level per GHG Protocol.
+
+    Delegates to the provenance registry rather than keeping a second list of
+    source names. The previous local list had drifted out of sync with the strings
+    providers actually stamp on a reading: it tested for "uk", "aemo" and "eskom"
+    while the providers emit "uk_carbon_intensity", "openelectricity" and
+    "eskom_heuristic", so every UK, Australian, Canadian and Taiwanese reading was
+    graded "estimated" on compliance reports despite coming from a live
+    grid-operator feed, and the Eskom time-of-day model was graded "measured".
+    """
+    return data_quality(source)

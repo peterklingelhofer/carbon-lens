@@ -17,7 +17,7 @@ import argparse
 import asyncio
 import json
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import httpx
 
@@ -71,7 +71,7 @@ def _carry_forward(
     the number of regions carried forward."""
     if not baseline:
         return 0
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     cutoff = timedelta(hours=max_stale_hours)
     carried = 0
     for key, prev in baseline.get("intensities", {}).items():
@@ -85,7 +85,7 @@ def _carry_forward(
         except (KeyError, ValueError):
             continue
         if ts.tzinfo is None:
-            ts = ts.replace(tzinfo=timezone.utc)
+            ts = ts.replace(tzinfo=UTC)
         if now - ts > cutoff:
             continue  # last real reading is too old to trust
         intensities[key] = {**prev, "carried_forward": True}
@@ -389,7 +389,7 @@ async def build_snapshot(
             print(f"  (weather precompute skipped: {e})", file=sys.stderr)
 
     return {
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "regions": snapshot_regions,
         "intensities": snapshot_intensities,
         "signals": signals,

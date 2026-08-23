@@ -5,7 +5,7 @@ without a real Postgres -- the repo only uses portable SQLAlchemy, and each doma
 model round-trips through a JSON payload column.
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
@@ -32,7 +32,7 @@ async def repo():
 
 
 def _sla(sla_id: str = "sla-1", org: str = "org-1", active: bool = True) -> GreenSLA:
-    now = datetime(2026, 6, 14, tzinfo=timezone.utc)
+    now = datetime(2026, 6, 14, tzinfo=UTC)
     return GreenSLA(
         id=sla_id,
         org_id=org,
@@ -83,7 +83,7 @@ async def test_sla_crud_roundtrip(repo: DBSLARepository):
 
 async def test_checks_ordered_and_latest(repo: DBSLARepository):
     await repo.create_sla(_sla())
-    t0 = datetime(2026, 6, 14, 0, tzinfo=timezone.utc)
+    t0 = datetime(2026, 6, 14, 0, tzinfo=UTC)
     await repo.add_check(_check("sla-1", t0))
     await repo.add_check(_check("sla-1", t0 + timedelta(hours=1), SLAStatus.BREACHED))
 
@@ -97,16 +97,16 @@ async def test_checks_ordered_and_latest(repo: DBSLARepository):
 
 async def test_delete_cascades_checks_and_reports(repo: DBSLARepository):
     await repo.create_sla(_sla())
-    await repo.add_check(_check("sla-1", datetime(2026, 6, 14, tzinfo=timezone.utc)))
+    await repo.add_check(_check("sla-1", datetime(2026, 6, 14, tzinfo=UTC)))
     report = SLAReport(
         id="rep-1",
         sla_id="sla-1",
         org_id="org-1",
         org_name="Org",
         sla_name="Green target",
-        period_start=datetime(2026, 6, 1, tzinfo=timezone.utc),
-        period_end=datetime(2026, 6, 14, tzinfo=timezone.utc),
-        generated_at=datetime(2026, 6, 14, tzinfo=timezone.utc),
+        period_start=datetime(2026, 6, 1, tzinfo=UTC),
+        period_end=datetime(2026, 6, 14, tzinfo=UTC),
+        generated_at=datetime(2026, 6, 14, tzinfo=UTC),
         total_checks=1,
         compliant_checks=1,
         warning_checks=0,
