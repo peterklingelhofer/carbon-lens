@@ -3,11 +3,11 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from carbon_mesh.carbon_sources.mock import MockCarbonSource
-from carbon_mesh.config import settings
-from carbon_mesh.engine.cache import IntensityCache
-from carbon_mesh.engine.router import RoutingEngine
-from carbon_mesh.grid.mapper import GridMapper
+from carbonlens.carbon_sources.mock import MockCarbonSource
+from carbonlens.config import settings
+from carbonlens.engine.cache import IntensityCache
+from carbonlens.engine.router import RoutingEngine
+from carbonlens.grid.mapper import GridMapper
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
@@ -16,7 +16,7 @@ DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 def _demo_mode_no_auth():
     """Run the suite in open demo mode — auth defaults to fail-closed in production,
     and the rate limiter is disabled so back-to-back test requests don't trip it."""
-    from carbon_mesh.main import limiter
+    from carbonlens.main import limiter
 
     original_auth = settings.api_key_required
     original_enabled = limiter.enabled
@@ -51,6 +51,6 @@ def engine(
 
 @pytest.fixture
 def client() -> TestClient:
-    from carbon_mesh.main import app
+    from carbonlens.main import app
 
     return TestClient(app)

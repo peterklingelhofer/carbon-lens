@@ -20,8 +20,8 @@ it uses the public CarbonLens instance; set ``api_url=`` for your own deployment
 
 from fastapi import FastAPI
 
-from carbon_mesh.middleware import CarbonAwareShedder
-from carbon_mesh.sdk import CarbonClient, choose_by_state
+from carbonlens.middleware import CarbonAwareShedder
+from carbonlens.sdk import CarbonClient, choose_by_state
 
 REGION = "aws/us-east-1"
 _client = CarbonClient()

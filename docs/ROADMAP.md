@@ -28,15 +28,15 @@ What's missing to become a real SaaS:
 - [ ] Historical carbon intensity data (store every query for trend analysis)
 
 ### CLI Tool
-- [ ] `carbon-mesh route --providers aws,gcp --residency EU`
-- [ ] `carbon-mesh intensity aws/us-east-1`
-- [ ] `carbon-mesh report --last 30d`
-- [ ] Publish to PyPI: `pip install carbon-mesh`
+- [ ] `carbonlens route --providers aws,gcp --residency EU`
+- [ ] `carbonlens intensity aws/us-east-1`
+- [ ] `carbonlens report --last 30d`
+- [ ] Publish to PyPI: `pip install carbonlens`
 
 ### CI/CD Integrations
-- [ ] GitHub Action: `uses: carbon-mesh/route@v1` — sets `DEPLOY_REGION` output
+- [ ] GitHub Action: `uses: carbonlens/route@v1` — sets `DEPLOY_REGION` output
 - [ ] GitLab CI template
-- [ ] Terraform provider: `data "carbon_mesh_greenest_region" {}`
+- [ ] Terraform provider: `data "carbonlens_greenest_region" {}`
 
 ---
 
@@ -70,7 +70,7 @@ The premium over Hetzner (~5-15%) pays for:
 For batch/flexible workloads (CI/CD, ML training), prices can be *lower* than Hetzner by using spot instances in green regions during off-peak hours.
 
 ### Container Platform
-- [ ] Docker container deployment: `carbon-mesh deploy --image myapp:latest`
+- [ ] Docker container deployment: `carbonlens deploy --image myapp:latest`
 - [ ] Automatic region selection based on current grid conditions
 - [ ] Container registry (or integrate with existing: GHCR, DockerHub, ECR)
 - [ ] Health checks, auto-restart, logging
@@ -97,7 +97,7 @@ For batch/flexible workloads (CI/CD, ML training), prices can be *lower* than He
 ### Kubernetes Operator
 - [ ] `CarbonMeshCluster` CRD — define multi-region cluster pool
 - [ ] Scheduler plugin: pods get placed on greenest available node
-- [ ] `carbon-mesh.io/min-renewable: "80%"` annotation on deployments
+- [ ] `carbonlens.io/min-renewable: "80%"` annotation on deployments
 - [ ] Auto-migration: reschedule pods when grid conditions change
 - [ ] Works with EKS, GKE, AKS
 

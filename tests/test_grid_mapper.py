@@ -1,4 +1,4 @@
-from carbon_mesh.grid.mapper import GridMapper
+from carbonlens.grid.mapper import GridMapper
 
 
 def test_get_region(grid_mapper: GridMapper):

@@ -25,7 +25,7 @@ contribution mechanics, see [CONTRIBUTING.md](CONTRIBUTING.md).
    (frontend reads snapshot directly)    not N live calls per request)
                   │
    ┌──────────────┼───────────────────────────────────────────────┐
-   │  FastAPI app (src/carbon_mesh)                                  │
+   │  FastAPI app (src/carbonlens)                                  │
    │  /carbon (now/forecast/history/zone/batch) · /route · /scheduler│
    │  /compliance · /sla · /metrics · /badge · /ws/carbon            │
    └──────────────┬───────────────────────────────────────────────┘
@@ -35,7 +35,7 @@ contribution mechanics, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Carbon data: the cascade
 
-[`HybridCarbonSource`](src/carbon_mesh/carbon_sources/hybrid.py) holds an ordered
+[`HybridCarbonSource`](src/carbonlens/carbon_sources/hybrid.py) holds an ordered
 provider chain. For a zone it tries each source that declares coverage and returns
 the first success; if a live provider fails it logs a warning and moves on, and if
 nothing covers the zone it falls through to labeled **mock** data (logged at INFO so
@@ -44,7 +44,7 @@ a zone going dark is visible in snapshot-builder logs). Priority, roughly:
 > UK → EIA → OpenElectricity/AEMO → IESO/AESO → Taipower → Grid India → ONS Brazil
 > → Eskom → GridStatus → ENTSO-E → Open-Meteo → Electricity Maps → Mock
 
-Most providers report a **fuel mix** (MW per fuel); [`emission_factors.py`](src/carbon_mesh/carbon_sources/emission_factors.py)
+Most providers report a **fuel mix** (MW per fuel); [`emission_factors.py`](src/carbonlens/carbon_sources/emission_factors.py)
 turns that into intensity (`calculate_carbon_intensity`), renewable %, a marginal
 estimate (`calculate_marginal_intensity` — the price-setting fuel, a labeled
 heuristic), and the per-fuel `power_breakdown`. XML feeds (ENTSO-E, IESO) parse via
@@ -65,7 +65,7 @@ User traffic never hits upstream provider APIs. A scheduled GitHub Action runs
 once and publishes `snapshot.json` (current) and `history.json` (a rolling
 per-region archive) to a `data` branch / CDN. Quota cost is `O(zones × cadence)`,
 not `O(users)`. The frontend reads the snapshot directly; the API reads it via
-[`SnapshotBackedSource`](src/carbon_mesh/carbon_sources/snapshot_source.py) (one
+[`SnapshotBackedSource`](src/carbonlens/carbon_sources/snapshot_source.py) (one
 cached fetch instead of dozens of live calls per request). Two resilience touches:
 **carry-forward** (a brief upstream gap keeps the last *live* reading rather than
 dropping to an estimate) and an in-memory **stale-while-revalidate cache**.
@@ -83,17 +83,17 @@ dropping to an estimate) and an in-memory **stale-while-revalidate cache**.
 
 ## Routing & scheduling
 
-- **Routing** ([`engine/router.py`](src/carbon_mesh/engine/router.py)) ranks
+- **Routing** ([`engine/router.py`](src/carbonlens/engine/router.py)) ranks
   candidate regions by a carbon/cost weighted score; default favors lowest carbon
   intensity. Greenest = lowest gCO₂/kWh (not highest renewable %).
-- **Scheduling** ([`scheduler/engine.py`](src/carbon_mesh/scheduler/engine.py))
+- **Scheduling** ([`scheduler/engine.py`](src/carbonlens/scheduler/engine.py))
   projects each region across a delay window and picks the cleanest slot; the
   `carbonlens run` CLI uses the same forecast to defer a job to a green window.
 
 ## SLA monitoring: pluggable persistence
 
 SLA definitions, checks, and reports go through an
-[`SLARepository`](src/carbon_mesh/sla/repository.py) with two backends behind one
+[`SLARepository`](src/carbonlens/sla/repository.py) with two backends behind one
 protocol: `InMemorySLARepository` (keyless demo, tests) and `DBSLARepository`
 (Postgres, durable). `get_sla_repository` picks per request based on
 `CARBON_LENS_USE_DATABASE`. Durable *scheduled* checking on a scale-to-zero host
@@ -112,7 +112,7 @@ sync with the routes. Observability extras: Prometheus carbon gauges on `/metric
 ## Layout
 
 ```
-src/carbon_mesh/
+src/carbonlens/
   carbon_sources/   provider integrations + hybrid cascade + emission factors
   engine/           routing, scoring, intensity cache
   scheduler/        carbon-aware window selection + forecast projection

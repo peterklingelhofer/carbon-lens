@@ -27,9 +27,9 @@ steps:
       template: train-model
 ```
 
-The gate reuses `carbon_mesh.sdk` (the same marginal/clean-surplus decision as the
+The gate reuses `carbonlens.sdk` (the same marginal/clean-surplus decision as the
 CLI, Action, Kubernetes, Airflow, Prefect, Dagster, and Celery surfaces), so it needs
-an image with `carbon_mesh` installed — the API image works, or your own.
+an image with `carbonlens` installed — the API image works, or your own.
 
 ## Pattern & honest limits
 

@@ -1,7 +1,7 @@
 import pytest
 
-from carbon_mesh.engine.router import RoutingEngine
-from carbon_mesh.models.routing import JobConstraints
+from carbonlens.engine.router import RoutingEngine
+from carbonlens.models.routing import JobConstraints
 
 
 @pytest.mark.asyncio

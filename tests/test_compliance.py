@@ -3,15 +3,15 @@
 import pytest
 from datetime import datetime, timezone
 
-from carbon_mesh.models.compliance import (
+from carbonlens.models.compliance import (
     AccountingMethod,
     EmissionScope,
     PROVIDER_PUE,
     VCPU_HOUR_KWH,
 )
-from carbon_mesh.compliance.usage_ingestion import estimate_energy_kwh, MockUsageAdapter
-from carbon_mesh.compliance.calculator import _scope_for_service, _data_quality
-from carbon_mesh.compliance.reporting import ReportingEngine
+from carbonlens.compliance.usage_ingestion import estimate_energy_kwh, MockUsageAdapter
+from carbonlens.compliance.calculator import _scope_for_service, _data_quality
+from carbonlens.compliance.reporting import ReportingEngine
 
 
 # --- Energy estimation tests ---
@@ -118,7 +118,7 @@ def test_empty_report():
 
 
 def test_report_with_calculations():
-    from carbon_mesh.models.compliance import EmissionsCalculation
+    from carbonlens.models.compliance import EmissionsCalculation
 
     now = datetime.now(timezone.utc)
     calcs = [
@@ -186,7 +186,7 @@ def test_report_with_calculations():
 
 
 def test_report_summary():
-    from carbon_mesh.models.compliance import EmissionsCalculation
+    from carbonlens.models.compliance import EmissionsCalculation
 
     now = datetime.now(timezone.utc)
     calcs = [

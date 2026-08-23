@@ -7,9 +7,9 @@ from unittest.mock import patch
 
 from typer.testing import CliRunner
 
-from carbon_mesh.cli import client
-from carbon_mesh.cli.green_run import choose_run_index, choose_run_plan
-from carbon_mesh.cli.main import app
+from carbonlens.cli import client
+from carbonlens.cli.green_run import choose_run_index, choose_run_plan
+from carbonlens.cli.main import app
 
 
 # ---------------------------------------------------------------------------
@@ -20,7 +20,7 @@ from carbon_mesh.cli.main import app
 def _generate_api_key() -> str:
     """Local reimplementation to avoid importing the full auth module
     (which pulls in SQLAlchemy models that fail to resolve on some Python versions).
-    Mirrors carbon_mesh.auth.api_keys.generate_api_key exactly.
+    Mirrors carbonlens.auth.api_keys.generate_api_key exactly.
     """
     import secrets
 
@@ -182,7 +182,7 @@ class TestCliApp:
     def test_verify_writes_markdown_disclosure(self, tmp_path: Path, monkeypatch):
         from datetime import datetime, timezone
 
-        from carbon_mesh.cli import ledger as ledger_mod
+        from carbonlens.cli import ledger as ledger_mod
 
         now = datetime(2026, 6, 18, tzinfo=timezone.utc)
         monkeypatch.setattr(
@@ -334,7 +334,7 @@ class TestImpactLedger:
     def test_real_grams_only_from_jobs_with_energy(self):
         from datetime import datetime, timezone
 
-        from carbon_mesh.cli.ledger import summarize
+        from carbonlens.cli.ledger import summarize
 
         now = datetime(2026, 6, 16, tzinfo=timezone.utc)
         entries = [
@@ -361,7 +361,7 @@ class TestImpactLedger:
     def test_counts_verified_measured_jobs(self):
         from datetime import datetime, timezone
 
-        from carbon_mesh.cli.ledger import summarize
+        from carbonlens.cli.ledger import summarize
 
         now = datetime(2026, 6, 16, tzinfo=timezone.utc)
         entries = [
@@ -385,7 +385,7 @@ class TestImpactLedger:
     def test_calibration_compares_predicted_to_measured_actual(self):
         from datetime import datetime, timezone
 
-        from carbon_mesh.cli.ledger import calibration
+        from carbonlens.cli.ledger import calibration
 
         now = datetime(2026, 6, 18, tzinfo=timezone.utc)
         entries = [
@@ -424,7 +424,7 @@ class TestImpactLedger:
         assert cal["mean_abs_error_gco2_kwh"] == 20.0  # (|180-200| + |120-100|)/2
 
     def test_adjusted_prediction_scales_by_ratio(self):
-        from carbon_mesh.cli.ledger import adjusted_prediction
+        from carbonlens.cli.ledger import adjusted_prediction
 
         # Past forecasts ran 10% high (ratio 0.9) -> a fresh 200 prediction nudges to 180.
         assert adjusted_prediction(200, 0.9) == 180.0
@@ -434,7 +434,7 @@ class TestImpactLedger:
     def test_calibration_by_region_buckets_separately(self):
         from datetime import datetime, timezone
 
-        from carbon_mesh.cli.ledger import calibration_by_region
+        from carbonlens.cli.ledger import calibration_by_region
 
         now = datetime(2026, 6, 18, tzinfo=timezone.utc)
         entries = [
@@ -463,7 +463,7 @@ class TestImpactLedger:
     def test_calibration_empty_when_no_measured_runs(self):
         from datetime import datetime, timezone
 
-        from carbon_mesh.cli.ledger import calibration
+        from carbonlens.cli.ledger import calibration
 
         now = datetime(2026, 6, 18, tzinfo=timezone.utc)
         cal = calibration([{"ts": now.isoformat(), "deferred_hours": 0}], now, days=30)
@@ -473,7 +473,7 @@ class TestImpactLedger:
     def test_disclosure_markdown_includes_accuracy_and_counterfactual(self):
         from datetime import datetime, timezone
 
-        from carbon_mesh.cli.ledger import disclosure_markdown, org_statement
+        from carbonlens.cli.ledger import disclosure_markdown, org_statement
 
         now = datetime(2026, 6, 18, tzinfo=timezone.utc)
         entries = [
@@ -496,7 +496,7 @@ class TestImpactLedger:
     def test_org_statement_includes_forecast_calibration(self):
         from datetime import datetime, timezone
 
-        from carbon_mesh.cli.ledger import org_statement
+        from carbonlens.cli.ledger import org_statement
 
         now = datetime(2026, 6, 18, tzinfo=timezone.utc)
         entries = [
@@ -517,7 +517,7 @@ class TestImpactLedger:
     def test_fleet_summary_aggregates_by_region(self):
         from datetime import datetime, timezone
 
-        from carbon_mesh.cli.ledger import fleet_summary
+        from carbonlens.cli.ledger import fleet_summary
 
         now = datetime(2026, 6, 17, tzinfo=timezone.utc)
         entries = [
@@ -550,7 +550,7 @@ class TestImpactLedger:
     def test_org_statement_states_methodology(self):
         from datetime import datetime, timezone
 
-        from carbon_mesh.cli.ledger import org_statement
+        from carbonlens.cli.ledger import org_statement
 
         now = datetime(2026, 6, 18, tzinfo=timezone.utc)
         entries = [
@@ -620,7 +620,7 @@ class TestImpactLedger:
     def test_old_entries_drop_out_of_window(self):
         from datetime import datetime, timedelta, timezone
 
-        from carbon_mesh.cli.ledger import summarize
+        from carbonlens.cli.ledger import summarize
 
         now = datetime(2026, 6, 16, tzinfo=timezone.utc)
         old = (now - timedelta(days=40)).isoformat()
@@ -630,7 +630,7 @@ class TestImpactLedger:
 
 class TestPlanEstimate:
     def test_combines_region_and_shift_savings(self):
-        from carbon_mesh.cli.plan import plan_estimate
+        from carbonlens.cli.plan import plan_estimate
 
         # Two candidates: greenest 100, other 300 -> naive mean 200.
         siting = {
@@ -651,7 +651,7 @@ class TestPlanEstimate:
         assert est["total_saving_kg"] == 1314.0
 
     def test_no_options_unavailable(self):
-        from carbon_mesh.cli.plan import plan_estimate
+        from carbonlens.cli.plan import plan_estimate
 
         assert plan_estimate({"options": []}, {"zones": []}, 500, 0.5) == {"available": False}
 
@@ -666,8 +666,8 @@ class TestPlanCommand:
         }
         shift = {"zones": [{"grid_zone": "FI", "shift_savings_pct": 50}]}
         with (
-            patch("carbon_mesh.cli.client.siting", return_value=siting),
-            patch("carbon_mesh.cli.client.shiftability", return_value=shift),
+            patch("carbonlens.cli.client.siting", return_value=siting),
+            patch("carbonlens.cli.client.shiftability", return_value=shift),
         ):
             result = runner.invoke(app, ["plan", "--power-watts", "1000", "--flexible", "1.0"])
         assert result.exit_code == 0
@@ -711,7 +711,7 @@ class TestRunCommand:
                 ],
             }
 
-        with patch("carbon_mesh.cli.client.forecast", side_effect=fake_forecast):
+        with patch("carbonlens.cli.client.forecast", side_effect=fake_forecast):
             result = runner.invoke(
                 app,
                 [
@@ -728,7 +728,7 @@ class TestRunCommand:
         assert "gcp/europe-west1" in result.output
 
     def test_dry_run_reports_a_deferral(self):
-        with patch("carbon_mesh.cli.client.forecast", return_value=_forecast([300, 300, 50])):
+        with patch("carbonlens.cli.client.forecast", return_value=_forecast([300, 300, 50])):
             result = runner.invoke(
                 app,
                 [
@@ -747,7 +747,7 @@ class TestRunCommand:
         assert "Deferring" in result.output
 
     def test_dry_run_runs_now_when_clean(self):
-        with patch("carbon_mesh.cli.client.forecast", return_value=_forecast([40, 300])):
+        with patch("carbonlens.cli.client.forecast", return_value=_forecast([40, 300])):
             result = runner.invoke(
                 app, ["run", "--region", "aws/us-east-1", "--dry-run", "--", "echo", "hi"]
             )
@@ -763,9 +763,9 @@ class TestRunCommand:
         captured: list[dict] = []
         reads = iter([(1_000_000_000, 0), (4_600_000_000, 0)])
         with (
-            patch("carbon_mesh.cli.client.forecast", return_value=_forecast([40, 300])),
-            patch("carbon_mesh.cli.energy.read_rapl_uj", side_effect=lambda: next(reads)),
-            patch("carbon_mesh.cli.ledger.append", side_effect=captured.append),
+            patch("carbonlens.cli.client.forecast", return_value=_forecast([40, 300])),
+            patch("carbonlens.cli.energy.read_rapl_uj", side_effect=lambda: next(reads)),
+            patch("carbonlens.cli.ledger.append", side_effect=captured.append),
         ):
             result = runner.invoke(
                 app, ["run", "--region", "aws/us-east-1", "--measure-energy", "--", "echo", "hi"]
@@ -778,13 +778,13 @@ class TestRunCommand:
         # Forecast says defer 2h to ~100; at run time the grid actually reads 90.
         captured: list[dict] = []
         with (
-            patch("carbon_mesh.cli.client.forecast", return_value=_forecast([300, 200, 100])),
+            patch("carbonlens.cli.client.forecast", return_value=_forecast([300, 200, 100])),
             patch(
-                "carbon_mesh.cli.client.intensity",
+                "carbonlens.cli.client.intensity",
                 return_value={"carbon_intensity_gco2_kwh": 90},
             ),
             patch("time.sleep", lambda _s: None),
-            patch("carbon_mesh.cli.ledger.append", side_effect=captured.append),
+            patch("carbonlens.cli.ledger.append", side_effect=captured.append),
         ):
             result = runner.invoke(app, ["run", "--region", "aws/us-east-1", "--", "echo", "hi"])
         assert result.exit_code == 0
@@ -807,7 +807,7 @@ class TestBestTimeCommand:
             "suggested_cron": "0 3 * * *",
             "ranked_hours": [{"hour_utc": 3, "mean_gco2_kwh": 60.0, "samples": 12}],
         }
-        with patch("carbon_mesh.cli.client.best_time", return_value=payload):
+        with patch("carbonlens.cli.client.best_time", return_value=payload):
             result = runner.invoke(app, ["best-time", "aws/us-east-1"])
         assert result.exit_code == 0
         assert "0 3 * * *" in result.output
@@ -842,7 +842,7 @@ class TestBestTimeCommand:
             "power_watts": 500.0,
             "days_analyzed": 30,
         }
-        with patch("carbon_mesh.cli.client.siting", return_value=payload):
+        with patch("carbonlens.cli.client.siting", return_value=payload):
             result = runner.invoke(app, ["siting", "-p", "gcp", "--power-watts", "500"])
         assert result.exit_code == 0
         assert "europe-north1" in result.output
@@ -861,7 +861,7 @@ class TestBestTimeCommand:
                 }
             ],
         }
-        with patch("carbon_mesh.cli.client.shiftability", return_value=payload):
+        with patch("carbonlens.cli.client.shiftability", return_value=payload):
             result = runner.invoke(app, ["shiftability"])
         assert result.exit_code == 0
         assert "US-CAL-CISO" in result.output
@@ -885,7 +885,7 @@ class TestBestTimeCommand:
         def fake(provider, reg, days, energy):
             return {"aws": payload(3, 200.0), "gcp": payload(5, 40.0)}[provider]
 
-        with patch("carbon_mesh.cli.client.best_time", side_effect=fake):
+        with patch("carbonlens.cli.client.best_time", side_effect=fake):
             result = runner.invoke(app, ["best-time", "aws/us-east-1,gcp/europe-west1"])
         assert result.exit_code == 0
         # gcp is cleaner (40 < 200) -> it's the greenest place.

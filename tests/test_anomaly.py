@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 
-from carbon_mesh.engine.anomaly import compute_anomaly
+from carbonlens.engine.anomaly import compute_anomaly
 
 NOW = datetime(2026, 6, 20, 14, tzinfo=timezone.utc)  # UTC hour 14
 

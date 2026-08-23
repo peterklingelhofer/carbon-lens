@@ -5,7 +5,7 @@ deployable demos, not a hardened production setup. Read this before relying on t
 
 ## What's here and what works
 
-- **`helm/carbon-mesh/`** — a real, `helm template`-able chart: Deployment, Service,
+- **`helm/carbonlens/`** — a real, `helm template`-able chart: Deployment, Service,
   Ingress, HPA (2–10 replicas @ 70% CPU), ConfigMap, and Secret templates with
   sane resource requests/limits. This is the part you can actually `helm install`.
 - **`helmfile.yaml`** + **`environments/`** — three environments (default/staging/production)

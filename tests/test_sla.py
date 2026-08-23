@@ -5,7 +5,7 @@ from datetime import datetime, timezone, timedelta
 
 import pytest
 
-from carbon_mesh.models.sla import (
+from carbonlens.models.sla import (
     AlertChannel,
     GreenSLA,
     SLACheck,
@@ -15,8 +15,8 @@ from carbon_mesh.models.sla import (
     SLASummary,
     AlertEvent,
 )
-from carbon_mesh.sla.engine import SLAEngine
-from carbon_mesh.sla.monitor import SLAMonitor, FREQUENCY_SECONDS
+from carbonlens.sla.engine import SLAEngine
+from carbonlens.sla.monitor import SLAMonitor, FREQUENCY_SECONDS
 
 
 # --- Fixtures ---
@@ -30,7 +30,7 @@ class MockCarbonSource:
         self._renewable = renewable
 
     async def get_carbon_intensity(self, grid_zone: str):
-        from carbon_mesh.models.carbon import CarbonIntensity
+        from carbonlens.models.carbon import CarbonIntensity
 
         return CarbonIntensity(
             grid_zone=grid_zone,
@@ -62,7 +62,7 @@ class MockGridMapper:
         return self._regions.get((provider, region))
 
     def list_regions(self, provider: str | None = None):
-        from carbon_mesh.models.region import CloudRegion
+        from carbonlens.models.region import CloudRegion
 
         regions = []
         for (prov, reg), zone in self._regions.items():

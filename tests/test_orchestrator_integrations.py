@@ -2,11 +2,11 @@
 
 import pytest
 
-from carbon_mesh.sdk import CarbonClient
+from carbonlens.sdk import CarbonClient
 
 
 def test_prefect_wait_delegates_to_sdk(monkeypatch):
-    from carbon_mesh.integrations import prefect
+    from carbonlens.integrations import prefect
 
     monkeypatch.setattr(
         CarbonClient, "signal", lambda self, region: {"advice": "run_now", "clean_surplus": False}
@@ -16,29 +16,29 @@ def test_prefect_wait_delegates_to_sdk(monkeypatch):
 
 
 @pytest.mark.skipif(
-    __import__("carbon_mesh.integrations.prefect", fromlist=["_HAS_PREFECT"])._HAS_PREFECT,
+    __import__("carbonlens.integrations.prefect", fromlist=["_HAS_PREFECT"])._HAS_PREFECT,
     reason="Prefect is installed; the guard isn't exercised",
 )
 def test_prefect_task_requires_prefect():
-    from carbon_mesh.integrations import prefect
+    from carbonlens.integrations import prefect
 
     with pytest.raises(ImportError, match="prefect"):
         prefect.clean_window_task()
 
 
 @pytest.mark.skipif(
-    __import__("carbon_mesh.integrations.dagster", fromlist=["_HAS_DAGSTER"])._HAS_DAGSTER,
+    __import__("carbonlens.integrations.dagster", fromlist=["_HAS_DAGSTER"])._HAS_DAGSTER,
     reason="Dagster is installed; the guard isn't exercised",
 )
 def test_dagster_op_requires_dagster():
-    from carbon_mesh.integrations import dagster
+    from carbonlens.integrations import dagster
 
     with pytest.raises(ImportError, match="[Dd]agster"):
         dagster.clean_window_op("aws/us-east-1")
 
 
 def test_celery_defer_seconds():
-    from carbon_mesh.integrations.celery import defer_seconds
+    from carbonlens.integrations.celery import defer_seconds
 
     # Good now -> run immediately.
     assert defer_seconds({"advice": "run_now", "clean_surplus": False}) == 0.0
@@ -63,7 +63,7 @@ class _FakeTask:
 
 
 def test_celery_apply_when_clean_dispatches_or_schedules(monkeypatch):
-    from carbon_mesh.integrations import celery
+    from carbonlens.integrations import celery
 
     # Clean now -> dispatched immediately (no countdown).
     monkeypatch.setattr(
@@ -89,7 +89,7 @@ def test_celery_apply_when_clean_dispatches_or_schedules(monkeypatch):
 
 
 def test_celery_apply_when_clean_reports_on_defer(monkeypatch):
-    from carbon_mesh.integrations import celery
+    from carbonlens.integrations import celery
 
     monkeypatch.setattr(
         CarbonClient,
@@ -120,7 +120,7 @@ def test_celery_apply_when_clean_reports_on_defer(monkeypatch):
 
 
 def test_celery_apply_when_clean_does_not_report_when_clean(monkeypatch):
-    from carbon_mesh.integrations import celery
+    from carbonlens.integrations import celery
 
     monkeypatch.setattr(
         CarbonClient, "signal", lambda self, region: {"advice": "run_now", "clean_surplus": False}
