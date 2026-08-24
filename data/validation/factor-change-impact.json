@@ -1,0 +1,272 @@
+{
+  "sampled_at": "2026-08-23T20:41:49.231975+00:00",
+  "zones": 29,
+  "mean_signed_delta_pct": 2.0,
+  "mean_abs_delta_pct": 3.9,
+  "max_abs_delta_pct": 12.3,
+  "zones_moved_up": 20,
+  "zones_moved_down": 9,
+  "rows": [
+    {
+      "zone": "ES",
+      "before_gco2_kwh": 141.1,
+      "after_gco2_kwh": 158.5,
+      "delta_gco2_kwh": 17.4,
+      "delta_pct": 12.3,
+      "coal_share_pct": 0.0,
+      "gas_share_pct": 28.7
+    },
+    {
+      "zone": "IT-NO",
+      "before_gco2_kwh": 283.5,
+      "after_gco2_kwh": 317.7,
+      "delta_gco2_kwh": 34.2,
+      "delta_pct": 12.0,
+      "coal_share_pct": 0.0,
+      "gas_share_pct": 57.0
+    },
+    {
+      "zone": "BE",
+      "before_gco2_kwh": 239.0,
+      "after_gco2_kwh": 260.0,
+      "delta_gco2_kwh": 21.0,
+      "delta_pct": 8.8,
+      "coal_share_pct": 0.0,
+      "gas_share_pct": 35.0
+    },
+    {
+      "zone": "ME",
+      "before_gco2_kwh": 415.1,
+      "after_gco2_kwh": 378.8,
+      "delta_gco2_kwh": -36.3,
+      "delta_pct": -8.7,
+      "coal_share_pct": 44.7,
+      "gas_share_pct": 0.0
+    },
+    {
+      "zone": "SK",
+      "before_gco2_kwh": 90.6,
+      "after_gco2_kwh": 98.5,
+      "delta_gco2_kwh": 7.9,
+      "delta_pct": 8.7,
+      "coal_share_pct": 0.0,
+      "gas_share_pct": 13.1
+    },
+    {
+      "zone": "PT",
+      "before_gco2_kwh": 74.5,
+      "after_gco2_kwh": 80.8,
+      "delta_gco2_kwh": 6.3,
+      "delta_pct": 8.5,
+      "coal_share_pct": 0.0,
+      "gas_share_pct": 10.5
+    },
+    {
+      "zone": "GR",
+      "before_gco2_kwh": 320.7,
+      "after_gco2_kwh": 347.5,
+      "delta_gco2_kwh": 26.8,
+      "delta_pct": 8.3,
+      "coal_share_pct": 8.2,
+      "gas_share_pct": 55.6
+    },
+    {
+      "zone": "PL",
+      "before_gco2_kwh": 589.4,
+      "after_gco2_kwh": 550.8,
+      "delta_gco2_kwh": -38.6,
+      "delta_pct": -6.6,
+      "coal_share_pct": 56.8,
+      "gas_share_pct": 11.4
+    },
+    {
+      "zone": "CZ",
+      "before_gco2_kwh": 364.7,
+      "after_gco2_kwh": 341.2,
+      "delta_gco2_kwh": -23.5,
+      "delta_pct": -6.4,
+      "coal_share_pct": 34.1,
+      "gas_share_pct": 6.2
+    },
+    {
+      "zone": "NO-NO4",
+      "before_gco2_kwh": 49.9,
+      "after_gco2_kwh": 53.0,
+      "delta_gco2_kwh": 3.1,
+      "delta_pct": 6.1,
+      "coal_share_pct": 0.0,
+      "gas_share_pct": 5.1
+    },
+    {
+      "zone": "SI",
+      "before_gco2_kwh": 33.3,
+      "after_gco2_kwh": 35.2,
+      "delta_gco2_kwh": 1.9,
+      "delta_pct": 5.8,
+      "coal_share_pct": 0.1,
+      "gas_share_pct": 3.2
+    },
+    {
+      "zone": "DE",
+      "before_gco2_kwh": 333.9,
+      "after_gco2_kwh": 317.9,
+      "delta_gco2_kwh": -16.0,
+      "delta_pct": -4.8,
+      "coal_share_pct": 27.0,
+      "gas_share_pct": 9.4
+    },
+    {
+      "zone": "DK-DK2",
+      "before_gco2_kwh": 73.1,
+      "after_gco2_kwh": 75.8,
+      "delta_gco2_kwh": 2.7,
+      "delta_pct": 3.7,
+      "coal_share_pct": 0.0,
+      "gas_share_pct": 4.9
+    },
+    {
+      "zone": "FR",
+      "before_gco2_kwh": 36.0,
+      "after_gco2_kwh": 37.3,
+      "delta_gco2_kwh": 1.3,
+      "delta_pct": 3.7,
+      "coal_share_pct": 0.0,
+      "gas_share_pct": 2.2
+    },
+    {
+      "zone": "RO",
+      "before_gco2_kwh": 305.5,
+      "after_gco2_kwh": 313.0,
+      "delta_gco2_kwh": 7.5,
+      "delta_pct": 2.5,
+      "coal_share_pct": 15.8,
+      "gas_share_pct": 33.5
+    },
+    {
+      "zone": "DK-DK1",
+      "before_gco2_kwh": 108.4,
+      "after_gco2_kwh": 110.2,
+      "delta_gco2_kwh": 1.8,
+      "delta_pct": 1.7,
+      "coal_share_pct": 0.0,
+      "gas_share_pct": 2.9
+    },
+    {
+      "zone": "LT",
+      "before_gco2_kwh": 43.9,
+      "after_gco2_kwh": 44.5,
+      "delta_gco2_kwh": 0.6,
+      "delta_pct": 1.5,
+      "coal_share_pct": 0.0,
+      "gas_share_pct": 1.2
+    },
+    {
+      "zone": "HU",
+      "before_gco2_kwh": 197.6,
+      "after_gco2_kwh": 196.2,
+      "delta_gco2_kwh": -1.4,
+      "delta_pct": -0.7,
+      "coal_share_pct": 9.4,
+      "gas_share_pct": 10.0
+    },
+    {
+      "zone": "NO-NO1",
+      "before_gco2_kwh": 24.4,
+      "after_gco2_kwh": 24.6,
+      "delta_gco2_kwh": 0.2,
+      "delta_pct": 0.7,
+      "coal_share_pct": 0.0,
+      "gas_share_pct": 0.0
+    },
+    {
+      "zone": "NL",
+      "before_gco2_kwh": 528.5,
+      "after_gco2_kwh": 531.7,
+      "delta_gco2_kwh": 3.2,
+      "delta_pct": 0.6,
+      "coal_share_pct": 32.9,
+      "gas_share_pct": 49.2
+    },
+    {
+      "zone": "HR",
+      "before_gco2_kwh": 207.7,
+      "after_gco2_kwh": 208.7,
+      "delta_gco2_kwh": 1.0,
+      "delta_pct": 0.5,
+      "coal_share_pct": 11.5,
+      "gas_share_pct": 17.0
+    },
+    {
+      "zone": "FI",
+      "before_gco2_kwh": 39.0,
+      "after_gco2_kwh": 39.2,
+      "delta_gco2_kwh": 0.2,
+      "delta_pct": 0.4,
+      "coal_share_pct": 0.0,
+      "gas_share_pct": 0.2
+    },
+    {
+      "zone": "NO-NO2",
+      "before_gco2_kwh": 24.7,
+      "after_gco2_kwh": 24.8,
+      "delta_gco2_kwh": 0.1,
+      "delta_pct": 0.4,
+      "coal_share_pct": 0.0,
+      "gas_share_pct": 0.3
+    },
+    {
+      "zone": "IE",
+      "before_gco2_kwh": 114.2,
+      "after_gco2_kwh": 114.0,
+      "delta_gco2_kwh": -0.2,
+      "delta_pct": -0.2,
+      "coal_share_pct": 0.0,
+      "gas_share_pct": 0.0
+    },
+    {
+      "zone": "AT",
+      "before_gco2_kwh": 40.7,
+      "after_gco2_kwh": 40.7,
+      "delta_gco2_kwh": -0.0,
+      "delta_pct": -0.1,
+      "coal_share_pct": 0.0,
+      "gas_share_pct": 0.0
+    },
+    {
+      "zone": "CH",
+      "before_gco2_kwh": 23.9,
+      "after_gco2_kwh": 23.9,
+      "delta_gco2_kwh": -0.0,
+      "delta_pct": -0.1,
+      "coal_share_pct": 0.0,
+      "gas_share_pct": 0.0
+    },
+    {
+      "zone": "EE",
+      "before_gco2_kwh": 168.0,
+      "after_gco2_kwh": 167.8,
+      "delta_gco2_kwh": -0.2,
+      "delta_pct": -0.1,
+      "coal_share_pct": 0.0,
+      "gas_share_pct": 0.6
+    },
+    {
+      "zone": "LV",
+      "before_gco2_kwh": 72.0,
+      "after_gco2_kwh": 72.0,
+      "delta_gco2_kwh": 0.0,
+      "delta_pct": 0.1,
+      "coal_share_pct": 0.0,
+      "gas_share_pct": 0.0
+    },
+    {
+      "zone": "NO-NO3",
+      "before_gco2_kwh": 25.9,
+      "after_gco2_kwh": 25.9,
+      "delta_gco2_kwh": 0.0,
+      "delta_pct": 0.1,
+      "coal_share_pct": 0.0,
+      "gas_share_pct": 0.0
+    }
+  ]
+}

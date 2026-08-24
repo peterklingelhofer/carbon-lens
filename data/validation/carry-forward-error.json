@@ -1,0 +1,177 @@
+{
+  "series_examined": 109,
+  "series_excluded_as_constant": 7,
+  "excluded_series": [
+    "aws/ca-central-1",
+    "aws/sa-east-1",
+    "azure/brazilsouth",
+    "azure/canadaeast",
+    "gcp/northamerica-northeast1",
+    "gcp/southamerica-east1",
+    "ovh/bhs"
+  ],
+  "total_points": 38976,
+  "carried_points": 14886,
+  "carried_share_pct": 38.2,
+  "carry_runs": 2152,
+  "single_repeat_runs": 423,
+  "overall": {
+    "mean_abs_error_gco2_kwh": 30.6,
+    "median_abs_error_gco2_kwh": 8.5,
+    "p90_abs_error_gco2_kwh": 125.0,
+    "max_abs_error_gco2_kwh": 460.8,
+    "mean_signed_error_gco2_kwh": -1.8
+  },
+  "by_hold_duration": [
+    {
+      "held_hours_range": "0-2",
+      "n": 419,
+      "mean_abs_error_gco2_kwh": 19.3,
+      "median_abs_error_gco2_kwh": 3.2,
+      "p90_abs_error_gco2_kwh": 71.5,
+      "max_abs_error_gco2_kwh": 230.2,
+      "mean_signed_error_gco2_kwh": -7.5
+    },
+    {
+      "held_hours_range": "2-4",
+      "n": 364,
+      "mean_abs_error_gco2_kwh": 62.0,
+      "median_abs_error_gco2_kwh": 55.0,
+      "p90_abs_error_gco2_kwh": 137.5,
+      "max_abs_error_gco2_kwh": 216.4,
+      "mean_signed_error_gco2_kwh": -29.4
+    },
+    {
+      "held_hours_range": "4-8",
+      "n": 450,
+      "mean_abs_error_gco2_kwh": 50.1,
+      "median_abs_error_gco2_kwh": 15.6,
+      "p90_abs_error_gco2_kwh": 137.5,
+      "max_abs_error_gco2_kwh": 275.5,
+      "mean_signed_error_gco2_kwh": 31.5
+    },
+    {
+      "held_hours_range": "8-1000000000.0",
+      "n": 919,
+      "mean_abs_error_gco2_kwh": 13.7,
+      "median_abs_error_gco2_kwh": 5.6,
+      "p90_abs_error_gco2_kwh": 33.9,
+      "max_abs_error_gco2_kwh": 460.8,
+      "mean_signed_error_gco2_kwh": -4.6
+    }
+  ],
+  "worst_runs": [
+    {
+      "series": "gcp/europe-west4",
+      "repeats": 22,
+      "held_hours": 23.17,
+      "hours_to_fresh": 24.04,
+      "carried_gco2_kwh": 0.0,
+      "fresh_gco2_kwh": 460.8,
+      "abs_error_gco2_kwh": 460.8,
+      "signed_error_gco2_kwh": 460.8,
+      "rel_error_pct": null
+    },
+    {
+      "series": "azure/westeurope",
+      "repeats": 22,
+      "held_hours": 23.17,
+      "hours_to_fresh": 24.04,
+      "carried_gco2_kwh": 0.0,
+      "fresh_gco2_kwh": 460.8,
+      "abs_error_gco2_kwh": 460.8,
+      "signed_error_gco2_kwh": 460.8,
+      "rel_error_pct": null
+    },
+    {
+      "series": "scaleway/nl-ams",
+      "repeats": 22,
+      "held_hours": 23.17,
+      "hours_to_fresh": 24.04,
+      "carried_gco2_kwh": 0.0,
+      "fresh_gco2_kwh": 460.8,
+      "abs_error_gco2_kwh": 460.8,
+      "signed_error_gco2_kwh": 460.8,
+      "rel_error_pct": null
+    },
+    {
+      "series": "gcp/europe-west1",
+      "repeats": 6,
+      "held_hours": 5.85,
+      "hours_to_fresh": 6.81,
+      "carried_gco2_kwh": 74.5,
+      "fresh_gco2_kwh": 350.0,
+      "abs_error_gco2_kwh": 275.5,
+      "signed_error_gco2_kwh": 275.5,
+      "rel_error_pct": 369.8
+    },
+    {
+      "series": "aws/eu-west-1",
+      "repeats": 1,
+      "held_hours": 0.96,
+      "hours_to_fresh": 1.97,
+      "carried_gco2_kwh": 300.0,
+      "fresh_gco2_kwh": 69.8,
+      "abs_error_gco2_kwh": 230.2,
+      "signed_error_gco2_kwh": -230.2,
+      "rel_error_pct": 76.7
+    },
+    {
+      "series": "azure/northeurope",
+      "repeats": 1,
+      "held_hours": 0.96,
+      "hours_to_fresh": 1.97,
+      "carried_gco2_kwh": 300.0,
+      "fresh_gco2_kwh": 69.8,
+      "abs_error_gco2_kwh": 230.2,
+      "signed_error_gco2_kwh": -230.2,
+      "rel_error_pct": 76.7
+    },
+    {
+      "series": "gcp/europe-west1",
+      "repeats": 6,
+      "held_hours": 5.67,
+      "hours_to_fresh": 6.62,
+      "carried_gco2_kwh": 127.4,
+      "fresh_gco2_kwh": 350.0,
+      "abs_error_gco2_kwh": 222.6,
+      "signed_error_gco2_kwh": 222.6,
+      "rel_error_pct": 174.7
+    },
+    {
+      "series": "gcp/europe-west1",
+      "repeats": 1,
+      "held_hours": 1.89,
+      "hours_to_fresh": 3.69,
+      "carried_gco2_kwh": 283.7,
+      "fresh_gco2_kwh": 64.9,
+      "abs_error_gco2_kwh": 218.8,
+      "signed_error_gco2_kwh": -218.8,
+      "rel_error_pct": 77.1
+    },
+    {
+      "series": "aws/eu-west-1",
+      "repeats": 1,
+      "held_hours": 2.73,
+      "hours_to_fresh": 4.84,
+      "carried_gco2_kwh": 83.6,
+      "fresh_gco2_kwh": 300.0,
+      "abs_error_gco2_kwh": 216.4,
+      "signed_error_gco2_kwh": 216.4,
+      "rel_error_pct": 258.9
+    },
+    {
+      "series": "azure/northeurope",
+      "repeats": 1,
+      "held_hours": 2.73,
+      "hours_to_fresh": 4.84,
+      "carried_gco2_kwh": 83.6,
+      "fresh_gco2_kwh": 300.0,
+      "abs_error_gco2_kwh": 216.4,
+      "signed_error_gco2_kwh": 216.4,
+      "rel_error_pct": 258.9
+    }
+  ],
+  "archive_generated_at": "2026-08-23T20:17:36.062735+00:00",
+  "archive": "https://raw.githubusercontent.com/peterklingelhofer/carbon-lens/data/history.json"
+}
