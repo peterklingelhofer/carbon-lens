@@ -1,6 +1,6 @@
 # Carbon Lens
 
-In this day and age, if you're hosting a website, you may as well host it on 100% renewable energy. CarbonLens provides observability into which cloud regions emit the least carbon by aggregating grid data from dozens of sources, making what was an opaque decision a clear one.
+The same workload emits around 20 gCO2/kWh in Paris and around 800 in Cape Town, and the gap moves hour by hour. CarbonLens aggregates grid data from dozens of sources so an opaque decision becomes an obvious one.
 
 **Measure and cut the carbon footprint of your cloud compute.**
 
@@ -20,9 +20,28 @@ CarbonLens aggregates electricity-grid carbon data into one cascading API: eight
 
 > **Status:** portfolio / demo project. It isn't a production service. See [What's real vs. estimated vs. mock](#whats-real-vs-estimated-vs-mock) for which parts are live integrations and which are stubs.
 
+### It carries its own evidence, and checks its own numbers
+
+Every number this API returns can be traced to a published source over the wire, and the
+places where it can't are the places it says so loudest.
+
+- **[Citation corpus](docs/CITATIONS.md)**: 49 sources, each backing a specific line of code, each with a verification status that distinguishes "we read this document" from "we confirmed the DOI resolves". Machine-readable as [CSL-JSON](docs/CITATIONS.csl.json), and served live at **`GET /api/v1/citations`**, so a `provenance.citations` key on any reading can be resolved without leaving the API. An unknown citekey is a type error, enforced in CI.
+- **[Validation](docs/VALIDATION.md)**: what the numbers are actually worth, measured. Flow tracing changes Austria's intensity by **289%** (41 to 159 gCO2/kWh) because it imports heavily, which is the case for the feature. **38.2%** of archived readings are carried forward rather than freshly measured, at a p90 error of **125 gCO2/kWh**. Reproducible from the published archive; the two comparisons needing paid credentials are reported as **NOT RUN** rather than estimated.
+- **[Verification record](docs/VERIFICATION.md)**: fourteen claims audited against primary sources. It caught the solar emission factor reading the wrong IPCC row, a UK renewable estimate off by **46.9 percentage points**, and a hollow feed publishing **0 gCO2/kWh**, the best possible score, so a broken feed was winning every routing decision. Eight fixes, each with a regression test.
+
+Emission factors live in a versioned [corpus](data/emission-factors.json) shared with the
+companion dispatcher project, so the two can't publish different numbers for the same
+physical quantity under the same citation. Every factor names its citekey and the exact
+table row, or declares itself an assumption.
+
 ## Why This Exists
 
 Every major cloud claims "100% renewable": mostly via **annual REC matching**, buying credits at noon to offset coal burned at midnight. CarbonLens surfaces the underlying grid numbers instead: live gCO2/kWh where a real grid-operator API exists, a labeled heuristic or mock value where it doesn't, so provenance is always visible.
+
+That argument comes from the 24/7 carbon-free
+energy literature, and the corpus cites it ([`riepin-2024-247-cfe`](docs/CITATIONS.md),
+[`ricks-2023-hourly-matching`](docs/CITATIONS.md), [`miller-2022-hourly-accounting`](docs/CITATIONS.md)).
+The corpus also carries sources that argue *against* positions this project takes.
 
 ---
 
@@ -158,6 +177,42 @@ Interactive docs at `/docs` (Swagger) or `/redoc` (ReDoc) when the server is run
 | `/api/v1/carbon/zone/{grid_zone}` | GET | Carbon intensity for a grid zone directly (no cloud region) |
 | `/api/v1/regions` | GET | List all 75+ supported cloud regions |
 | `/api/v1/regions?provider=aws` | GET | Filter regions by cloud provider |
+
+### Provenance
+
+Every carbon-intensity response carries a `provenance` block: how the number was produced,
+which accounting basis it's on, the citekeys backing it, the weakest evidence tier among
+them, and any fuel bucket in the mix whose emission factor is an assumption rather than a
+citation. These endpoints resolve those citekeys.
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/citations` | GET | The full citation corpus behind every number the API returns (filter with `?group=` or `?evidence_tier=`) |
+| `/api/v1/citations/{id}` | GET | Resolve one citekey from a reading's `provenance.citations` |
+
+```jsonc
+// GET /api/v1/carbon/zone/GB  (abridged)
+{
+  "carbon_intensity_gco2_kwh": 172.0,
+  "renewable_percentage": 10.4,
+  "source": "uk_carbon_intensity",
+  "provenance": {
+    "source_class": "live",
+    "accounting_basis": "production_direct",   // NOT the same quantity as a fuel-mix zone
+    "method": "NESO's own published carbon intensity for the zone",
+    "factors": "neso-carbon-intensity-methodology",
+    "citations": ["neso-carbon-intensity-api", "neso-carbon-intensity-methodology"],
+    "evidence_tier": "A",
+    "assumed_factors": [],
+    "caveat": "DIFFERENT ACCOUNTING BASIS to every fuel-mix zone. NESO's factors are direct…"
+  }
+}
+```
+
+`accounting_basis` is worth reading before comparing two zones. UK zones come from NESO on a
+**direct combustion** basis (renewables and nuclear score 0); fuel-mix zones are **IPCC
+lifecycle**. Measured gap on the same mix at the same instant: **+60.4%**
+([VALIDATION.md §6](docs/VALIDATION.md)).
 
 ### Routing
 
@@ -363,7 +418,7 @@ web/                Vite + React 19 + TypeScript frontend
 terraform/          Terraform data source for green routing
 data/               region_grid_map.yaml (75+ regions -> grid zones)
 alembic/            Database migrations
-tests/              182 tests
+tests/              442 tests
 ```
 
 ---
@@ -418,7 +473,7 @@ tests/              182 tests
 make help       # show all commands
 make setup      # install deps + git hooks + copy .env + build frontend
 make dev        # API + frontend with hot reload
-make test       # 182 tests
+make test       # 442 tests
 make lint       # ruff + biome + tsc
 make fix        # auto-fix lint (ruff + biome)
 make hooks      # install pre-commit + commitlint git hooks

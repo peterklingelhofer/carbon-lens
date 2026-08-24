@@ -1,0 +1,692 @@
+{
+  "periods": 97,
+  "mean_error_pp": 46.9,
+  "mae_pp": 46.9,
+  "mean_error_incl_biomass_pp": 36.6,
+  "mae_incl_biomass_pp": 36.6,
+  "window": {
+    "from": "2026-08-21T20:00Z",
+    "to": "2026-08-23T20:00Z"
+  },
+  "rows": [
+    {
+      "from": "2026-08-21T19:30Z",
+      "intensity": 154,
+      "estimated_renewable_pct": 65.8,
+      "true_renewable_pct": 29.500000000000004,
+      "true_incl_biomass_pct": 38.0
+    },
+    {
+      "from": "2026-08-21T20:00Z",
+      "intensity": 148,
+      "estimated_renewable_pct": 67.1,
+      "true_renewable_pct": 29.700000000000003,
+      "true_incl_biomass_pct": 38.5
+    },
+    {
+      "from": "2026-08-21T20:30Z",
+      "intensity": 141,
+      "estimated_renewable_pct": 68.7,
+      "true_renewable_pct": 31.0,
+      "true_incl_biomass_pct": 40.1
+    },
+    {
+      "from": "2026-08-21T21:00Z",
+      "intensity": 134,
+      "estimated_renewable_pct": 70.2,
+      "true_renewable_pct": 31.4,
+      "true_incl_biomass_pct": 41.099999999999994
+    },
+    {
+      "from": "2026-08-21T21:30Z",
+      "intensity": 106,
+      "estimated_renewable_pct": 76.4,
+      "true_renewable_pct": 33.3,
+      "true_incl_biomass_pct": 43.5
+    },
+    {
+      "from": "2026-08-21T22:00Z",
+      "intensity": 91,
+      "estimated_renewable_pct": 79.8,
+      "true_renewable_pct": 36.199999999999996,
+      "true_incl_biomass_pct": 46.89999999999999
+    },
+    {
+      "from": "2026-08-21T22:30Z",
+      "intensity": 84,
+      "estimated_renewable_pct": 81.3,
+      "true_renewable_pct": 36.5,
+      "true_incl_biomass_pct": 47.3
+    },
+    {
+      "from": "2026-08-21T23:00Z",
+      "intensity": 84,
+      "estimated_renewable_pct": 81.3,
+      "true_renewable_pct": 36.1,
+      "true_incl_biomass_pct": 47.0
+    },
+    {
+      "from": "2026-08-21T23:30Z",
+      "intensity": 74,
+      "estimated_renewable_pct": 83.6,
+      "true_renewable_pct": 37.099999999999994,
+      "true_incl_biomass_pct": 48.39999999999999
+    },
+    {
+      "from": "2026-08-22T00:00Z",
+      "intensity": 70,
+      "estimated_renewable_pct": 84.4,
+      "true_renewable_pct": 39.0,
+      "true_incl_biomass_pct": 50.1
+    },
+    {
+      "from": "2026-08-22T00:30Z",
+      "intensity": 69,
+      "estimated_renewable_pct": 84.7,
+      "true_renewable_pct": 39.099999999999994,
+      "true_incl_biomass_pct": 50.199999999999996
+    },
+    {
+      "from": "2026-08-22T01:00Z",
+      "intensity": 68,
+      "estimated_renewable_pct": 84.9,
+      "true_renewable_pct": 39.7,
+      "true_incl_biomass_pct": 50.800000000000004
+    },
+    {
+      "from": "2026-08-22T01:30Z",
+      "intensity": 64,
+      "estimated_renewable_pct": 85.8,
+      "true_renewable_pct": 41.9,
+      "true_incl_biomass_pct": 53.4
+    },
+    {
+      "from": "2026-08-22T02:00Z",
+      "intensity": 64,
+      "estimated_renewable_pct": 85.8,
+      "true_renewable_pct": 41.7,
+      "true_incl_biomass_pct": 53.300000000000004
+    },
+    {
+      "from": "2026-08-22T02:30Z",
+      "intensity": 64,
+      "estimated_renewable_pct": 85.8,
+      "true_renewable_pct": 42.5,
+      "true_incl_biomass_pct": 54.2
+    },
+    {
+      "from": "2026-08-22T03:00Z",
+      "intensity": 62,
+      "estimated_renewable_pct": 86.2,
+      "true_renewable_pct": 42.9,
+      "true_incl_biomass_pct": 54.7
+    },
+    {
+      "from": "2026-08-22T03:30Z",
+      "intensity": 64,
+      "estimated_renewable_pct": 85.8,
+      "true_renewable_pct": 42.2,
+      "true_incl_biomass_pct": 54.1
+    },
+    {
+      "from": "2026-08-22T04:00Z",
+      "intensity": 64,
+      "estimated_renewable_pct": 85.8,
+      "true_renewable_pct": 42.3,
+      "true_incl_biomass_pct": 54.099999999999994
+    },
+    {
+      "from": "2026-08-22T04:30Z",
+      "intensity": 64,
+      "estimated_renewable_pct": 85.8,
+      "true_renewable_pct": 40.7,
+      "true_incl_biomass_pct": 52.5
+    },
+    {
+      "from": "2026-08-22T05:00Z",
+      "intensity": 67,
+      "estimated_renewable_pct": 85.1,
+      "true_renewable_pct": 39.7,
+      "true_incl_biomass_pct": 51.400000000000006
+    },
+    {
+      "from": "2026-08-22T05:30Z",
+      "intensity": 70,
+      "estimated_renewable_pct": 84.4,
+      "true_renewable_pct": 38.2,
+      "true_incl_biomass_pct": 48.400000000000006
+    },
+    {
+      "from": "2026-08-22T06:00Z",
+      "intensity": 68,
+      "estimated_renewable_pct": 84.9,
+      "true_renewable_pct": 39.699999999999996,
+      "true_incl_biomass_pct": 47.599999999999994
+    },
+    {
+      "from": "2026-08-22T06:30Z",
+      "intensity": 68,
+      "estimated_renewable_pct": 84.9,
+      "true_renewable_pct": 39.6,
+      "true_incl_biomass_pct": 46.7
+    },
+    {
+      "from": "2026-08-22T07:00Z",
+      "intensity": 67,
+      "estimated_renewable_pct": 85.1,
+      "true_renewable_pct": 41.6,
+      "true_incl_biomass_pct": 48.4
+    },
+    {
+      "from": "2026-08-22T07:30Z",
+      "intensity": 66,
+      "estimated_renewable_pct": 85.3,
+      "true_renewable_pct": 43.1,
+      "true_incl_biomass_pct": 49.6
+    },
+    {
+      "from": "2026-08-22T08:00Z",
+      "intensity": 65,
+      "estimated_renewable_pct": 85.6,
+      "true_renewable_pct": 44.300000000000004,
+      "true_incl_biomass_pct": 50.7
+    },
+    {
+      "from": "2026-08-22T08:30Z",
+      "intensity": 62,
+      "estimated_renewable_pct": 86.2,
+      "true_renewable_pct": 46.2,
+      "true_incl_biomass_pct": 52.5
+    },
+    {
+      "from": "2026-08-22T09:00Z",
+      "intensity": 58,
+      "estimated_renewable_pct": 87.1,
+      "true_renewable_pct": 48.2,
+      "true_incl_biomass_pct": 53.900000000000006
+    },
+    {
+      "from": "2026-08-22T09:30Z",
+      "intensity": 57,
+      "estimated_renewable_pct": 87.3,
+      "true_renewable_pct": 49.49999999999999,
+      "true_incl_biomass_pct": 54.099999999999994
+    },
+    {
+      "from": "2026-08-22T10:00Z",
+      "intensity": 55,
+      "estimated_renewable_pct": 87.8,
+      "true_renewable_pct": 50.6,
+      "true_incl_biomass_pct": 55.0
+    },
+    {
+      "from": "2026-08-22T10:30Z",
+      "intensity": 55,
+      "estimated_renewable_pct": 87.8,
+      "true_renewable_pct": 51.199999999999996,
+      "true_incl_biomass_pct": 55.599999999999994
+    },
+    {
+      "from": "2026-08-22T11:00Z",
+      "intensity": 57,
+      "estimated_renewable_pct": 87.3,
+      "true_renewable_pct": 50.1,
+      "true_incl_biomass_pct": 54.5
+    },
+    {
+      "from": "2026-08-22T11:30Z",
+      "intensity": 55,
+      "estimated_renewable_pct": 87.8,
+      "true_renewable_pct": 50.099999999999994,
+      "true_incl_biomass_pct": 54.599999999999994
+    },
+    {
+      "from": "2026-08-22T12:00Z",
+      "intensity": 59,
+      "estimated_renewable_pct": 86.9,
+      "true_renewable_pct": 48.5,
+      "true_incl_biomass_pct": 53.0
+    },
+    {
+      "from": "2026-08-22T12:30Z",
+      "intensity": 59,
+      "estimated_renewable_pct": 86.9,
+      "true_renewable_pct": 47.5,
+      "true_incl_biomass_pct": 52.5
+    },
+    {
+      "from": "2026-08-22T13:00Z",
+      "intensity": 59,
+      "estimated_renewable_pct": 86.9,
+      "true_renewable_pct": 47.2,
+      "true_incl_biomass_pct": 52.2
+    },
+    {
+      "from": "2026-08-22T13:30Z",
+      "intensity": 60,
+      "estimated_renewable_pct": 86.7,
+      "true_renewable_pct": 46.3,
+      "true_incl_biomass_pct": 51.5
+    },
+    {
+      "from": "2026-08-22T14:00Z",
+      "intensity": 61,
+      "estimated_renewable_pct": 86.4,
+      "true_renewable_pct": 45.9,
+      "true_incl_biomass_pct": 51.9
+    },
+    {
+      "from": "2026-08-22T14:30Z",
+      "intensity": 65,
+      "estimated_renewable_pct": 85.6,
+      "true_renewable_pct": 43.6,
+      "true_incl_biomass_pct": 50.7
+    },
+    {
+      "from": "2026-08-22T15:00Z",
+      "intensity": 70,
+      "estimated_renewable_pct": 84.4,
+      "true_renewable_pct": 41.6,
+      "true_incl_biomass_pct": 50.3
+    },
+    {
+      "from": "2026-08-22T15:30Z",
+      "intensity": 78,
+      "estimated_renewable_pct": 82.7,
+      "true_renewable_pct": 38.6,
+      "true_incl_biomass_pct": 49.400000000000006
+    },
+    {
+      "from": "2026-08-22T16:00Z",
+      "intensity": 86,
+      "estimated_renewable_pct": 80.9,
+      "true_renewable_pct": 36.5,
+      "true_incl_biomass_pct": 47.8
+    },
+    {
+      "from": "2026-08-22T16:30Z",
+      "intensity": 100,
+      "estimated_renewable_pct": 77.8,
+      "true_renewable_pct": 33.199999999999996,
+      "true_incl_biomass_pct": 44.3
+    },
+    {
+      "from": "2026-08-22T17:00Z",
+      "intensity": 114,
+      "estimated_renewable_pct": 74.7,
+      "true_renewable_pct": 29.6,
+      "true_incl_biomass_pct": 40.7
+    },
+    {
+      "from": "2026-08-22T17:30Z",
+      "intensity": 120,
+      "estimated_renewable_pct": 73.3,
+      "true_renewable_pct": 26.8,
+      "true_incl_biomass_pct": 38.1
+    },
+    {
+      "from": "2026-08-22T18:00Z",
+      "intensity": 127,
+      "estimated_renewable_pct": 71.8,
+      "true_renewable_pct": 23.7,
+      "true_incl_biomass_pct": 35.3
+    },
+    {
+      "from": "2026-08-22T18:30Z",
+      "intensity": 133,
+      "estimated_renewable_pct": 70.4,
+      "true_renewable_pct": 21.400000000000002,
+      "true_incl_biomass_pct": 33.0
+    },
+    {
+      "from": "2026-08-22T19:00Z",
+      "intensity": 140,
+      "estimated_renewable_pct": 68.9,
+      "true_renewable_pct": 18.9,
+      "true_incl_biomass_pct": 30.799999999999997
+    },
+    {
+      "from": "2026-08-22T19:30Z",
+      "intensity": 140,
+      "estimated_renewable_pct": 68.9,
+      "true_renewable_pct": 17.4,
+      "true_incl_biomass_pct": 29.599999999999998
+    },
+    {
+      "from": "2026-08-22T20:00Z",
+      "intensity": 137,
+      "estimated_renewable_pct": 69.6,
+      "true_renewable_pct": 17.5,
+      "true_incl_biomass_pct": 30.0
+    },
+    {
+      "from": "2026-08-22T20:30Z",
+      "intensity": 139,
+      "estimated_renewable_pct": 69.1,
+      "true_renewable_pct": 16.2,
+      "true_incl_biomass_pct": 28.799999999999997
+    },
+    {
+      "from": "2026-08-22T21:00Z",
+      "intensity": 135,
+      "estimated_renewable_pct": 70.0,
+      "true_renewable_pct": 16.599999999999998,
+      "true_incl_biomass_pct": 29.4
+    },
+    {
+      "from": "2026-08-22T21:30Z",
+      "intensity": 130,
+      "estimated_renewable_pct": 71.1,
+      "true_renewable_pct": 16.599999999999998,
+      "true_incl_biomass_pct": 30.099999999999998
+    },
+    {
+      "from": "2026-08-22T22:00Z",
+      "intensity": 125,
+      "estimated_renewable_pct": 72.2,
+      "true_renewable_pct": 16.8,
+      "true_incl_biomass_pct": 30.6
+    },
+    {
+      "from": "2026-08-22T22:30Z",
+      "intensity": 118,
+      "estimated_renewable_pct": 73.8,
+      "true_renewable_pct": 16.8,
+      "true_incl_biomass_pct": 31.1
+    },
+    {
+      "from": "2026-08-22T23:00Z",
+      "intensity": 114,
+      "estimated_renewable_pct": 74.7,
+      "true_renewable_pct": 16.6,
+      "true_incl_biomass_pct": 31.200000000000003
+    },
+    {
+      "from": "2026-08-22T23:30Z",
+      "intensity": 112,
+      "estimated_renewable_pct": 75.1,
+      "true_renewable_pct": 16.4,
+      "true_incl_biomass_pct": 31.2
+    },
+    {
+      "from": "2026-08-23T00:00Z",
+      "intensity": 113,
+      "estimated_renewable_pct": 74.9,
+      "true_renewable_pct": 15.5,
+      "true_incl_biomass_pct": 30.4
+    },
+    {
+      "from": "2026-08-23T00:30Z",
+      "intensity": 113,
+      "estimated_renewable_pct": 74.9,
+      "true_renewable_pct": 14.6,
+      "true_incl_biomass_pct": 29.7
+    },
+    {
+      "from": "2026-08-23T01:00Z",
+      "intensity": 111,
+      "estimated_renewable_pct": 75.3,
+      "true_renewable_pct": 14.6,
+      "true_incl_biomass_pct": 29.9
+    },
+    {
+      "from": "2026-08-23T01:30Z",
+      "intensity": 109,
+      "estimated_renewable_pct": 75.8,
+      "true_renewable_pct": 15.100000000000001,
+      "true_incl_biomass_pct": 30.900000000000002
+    },
+    {
+      "from": "2026-08-23T02:00Z",
+      "intensity": 105,
+      "estimated_renewable_pct": 76.7,
+      "true_renewable_pct": 15.200000000000001,
+      "true_incl_biomass_pct": 31.300000000000004
+    },
+    {
+      "from": "2026-08-23T02:30Z",
+      "intensity": 109,
+      "estimated_renewable_pct": 75.8,
+      "true_renewable_pct": 15.0,
+      "true_incl_biomass_pct": 31.3
+    },
+    {
+      "from": "2026-08-23T03:00Z",
+      "intensity": 111,
+      "estimated_renewable_pct": 75.3,
+      "true_renewable_pct": 14.700000000000001,
+      "true_incl_biomass_pct": 30.9
+    },
+    {
+      "from": "2026-08-23T03:30Z",
+      "intensity": 112,
+      "estimated_renewable_pct": 75.1,
+      "true_renewable_pct": 14.700000000000001,
+      "true_incl_biomass_pct": 31.1
+    },
+    {
+      "from": "2026-08-23T04:00Z",
+      "intensity": 109,
+      "estimated_renewable_pct": 75.8,
+      "true_renewable_pct": 15.0,
+      "true_incl_biomass_pct": 31.1
+    },
+    {
+      "from": "2026-08-23T04:30Z",
+      "intensity": 111,
+      "estimated_renewable_pct": 75.3,
+      "true_renewable_pct": 14.299999999999999,
+      "true_incl_biomass_pct": 28.0
+    },
+    {
+      "from": "2026-08-23T05:00Z",
+      "intensity": 112,
+      "estimated_renewable_pct": 75.1,
+      "true_renewable_pct": 14.7,
+      "true_incl_biomass_pct": 27.6
+    },
+    {
+      "from": "2026-08-23T05:30Z",
+      "intensity": 108,
+      "estimated_renewable_pct": 76.0,
+      "true_renewable_pct": 15.9,
+      "true_incl_biomass_pct": 28.1
+    },
+    {
+      "from": "2026-08-23T06:00Z",
+      "intensity": 102,
+      "estimated_renewable_pct": 77.3,
+      "true_renewable_pct": 18.7,
+      "true_incl_biomass_pct": 29.799999999999997
+    },
+    {
+      "from": "2026-08-23T06:30Z",
+      "intensity": 96,
+      "estimated_renewable_pct": 78.7,
+      "true_renewable_pct": 22.3,
+      "true_incl_biomass_pct": 32.4
+    },
+    {
+      "from": "2026-08-23T07:00Z",
+      "intensity": 91,
+      "estimated_renewable_pct": 79.8,
+      "true_renewable_pct": 26.3,
+      "true_incl_biomass_pct": 35.7
+    },
+    {
+      "from": "2026-08-23T07:30Z",
+      "intensity": 85,
+      "estimated_renewable_pct": 81.1,
+      "true_renewable_pct": 30.500000000000004,
+      "true_incl_biomass_pct": 39.5
+    },
+    {
+      "from": "2026-08-23T08:00Z",
+      "intensity": 79,
+      "estimated_renewable_pct": 82.4,
+      "true_renewable_pct": 34.1,
+      "true_incl_biomass_pct": 42.5
+    },
+    {
+      "from": "2026-08-23T08:30Z",
+      "intensity": 74,
+      "estimated_renewable_pct": 83.6,
+      "true_renewable_pct": 38.3,
+      "true_incl_biomass_pct": 45.199999999999996
+    },
+    {
+      "from": "2026-08-23T09:00Z",
+      "intensity": 69,
+      "estimated_renewable_pct": 84.7,
+      "true_renewable_pct": 41.4,
+      "true_incl_biomass_pct": 47.5
+    },
+    {
+      "from": "2026-08-23T09:30Z",
+      "intensity": 71,
+      "estimated_renewable_pct": 84.2,
+      "true_renewable_pct": 42.9,
+      "true_incl_biomass_pct": 48.699999999999996
+    },
+    {
+      "from": "2026-08-23T10:00Z",
+      "intensity": 66,
+      "estimated_renewable_pct": 85.3,
+      "true_renewable_pct": 44.6,
+      "true_incl_biomass_pct": 51.4
+    },
+    {
+      "from": "2026-08-23T10:30Z",
+      "intensity": 67,
+      "estimated_renewable_pct": 85.1,
+      "true_renewable_pct": 44.199999999999996,
+      "true_incl_biomass_pct": 52.199999999999996
+    },
+    {
+      "from": "2026-08-23T11:00Z",
+      "intensity": 66,
+      "estimated_renewable_pct": 85.3,
+      "true_renewable_pct": 43.8,
+      "true_incl_biomass_pct": 52.699999999999996
+    },
+    {
+      "from": "2026-08-23T11:30Z",
+      "intensity": 68,
+      "estimated_renewable_pct": 84.9,
+      "true_renewable_pct": 43.8,
+      "true_incl_biomass_pct": 54.099999999999994
+    },
+    {
+      "from": "2026-08-23T12:00Z",
+      "intensity": 68,
+      "estimated_renewable_pct": 84.9,
+      "true_renewable_pct": 43.599999999999994,
+      "true_incl_biomass_pct": 53.99999999999999
+    },
+    {
+      "from": "2026-08-23T12:30Z",
+      "intensity": 69,
+      "estimated_renewable_pct": 84.7,
+      "true_renewable_pct": 43.199999999999996,
+      "true_incl_biomass_pct": 53.5
+    },
+    {
+      "from": "2026-08-23T13:00Z",
+      "intensity": 69,
+      "estimated_renewable_pct": 84.7,
+      "true_renewable_pct": 43.49999999999999,
+      "true_incl_biomass_pct": 52.89999999999999
+    },
+    {
+      "from": "2026-08-23T13:30Z",
+      "intensity": 69,
+      "estimated_renewable_pct": 84.7,
+      "true_renewable_pct": 42.39999999999999,
+      "true_incl_biomass_pct": 50.49999999999999
+    },
+    {
+      "from": "2026-08-23T14:00Z",
+      "intensity": 75,
+      "estimated_renewable_pct": 83.3,
+      "true_renewable_pct": 40.2,
+      "true_incl_biomass_pct": 49.0
+    },
+    {
+      "from": "2026-08-23T14:30Z",
+      "intensity": 86,
+      "estimated_renewable_pct": 80.9,
+      "true_renewable_pct": 36.8,
+      "true_incl_biomass_pct": 46.5
+    },
+    {
+      "from": "2026-08-23T15:00Z",
+      "intensity": 104,
+      "estimated_renewable_pct": 76.9,
+      "true_renewable_pct": 33.1,
+      "true_incl_biomass_pct": 43.0
+    },
+    {
+      "from": "2026-08-23T15:30Z",
+      "intensity": 118,
+      "estimated_renewable_pct": 73.8,
+      "true_renewable_pct": 28.6,
+      "true_incl_biomass_pct": 39.400000000000006
+    },
+    {
+      "from": "2026-08-23T16:00Z",
+      "intensity": 135,
+      "estimated_renewable_pct": 70.0,
+      "true_renewable_pct": 24.5,
+      "true_incl_biomass_pct": 35.7
+    },
+    {
+      "from": "2026-08-23T16:30Z",
+      "intensity": 144,
+      "estimated_renewable_pct": 68.0,
+      "true_renewable_pct": 22.2,
+      "true_incl_biomass_pct": 33.3
+    },
+    {
+      "from": "2026-08-23T17:00Z",
+      "intensity": 157,
+      "estimated_renewable_pct": 65.1,
+      "true_renewable_pct": 19.3,
+      "true_incl_biomass_pct": 30.200000000000003
+    },
+    {
+      "from": "2026-08-23T17:30Z",
+      "intensity": 169,
+      "estimated_renewable_pct": 62.4,
+      "true_renewable_pct": 16.4,
+      "true_incl_biomass_pct": 27.599999999999998
+    },
+    {
+      "from": "2026-08-23T18:00Z",
+      "intensity": 175,
+      "estimated_renewable_pct": 61.1,
+      "true_renewable_pct": 14.0,
+      "true_incl_biomass_pct": 25.4
+    },
+    {
+      "from": "2026-08-23T18:30Z",
+      "intensity": 173,
+      "estimated_renewable_pct": 61.6,
+      "true_renewable_pct": 11.9,
+      "true_incl_biomass_pct": 23.700000000000003
+    },
+    {
+      "from": "2026-08-23T19:00Z",
+      "intensity": 177,
+      "estimated_renewable_pct": 60.7,
+      "true_renewable_pct": 10.5,
+      "true_incl_biomass_pct": 22.3
+    },
+    {
+      "from": "2026-08-23T19:30Z",
+      "intensity": 175,
+      "estimated_renewable_pct": 61.1,
+      "true_renewable_pct": 10.299999999999999,
+      "true_incl_biomass_pct": 22.299999999999997
+    }
+  ]
+}
