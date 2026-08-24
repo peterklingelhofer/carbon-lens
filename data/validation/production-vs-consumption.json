@@ -1,0 +1,278 @@
+{
+  "sampled_at": "2026-08-23T20:36:07.757186+00:00",
+  "traced_zones": [
+    "FR",
+    "DE",
+    "NL",
+    "BE",
+    "CH",
+    "AT",
+    "ES",
+    "PT",
+    "IT-NO",
+    "PL",
+    "CZ",
+    "GB",
+    "IE",
+    "DK-DK1"
+  ],
+  "zones_with_no_production_data": [
+    "GB"
+  ],
+  "unevaluable_borders": [
+    "FR-GB",
+    "NL-GB",
+    "GB-IE"
+  ],
+  "zones_compared": 13,
+  "zones_with_measurable_imports": 9,
+  "mean_abs_delta_pct_importers": 41.5,
+  "max_abs_delta_pct_importers": 289.0,
+  "rows": [
+    {
+      "zone": "AT",
+      "production_gco2_kwh": 40.9,
+      "consumption_gco2_kwh": 159.1,
+      "delta_gco2_kwh": 118.2,
+      "delta_pct": 289.0,
+      "load_mw": 3920.0,
+      "interpretation": "importer"
+    },
+    {
+      "zone": "IT-NO",
+      "production_gco2_kwh": 317.7,
+      "consumption_gco2_kwh": 194.3,
+      "delta_gco2_kwh": -123.4,
+      "delta_pct": -38.8,
+      "load_mw": 8343.0,
+      "interpretation": "importer"
+    },
+    {
+      "zone": "BE",
+      "production_gco2_kwh": 260.0,
+      "consumption_gco2_kwh": 198.3,
+      "delta_gco2_kwh": -61.7,
+      "delta_pct": -23.7,
+      "load_mw": 3773.0,
+      "interpretation": "importer"
+    },
+    {
+      "zone": "DE",
+      "production_gco2_kwh": 317.9,
+      "consumption_gco2_kwh": 289.8,
+      "delta_gco2_kwh": -28.1,
+      "delta_pct": -8.8,
+      "load_mw": 37944.0,
+      "interpretation": "importer"
+    },
+    {
+      "zone": "CZ",
+      "production_gco2_kwh": 341.2,
+      "consumption_gco2_kwh": 362.7,
+      "delta_gco2_kwh": 21.5,
+      "delta_pct": 6.3,
+      "load_mw": 7550.0,
+      "interpretation": "importer"
+    },
+    {
+      "zone": "PL",
+      "production_gco2_kwh": 548.6,
+      "consumption_gco2_kwh": 531.4,
+      "delta_gco2_kwh": -17.2,
+      "delta_pct": -3.1,
+      "load_mw": 15650.0,
+      "interpretation": "importer_small_effect"
+    },
+    {
+      "zone": "CH",
+      "production_gco2_kwh": 23.9,
+      "consumption_gco2_kwh": 24.4,
+      "delta_gco2_kwh": 0.5,
+      "delta_pct": 2.1,
+      "load_mw": 2389.0,
+      "interpretation": "importer_small_effect"
+    },
+    {
+      "zone": "ES",
+      "production_gco2_kwh": 158.5,
+      "consumption_gco2_kwh": 157.1,
+      "delta_gco2_kwh": -1.4,
+      "delta_pct": -0.9,
+      "load_mw": 30224.0,
+      "interpretation": "importer_small_effect"
+    },
+    {
+      "zone": "NL",
+      "production_gco2_kwh": 529.4,
+      "consumption_gco2_kwh": 525.4,
+      "delta_gco2_kwh": -4.0,
+      "delta_pct": -0.8,
+      "load_mw": 9951.0,
+      "interpretation": "importer_small_effect"
+    },
+    {
+      "zone": "DK-DK1",
+      "production_gco2_kwh": 110.2,
+      "consumption_gco2_kwh": 110.2,
+      "delta_gco2_kwh": 0.0,
+      "delta_pct": 0.0,
+      "load_mw": 2275.0,
+      "interpretation": "net_exporter_no_imports"
+    },
+    {
+      "zone": "FR",
+      "production_gco2_kwh": 37.3,
+      "consumption_gco2_kwh": 37.3,
+      "delta_gco2_kwh": 0.0,
+      "delta_pct": 0.0,
+      "load_mw": 54573.0,
+      "interpretation": "net_exporter_no_imports"
+    },
+    {
+      "zone": "IE",
+      "production_gco2_kwh": 114.0,
+      "consumption_gco2_kwh": 114.0,
+      "delta_gco2_kwh": 0.0,
+      "delta_pct": 0.0,
+      "load_mw": 260.0,
+      "interpretation": "no_evaluable_border"
+    },
+    {
+      "zone": "PT",
+      "production_gco2_kwh": 80.8,
+      "consumption_gco2_kwh": 80.8,
+      "delta_gco2_kwh": 0.0,
+      "delta_pct": 0.0,
+      "load_mw": 6453.0,
+      "interpretation": "net_exporter_no_imports"
+    }
+  ],
+  "borders": [
+    {
+      "a": "FR",
+      "b": "DE",
+      "evaluable": true,
+      "net_b_to_a_mw": -2820.5
+    },
+    {
+      "a": "FR",
+      "b": "BE",
+      "evaluable": true,
+      "net_b_to_a_mw": -3117.7
+    },
+    {
+      "a": "FR",
+      "b": "CH",
+      "evaluable": true,
+      "net_b_to_a_mw": -95.7
+    },
+    {
+      "a": "FR",
+      "b": "ES",
+      "evaluable": true,
+      "net_b_to_a_mw": -223.6
+    },
+    {
+      "a": "FR",
+      "b": "IT-NO",
+      "evaluable": true,
+      "net_b_to_a_mw": -3997.4
+    },
+    {
+      "a": "FR",
+      "b": "GB",
+      "evaluable": false,
+      "net_b_to_a_mw": null
+    },
+    {
+      "a": "DE",
+      "b": "NL",
+      "evaluable": true,
+      "net_b_to_a_mw": -168.4
+    },
+    {
+      "a": "DE",
+      "b": "CH",
+      "evaluable": true,
+      "net_b_to_a_mw": 1341.4
+    },
+    {
+      "a": "DE",
+      "b": "AT",
+      "evaluable": true,
+      "net_b_to_a_mw": -694.5
+    },
+    {
+      "a": "DE",
+      "b": "PL",
+      "evaluable": true,
+      "net_b_to_a_mw": -1115.3
+    },
+    {
+      "a": "DE",
+      "b": "CZ",
+      "evaluable": true,
+      "net_b_to_a_mw": -1040.5
+    },
+    {
+      "a": "DE",
+      "b": "DK-DK1",
+      "evaluable": true,
+      "net_b_to_a_mw": 0.0
+    },
+    {
+      "a": "NL",
+      "b": "BE",
+      "evaluable": true,
+      "net_b_to_a_mw": -822.8
+    },
+    {
+      "a": "NL",
+      "b": "GB",
+      "evaluable": false,
+      "net_b_to_a_mw": null
+    },
+    {
+      "a": "CH",
+      "b": "AT",
+      "evaluable": true,
+      "net_b_to_a_mw": -514.9
+    },
+    {
+      "a": "CH",
+      "b": "IT-NO",
+      "evaluable": true,
+      "net_b_to_a_mw": -2284.2
+    },
+    {
+      "a": "AT",
+      "b": "CZ",
+      "evaluable": true,
+      "net_b_to_a_mw": 2169.6
+    },
+    {
+      "a": "AT",
+      "b": "IT-NO",
+      "evaluable": true,
+      "net_b_to_a_mw": -395.0
+    },
+    {
+      "a": "ES",
+      "b": "PT",
+      "evaluable": true,
+      "net_b_to_a_mw": 192.3
+    },
+    {
+      "a": "PL",
+      "b": "CZ",
+      "evaluable": true,
+      "net_b_to_a_mw": -1412.4
+    },
+    {
+      "a": "GB",
+      "b": "IE",
+      "evaluable": false,
+      "net_b_to_a_mw": null
+    }
+  ]
+}
