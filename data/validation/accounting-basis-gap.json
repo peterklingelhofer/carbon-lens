@@ -1,0 +1,30 @@
+{
+  "sampled_at": "2026-08-23T20:42:44.895841+00:00",
+  "settlement_period": {
+    "from": "2026-08-23T20:00Z",
+    "to": "2026-08-23T20:30Z"
+  },
+  "neso_generation_mix_pct": {
+    "biomass": 14.1,
+    "coal": 0.0,
+    "imports": 27.7,
+    "gas": 32.1,
+    "nuclear": 18.3,
+    "other": 0.0,
+    "hydro": 0.0,
+    "solar": 0.0,
+    "wind": 7.8
+  },
+  "neso_published_direct_gco2_kwh": 172,
+  "same_mix_on_our_lifecycle_basis_gco2_kwh": 275.9,
+  "gap_gco2_kwh": 103.9,
+  "gap_pct": 60.4,
+  "import_share_pct": 27.7,
+  "lifecycle_under_different_import_factors": {
+    "our_other_assumption_300": 275.9,
+    "neso_french_interconnector_53": 207.5,
+    "neso_irish_interconnector_458": 319.6,
+    "neso_dutch_interconnector_474": 324.1
+  },
+  "note": "The gap is methodology, not grid: same instant, same mix. A UK zone is therefore reported cleaner than an equivalently-dirty fuel-mix zone, and /route compares them directly. The sensitivity block bounds how much of the gap is attributable to the unsourced `other` factor standing in for NESO's separately-priced interconnector imports."
+}
