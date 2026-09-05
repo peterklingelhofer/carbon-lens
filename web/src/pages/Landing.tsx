@@ -105,7 +105,7 @@ export function Landing() {
           style={{ display: "flex", gap: "1rem", justifyContent: "center" }}
         >
           <Link
-            to="/globe"
+            to="/"
             style={{
               padding: "0.75rem 2rem",
               borderRadius: 8,
@@ -425,7 +425,7 @@ export function Landing() {
         {/* CTA */}
         <div style={{ textAlign: "center", margin: "3rem 0 1rem" }}>
           <Link
-            to="/globe"
+            to="/"
             style={{
               display: "inline-block",
               padding: "0.85rem 2.5rem",

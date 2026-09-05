@@ -7,6 +7,7 @@ import { useLocation } from "react-router-dom";
 const TITLES: Record<string, string> = {
   "/": "Carbon Lens - live carbon intensity for cloud regions",
   "/globe": "Carbon Globe - Carbon Lens",
+  "/intro": "Intro - Carbon Lens",
   "/dashboard": "Grid Data - Carbon Lens",
   "/api-explorer": "API Explorer - Carbon Lens",
   "/compliance": "Compliance reporting - Carbon Lens",
