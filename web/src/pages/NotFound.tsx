@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 // A wrong URL is a dead end, so point people at the places they most likely
 // wanted instead of just an apology.
 const SUGGESTIONS: { to: string; label: string; desc: string }[] = [
-  { to: "/globe", label: "Live globe", desc: "Grid carbon intensity worldwide" },
+  { to: "/intro", label: "Intro", desc: "What the site measures and where the data comes from" },
   { to: "/dashboard", label: "Grid data", desc: "Every region, sortable and searchable" },
   { to: "/api-explorer", label: "API explorer", desc: "Try the endpoints in the browser" },
   { to: "/methodology", label: "Methodology", desc: "How every number is produced" },

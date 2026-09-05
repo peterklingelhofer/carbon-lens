@@ -171,7 +171,7 @@ export function Methodology() {
 
       <div style={{ textAlign: "center", marginTop: "2rem" }}>
         <Link
-          to="/globe"
+          to="/"
           style={{
             display: "inline-block",
             padding: "0.85rem 2.5rem",

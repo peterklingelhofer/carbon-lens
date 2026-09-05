@@ -45,6 +45,29 @@ export default function App() {
   );
 }
 
+// The globe is the home page: it's the strongest first screen the site has;
+// /globe stays as an alias so older links keep working
+const globe = (
+  <Suspense
+    fallback={
+      <div
+        style={{
+          height: "calc(100vh - 56px)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#000",
+          color: "#94a3b8",
+        }}
+      >
+        Loading globe…
+      </div>
+    }
+  >
+    <CarbonGlobe />
+  </Suspense>
+);
+
 // Page content sits behind its own error boundary, keyed on the path so a crash
 // in one page leaves the Nav intact and clears itself when the user navigates
 // elsewhere; the outer boundary only trips for app-shell (Nav) failures.
@@ -53,32 +76,11 @@ function RoutedContent() {
   return (
     <ErrorBoundary key={location.pathname}>
       <Routes>
-        <Route path="/" element={<Landing />} />
+        <Route path="/" element={globe} />
+        <Route path="/globe" element={globe} />
+        <Route path="/intro" element={<Landing />} />
         <Route path="/api-explorer" element={<ApiExplorer />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route
-          path="/globe"
-          element={
-            <Suspense
-              fallback={
-                <div
-                  style={{
-                    height: "calc(100vh - 56px)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    background: "#000",
-                    color: "#94a3b8",
-                  }}
-                >
-                  Loading globe…
-                </div>
-              }
-            >
-              <CarbonGlobe />
-            </Suspense>
-          }
-        />
         <Route path="/route" element={<RouteDemo />} />
         <Route path="/clean-compute" element={<CleanCompute />} />
         <Route path="/compliance" element={<Compliance />} />

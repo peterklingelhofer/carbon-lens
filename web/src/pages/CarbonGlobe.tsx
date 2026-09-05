@@ -46,11 +46,14 @@ function webglAvailable(): boolean {
 // real/estimated snapshot the dashboard uses - no continuous-surface coloring,
 // so empty regions are simply dark (honest), not faked.
 
-// Self-hosted from public/textures (copied from three-globe). Avoids three-globe's
-// exports-field restriction on deep imports and any runtime CDN dependency.
-const EARTH_NIGHT = "/textures/earth-night.jpg";
-const EARTH_TOPOLOGY = "/textures/earth-topology.png";
-const NIGHT_SKY = "/textures/night-sky.png";
+// Self-hosted from public/textures: three-globe's images re-encoded as WebP, so
+// the first paint isn't waiting on 2 MB of PNG/JPEG. Phones get the 2k Earth
+// (76 KB); wider screens the 4k (288 KB), since a zoomed-in globe on a retina
+// display shows the difference. The sky is a soft backdrop, so 2k everywhere
+const BIG_SCREEN = typeof window !== "undefined" && window.innerWidth > 900;
+const EARTH_NIGHT = BIG_SCREEN ? "/textures/earth-night-4k.webp" : "/textures/earth-night.webp";
+const EARTH_TOPOLOGY = "/textures/earth-topology.webp";
+const NIGHT_SKY = "/textures/night-sky.webp";
 
 // A recent global true-color mosaic from NASA GIBS (free, public domain, CORS-open),
 // as one equirectangular image. We don't draw it as-is; a shader keeps only its
@@ -384,6 +387,8 @@ export default function CarbonGlobe() {
   const [legendOpen, setLegendOpen] = useState(
     () => typeof window === "undefined" || !window.matchMedia("(max-width: 720px)").matches,
   );
+  // The top-right "what is this" explainer, for visitors who land on the globe cold
+  const [introOpen, setIntroOpen] = useState(false);
 
   // Read inside globe.gl accessors so a toggle takes effect without re-init.
   const heightMetricRef = useRef<Metric>(heightMetric);
@@ -825,17 +830,14 @@ export default function CarbonGlobe() {
     >
       <style>{`
         .globe-legend-toggle { display: none; }
-        /* Description-in-tooltip swap: the long description shows as text on desktop;
-           on mobile it's hidden and folded into the mobile info icon. */
-        .globe-tip-mobile { display: none; }
         @media (max-width: 720px) {
           .globe-links-inline { display: none; }
-          /* Title: trim to essentials so it doesn't dominate a phone screen */
+          /* Title: trim to essentials so it doesn't dominate a phone screen; the
+             description lives in the top-right explainer instead */
           .globe-title { max-width: 78vw; }
+          .globe-title h1 { font-size: 1rem !important; }
           .globe-title p { font-size: 0.74rem !important; }
           .globe-title-desc { display: none; }
-          .globe-tip-desktop { display: none; }
-          .globe-tip-mobile { display: inline-flex; align-items: center; }
           /* Legend: collapse behind a toggle; hide everything but the toggle when closed */
           .globe-legend-toggle {
             display: inline-flex; align-items: center; gap: 4px;
@@ -933,21 +935,8 @@ export default function CarbonGlobe() {
           display: bare || webglError ? "none" : undefined,
         }}
       >
-        {/* Visually hidden - kept for the document outline / screen readers. */}
-        <h1
-          style={{
-            position: "absolute",
-            width: 1,
-            height: 1,
-            padding: 0,
-            margin: -1,
-            overflow: "hidden",
-            clip: "rect(0,0,0,0)",
-            whiteSpace: "nowrap",
-            border: 0,
-          }}
-        >
-          Carbon Globe
+        <h1 style={{ margin: "0 0 4px", fontSize: "1.25rem", fontWeight: 700 }}>
+          How green is your cloud region, right now?
         </h1>
         <p
           className="globe-title-desc"
@@ -976,25 +965,7 @@ export default function CarbonGlobe() {
             {estCount > 0 && (
               <span style={{ color: "#fbbf24", marginLeft: 10 }}>● {estCount} estimated</span>
             )}
-            {/* Desktop: the description is shown above, so this icon only explains live vs estimated. */}
-            <span className="globe-tip-desktop">
-              <InfoTip label="live vs estimated" text={DATA_QUALITY_TIP_RICH} placement="bottom" />
-            </span>
-            {/* Mobile: the description is hidden to declutter, so it's folded into this icon. */}
-            <span className="globe-tip-mobile">
-              <InfoTip
-                label="about this view"
-                text={
-                  <>
-                    Drag to spin, tap a node for detail.
-                    <br />
-                    <br />
-                    {DATA_QUALITY_TIP_RICH}
-                  </>
-                }
-                placement="bottom"
-              />
-            </span>
+            <InfoTip label="live vs estimated" text={DATA_QUALITY_TIP_RICH} placement="bottom" />
           </p>
         )}
         {snapshot && (
@@ -1031,6 +1002,101 @@ export default function CarbonGlobe() {
           </Link>
         </p>
       </div>
+
+      {/* "What is this" explainer (top-right): a one-paragraph intro with a link to
+          the full intro page. Shares .globe-detail so on phones it becomes the same
+          full-width sheet as the region panel */}
+      {!bare && !webglError && (
+        <>
+          <button
+            type="button"
+            aria-label="What is this?"
+            aria-expanded={introOpen}
+            aria-controls="globe-intro"
+            onClick={() => setIntroOpen((o) => !o)}
+            style={{
+              position: "absolute",
+              top: 16,
+              right: 16,
+              width: 36,
+              height: 36,
+              borderRadius: "50%",
+              border: "1px solid rgba(255,255,255,0.35)",
+              background: "rgba(10,15,20,0.7)",
+              color: "#fff",
+              font: "italic 700 18px/1 Georgia, serif",
+              cursor: "pointer",
+            }}
+          >
+            i
+          </button>
+          {introOpen && (
+            <div
+              id="globe-intro"
+              className="globe-detail"
+              style={{
+                position: "absolute",
+                top: 60,
+                right: 16,
+                width: 320,
+                background: "rgba(10,15,20,0.92)",
+                border: "1px solid rgba(255,255,255,0.15)",
+                borderRadius: 12,
+                padding: "14px 16px 16px",
+                color: "#e5e7eb",
+                fontSize: "0.88rem",
+                lineHeight: 1.5,
+                backdropFilter: "blur(8px)",
+                zIndex: 16,
+              }}
+            >
+              <div
+                style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+              >
+                <strong style={{ color: "#fff" }}>What you're looking at</strong>
+                <button
+                  type="button"
+                  aria-label="Close"
+                  onClick={() => setIntroOpen(false)}
+                  style={{
+                    background: "none",
+                    border: 0,
+                    color: "#94a3b8",
+                    fontSize: "1.1rem",
+                    cursor: "pointer",
+                    padding: "0 4px",
+                  }}
+                >
+                  ✕
+                </button>
+              </div>
+              <p style={{ margin: "8px 0" }}>
+                Every cloud region runs on a local power grid. Each beam is a real AWS, GCP, or
+                Azure region, coloured by how much CO₂ its grid emits per kWh right now: green is
+                clean, red is dirty. Beam height is the renewable share.
+              </p>
+              <p style={{ margin: "0 0 12px", color: "#94a3b8" }}>
+                Drag to spin, tap a beam for detail. {liveCount} of {points.length} regions are read
+                live from grid operators; the rest are labelled estimates.
+              </p>
+              <Link
+                to="/intro"
+                style={{
+                  display: "inline-block",
+                  padding: "8px 14px",
+                  borderRadius: 8,
+                  background: "var(--btn-green)",
+                  color: "#fff",
+                  fontWeight: 600,
+                  textDecoration: "none",
+                }}
+              >
+                Read the intro
+              </Link>
+            </div>
+          )}
+        </>
+      )}
 
       {/* Controls + legend (bottom-left) */}
       <div

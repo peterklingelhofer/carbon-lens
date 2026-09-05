@@ -11,7 +11,7 @@ describe("NotFound", () => {
       </MemoryRouter>,
     );
     expect(screen.getByRole("heading", { name: /page not found/i })).toBeTruthy();
-    expect(screen.getByRole("link", { name: /live globe/i }).getAttribute("href")).toBe("/globe");
+    expect(screen.getByRole("link", { name: /intro/i }).getAttribute("href")).toBe("/intro");
     expect(screen.getByRole("link", { name: /methodology/i }).getAttribute("href")).toBe(
       "/methodology",
     );
