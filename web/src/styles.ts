@@ -34,12 +34,6 @@ export function providerChip(provider: string): React.CSSProperties {
   };
 }
 
-export const grid3: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-  gap: "1.5rem",
-};
-
 // Dimmed secondary text, used for captions and helper copy across components
 export const muted: React.CSSProperties = {
   color: "var(--gray-500)",
