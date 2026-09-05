@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { InfoTip } from "../components/InfoTip";
-import { card as baseCard, grid3, sectionStyle } from "../styles";
+import { card as baseCard, sectionStyle } from "../styles";
 
 const section: React.CSSProperties = { ...sectionStyle(), padding: "3rem 2rem" };
 const card: React.CSSProperties = { ...baseCard, padding: "2rem" };
@@ -210,47 +210,49 @@ export function Landing() {
         </div>
 
         <h2 style={heading()}>What you can build with it</h2>
-        <div style={grid3}>
-          {[
-            {
-              title: "Carbon intensity API",
-              desc: "Latest grams of CO₂ per kWh for 75+ cloud regions in one request, with the data source tagged on every response.",
-              tip: "An API is how one program asks another for data. Here, your code asks ours for a region's live carbon number. gCO₂/kWh = grams of CO₂ emitted per kilowatt-hour of electricity.",
-            },
-            {
-              title: "Emissions reporting",
-              desc: "Draft the emissions reports regulators are starting to require, built from the same live data, with a documented method and a data-quality summary.",
-              tip: "Greenhouse-gas reporting follows the GHG Protocol standard. 'Scope 2' = emissions from the electricity you use; 'Scope 3' = emissions from services you buy (cloud included). Rules like the EU's CSRD, the US SEC climate rule, and California's SB 253 increasingly require it.",
-            },
-            {
-              title: "Carbon-aware routing",
-              desc: "Find the greenest cloud region across AWS, GCP, and Azure, weighing carbon against cost.",
-              tip: "'Routing' means choosing where to run a job. You set priorities (e.g. favour low carbon, cap cost) and it ranks every region. Acting on the result is up to you.",
-            },
-            {
-              title: "8 live grid integrations",
-              desc: "UK, EIA, OpenElectricity/AEMO, IESO/AESO, Taipower, GridStatus, ENTSO-E, and Electricity Maps pull data straight from grid operators. Other regions use clearly-labelled estimates.",
-              tip: "A grid operator runs a region's electricity grid and publishes what it's generating right now. 'Live integration' means we read that official feed directly, rather than estimating.",
-            },
-            {
-              title: "Live updates feed",
-              desc: "A continuous stream of carbon-intensity updates to build on: dashboards, alerts, or shifting flexible jobs to cleaner hours.",
-              tip: "Delivered over a WebSocket, a connection that stays open so the server can push new readings to your app the instant they change, instead of you repeatedly asking.",
-            },
-            {
-              title: "Carbon targets (beta)",
-              desc: "Set a carbon target for your workloads and get checked against live data, with summary reports.",
-              tip: "Modelled on an SLA (service-level agreement), a measurable promise about a service. Here that promise is a carbon ceiling, e.g. 'stay under 100 gCO₂/kWh'. Beta: checks run in memory and reset on restart; not a third-party-assured standard.",
-            },
-          ].map((item) => (
-            <div key={item.title} style={card}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                <h3 style={featureTitle}>{item.title}</h3>
-                <InfoTip label={item.title} text={item.tip} />
+        <div style={card}>
+          <dl style={{ display: "grid", gap: "1.25rem", margin: 0 }}>
+            {[
+              {
+                title: "Carbon intensity API",
+                desc: "Latest grams of CO₂ per kWh for 75+ cloud regions in one request, with the data source tagged on every response.",
+                tip: "An API is how one program asks another for data. Here, your code asks ours for a region's live carbon number. gCO₂/kWh = grams of CO₂ emitted per kilowatt-hour of electricity.",
+              },
+              {
+                title: "Emissions reporting",
+                desc: "Draft the emissions reports regulators are starting to require, built from the same live data, with a documented method and a data-quality summary.",
+                tip: "Greenhouse-gas reporting follows the GHG Protocol standard. 'Scope 2' = emissions from the electricity you use; 'Scope 3' = emissions from services you buy (cloud included). Rules like the EU's CSRD, the US SEC climate rule, and California's SB 253 increasingly require it.",
+              },
+              {
+                title: "Carbon-aware routing",
+                desc: "Find the greenest cloud region across AWS, GCP, and Azure, weighing carbon against cost.",
+                tip: "'Routing' means choosing where to run a job. You set priorities (e.g. favour low carbon, cap cost) and it ranks every region. Acting on the result is up to you.",
+              },
+              {
+                title: "8 live grid integrations",
+                desc: "UK, EIA, OpenElectricity/AEMO, IESO/AESO, Taipower, GridStatus, ENTSO-E, and Electricity Maps pull data straight from grid operators. Other regions use clearly-labelled estimates.",
+                tip: "A grid operator runs a region's electricity grid and publishes what it's generating right now. 'Live integration' means we read that official feed directly, rather than estimating.",
+              },
+              {
+                title: "Live updates feed",
+                desc: "A continuous stream of carbon-intensity updates to build on: dashboards, alerts, or shifting flexible jobs to cleaner hours.",
+                tip: "Delivered over a WebSocket, a connection that stays open so the server can push new readings to your app the instant they change, instead of you repeatedly asking.",
+              },
+              {
+                title: "Carbon targets (beta)",
+                desc: "Set a carbon target for your workloads and get checked against live data, with summary reports.",
+                tip: "Modelled on an SLA (service-level agreement), a measurable promise about a service. Here that promise is a carbon ceiling, e.g. 'stay under 100 gCO₂/kWh'. Beta: checks run in memory and reset on restart; not a third-party-assured standard.",
+              },
+            ].map((item) => (
+              <div key={item.title}>
+                <dt style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                  <span style={featureTitle}>{item.title}</span>
+                  <InfoTip label={item.title} text={item.tip} />
+                </dt>
+                <dd style={{ margin: "0.5rem 0 0", fontSize: "0.95rem" }}>{item.desc}</dd>
               </div>
-              <p style={{ marginTop: "0.75rem", fontSize: "0.95rem" }}>{item.desc}</p>
-            </div>
-          ))}
+            ))}
+          </dl>
         </div>
 
         {/* What makes a grid greener - the one centered interlude */}
