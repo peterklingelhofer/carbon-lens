@@ -1,0 +1,109 @@
+{
+  "days": [
+    {
+      "date": "2026-08-17",
+      "greenest_mean_gco2_kwh": 32.5,
+      "top_shiftability_pct": 72.5
+    },
+    {
+      "date": "2026-08-18",
+      "greenest_mean_gco2_kwh": 32.5,
+      "top_shiftability_pct": 70.9
+    },
+    {
+      "date": "2026-08-19",
+      "greenest_mean_gco2_kwh": 32.8,
+      "top_shiftability_pct": 69.8
+    },
+    {
+      "date": "2026-08-20",
+      "greenest_mean_gco2_kwh": 32.9,
+      "top_shiftability_pct": 69.9
+    },
+    {
+      "date": "2026-08-21",
+      "greenest_mean_gco2_kwh": 32.9,
+      "top_shiftability_pct": 67.8
+    },
+    {
+      "date": "2026-08-22",
+      "greenest_mean_gco2_kwh": 32.6,
+      "top_shiftability_pct": 67.6
+    },
+    {
+      "date": "2026-08-23",
+      "greenest_mean_gco2_kwh": 32.4,
+      "top_shiftability_pct": 68.6
+    },
+    {
+      "date": "2026-08-24",
+      "greenest_mean_gco2_kwh": 32.2,
+      "top_shiftability_pct": 70.0
+    },
+    {
+      "date": "2026-08-25",
+      "greenest_mean_gco2_kwh": 32.4,
+      "top_shiftability_pct": 69.8
+    },
+    {
+      "date": "2026-08-26",
+      "greenest_mean_gco2_kwh": 32.4,
+      "top_shiftability_pct": 69.8
+    },
+    {
+      "date": "2026-08-27",
+      "greenest_mean_gco2_kwh": 32.4,
+      "top_shiftability_pct": 70.2
+    },
+    {
+      "date": "2026-08-28",
+      "greenest_mean_gco2_kwh": 32.2,
+      "top_shiftability_pct": 62.7
+    },
+    {
+      "date": "2026-08-29",
+      "greenest_mean_gco2_kwh": 32.2,
+      "top_shiftability_pct": 64.9
+    },
+    {
+      "date": "2026-08-30",
+      "greenest_mean_gco2_kwh": 32.3,
+      "top_shiftability_pct": 67.3
+    },
+    {
+      "date": "2026-08-31",
+      "greenest_mean_gco2_kwh": 32.0,
+      "top_shiftability_pct": 66.5
+    },
+    {
+      "date": "2026-09-01",
+      "greenest_mean_gco2_kwh": 32.0,
+      "top_shiftability_pct": 67.2
+    },
+    {
+      "date": "2026-09-02",
+      "greenest_mean_gco2_kwh": 32.0,
+      "top_shiftability_pct": 69.1
+    },
+    {
+      "date": "2026-09-03",
+      "greenest_mean_gco2_kwh": 31.9,
+      "top_shiftability_pct": 70.1
+    },
+    {
+      "date": "2026-09-04",
+      "greenest_mean_gco2_kwh": 31.6,
+      "top_shiftability_pct": 70.9
+    },
+    {
+      "date": "2026-09-05",
+      "greenest_mean_gco2_kwh": 32.2,
+      "top_shiftability_pct": 76.0
+    },
+    {
+      "date": "2026-09-06",
+      "greenest_mean_gco2_kwh": 32.8,
+      "top_shiftability_pct": 74.8
+    }
+  ]
+}
