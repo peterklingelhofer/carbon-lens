@@ -18,7 +18,7 @@ inputs:
   api-url:
     description: "CarbonLens API URL"
     required: false
-    default: "http://localhost:8000"
+    default: "https://carbonlens-gssa.onrender.com"
   api-key:
     description: "CarbonLens API key"
     required: false
