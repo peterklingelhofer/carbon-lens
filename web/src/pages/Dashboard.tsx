@@ -24,7 +24,7 @@ function QualityTag({ quality }: { quality?: CarbonIntensity["quality"] }) {
         padding: "0 6px",
         borderRadius: 4,
         fontSize: "0.65rem",
-        fontWeight: 600,
+        fontWeight: 500,
         color: "var(--amber)",
         border: "1px solid var(--amber)",
         verticalAlign: "middle",
@@ -82,7 +82,7 @@ function SnapshotBanner({ snapshot }: { snapshot: CarbonSnapshot }) {
         <>
           {" "}
           · {estimated_zones} estimated (intermittent upstream, tagged{" "}
-          <span style={{ color: "var(--amber)", fontWeight: 600 }}>est.</span>)
+          <span style={{ color: "var(--amber)", fontWeight: 500 }}>est.</span>)
         </>
       )}{" "}
       · updated {timeAgo(snapshot.generated_at)}
@@ -188,7 +188,7 @@ function RegionRow({ region, intensity }: { region: CloudRegion; intensity?: Car
         {intensity ? (
           <span
             style={{
-              fontWeight: 600,
+              fontWeight: 500,
               color: intensity.renewable_percentage >= 70 ? "var(--green-text)" : "var(--gray-600)",
             }}
           >
@@ -361,7 +361,7 @@ export function Dashboard() {
               border: "none",
               background: "var(--btn-green)",
               color: "white",
-              fontWeight: 600,
+              fontWeight: 500,
               fontSize: "0.85rem",
               cursor: routeSample.isPending ? "wait" : "pointer",
               whiteSpace: "nowrap",
@@ -535,7 +535,7 @@ export function Dashboard() {
               background: provider === p ? "var(--btn-green)" : "var(--surface)",
               color: provider === p ? "white" : "var(--gray-700)",
               cursor: "pointer",
-              fontWeight: provider === p ? 600 : 400,
+              fontWeight: provider === p ? 500 : 400,
               fontSize: "0.85rem",
             }}
           >
@@ -604,7 +604,7 @@ export function Dashboard() {
                             border: "none",
                             font: "inherit",
                             fontSize: "0.8rem",
-                            fontWeight: 600,
+                            fontWeight: 500,
                             cursor: "pointer",
                             padding: "0.25rem",
                             display: "inline-flex",

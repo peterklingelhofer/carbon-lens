@@ -155,7 +155,7 @@ export function Compliance() {
               border: "none",
               background: "var(--btn-green)",
               color: "white",
-              fontWeight: 600,
+              fontWeight: 500,
               cursor: step === "idle" ? "pointer" : "wait",
               opacity: step === "idle" ? 1 : 0.7,
             }}
@@ -283,7 +283,7 @@ export function Compliance() {
               border: "none",
               background: "var(--btn-green)",
               color: "white",
-              fontWeight: 600,
+              fontWeight: 500,
               cursor: !csvFile || csvPipeline.isPending ? "not-allowed" : "pointer",
               opacity: !csvFile || csvPipeline.isPending || step !== "idle" ? 0.6 : 1,
             }}
@@ -379,7 +379,7 @@ export function Compliance() {
                     style={{
                       padding: "0.5rem",
                       textAlign: "right",
-                      fontWeight: 600,
+                      fontWeight: 500,
                     }}
                   >
                     {r.total_kgco2e.toFixed(4)}
@@ -389,7 +389,7 @@ export function Compliance() {
                       padding: "0.5rem",
                       textAlign: "right",
                       color: "var(--green-text)",
-                      fontWeight: 600,
+                      fontWeight: 500,
                     }}
                   >
                     {r.carbon_saved_percentage.toFixed(1)}%
@@ -564,7 +564,7 @@ function ReportView({ report }: { report: ComplianceReport }) {
                 style={{
                   padding: "0.5rem",
                   textAlign: "right",
-                  fontWeight: 600,
+                  fontWeight: 500,
                 }}
               >
                 {report.scope2_location_kgco2e.toFixed(4)}
@@ -577,7 +577,7 @@ function ReportView({ report }: { report: ComplianceReport }) {
                 style={{
                   padding: "0.5rem",
                   textAlign: "right",
-                  fontWeight: 600,
+                  fontWeight: 500,
                 }}
               >
                 {report.scope2_market_kgco2e.toFixed(4)}
@@ -590,7 +590,7 @@ function ReportView({ report }: { report: ComplianceReport }) {
                 style={{
                   padding: "0.5rem",
                   textAlign: "right",
-                  fontWeight: 600,
+                  fontWeight: 500,
                 }}
               >
                 {report.scope3_cat1_kgco2e.toFixed(4)}
@@ -680,7 +680,7 @@ function ReportView({ report }: { report: ComplianceReport }) {
       >
         <div
           style={{
-            fontWeight: 600,
+            fontWeight: 500,
             fontSize: "0.9rem",
             marginBottom: 4,
             display: "inline-flex",
@@ -711,7 +711,7 @@ function ReportView({ report }: { report: ComplianceReport }) {
           >
             <span
               style={{
-                fontWeight: 600,
+                fontWeight: 500,
                 display: "inline-flex",
                 alignItems: "center",
               }}

@@ -49,7 +49,7 @@ export function ShiftabilityPanel() {
         {zones.map((z) => (
           <div key={z.grid_zone} style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ width: 200, fontSize: "0.82rem" }}>
-              <span style={{ fontWeight: 600 }}>{z.grid_zone}</span>{" "}
+              <span style={{ fontWeight: 500 }}>{z.grid_zone}</span>{" "}
               <span style={{ color: "var(--gray-500)" }}>{z.location}</span>
             </div>
             <div style={{ flex: 1, background: "var(--gray-200)", borderRadius: 4, height: 14 }}>
@@ -63,7 +63,7 @@ export function ShiftabilityPanel() {
               />
             </div>
             <div style={{ width: 96, textAlign: "right", fontSize: "0.82rem" }}>
-              <span style={{ color: "var(--green-text)", fontWeight: 600 }}>
+              <span style={{ color: "var(--green-text)", fontWeight: 500 }}>
                 {Math.round(z.shift_savings_pct)}%
               </span>{" "}
               <span style={{ color: "var(--gray-400)", fontSize: "0.7rem" }}>

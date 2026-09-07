@@ -39,7 +39,7 @@ export function NotFound() {
               color: "inherit",
             }}
           >
-            <span style={{ fontWeight: 600, color: "var(--green-text)" }}>{s.label}</span>
+            <span style={{ fontWeight: 500, color: "var(--green-text)" }}>{s.label}</span>
             <span style={{ display: "block", fontSize: "0.85rem", color: "var(--gray-500)" }}>
               {s.desc}
             </span>
@@ -56,7 +56,7 @@ export function NotFound() {
           color: "white",
           borderRadius: 8,
           textDecoration: "none",
-          fontWeight: 600,
+          fontWeight: 500,
         }}
       >
         Back to the globe

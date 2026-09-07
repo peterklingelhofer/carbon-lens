@@ -116,7 +116,7 @@ export function ApiExplorer() {
           rel="noopener noreferrer"
           style={{
             color: "var(--green-text)",
-            fontWeight: 600,
+            fontWeight: 500,
             textDecoration: "underline",
           }}
         >
@@ -158,7 +158,7 @@ export function ApiExplorer() {
               background: activeTab === tab.key ? "var(--btn-green)" : "var(--surface)",
               color: activeTab === tab.key ? "white" : "var(--gray-700)",
               cursor: "pointer",
-              fontWeight: activeTab === tab.key ? 600 : 400,
+              fontWeight: activeTab === tab.key ? 500 : 400,
               fontSize: "0.85rem",
             }}
           >
@@ -400,7 +400,7 @@ export function ApiExplorer() {
                             style={{
                               ...td,
                               textAlign: "right",
-                              fontWeight: 600,
+                              fontWeight: 500,
                               color: intensityVarColor(val.carbon_intensity_gco2_kwh),
                             }}
                           >
@@ -500,7 +500,7 @@ export function ApiExplorer() {
               </div>
               <div>
                 <div style={{ fontSize: "0.7rem", color: "var(--gray-500)" }}>Region</div>
-                <div style={{ fontWeight: 600, fontFamily: "var(--mono)" }}>
+                <div style={{ fontWeight: 500, fontFamily: "var(--mono)" }}>
                   {routeResult.recommended.region}
                 </div>
               </div>
@@ -551,7 +551,7 @@ export function ApiExplorer() {
                         <td
                           style={{
                             ...td,
-                            fontWeight: 600,
+                            fontWeight: 500,
                             textTransform: "uppercase",
                             fontSize: "0.8rem",
                           }}
@@ -571,7 +571,7 @@ export function ApiExplorer() {
                           style={{
                             ...td,
                             textAlign: "right",
-                            fontWeight: 600,
+                            fontWeight: 500,
                             color: intensityVarColor(alt.carbon_intensity_gco2_kwh),
                           }}
                         >
@@ -616,7 +616,7 @@ function buttonStyle(pending: boolean): React.CSSProperties {
     border: "none",
     background: "var(--btn-green)",
     color: "white",
-    fontWeight: 600,
+    fontWeight: 500,
     cursor: pending ? "wait" : "pointer",
   };
 }
