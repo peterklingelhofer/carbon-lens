@@ -913,7 +913,7 @@ export default function CarbonGlobe() {
                 borderRadius: 8,
                 background: "var(--btn-green)",
                 color: "#fff",
-                fontWeight: 600,
+                fontWeight: 500,
                 textDecoration: "none",
               }}
             >
@@ -1091,7 +1091,7 @@ export default function CarbonGlobe() {
                   borderRadius: 8,
                   background: "var(--btn-green)",
                   color: "#fff",
-                  fontWeight: 600,
+                  fontWeight: 500,
                   textDecoration: "none",
                 }}
               >
@@ -1480,7 +1480,7 @@ export default function CarbonGlobe() {
               style={{
                 marginTop: 8,
                 fontSize: "0.72rem",
-                fontWeight: 600,
+                fontWeight: 500,
                 color: "#4ade80",
                 display: "inline-flex",
                 alignItems: "center",

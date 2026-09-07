@@ -86,7 +86,7 @@ export function CustomZoneLookup() {
       {ci && !isLoading && (
         <div style={{ marginTop: "1rem" }}>
           <IntensityValue value={ci.carbon_intensity_gco2_kwh} />
-          <span style={{ marginLeft: "1rem", color: "var(--green-text)", fontWeight: 600 }}>
+          <span style={{ marginLeft: "1rem", color: "var(--green-text)", fontWeight: 500 }}>
             {ci.renewable_percentage}% renewable
           </span>
           {ci.marginal_intensity_gco2_kwh != null && (

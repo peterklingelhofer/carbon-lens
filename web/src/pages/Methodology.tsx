@@ -179,7 +179,7 @@ export function Methodology() {
             borderRadius: 8,
             background: "var(--btn-green)",
             color: "white",
-            fontWeight: 600,
+            fontWeight: 500,
             fontSize: "1.05rem",
             textDecoration: "none",
           }}

@@ -47,7 +47,7 @@ export function RegionSignal({ provider, region }: { provider: string; region: s
       <div style={{ fontSize: "0.72rem", color: "#9ca3af", marginBottom: 4 }}>
         Shift flexible work here?
       </div>
-      <div style={{ fontSize: "0.85rem", fontWeight: 600, color }}>
+      <div style={{ fontSize: "0.85rem", fontWeight: 500, color }}>
         {signal.clean_surplus ? "Clean surplus · " : ""}
         {runNow
           ? "Yes: exceptionally clean now"
@@ -241,7 +241,7 @@ export function RegionBestTime({ provider, region }: { provider: string; region:
       <div style={{ fontSize: "0.72rem", color: "#9ca3af", marginBottom: 4 }}>
         Greenest hour to schedule
       </div>
-      <div style={{ fontSize: "0.8rem", color: "#4ade80", fontWeight: 600 }}>
+      <div style={{ fontSize: "0.8rem", color: "#4ade80", fontWeight: 500 }}>
         {hh}:00 UTC
         {savings != null && savings > 0 && (
           <span style={{ color: "#86efac", fontWeight: 400 }}>

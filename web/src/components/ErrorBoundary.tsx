@@ -61,7 +61,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 border: "none",
                 borderRadius: 8,
                 cursor: "pointer",
-                fontWeight: 600,
+                fontWeight: 500,
                 fontSize: "1rem",
               }}
             >
@@ -80,7 +80,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 border: "1px solid var(--gray-300)",
                 borderRadius: 8,
                 cursor: "pointer",
-                fontWeight: 600,
+                fontWeight: 500,
                 fontSize: "1rem",
               }}
             >
