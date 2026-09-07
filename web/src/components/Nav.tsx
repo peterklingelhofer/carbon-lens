@@ -5,7 +5,7 @@ import { ROUTES } from "../routes";
 const linkStyle = ({ isActive }: { isActive: boolean }) =>
   ({
     borderRadius: "6px",
-    fontWeight: isActive ? 600 : 400,
+    fontWeight: isActive ? 500 : 400,
     // Translucent green tint reads as a highlight on both the light and dark
     // nav; --green-text keeps the label legible in both modes.
     background: isActive ? "rgba(34,197,94,0.10)" : "transparent",

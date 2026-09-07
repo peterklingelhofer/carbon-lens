@@ -20,7 +20,7 @@ const heading = (align: "left" | "center" = "left"): React.CSSProperties => ({
 const featureTitle: React.CSSProperties = {
   margin: 0,
   fontSize: "1rem",
-  fontWeight: 600,
+  fontWeight: 500,
   borderLeft: "3px solid var(--btn-green)",
   paddingLeft: "0.6rem",
 };
@@ -124,7 +124,7 @@ export function Landing() {
               // green, so dark-green text on white is high-contrast in both modes.
               background: "#ffffff",
               color: "var(--green-800)",
-              fontWeight: 600,
+              fontWeight: 500,
               textDecoration: "none",
             }}
           >
@@ -137,7 +137,7 @@ export function Landing() {
               borderRadius: 8,
               border: "2px solid rgba(255,255,255,0.4)",
               color: "white",
-              fontWeight: 600,
+              fontWeight: 500,
               textDecoration: "none",
             }}
           >
@@ -198,7 +198,7 @@ export function Landing() {
             cleanest regions is often more than tenfold, so the same server can emit a fraction of
             what it does today purely by running somewhere else. For new workloads with no
             data-residency constraint, it costs nothing to choose well.{" "}
-            <Link to="/regions" style={{ color: "var(--green-text)", fontWeight: 600 }}>
+            <Link to="/regions" style={{ color: "var(--green-text)", fontWeight: 500 }}>
               Compare every region
             </Link>
             .
@@ -225,7 +225,7 @@ export function Landing() {
                 How much this saves depends heavily on the grid, and on a clean grid it's little.
               </>
             )}{" "}
-            <Link to="/best-time" style={{ color: "var(--green-text)", fontWeight: 600 }}>
+            <Link to="/best-time" style={{ color: "var(--green-text)", fontWeight: 500 }}>
               Find the greenest window
             </Link>
             .
@@ -238,7 +238,7 @@ export function Landing() {
             Greenhouse-gas reporting asks for a location-based figure: what the grid you drew from
             actually emitted. That's the number this site measures, so it can turn your cloud usage
             into a first draft with the method and data quality shown.{" "}
-            <Link to="/report" style={{ color: "var(--green-text)", fontWeight: 600 }}>
+            <Link to="/report" style={{ color: "var(--green-text)", fontWeight: 500 }}>
               Draft a report
             </Link>
             .
@@ -368,7 +368,7 @@ export function Landing() {
             style={{
               color: "var(--green-text)",
               textDecoration: "underline",
-              fontWeight: 600,
+              fontWeight: 500,
             }}
           >
             read the methodology
@@ -410,7 +410,7 @@ export function Landing() {
                   <td style={{ padding: "0.5rem" }}>{res}</td>
                   <td style={{ padding: "0.5rem" }}>
                     {here === "Yes" ? (
-                      <span style={{ color: "var(--green-text)", fontWeight: 600 }}>{here}</span>
+                      <span style={{ color: "var(--green-text)", fontWeight: 500 }}>{here}</span>
                     ) : (
                       <span style={{ color: "var(--gray-500)" }}>{here}</span>
                     )}
@@ -441,7 +441,7 @@ export function Landing() {
               borderRadius: 8,
               background: "var(--btn-green)",
               color: "white",
-              fontWeight: 600,
+              fontWeight: 500,
               fontSize: "1.1rem",
               textDecoration: "none",
             }}

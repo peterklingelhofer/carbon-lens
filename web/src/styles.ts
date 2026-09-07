@@ -65,7 +65,7 @@ export const th: React.CSSProperties = {
   textAlign: "left",
   padding: "0.5rem",
   fontSize: "0.75rem",
-  fontWeight: 600,
+  fontWeight: 500,
   color: "var(--gray-500)",
 };
 

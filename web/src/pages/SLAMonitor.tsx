@@ -122,7 +122,7 @@ export function SLAMonitor() {
                 display: "inline-block",
               }}
             />
-            <span style={{ fontSize: "0.85rem", fontWeight: 600 }}>
+            <span style={{ fontSize: "0.85rem", fontWeight: 500 }}>
               {monitorStatus?.running ? "Running" : "Stopped"}
             </span>
           </div>
@@ -150,7 +150,7 @@ export function SLAMonitor() {
               border: "none",
               background: monitorStatus?.running ? "var(--gray-200)" : "var(--btn-green)",
               color: monitorStatus?.running ? "var(--gray-700)" : "white",
-              fontWeight: 600,
+              fontWeight: 500,
               fontSize: "0.85rem",
               cursor:
                 monitorMutation.isPending ||
@@ -201,15 +201,15 @@ export function SLAMonitor() {
           <div style={{ fontSize: "0.8rem", color: "var(--gray-500)" }}>SLAs defined</div>
           {slas && slas.length > 0 && (
             <div style={{ marginTop: "0.5rem", fontSize: "0.8rem" }}>
-              <span style={{ color: "var(--green-text)", fontWeight: 600 }}>
+              <span style={{ color: "var(--green-text)", fontWeight: 500 }}>
                 {slas.filter((s: { status: string }) => s.status === "compliant").length} compliant
               </span>
               {" | "}
-              <span style={{ color: "var(--orange-400, #fb923c)", fontWeight: 600 }}>
+              <span style={{ color: "var(--orange-400, #fb923c)", fontWeight: 500 }}>
                 {slas.filter((s: { status: string }) => s.status === "warning").length} warning
               </span>
               {" | "}
-              <span style={{ color: "var(--red-400, #f87171)", fontWeight: 600 }}>
+              <span style={{ color: "var(--red-400, #f87171)", fontWeight: 500 }}>
                 {slas.filter((s: { status: string }) => s.status === "breached").length} breached
               </span>
             </div>
@@ -228,7 +228,7 @@ export function SLAMonitor() {
             border: "none",
             background: "var(--btn-green)",
             color: "white",
-            fontWeight: 600,
+            fontWeight: 500,
             cursor: "pointer",
             fontSize: "0.85rem",
           }}
@@ -279,7 +279,7 @@ export function SLAMonitor() {
                   fontSize: "0.8rem",
                   textAlign: "center",
                   color: intensityVarColor(maxCarbon),
-                  fontWeight: 600,
+                  fontWeight: 500,
                 }}
               >
                 {maxCarbon === 0 ? "ZERO CARBON ONLY" : `${maxCarbon} gCO₂/kWh`}
@@ -303,7 +303,7 @@ export function SLAMonitor() {
                 style={{
                   fontSize: "0.8rem",
                   textAlign: "center",
-                  fontWeight: 600,
+                  fontWeight: 500,
                   color: minRenewable >= 80 ? "var(--green-text)" : "inherit",
                 }}
               >
@@ -321,7 +321,7 @@ export function SLAMonitor() {
               border: "none",
               background: "var(--btn-green)",
               color: "white",
-              fontWeight: 600,
+              fontWeight: 500,
               cursor: createMutation.isPending ? "wait" : "pointer",
             }}
           >
@@ -376,7 +376,7 @@ export function SLAMonitor() {
               <tbody>
                 {slas.map((sla) => (
                   <tr key={sla.id} style={{ borderBottom: "1px solid var(--gray-100)" }}>
-                    <td style={{ ...td, fontWeight: 600 }}>{sla.name}</td>
+                    <td style={{ ...td, fontWeight: 500 }}>{sla.name}</td>
                     <td style={td}>
                       <StatusBadge status={sla.status} />
                     </td>
@@ -494,7 +494,7 @@ export function SLAMonitor() {
                           <td
                             style={{
                               ...td,
-                              fontWeight: 600,
+                              fontWeight: 500,
                               textTransform: "uppercase",
                               fontSize: "0.8rem",
                             }}
@@ -514,7 +514,7 @@ export function SLAMonitor() {
                             style={{
                               ...td,
                               textAlign: "right",
-                              fontWeight: 600,
+                              fontWeight: 500,
                               color: "var(--red-400, #f87171)",
                             }}
                           >
@@ -628,7 +628,7 @@ function StatusBadge({ status, style }: { status: string; style?: React.CSSPrope
     <span
       style={{
         fontSize: "0.7rem",
-        fontWeight: 600,
+        fontWeight: 500,
         padding: "2px 8px",
         borderRadius: 4,
         background: c.bg,

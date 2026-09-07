@@ -379,7 +379,7 @@ export function Scheduler() {
                     cursor: "pointer",
                     padding: "0.25rem 0.5rem",
                     borderRadius: 6,
-                    fontWeight: strategy === s.value ? 600 : 400,
+                    fontWeight: strategy === s.value ? 500 : 400,
                     background: strategy === s.value ? "var(--surface-alt)" : "transparent",
                   }}
                 >
@@ -420,7 +420,7 @@ export function Scheduler() {
                     padding: "0.4rem 0.8rem",
                     borderRadius: 6,
                     fontSize: "0.85rem",
-                    fontWeight: 600,
+                    fontWeight: 500,
                     cursor: "pointer",
                     textTransform: "uppercase",
                     border: selectedProviders.includes(p)
@@ -449,7 +449,7 @@ export function Scheduler() {
             border: "none",
             background: "var(--btn-green)",
             color: "white",
-            fontWeight: 600,
+            fontWeight: 500,
             cursor: findWindow.isPending ? "wait" : "pointer",
             fontSize: "0.9rem",
           }}
@@ -474,7 +474,7 @@ export function Scheduler() {
                 style={{
                   marginLeft: 8,
                   fontSize: "0.8rem",
-                  fontWeight: 600,
+                  fontWeight: 500,
                   color: "var(--green-text)",
                   background: "var(--green-100)",
                   padding: "2px 8px",
@@ -489,7 +489,7 @@ export function Scheduler() {
                 style={{
                   marginLeft: 8,
                   fontSize: "0.8rem",
-                  fontWeight: 600,
+                  fontWeight: 500,
                   color: "var(--green-text)",
                   background: "var(--green-100)",
                   padding: "2px 8px",
@@ -572,7 +572,7 @@ export function Scheduler() {
                         <td
                           style={{
                             ...td,
-                            fontWeight: 600,
+                            fontWeight: 500,
                             textTransform: "uppercase",
                             fontSize: "0.8rem",
                           }}
@@ -596,7 +596,7 @@ export function Scheduler() {
                             ...td,
                             textAlign: "right",
                             color: "var(--green-text)",
-                            fontWeight: 600,
+                            fontWeight: 500,
                           }}
                         >
                           {alt.renewable_percentage}%
@@ -652,7 +652,7 @@ export function Scheduler() {
             href="https://github.com/peterklingelhofer/carbon-aware-dispatcher"
             target="_blank"
             rel="noopener noreferrer"
-            style={{ color: "var(--green-text)", fontWeight: 600 }}
+            style={{ color: "var(--green-text)", fontWeight: 500 }}
           >
             carbon-aware-dispatcher
           </a>{" "}
@@ -710,7 +710,7 @@ const sliderValue: React.CSSProperties = {
   fontSize: "0.8rem",
   textAlign: "center",
   color: "var(--green-text)",
-  fontWeight: 600,
+  fontWeight: 500,
 };
 
 const codeBlock: React.CSSProperties = {

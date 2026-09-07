@@ -22,7 +22,7 @@ function Stat({
   return (
     <div style={{ flex: "1 1 180px", minWidth: 0 }}>
       <div style={{ ...muted, textTransform: "uppercase", fontSize: "0.68rem" }}>{title}</div>
-      <div style={{ fontWeight: 600, fontFamily: "var(--mono)", margin: "0.15rem 0" }}>
+      <div style={{ fontWeight: 500, fontFamily: "var(--mono)", margin: "0.15rem 0" }}>
         {subject}
       </div>
       {intensity != null ? (

@@ -75,7 +75,7 @@ export function RouteDemo() {
         <fieldset style={{ border: "none", margin: "0 0 1.25rem", padding: 0, minWidth: 0 }}>
           <legend
             style={{
-              fontWeight: 600,
+              fontWeight: 500,
               display: "block",
               marginBottom: "0.5rem",
             }}
@@ -97,7 +97,7 @@ export function RouteDemo() {
                   background: providers.includes(p) ? "var(--green-50)" : "var(--surface)",
                   color: providers.includes(p) ? "var(--green-800)" : "var(--gray-600)",
                   cursor: "pointer",
-                  fontWeight: 600,
+                  fontWeight: 500,
                   textTransform: "uppercase",
                 }}
               >
@@ -111,7 +111,7 @@ export function RouteDemo() {
         <div style={{ marginBottom: "1.25rem" }}>
           <span
             style={{
-              fontWeight: 600,
+              fontWeight: 500,
               display: "inline-flex",
               alignItems: "center",
               marginBottom: "0.5rem",
@@ -167,7 +167,7 @@ export function RouteDemo() {
             border: "none",
             background: loading ? "var(--gray-300)" : "var(--btn-green)",
             color: "white",
-            fontWeight: 600,
+            fontWeight: 500,
             fontSize: "1rem",
             cursor: loading ? "not-allowed" : "pointer",
           }}
@@ -226,7 +226,7 @@ export function RouteDemo() {
                 style={
                   {
                     ...intensityLabel(result.recommended.carbon_intensity_gco2_kwh),
-                    fontWeight: 600,
+                    fontWeight: 500,
                     fontSize: "0.9rem",
                   } as React.CSSProperties
                 }
@@ -245,7 +245,7 @@ export function RouteDemo() {
             >
               <div>
                 <div style={{ fontSize: "0.75rem", color: "var(--gray-500)" }}>Grid Zone</div>
-                <div style={{ fontWeight: 600 }}>{result.recommended.grid_zone}</div>
+                <div style={{ fontWeight: 500 }}>{result.recommended.grid_zone}</div>
               </div>
               <div>
                 <div
@@ -259,7 +259,7 @@ export function RouteDemo() {
                   Carbon emissions
                   <InfoTip label="Carbon emissions" text={EMISSIONS_TIP} />
                 </div>
-                <div style={{ fontWeight: 600 }}>
+                <div style={{ fontWeight: 500 }}>
                   {result.recommended.carbon_intensity_gco2_kwh} gCO₂/kWh
                 </div>
               </div>
@@ -276,7 +276,7 @@ export function RouteDemo() {
                 </div>
                 <div
                   style={{
-                    fontWeight: 600,
+                    fontWeight: 500,
                     color:
                       result.recommended.renewable_percentage >= 70
                         ? "var(--green-text)"
@@ -288,7 +288,7 @@ export function RouteDemo() {
               </div>
               <div>
                 <div style={{ fontSize: "0.75rem", color: "var(--gray-500)" }}>Carbon Savings</div>
-                <div style={{ fontWeight: 600, color: "var(--green-text)" }}>
+                <div style={{ fontWeight: 500, color: "var(--green-text)" }}>
                   {result.recommended.carbon_savings_vs_worst_pct.toFixed(1)}% greener
                 </div>
               </div>

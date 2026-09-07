@@ -154,7 +154,7 @@ export function Settings() {
           rel="noopener noreferrer"
           style={{
             color: "var(--green-text)",
-            fontWeight: 600,
+            fontWeight: 500,
             textDecoration: "underline",
           }}
         >
@@ -186,7 +186,7 @@ export function Settings() {
               </div>
               <div
                 style={{
-                  fontWeight: 600,
+                  fontWeight: 500,
                   color: health.status === "ok" ? "var(--green-text)" : "var(--orange-400)",
                 }}
               >
@@ -204,7 +204,7 @@ export function Settings() {
               >
                 Version
               </div>
-              <div style={{ fontWeight: 600 }}>{health.version}</div>
+              <div style={{ fontWeight: 500 }}>{health.version}</div>
             </div>
             <div>
               <div
@@ -222,7 +222,7 @@ export function Settings() {
                   text="Which data-source mode the API is running. 'hybrid' cascades through all providers (live feeds first, then estimates) - the normal setting."
                 />
               </div>
-              <div style={{ fontWeight: 600 }}>{health.carbon_source}</div>
+              <div style={{ fontWeight: 500 }}>{health.carbon_source}</div>
             </div>
           </div>
         ) : healthError ? (
@@ -405,7 +405,7 @@ export function Settings() {
               },
             ].map((p) => (
               <tr key={p.name} style={{ borderBottom: "1px solid var(--gray-100)" }}>
-                <td style={{ padding: "0.5rem", fontWeight: 600 }}>{p.name}</td>
+                <td style={{ padding: "0.5rem", fontWeight: 500 }}>{p.name}</td>
                 <td style={{ padding: "0.5rem" }}>{p.coverage}</td>
                 <td style={{ padding: "0.5rem" }}>
                   <code
