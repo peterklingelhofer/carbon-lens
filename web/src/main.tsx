@@ -7,6 +7,9 @@ import { BrowserRouter } from "react-router-dom";
 import "@fontsource/ubuntu/400.css";
 import "@fontsource/ubuntu/500.css";
 import "@fontsource/ubuntu/700.css";
+// Ubuntu Mono ships 400 and 700; StatCard renders identifiers at 700.
+import "@fontsource/ubuntu-mono/400.css";
+import "@fontsource/ubuntu-mono/700.css";
 import App from "./App";
 import "./index.css";
 
