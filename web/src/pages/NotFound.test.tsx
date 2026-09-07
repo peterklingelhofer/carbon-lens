@@ -12,9 +12,12 @@ describe("NotFound", () => {
     );
     expect(screen.getByRole("heading", { name: /page not found/i })).toBeTruthy();
     expect(screen.getByRole("link", { name: /intro/i }).getAttribute("href")).toBe("/intro");
+    expect(screen.getByRole("link", { name: /all regions/i }).getAttribute("href")).toBe(
+      "/regions",
+    );
     expect(screen.getByRole("link", { name: /methodology/i }).getAttribute("href")).toBe(
       "/methodology",
     );
-    expect(screen.getByRole("link", { name: /back to home/i }).getAttribute("href")).toBe("/");
+    expect(screen.getByRole("link", { name: /back to the globe/i }).getAttribute("href")).toBe("/");
   });
 });

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
+import { ROUTES } from "../routes";
 
 const linkStyle = ({ isActive }: { isActive: boolean }) =>
   ({
@@ -12,21 +13,6 @@ const linkStyle = ({ isActive }: { isActive: boolean }) =>
     textDecoration: "none",
     whiteSpace: "nowrap",
   }) as const;
-
-const LINKS: { to: string; label: string; end?: boolean }[] = [
-  { to: "/", label: "Globe", end: true },
-  { to: "/intro", label: "Intro" },
-  { to: "/dashboard", label: "Grid Data" },
-  { to: "/api-explorer", label: "API Explorer" },
-  { to: "/compliance", label: "Compliance" },
-  { to: "/sla", label: "SLA" },
-  { to: "/scheduler", label: "Scheduler" },
-  { to: "/route", label: "Route" },
-  { to: "/clean-compute", label: "Clean Compute" },
-  { to: "/methodology", label: "Methodology" },
-  { to: "/settings", label: "Status" },
-  { to: "/about", label: "About" },
-];
 
 export function Nav() {
   const [open, setOpen] = useState(false);
@@ -121,9 +107,9 @@ export function Nav() {
           <span aria-hidden>{open ? "Close" : "Menu"}</span>
         </button>
         <div id="nav-links" className={`nav-links${open ? " open" : ""}`}>
-          {LINKS.map((l) => (
-            <NavLink key={l.to} to={l.to} end={l.end} style={linkStyle} onClick={close}>
-              {l.label}
+          {ROUTES.map((r) => (
+            <NavLink key={r.path} to={r.path} end={r.end} style={linkStyle} onClick={close}>
+              {r.label}
             </NavLink>
           ))}
         </div>

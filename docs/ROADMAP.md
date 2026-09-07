@@ -4,7 +4,7 @@
 
 What's built:
 - Real-time carbon intensity monitoring (11 providers, 90+ grid zones)
-- Multi-cloud routing engine (AWS/GCP/Azure, 75+ regions)
+- Multi-cloud routing engine (AWS/GCP/Azure/OVH/Hetzner/Scaleway, 116 regions)
 - REST API (route, regions, carbon intensity, accounting)
 - Carbon savings tracking per request
 - 57 tests passing

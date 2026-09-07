@@ -72,16 +72,26 @@ export function SLAMonitor() {
           alignItems: "center",
         }}
       >
-        Green SLA monitoring
+        Carbon targets
         <InfoTip
-          label="SLA"
+          label="carbon targets"
           text="An SLA (service-level agreement) is a measurable promise about a service. Here it's a carbon ceiling for your workloads - e.g. 'stay under 100 gCO₂/kWh' - checked against live grid data. A 'breach' is a check where a region exceeded your carbon ceiling or fell below your renewable floor."
         />
       </h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
-        Set carbon targets for your workloads, check them against live grid data, and get summary
-        reports. Checks run live against the grid; state is kept in memory for this demo, so SLAs
-        reset when the server restarts.
+        Set a carbon ceiling for your workloads, check it against live grid data, and get summary
+        reports.
+      </p>
+      <p
+        style={{
+          color: "var(--gray-400)",
+          fontSize: "0.85rem",
+          marginTop: "-1.5rem",
+          marginBottom: "2rem",
+        }}
+      >
+        Checks run live against the grid. Targets themselves are held in memory on this public demo,
+        so they reset when the server restarts.
       </p>
 
       {/* Monitor Status + Controls */}

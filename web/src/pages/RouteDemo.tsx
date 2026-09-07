@@ -54,15 +54,15 @@ export function RouteDemo() {
           alignItems: "center",
         }}
       >
-        Green route demo
+        Find a region
         <InfoTip
-          label="green route"
+          label="finding a region"
           text="Routing means choosing where to run a workload. This ranks every eligible region by your priorities and returns the greenest match. It's a recommendation you'd act on yourself (e.g. in a deploy script) - nothing is deployed or run here."
         />
       </h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
-        Choose providers and how much to favour clean energy over cost, and see which region comes
-        out greenest right now.
+        Choose which providers you can use and how much to favour clean energy over cost, and see
+        which region comes out greenest right now.
       </p>
 
       <RegionComparison />
