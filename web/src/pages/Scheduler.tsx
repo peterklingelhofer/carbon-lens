@@ -641,13 +641,12 @@ export function Scheduler() {
           borderLeft: "3px solid var(--green-300)",
         }}
       >
-        <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.1rem" }}>
-          Recommends - doesn't run your job
-        </h2>
+        <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.1rem" }}>Acting on the answer</h2>
         <p style={{ color: "var(--gray-600)", fontSize: "0.9rem", margin: 0 }}>
-          Carbon Lens tells you the greenest window and region. It doesn't trigger, hold, or
-          relocate any workload - that execution step is yours. To actually gate or defer real CI/CD
-          jobs on grid cleanliness, see{" "}
+          This page tells you the greenest window and region; it doesn't trigger or hold anything
+          itself. Carbon Lens gates work elsewhere: the <code>carbon-signal</code> GitHub Action, a
+          Kubernetes CronJob suspend controller, a KEDA scaler, and an Argo Workflows step, all
+          reading the same signal you see here. For CI gating with nothing to host, the companion{" "}
           <a
             href="https://github.com/peterklingelhofer/carbon-aware-dispatcher"
             target="_blank"
@@ -656,9 +655,9 @@ export function Scheduler() {
           >
             carbon-aware-dispatcher
           </a>{" "}
-          - a GitHub Action (and CLI) that reads the same kind of live grid data, then skips, waits
-          for, or dispatches a build only when the grid is clean. This page advises <em>when</em> to
-          run; the dispatcher changes <em>when and where compute actually runs</em>.
+          is a standalone Action and CLI with presets, carbon budgets, and GitLab, CircleCI and
+          Bitbucket templates. It reaches grid operators directly rather than through this API; the
+          two agree because they share one emission-factor corpus.
         </p>
       </div>
 

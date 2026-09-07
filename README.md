@@ -522,7 +522,11 @@ The carbon data layer for carbon-aware infrastructure: one cascading API over mu
 
 ## Companion project
 
-**[carbon-aware-dispatcher](https://github.com/peterklingelhofer/carbon-aware-dispatcher)**: a GitHub Action that runs CI/CD only when the grid is clean. CarbonLens is the data + reporting layer (measure, route, report); the dispatcher is the enforcement layer for deferrable jobs.
+**[carbon-aware-dispatcher](https://github.com/peterklingelhofer/carbon-aware-dispatcher)**: a zero-config GitHub Action (and CLI) that runs CI/CD only when the grid is clean.
+
+It's a sibling project that stands alone: it queries grid operators through its own provider set and never calls this API. The two share exactly one thing, [`data/emission-factors.json`](data/emission-factors.json), which CarbonLens owns and the dispatcher vendors byte-identically, so neither can publish a different number for the same fuel.
+
+Use the dispatcher for CI gating with nothing to host; it ships presets, carbon budgets, a weekly digest, and templates for GitLab, CircleCI and Bitbucket. Use CarbonLens for the data itself: a queryable API with provenance on every number, Scope 2/3 reporting, and the Kubernetes, Airflow and Terraform surfaces above.
 
 ```yaml
 - uses: peterklingelhofer/carbon-aware-dispatcher@v1

@@ -2,12 +2,8 @@
 
 ## Where Things Stand Now (Control Plane MVP)
 
-What's built:
-- Real-time carbon intensity monitoring (11 providers, 90+ grid zones)
-- Multi-cloud routing engine (AWS/GCP/Azure/OVH/Hetzner/Scaleway, 116 regions)
-- REST API (route, regions, carbon intensity, accounting)
-- Carbon savings tracking per request
-- 57 tests passing
+The [README](../README.md) is the source of truth for what ships; it's kept current.
+This file tracks what's *next*, and the boxes below record which of those have landed.
 
 What's missing to become a real SaaS:
 
@@ -18,25 +14,31 @@ What's missing to become a real SaaS:
 **Goal:** People can sign up, get an API key, and integrate CarbonLens into their existing deployment pipelines.
 
 ### Auth & Multi-tenancy
-- [ ] API key authentication (issue keys per org)
+- [x] API key authentication (`carbonlens/auth`)
 - [ ] Optional per-key rate limits for self-hosters (per-IP limiting is already enabled)
-- [ ] Tenant isolation for carbon accounting (each org sees only their data)
+- [ ] Tenant isolation for carbon accounting (each org sees only their data; `org_id` exists, enforcement doesn't)
 
 ### Persistence
-- [ ] PostgreSQL for accounting records, API keys, org data
-- [ ] Replace in-memory tracker with DB-backed tracker
-- [ ] Historical carbon intensity data (store every query for trend analysis)
+- [x] PostgreSQL for accounting records, API keys, org data (Alembic-migrated)
+- [x] Replace in-memory tracker with DB-backed tracker (`DBCarbonTracker`)
+- [ ] Historical carbon intensity in the DB. The snapshot cron publishes a rolling
+      history archive today, so nothing queries a stored per-request series
 
 ### CLI Tool
-- [ ] `carbonlens route --providers aws,gcp --residency EU`
-- [ ] `carbonlens intensity aws/us-east-1`
-- [ ] `carbonlens report --last 30d`
+- [x] `carbonlens route`, `intensity`, `regions`, `run`, `best-time`, `calibration`
+- [x] `carbonlens report` (lifetime savings; no `--last` window) and `impact --days 30`
 - [ ] Publish to PyPI: `pip install carbonlens`
 
 ### CI/CD Integrations
-- [ ] GitHub Action: `uses: carbonlens/route@v1` sets `DEPLOY_REGION` output
-- [ ] GitLab CI template
-- [ ] Terraform provider: `data "carbonlens_greenest_region" {}`
+- [x] GitHub Actions: [`carbon-signal`](../.github/actions/carbon-signal/README.md) gates on the
+      grid, [`route`](../.github/actions/route/README.md) picks the region,
+      [`carbon-report`](../.github/actions/carbon-report/README.md) posts the clean-compute summary
+- [ ] GitLab CI template. The companion
+      [carbon-aware-dispatcher](https://github.com/peterklingelhofer/carbon-aware-dispatcher)
+      already ships GitLab, CircleCI and Bitbucket templates against its own providers,
+      so this is only worth doing for people who want it against this API
+- [ ] Terraform *provider*: `data "carbonlens_greenest_region" {}`. A
+      [module](../deploy/terraform/greenest-region/README.md) ships today; a provider doesn't
 
 ---
 

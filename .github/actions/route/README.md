@@ -8,7 +8,7 @@ Find the greenest cloud region for your deployment by querying the CarbonLens AP
 | ---------------- | -------- | ------------------------ | -------------------------------------------------------- |
 | `providers`      | Yes      |                          | Comma-separated list of cloud providers (e.g. `aws,gcp`) |
 | `data-residency` | No       |                          | ISO 3166-1 alpha-2 country code to constrain regions     |
-| `api-url`        | No       | `http://localhost:8000`  | CarbonLens API base URL                                 |
+| `api-url`        | No       | public instance          | CarbonLens API base URL                                  |
 | `api-key`        | No       |                          | API key for authenticated access                         |
 
 ## Outputs
@@ -27,22 +27,20 @@ Find the greenest cloud region for your deployment by querying the CarbonLens AP
 
 ```yaml
 steps:
-  - uses: carbonlens/route@v1
+  - uses: peterklingelhofer/carbon-lens/.github/actions/route@main
     with:
       providers: aws,gcp
-      api-url: https://api.carbonlens.io
 ```
 
 ### With all options
 
 ```yaml
 steps:
-  - uses: carbonlens/route@v1
+  - uses: peterklingelhofer/carbon-lens/.github/actions/route@main
     id: green
     with:
       providers: aws,gcp,azure
       data-residency: DE
-      api-url: https://api.carbonlens.io
       api-key: ${{ secrets.CARBON_LENS_API_KEY }}
 
   - name: Deploy to greenest region
@@ -62,11 +60,10 @@ jobs:
       provider: ${{ steps.green.outputs.provider }}
       region: ${{ steps.green.outputs.region }}
     steps:
-      - uses: carbonlens/route@v1
+      - uses: peterklingelhofer/carbon-lens/.github/actions/route@main
         id: green
         with:
           providers: aws,gcp
-          api-url: https://api.carbonlens.io
           api-key: ${{ secrets.CARBON_LENS_API_KEY }}
 
   deploy:
