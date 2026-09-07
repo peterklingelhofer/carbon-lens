@@ -349,7 +349,7 @@ export function Dashboard() {
           marginBottom: "0.5rem",
         }}
       >
-        <h1 style={{ margin: 0 }}>Grid Data</h1>
+        <h1 style={{ margin: 0 }}>All regions</h1>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
           <button
             type="button"
@@ -375,6 +375,10 @@ export function Dashboard() {
           />
         </span>
       </div>
+      <p style={{ color: "var(--gray-500)", marginBottom: "0.75rem" }}>
+        Every cloud region we track, with the carbon intensity of the grid it runs on right now.
+        Sort by any column to find the cleanest place to run.
+      </p>
       {usingSnapshot ? (
         <SnapshotBanner snapshot={snapshot} />
       ) : (
@@ -384,12 +388,12 @@ export function Dashboard() {
             marginBottom: routeSample.data ? "0.75rem" : "2rem",
           }}
         >
-          Live carbon intensity data powering the API. 11 cascading sources
+          Live data straight from the API, read through cascading sources
           <InfoTip
             label="cascading sources"
             text="The API tries data sources in priority order and uses the first that covers a zone - a real grid-operator feed where one exists, then a regional heuristic or weather-based estimate, falling back to labelled sample data. So coverage is broad and every reading is tagged with where it came from."
-          />{" "}
-          (6 live integrations), 75+ cloud regions.
+          />
+          .
         </p>
       )}
       {routeSample.data && (

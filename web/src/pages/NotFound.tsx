@@ -4,8 +4,8 @@ import { Link } from "react-router-dom";
 // wanted instead of just an apology.
 const SUGGESTIONS: { to: string; label: string; desc: string }[] = [
   { to: "/intro", label: "Intro", desc: "What the site measures and where the data comes from" },
-  { to: "/dashboard", label: "Grid data", desc: "Every region, sortable and searchable" },
-  { to: "/api-explorer", label: "API explorer", desc: "Try the endpoints in the browser" },
+  { to: "/regions", label: "All regions", desc: "Every region, sortable and searchable" },
+  { to: "/api", label: "API explorer", desc: "Try the endpoints in the browser" },
   { to: "/methodology", label: "Methodology", desc: "How every number is produced" },
 ];
 
@@ -59,7 +59,7 @@ export function NotFound() {
           fontWeight: 600,
         }}
       >
-        Back to Home
+        Back to the globe
       </Link>
     </div>
   );

@@ -1,24 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
-
-// Per-route page titles. SPA navigation never reloads the document, so without
-// this every route would keep index.html's title and a screen reader would
-// announce the same name on every page. Keep in sync with Nav's routes.
-const TITLES: Record<string, string> = {
-  "/": "Carbon Lens - live carbon intensity for cloud regions",
-  "/globe": "Carbon Globe - Carbon Lens",
-  "/intro": "Intro - Carbon Lens",
-  "/dashboard": "Grid Data - Carbon Lens",
-  "/api-explorer": "API Explorer - Carbon Lens",
-  "/compliance": "Compliance reporting - Carbon Lens",
-  "/sla": "SLA monitor - Carbon Lens",
-  "/scheduler": "Carbon-aware scheduler - Carbon Lens",
-  "/route": "Workload routing - Carbon Lens",
-  "/clean-compute": "State of clean compute - Carbon Lens",
-  "/methodology": "Methodology - Carbon Lens",
-  "/settings": "Status - Carbon Lens",
-  "/about": "About - Carbon Lens",
-};
+import { TITLES } from "../routes";
 
 const FALLBACK = "Carbon Lens";
 
