@@ -1,5 +1,8 @@
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
+import { useSnapshot } from "../api/snapshot";
 import { InfoTip } from "../components/InfoTip";
+import { RegionSpread } from "../components/RegionSpread";
 import { card as baseCard, sectionStyle } from "../styles";
 
 const section: React.CSSProperties = { ...sectionStyle(), padding: "3rem 2rem" };
@@ -29,18 +32,45 @@ const legend: React.CSSProperties = {
   lineHeight: 1.6,
 };
 
+const body: React.CSSProperties = { color: "var(--gray-600)", fontSize: "0.95rem" };
+
+// The quantitative claims on this page are read from the same snapshot they
+// describe, so they can't drift out of date the way hardcoded copy does.
+function useSiteFacts() {
+  const { data: snapshot } = useSnapshot();
+  return useMemo(() => {
+    if (!snapshot) return null;
+    const readings = Object.values(snapshot.intensities);
+    const live = readings.filter((i) => i.quality === "live").length;
+    const shifts = Object.values(snapshot.best_time ?? {})
+      .map((b) => b.shift_savings_pct ?? 0)
+      .sort((a, b) => a - b);
+    const median = shifts.length ? shifts[Math.floor(shifts.length / 2)] : null;
+    return {
+      regions: snapshot.regions.length,
+      providers: new Set(snapshot.regions.map((r) => r.provider)).size,
+      live,
+      estimated: readings.length - live,
+      medianShift: median === null ? null : Math.round(median),
+      bestShift: shifts.length ? Math.round(shifts[shifts.length - 1]) : null,
+    };
+  }, [snapshot]);
+}
+
 export function Landing() {
+  const facts = useSiteFacts();
+
   return (
     <div>
       {/* Hero */}
       <style>{`
         .hero-title { font-size: 3rem; }
-        .hero-subtitle { font-size: 1.25rem; }
-        .hero-section { padding: 5rem 2rem 4rem; }
+        .hero-subtitle { font-size: 1.15rem; }
+        .hero-section { padding: 4rem 2rem 3.5rem; }
         @media (max-width: 600px) {
           .hero-title { font-size: 1.75rem !important; }
           .hero-subtitle { font-size: 1rem !important; }
-          .hero-section { padding: 3rem 1rem 2.5rem !important; }
+          .hero-section { padding: 2.5rem 1rem 2.5rem !important; }
           .hero-cta { flex-direction: column !important; align-items: stretch !important; }
           .hero-cta a { text-align: center; }
         }
@@ -50,7 +80,7 @@ export function Landing() {
         style={{
           background: "var(--green-800)",
           color: "white",
-          padding: "5rem 2rem 4rem",
+          padding: "4rem 2rem 3.5rem",
           textAlign: "center",
         }}
       >
@@ -65,41 +95,22 @@ export function Landing() {
         <p
           className="hero-subtitle"
           style={{
-            fontSize: "1.25rem",
-            maxWidth: 720,
-            margin: "0 auto 0.75rem",
-            opacity: 0.92,
-          }}
-        >
-          If you're hosting a website, you may as well host it on 100% renewable energy. Carbon Lens
-          provides observability into which cloud regions emit the least carbon by aggregating grid
-          data from dozens of sources, making what was an opaque decision a clear one.
-        </p>
-        <p
-          className="hero-subtitle"
-          style={{
-            fontSize: "1.25rem",
-            maxWidth: 720,
-            margin: "0 auto 0.75rem",
-            opacity: 0.92,
-          }}
-        >
-          Every cloud region runs on a local power grid. Carbon Lens reads how much CO₂ that grid
-          emits per kilowatt-hour right now (its <strong>carbon intensity</strong>) from live
-          grid-operator data. Lower means greener.
-        </p>
-        <p
-          className="hero-subtitle"
-          style={{
-            fontSize: "1rem",
-            maxWidth: 620,
+            fontSize: "1.15rem",
+            maxWidth: 700,
             margin: "0 auto 2rem",
-            opacity: 0.75,
+            opacity: 0.92,
           }}
         >
-          75+ regions across AWS, GCP, and Azure. Route your workloads to the cleanest one, then
-          turn the same data into the emissions reports regulators are starting to require.
+          Every data centre runs on its local power grid, and grids differ by more than tenfold.
+          Carbon Lens reads each grid's live output and shows what your region is emitting this
+          hour, so you can pick a cleaner one, run flexible jobs at cleaner times, and put real
+          numbers in your emissions report.
         </p>
+
+        <div style={{ margin: "0 auto 2rem", maxWidth: 720 }}>
+          <RegionSpread />
+        </div>
+
         <div
           className="hero-cta"
           style={{ display: "flex", gap: "1rem", justifyContent: "center" }}
@@ -120,7 +131,7 @@ export function Landing() {
             Explore the live globe
           </Link>
           <Link
-            to="/dashboard"
+            to="/regions"
             style={{
               padding: "0.75rem 2rem",
               borderRadius: 8,
@@ -130,7 +141,7 @@ export function Landing() {
               textDecoration: "none",
             }}
           >
-            See live grid data
+            See every region
           </Link>
         </div>
         <p
@@ -149,111 +160,96 @@ export function Landing() {
       </div>
 
       <section style={section}>
-        <h2 style={{ ...heading(), marginTop: 0 }}>"100% renewable" is a yearly average</h2>
+        <h2 style={{ ...heading(), marginTop: 0 }}>Renewable hosting is an accounting claim</h2>
         <p style={{ color: "var(--gray-500)", marginBottom: "1.5rem", maxWidth: 680 }}>
-          Providers match their annual electricity use with renewable certificates. That doesn't
-          tell you whether your 2 a.m. job ran on wind or on gas. Carbon Lens reports the grid's
-          measured carbon intensity, hour by hour.
+          "Runs on 100% renewable energy" almost always describes a year of paperwork, not the
+          electricity reaching the machine. The grid is physical, and it's what actually emits.
         </p>
 
-        {/* Plain-language explainer: the "credits" argument + the acronyms decoded */}
         <div style={card}>
-          <h3 style={{ marginTop: 0, fontSize: "1.15rem" }}>
-            How the "100% renewable" claim actually works
-          </h3>
-          <p style={{ color: "var(--gray-600)", fontSize: "0.95rem" }}>
+          <h3 style={{ marginTop: 0, fontSize: "1.15rem" }}>How the claim works</h3>
+          <p style={body}>
             Over a year, a provider buys enough <strong>renewable-energy certificates</strong>{" "}
             (RECs), or signs enough power-purchase agreements, to match its total electricity use.
-            The certificates and the electricity are counted separately, so a data center can draw
-            from a gas-heavy grid at midnight and still "count" as 100% renewable on its annual
-            report. That money does fund new renewables, and the claim is an accounting match. It
-            doesn't show that clean electrons ran your job.
+            The certificates and the electricity are counted separately, so a data centre can draw
+            from a gas-heavy grid at midnight and still count as 100% renewable on its annual
+            report. That money does fund new renewables, and the claim is a fair accounting match.
+            It doesn't show that clean electrons ran your job.
           </p>
 
           <h3 style={{ fontSize: "1.15rem", marginBottom: "0.5rem" }}>
-            Why measuring is starting to matter
+            Why switching to a green host isn't the whole answer
           </h3>
-          <p
-            style={{
-              color: "var(--gray-600)",
-              fontSize: "0.95rem",
-              marginTop: 0,
-            }}
-          >
-            Regulators are moving from annual offsets to measured emissions:
-          </p>
-          <ul
-            style={{
-              color: "var(--gray-600)",
-              fontSize: "0.95rem",
-              lineHeight: 1.7,
-              paddingLeft: "1.2rem",
-              margin: "0 0 1rem",
-            }}
-          >
-            <li>
-              <strong>CSRD</strong> (the EU's Corporate Sustainability Reporting Directive): large
-              companies must report audited emissions data.
-            </li>
-            <li>
-              <strong>SEC climate rule</strong>: US rules pushing public companies to disclose
-              climate-related emissions.
-            </li>
-            <li>
-              <strong>California SB 253</strong>: large companies operating in California must
-              report their greenhouse-gas emissions.
-            </li>
-          </ul>
-          <p style={{ color: "var(--gray-600)", fontSize: "0.95rem", margin: 0 }}>
-            Carbon Lens turns live grid data into a first draft of those reports.
+          <p style={{ ...body, marginTop: 0, marginBottom: 0 }}>
+            A host with strong renewable commitments still draws from whatever grid its building
+            sits on. A server in Frankfurt runs on the German grid whether it's rented from a big
+            cloud or a green-branded provider, and that grid is several times dirtier per
+            kilowatt-hour than one in Norway or Québec. Picking a genuinely clean grid is the larger
+            lever, and it's available on every provider. Carbon Lens covers hosts like Hetzner, OVH
+            and Scaleway alongside AWS, Azure and Google Cloud for exactly that comparison.
           </p>
         </div>
 
-        <h2 style={heading()}>What you can build with it</h2>
+        <h2 style={heading()}>Three things you can do with it</h2>
         <div style={card}>
-          <dl style={{ display: "grid", gap: "1.25rem", margin: 0 }}>
-            {[
-              {
-                title: "Carbon intensity API",
-                desc: "Latest grams of CO₂ per kWh for 75+ cloud regions in one request, with the data source tagged on every response.",
-                tip: "An API is how one program asks another for data. Here, your code asks ours for a region's live carbon number. gCO₂/kWh = grams of CO₂ emitted per kilowatt-hour of electricity.",
-              },
-              {
-                title: "Emissions reporting",
-                desc: "Draft the emissions reports regulators are starting to require, built from the same live data, with a documented method and a data-quality summary.",
-                tip: "Greenhouse-gas reporting follows the GHG Protocol standard. 'Scope 2' = emissions from the electricity you use; 'Scope 3' = emissions from services you buy (cloud included). Rules like the EU's CSRD, the US SEC climate rule, and California's SB 253 increasingly require it.",
-              },
-              {
-                title: "Carbon-aware routing",
-                desc: "Find the greenest cloud region across AWS, GCP, and Azure, weighing carbon against cost.",
-                tip: "'Routing' means choosing where to run a job. You set priorities (e.g. favour low carbon, cap cost) and it ranks every region. Acting on the result is up to you.",
-              },
-              {
-                title: "8 live grid integrations",
-                desc: "UK, EIA, OpenElectricity/AEMO, IESO/AESO, Taipower, GridStatus, ENTSO-E, and Electricity Maps pull data straight from grid operators. Other regions use clearly-labelled estimates.",
-                tip: "A grid operator runs a region's electricity grid and publishes what it's generating right now. 'Live integration' means we read that official feed directly, rather than estimating.",
-              },
-              {
-                title: "Live updates feed",
-                desc: "A continuous stream of carbon-intensity updates to build on: dashboards, alerts, or shifting flexible jobs to cleaner hours.",
-                tip: "Delivered over a WebSocket, a connection that stays open so the server can push new readings to your app the instant they change, instead of you repeatedly asking.",
-              },
-              {
-                title: "Carbon targets (beta)",
-                desc: "Set a carbon target for your workloads and get checked against live data, with summary reports.",
-                tip: "Modelled on an SLA (service-level agreement), a measurable promise about a service. Here that promise is a carbon ceiling, e.g. 'stay under 100 gCO₂/kWh'. Beta: checks run in memory and reset on restart; not a third-party-assured standard.",
-              },
-            ].map((item) => (
-              <div key={item.title}>
-                <dt style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
-                  <span style={featureTitle}>{item.title}</span>
-                  <InfoTip label={item.title} text={item.tip} />
-                </dt>
-                <dd style={{ margin: "0.5rem 0 0", fontSize: "0.95rem" }}>{item.desc}</dd>
-              </div>
-            ))}
-          </dl>
+          <h3 style={{ marginTop: 0, fontSize: "1.15rem" }}>1. Pick a cleaner region</h3>
+          <p style={body}>
+            This is the big one, and it's a one-time decision. The spread between the dirtiest and
+            cleanest regions is often more than tenfold, so the same server can emit a fraction of
+            what it does today purely by running somewhere else. For new workloads with no
+            data-residency constraint, it costs nothing to choose well.{" "}
+            <Link to="/regions" style={{ color: "var(--green-text)", fontWeight: 600 }}>
+              Compare every region
+            </Link>
+            .
+          </p>
+
+          <h3 style={{ fontSize: "1.15rem", marginBottom: "0.5rem" }}>
+            2. Run flexible jobs at cleaner times
+          </h3>
+          <p style={{ ...body, marginTop: 0 }}>
+            A grid's mix shifts hour to hour with weather and demand. Work that doesn't need a fixed
+            start time (nightly batch jobs, model training, CI pipelines) can wait for a cleaner
+            window.
+            {facts?.medianShift != null && facts.bestShift != null ? (
+              <>
+                {" "}
+                Across the regions here, moving a daily job to the cleanest hour saves about{" "}
+                <strong>{facts.medianShift}%</strong> in the median region, and up to{" "}
+                <strong>{facts.bestShift}%</strong> in the most variable ones. On an already-clean
+                grid like Québec's it saves almost nothing, because there's little to avoid.
+              </>
+            ) : (
+              <>
+                {" "}
+                How much this saves depends heavily on the grid, and on a clean grid it's little.
+              </>
+            )}{" "}
+            <Link to="/best-time" style={{ color: "var(--green-text)", fontWeight: 600 }}>
+              Find the greenest window
+            </Link>
+            .
+          </p>
+
+          <h3 style={{ fontSize: "1.15rem", marginBottom: "0.5rem" }}>
+            3. Put real numbers in your reporting
+          </h3>
+          <p style={{ ...body, marginTop: 0, marginBottom: 0 }}>
+            Greenhouse-gas reporting asks for a location-based figure: what the grid you drew from
+            actually emitted. That's the number this site measures, so it can turn your cloud usage
+            into a first draft with the method and data quality shown.{" "}
+            <Link to="/report" style={{ color: "var(--green-text)", fontWeight: 600 }}>
+              Draft a report
+            </Link>
+            .
+          </p>
         </div>
+
+        <p style={{ ...body, color: "var(--gray-500)", fontSize: "0.9rem" }}>
+          Worth being plain about scale: a small website or blog emits very little either way, and
+          moving it won't change much. The tonnes are in compute-heavy work, so that's where this is
+          worth your time.
+        </p>
 
         {/* What makes a grid greener - the one centered interlude */}
         <h2 style={heading("center")}>What makes a grid greener</h2>
@@ -273,70 +269,85 @@ export function Landing() {
           <strong>carbon intensity</strong>, in grams of CO₂ per kWh.
         </p>
 
-        {/* How It Works */}
-        <h2 style={heading()}>How it works</h2>
+        <h2 style={heading()}>Why measuring is starting to matter</h2>
         <div style={card}>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-              gap: "1.5rem",
-              textAlign: "center",
-            }}
-          >
+          <p style={{ ...body, marginTop: 0 }}>
+            Emissions accounting is moving from annual averages toward measured, time-matched
+            electricity. The <strong>GHG Protocol</strong>, the standard the whole field reports
+            against, is revising its Scope 2 rules and has consulted on requiring{" "}
+            <strong>hourly matching</strong>: proving clean generation in the same hour the power
+            was used, rather than over a year. If that lands, the hour-by-hour grid figure stops
+            being a nice extra and becomes the number that counts.
+          </p>
+          <p style={body}>Where the rules stand today:</p>
+          <ul style={{ ...body, lineHeight: 1.7, paddingLeft: "1.2rem", margin: "0 0 1rem" }}>
+            <li>
+              <strong>California SB 253</strong> is in force. Companies above $1B in revenue doing
+              business in California file their first Scope 1 and 2 emissions by 10 November 2026,
+              with Scope 3 following in 2027.
+            </li>
+            <li>
+              <strong>The EU's CSRD</strong> still requires audited sustainability reporting, though
+              February 2026's Omnibus package cut its scope considerably: it now applies to
+              companies above 1,000 employees and €450M turnover, for financial years from 2027.
+            </li>
+            <li>
+              <strong>The US SEC climate rule</strong> is going the other way. It was adopted in
+              2024, stayed, and the Commission proposed rescinding it in 2026, so it isn't a live
+              requirement.
+            </li>
+          </ul>
+          <p style={{ ...body, margin: 0 }}>
+            Regulation moves in both directions, which is why the durable case here is the standard
+            rather than any one rule: measured, location-based intensity is what credible reporting
+            is built on, and it's what a company asking about its own footprint actually needs.
+          </p>
+        </div>
+
+        <h2 style={heading()}>For developers</h2>
+        <div style={card}>
+          <dl style={{ display: "grid", gap: "1.25rem", margin: 0 }}>
             {[
               {
-                step: "1",
-                title: "Look up",
-                desc: "Ask for any cloud provider and region and get its live carbon intensity, renewable share, and the source behind the number.",
+                title: "Carbon intensity API",
+                desc: `Latest grams of CO₂ per kWh for ${facts ? `${facts.regions} cloud regions` : "every cloud region"} in one request, with the data source tagged on every response.`,
+                tip: "An API is how one program asks another for data. Here, your code asks ours for a region's live carbon number. gCO₂/kWh = grams of CO₂ emitted per kilowatt-hour of electricity.",
               },
               {
-                step: "2",
-                title: "Compare",
-                desc: "Set your priorities (e.g. greenest within a cost limit) and get the best region to run in. It ranks options; moving the workload is still your call.",
+                title: "Carbon-aware routing",
+                desc: "Rank every region by your own priorities, weighing carbon against cost, and get the best one to run in.",
+                tip: "'Routing' means choosing where to run a job. You set priorities (e.g. favour low carbon, cap cost) and it ranks every region. Acting on the result is up to you.",
               },
               {
-                step: "3",
-                title: "Report",
-                desc: "Provide your cloud usage and get a draft emissions report from live grid data, with the method and data quality shown.",
+                title: "Emissions reporting",
+                desc: "Draft GHG-Protocol Scope 2 and 3 reports from the same live data, with a documented method and a data-quality summary.",
+                tip: "Greenhouse-gas reporting follows the GHG Protocol standard. 'Scope 2' = emissions from the electricity you use; 'Scope 3' = emissions from services you buy (cloud included).",
               },
               {
-                step: "4",
-                title: "Monitor",
-                desc: "Set a carbon target and have workloads checked against live data, with summary reports. (Beta.)",
+                title: "Live grid integrations",
+                desc: "UK, EIA, ENTSO-E, OpenElectricity/AEMO, IESO and AESO pull data straight from grid operators. Other regions use clearly-labelled estimates.",
+                tip: "A grid operator runs a region's electricity grid and publishes what it's generating right now. 'Live integration' means we read that official feed directly, rather than estimating.",
               },
-            ].map((s) => (
-              <div key={s.step}>
-                <div
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: "50%",
-                    background: "var(--btn-green)",
-                    color: "white",
-                    display: "inline-flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: 700,
-                    fontSize: "1.1rem",
-                    marginBottom: "0.5rem",
-                  }}
-                >
-                  {s.step}
-                </div>
-                <h3 style={{ margin: "0.5rem 0 0.25rem", fontSize: "1rem" }}>{s.title}</h3>
-                <p
-                  style={{
-                    fontSize: "0.85rem",
-                    color: "var(--gray-500)",
-                    margin: 0,
-                  }}
-                >
-                  {s.desc}
-                </p>
+              {
+                title: "Live updates feed",
+                desc: "A continuous stream of carbon-intensity updates to build on: dashboards, alerts, or shifting flexible jobs to cleaner hours.",
+                tip: "Delivered over a WebSocket, a connection that stays open so the server can push new readings to your app the instant they change, instead of you repeatedly asking.",
+              },
+              {
+                title: "Carbon targets (beta)",
+                desc: "Set a carbon ceiling for your workloads and get checked against live data, with summary reports.",
+                tip: "Modelled on an SLA (service-level agreement), a measurable promise about a service. Here that promise is a carbon ceiling, e.g. 'stay under 100 gCO₂/kWh'. Beta: checks run in memory and reset on restart; not a third-party-assured standard.",
+              },
+            ].map((item) => (
+              <div key={item.title}>
+                <dt style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+                  <span style={featureTitle}>{item.title}</span>
+                  <InfoTip label={item.title} text={item.tip} />
+                </dt>
+                <dd style={{ margin: "0.5rem 0 0", fontSize: "0.95rem" }}>{item.desc}</dd>
               </div>
             ))}
-          </div>
+          </dl>
         </div>
 
         {/* Data Sources */}
@@ -348,7 +359,10 @@ export function Landing() {
             fontSize: "0.9rem",
           }}
         >
-          How every number is produced, and where it's an estimate:{" "}
+          {facts
+            ? `Of the ${facts.regions} regions published right now, ${facts.live} are read from a live grid-operator feed and ${facts.estimated} are labelled estimates. `
+            : "Every reading is tagged with the source that produced it. "}
+          How each number is produced, and where it's an estimate:{" "}
           <Link
             to="/methodology"
             style={{
@@ -370,34 +384,35 @@ export function Landing() {
           >
             <thead>
               <tr style={{ borderBottom: "2px solid var(--gray-200)" }}>
-                <th style={{ textAlign: "left", padding: "0.5rem" }}>Provider</th>
+                <th style={{ textAlign: "left", padding: "0.5rem" }}>Source</th>
                 <th style={{ textAlign: "left", padding: "0.5rem" }}>Coverage</th>
                 <th style={{ textAlign: "left", padding: "0.5rem" }}>Type</th>
-                <th style={{ textAlign: "left", padding: "0.5rem" }}>Access</th>
+                <th style={{ textAlign: "left", padding: "0.5rem" }}>On this site</th>
               </tr>
             </thead>
             <tbody>
               {[
-                ["UK Carbon Intensity", "Great Britain (18 zones)", "Live API", "Free, no key"],
-                ["EIA (US DOE)", "US (60+ balancing authorities)", "Live API", "Free key"],
-                ["AEMO", "Australia (5 states)", "Live API", "Free, no key"],
-                ["Grid India", "India (5 regions)", "Heuristic", "Free, no key"],
-                ["ONS Brazil", "Brazil (5 regions)", "Heuristic", "Free, no key"],
-                ["Eskom", "South Africa", "Heuristic", "Free, no key"],
-                ["GridStatus.io", "US ISOs (7)", "Live API", "Paid key"],
-                ["ENTSO-E", "Europe (36+ countries)", "Live API", "Free token"],
-                ["Open-Meteo", "Worldwide (40+ zones)", "Weather estimate", "Free, no key"],
-                ["Electricity Maps", "Global (200+ zones)", "Live API", "Paid key"],
-              ].map(([name, coverage, res, auth]) => (
+                ["ENTSO-E", "Europe", "Live feed", "Yes"],
+                ["EIA (US DOE)", "United States", "Live feed", "Yes"],
+                ["UK Carbon Intensity", "Great Britain", "Live feed", "Yes"],
+                ["OpenElectricity / AEMO", "Australia", "Live feed", "Yes"],
+                ["IESO", "Ontario, Canada", "Live feed", "Yes"],
+                ["AESO", "Alberta, Canada", "Live feed", "Yes"],
+                ["Open-Meteo", "Worldwide", "Weather estimate", "Yes"],
+                ["Regional heuristics", "India, Brazil, South Africa, Québec", "Estimate", "Yes"],
+                ["Taipower", "Taiwan", "Live feed", "Self-host"],
+                ["GridStatus.io", "US ISOs", "Live feed", "Self-host (paid key)"],
+                ["Electricity Maps", "Global", "Live feed", "Self-host (paid key)"],
+              ].map(([name, coverage, res, here]) => (
                 <tr key={name} style={{ borderBottom: "1px solid var(--gray-100)" }}>
                   <td style={{ padding: "0.5rem", fontWeight: 500 }}>{name}</td>
                   <td style={{ padding: "0.5rem" }}>{coverage}</td>
                   <td style={{ padding: "0.5rem" }}>{res}</td>
                   <td style={{ padding: "0.5rem" }}>
-                    {auth?.includes("no key") ? (
-                      <span style={{ color: "var(--green-text)", fontWeight: 600 }}>{auth}</span>
+                    {here === "Yes" ? (
+                      <span style={{ color: "var(--green-text)", fontWeight: 600 }}>{here}</span>
                     ) : (
-                      <span>{auth}</span>
+                      <span style={{ color: "var(--gray-500)" }}>{here}</span>
                     )}
                   </td>
                 </tr>
@@ -405,20 +420,14 @@ export function Landing() {
             </tbody>
           </table>
           <p style={legend}>
-            <strong>Type.</strong> Live API: read directly from the grid operator's official
-            real-time feed. Heuristic: an estimate from typical regional values and time of day.
-            Weather estimate: inferred from local solar and wind conditions rather than a direct
-            carbon measurement.
+            <strong>Type.</strong> Live feed: read directly from the grid operator's official
+            real-time data. Weather estimate: inferred from local solar and wind conditions rather
+            than a direct carbon measurement. Estimate: typical regional values by time of day.
           </p>
           <p style={legend}>
-            <strong>Access.</strong> "No key" works out of the box; a free key or token needs a free
-            sign-up; a paid key needs a paid plan with that provider.
-          </p>
-          <p style={legend}>
-            <strong>Balancing authority / ISO.</strong> The body that runs a regional electricity
-            grid and publishes what it's generating, such as PJM (US Mid-Atlantic), CAISO
-            (California), or National Grid ESO (Great Britain). Carbon is measured at that grid
-            rather than inside the datacenter.
+            <strong>On this site.</strong> "Self-host" means the integration is built and tested but
+            needs a key this public deployment doesn't use, so those regions fall back to an
+            estimate here. Running your own copy with a key switches them on.
           </p>
         </div>
 
@@ -448,7 +457,7 @@ export function Landing() {
           >
             Live grid-operator data, updated continuously. Or{" "}
             <Link
-              to="/api-explorer"
+              to="/api"
               style={{
                 color: "var(--green-text)",
                 textDecoration: "underline",

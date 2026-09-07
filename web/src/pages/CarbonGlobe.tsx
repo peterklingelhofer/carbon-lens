@@ -15,6 +15,7 @@ import {
   RegionSignal,
   RegionWeather,
 } from "../components/RegionDetail";
+import { RegionSpread } from "../components/RegionSpread";
 import { DATA_QUALITY_TIP_RICH, MARGINAL_TIP, SURPLUS_TIP } from "../copy";
 import { formatLoad, niceKm, timeAgo } from "../lib/format";
 import { intensityColor, intensityRGB, renewableRGB } from "../lib/intensity";
@@ -905,7 +906,7 @@ export default function CarbonGlobe() {
               opening this in Chrome. The same live data is available as a table:
             </p>
             <Link
-              to="/dashboard"
+              to="/regions"
               style={{
                 display: "inline-block",
                 padding: "0.7rem 1.75rem",
@@ -987,7 +988,7 @@ export default function CarbonGlobe() {
             fontSize: "0.72rem",
           }}
         >
-          <Link to="/dashboard" style={{ color: "#7dd3fc", textDecoration: "underline" }}>
+          <Link to="/regions" style={{ color: "#7dd3fc", textDecoration: "underline" }}>
             View as a table
           </Link>
           <Link
@@ -1071,10 +1072,13 @@ export default function CarbonGlobe() {
                 </button>
               </div>
               <p style={{ margin: "8px 0" }}>
-                Every cloud region runs on a local power grid. Each beam is a real AWS, GCP, or
-                Azure region, coloured by how much CO₂ its grid emits per kWh right now: green is
-                clean, red is dirty. Beam height is the renewable share.
+                Every cloud region runs on a local power grid. Each beam is a real data centre,
+                coloured by how much CO₂ its grid emits per kWh right now: green is clean, red is
+                dirty. Beam height is the renewable share.
               </p>
+              <div style={{ margin: "12px 0" }}>
+                <RegionSpread />
+              </div>
               <p style={{ margin: "0 0 12px", color: "#94a3b8" }}>
                 Drag to spin, tap a beam for detail. {liveCount} of {points.length} regions are read
                 live from grid operators; the rest are labelled estimates.
@@ -1350,7 +1354,7 @@ export default function CarbonGlobe() {
           {dataError ? (
             <span>
               Couldn't load the grid data right now.{" "}
-              <Link to="/dashboard" style={{ color: "#7dd3fc", textDecoration: "underline" }}>
+              <Link to="/regions" style={{ color: "#7dd3fc", textDecoration: "underline" }}>
                 Try the dashboard
               </Link>
               .

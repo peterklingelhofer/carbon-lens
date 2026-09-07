@@ -203,7 +203,7 @@ export function Scheduler() {
           alignItems: "center",
         }}
       >
-        Carbon-aware scheduler
+        Best time to run
         <InfoTip
           label="carbon-aware scheduling"
           text="Many jobs don't have to run at a fixed moment - CI/CD pipelines, ML training, nightly batch processing. Carbon-aware scheduling runs them when and where the grid is cleanest, cutting emissions for the same work. This tool finds that window for you; a CI runner or scheduler then executes the job - Carbon Lens recommends, it doesn't run anything itself."

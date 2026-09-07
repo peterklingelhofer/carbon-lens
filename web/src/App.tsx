@@ -1,25 +1,11 @@
-import { lazy, Suspense } from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
 import { ColdStartBanner } from "./components/ColdStartBanner";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { Nav } from "./components/Nav";
 import { RouteAnnouncer } from "./components/RouteAnnouncer";
 import { ScrollToTop } from "./components/ScrollToTop";
-import { About } from "./pages/About";
-import { ApiExplorer } from "./pages/ApiExplorer";
-import { CleanCompute } from "./pages/CleanCompute";
-import { Compliance } from "./pages/Compliance";
-import { Dashboard } from "./pages/Dashboard";
-import { Landing } from "./pages/Landing";
-import { Methodology } from "./pages/Methodology";
 import { NotFound } from "./pages/NotFound";
-import { RouteDemo } from "./pages/RouteDemo";
-import { Scheduler } from "./pages/Scheduler";
-import { Settings } from "./pages/Settings";
-import { SLAMonitor } from "./pages/SLAMonitor";
-
-// Lazy-loaded so three.js / globe.gl stay out of the main bundle.
-const CarbonGlobe = lazy(() => import("./pages/CarbonGlobe"));
+import { ROUTES } from "./routes";
 
 export default function App() {
   return (
@@ -45,29 +31,6 @@ export default function App() {
   );
 }
 
-// The globe is the home page: it's the strongest first screen the site has;
-// /globe stays as an alias so older links keep working
-const globe = (
-  <Suspense
-    fallback={
-      <div
-        style={{
-          height: "calc(100vh - 56px)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "#000",
-          color: "#94a3b8",
-        }}
-      >
-        Loading globe…
-      </div>
-    }
-  >
-    <CarbonGlobe />
-  </Suspense>
-);
-
 // Page content sits behind its own error boundary, keyed on the path so a crash
 // in one page leaves the Nav intact and clears itself when the user navigates
 // elsewhere; the outer boundary only trips for app-shell (Nav) failures.
@@ -76,19 +39,11 @@ function RoutedContent() {
   return (
     <ErrorBoundary key={location.pathname}>
       <Routes>
-        <Route path="/" element={globe} />
-        <Route path="/globe" element={globe} />
-        <Route path="/intro" element={<Landing />} />
-        <Route path="/api-explorer" element={<ApiExplorer />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/route" element={<RouteDemo />} />
-        <Route path="/clean-compute" element={<CleanCompute />} />
-        <Route path="/compliance" element={<Compliance />} />
-        <Route path="/sla" element={<SLAMonitor />} />
-        <Route path="/scheduler" element={<Scheduler />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/methodology" element={<Methodology />} />
-        <Route path="/settings" element={<Settings />} />
+        {ROUTES.flatMap((r) =>
+          [r.path, ...(r.aliases ?? [])].map((path) => (
+            <Route key={path} path={path} element={r.element} />
+          )),
+        )}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </ErrorBoundary>

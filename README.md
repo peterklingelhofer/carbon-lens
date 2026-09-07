@@ -4,9 +4,9 @@ The same workload emits around 20 gCO2/kWh in Paris and around 800 in Cape Town,
 
 **Measure and cut the carbon footprint of your cloud compute.**
 
-*Live carbon-intensity data for 75+ cloud regions: see which grid is greenest right now, route workloads to it, and report on it.*
+*Live carbon-intensity data for 116 cloud regions across six providers: see which grid is greenest right now, move workloads to it, and report on it.*
 
-**[Live demo](https://carbonlens.peterklingelhofer.workers.dev/globe)**
+**[Live demo](https://carbonlens.peterklingelhofer.workers.dev/)**
 
 ![CarbonLens: live 3D carbon globe](docs/screenshots/globe.gif)
 
@@ -65,10 +65,10 @@ make dev
 
 | What to show | URL |
 |--------------|-----|
-| **Carbon globe** (start here) | **http://localhost:5173/globe** |
-| Live dashboard | http://localhost:5173/dashboard |
-| Landing page | http://localhost:5173 |
-| Interactive API Explorer | http://localhost:5173/api-explorer |
+| **Carbon globe** (start here) | **http://localhost:5173/** |
+| Every region, sortable | http://localhost:5173/regions |
+| Intro / explainer | http://localhost:5173/intro |
+| Interactive API Explorer | http://localhost:5173/api |
 | Swagger API docs | http://localhost:8000/docs |
 
 Runs with **no API keys**: several live grid sources work key-free (UK, Australia, Canada, Taiwan); any region without a live source returns labeled fallback data. (Add keys to `.env` for US/EU coverage; see [Adding Credentials](#adding-credentials).)
@@ -95,7 +95,7 @@ curl -X POST http://localhost:8000/api/v1/carbon/batch \
 ## Products
 
 ### 1. Carbon Intensity API
-Electricity-grid carbon data for 75+ cloud regions, behind one cascading interface: 8 live grid-operator integrations plus labeled heuristic and mock fallbacks. Beyond the headline production-based intensity, it also exposes a flow-traced **consumption-based** intensity for the interconnected European grid and an estimated **marginal** intensity (the price-setting fuel) for load-shifting decisions.
+Electricity-grid carbon data for 116 cloud regions, behind one cascading interface: 8 live grid-operator integrations (6 of them active on the public demo; the rest need paid keys) plus labeled heuristic and mock fallbacks. Beyond the headline production-based intensity, it also exposes a flow-traced **consumption-based** intensity for the interconnected European grid and an estimated **marginal** intensity (the price-setting fuel) for load-shifting decisions.
 
 ### 2. Compliance Reporting
 GHG-Protocol Scope 2 (location-based) + Scope 3 Cat 1 emissions reporting for cloud workloads, aimed at CSRD / SEC Climate / SB 253 workflows. Documented methodology, data-quality summary, JSON/CSV export.
@@ -175,7 +175,7 @@ Interactive docs at `/docs` (Swagger) or `/redoc` (ReDoc) when the server is run
 | `/api/v1/carbon/batch` | POST | Batch query multiple regions in one call |
 | `/api/v1/carbon/zones` | GET | List covered grid zones (for on-prem / non-cloud lookups) |
 | `/api/v1/carbon/zone/{grid_zone}` | GET | Carbon intensity for a grid zone directly (no cloud region) |
-| `/api/v1/regions` | GET | List all 75+ supported cloud regions |
+| `/api/v1/regions` | GET | List all 116 supported cloud regions |
 | `/api/v1/regions?provider=aws` | GET | Filter regions by cloud provider |
 
 ### Provenance
@@ -382,11 +382,14 @@ CARBON_LENS_WATTTIME_ZONE_MAP=US-CAL-CISO:CAISO_NORTH,US-MIDA-PJM:PJM_DC
 
 ## Cloud Region Coverage
 
-75+ cloud regions across three major providers:
+116 cloud regions across six providers:
 
-- **AWS**: 26 regions
 - **GCP**: 37 regions
 - **Azure**: 35 regions
+- **AWS**: 26 regions
+- **OVH**: 10 regions
+- **Hetzner**: 5 regions
+- **Scaleway**: 3 regions
 
 Each region is mapped to a physical electricity grid zone in `data/region_grid_map.yaml`.
 
@@ -416,7 +419,7 @@ web/                Vite + React 19 + TypeScript frontend
   src/api/          Typed API client + WebSocket
 
 terraform/          Terraform data source for green routing
-data/               region_grid_map.yaml (75+ regions -> grid zones)
+data/               region_grid_map.yaml (116 regions -> grid zones)
 alembic/            Database migrations
 tests/              442 tests
 ```
@@ -500,7 +503,7 @@ uv run pre-commit autoupdate                  # (optional) refresh pinned hook v
 The carbon data layer for carbon-aware infrastructure: one cascading API over multiple grid sources, with routing, reporting, and monitoring on top.
 
 **Built (and real):**
-- Cascading carbon-intensity API: **8 live grid-operator integrations** + labeled heuristic/mock fallbacks, 75+ cloud regions
+- Cascading carbon-intensity API: **8 live grid-operator integrations** + labeled heuristic/mock fallbacks, 116 cloud regions
 - Consumption-based (flow-traced) intensity for the European grid and an estimated marginal intensity, alongside the production-based headline
 - Carbon-aware routing and scheduling (real ENTSO-E day-ahead forecast in the EU) with stale-while-revalidate caching
 - GHG-Protocol Scope 2 + Scope 3 (Cat 1) compliance reporting (location-based)
