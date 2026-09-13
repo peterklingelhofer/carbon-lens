@@ -6,9 +6,9 @@ The same workload emits around 20 gCO2/kWh in Paris and around 800 in Cape Town,
 
 *Live carbon-intensity data for 116 cloud regions across six providers: see which grid is greenest right now, move workloads to it, and report on it.*
 
-**[Live demo](https://carbonlens.peterklingelhofer.workers.dev/)**
+**[Live demo](https://carbonlens.peterklingelhofer.com/)** · [API docs](https://carbonlens.peterklingelhofer.com/docs)
 
-![CarbonLens: live 3D carbon globe](docs/screenshots/globe.gif)
+[![CarbonLens: live 3D carbon globe](docs/screenshots/globe.gif)](https://carbonlens.peterklingelhofer.com/)
 
 <sub>Each glowing beam is a cloud region at its datacenter location, colored by **live** grid carbon intensity (green for clean, red for dirty) and sized by renewable share. Real grid-operator data, estimated ones are labeled.</sub>
 
@@ -25,7 +25,7 @@ CarbonLens aggregates electricity-grid carbon data into one cascading API: eight
 Every number this API returns can be traced to a published source over the wire, and the
 places where it can't are the places it says so loudest.
 
-- **[Citation corpus](docs/CITATIONS.md)**: 49 sources, each backing a specific line of code, each with a verification status that distinguishes "we read this document" from "we confirmed the DOI resolves". Machine-readable as [CSL-JSON](docs/CITATIONS.csl.json), and served live at **`GET /api/v1/citations`**, so a `provenance.citations` key on any reading can be resolved without leaving the API. An unknown citekey is a type error, enforced in CI.
+- **[Citation corpus](docs/CITATIONS.md)**: 49 sources, each backing a specific line of code, each with a verification status that distinguishes "we read this document" from "we confirmed the DOI resolves". Machine-readable as [CSL-JSON](docs/CITATIONS.csl.json), and served live at [**`GET /api/v1/citations`**](https://carbonlens.peterklingelhofer.com/api/v1/citations), so a `provenance.citations` key on any reading can be resolved without leaving the API. An unknown citekey is a type error, enforced in CI.
 - **[Validation](docs/VALIDATION.md)**: what the numbers are actually worth, measured. Flow tracing changes Austria's intensity by **289%** (41 to 159 gCO2/kWh) because it imports heavily, which is the case for the feature. **38.2%** of archived readings are carried forward rather than freshly measured, at a p90 error of **125 gCO2/kWh**. Reproducible from the published archive. The two comparisons needing paid credentials are reported as **NOT RUN** rather than estimated.
 - **[Verification record](docs/VERIFICATION.md)**: fourteen claims audited against primary sources. It caught the solar emission factor reading the wrong IPCC row, a UK renewable estimate off by **46.9 percentage points**, and a hollow feed publishing **0 gCO2/kWh**, the best possible score, so a broken feed was winning every routing decision. Eight fixes, each with a regression test.
 
