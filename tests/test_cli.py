@@ -184,7 +184,8 @@ class TestCliApp:
 
         from carbonlens.cli import ledger as ledger_mod
 
-        now = datetime(2026, 6, 18, tzinfo=UTC)
+        # verify windows against the real clock, so the entry has to be recent
+        now = datetime.now(UTC)
         monkeypatch.setattr(
             ledger_mod,
             "read",
