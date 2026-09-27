@@ -1,5 +1,5 @@
 # Example: a carbon-aware flexible job. Manually triggered so it never runs on its
-# own in this repo. Copy the pattern into your own non-urgent / scheduled workflow.
+# own in this repo. Copy the pattern into your own non-urgent / scheduled workflow
 name: Carbon-aware example
 
 on:
@@ -21,7 +21,7 @@ jobs:
           region: ${{ github.event.inputs.region }}
           max-intensity: "150"
           # Advisory here (won't fail the run); set true on a `schedule:` workflow to
-          # skip-and-retry until a clean window.
+          # skip-and-retry until a clean window
           fail-if-dirty: "false"
 
       - name: Run the flexible job when the grid is clean

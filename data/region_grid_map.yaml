@@ -1,7 +1,5 @@
 # Cloud region to electricity grid zone mapping
 # grid_zone: Electricity Maps zone ID (also used as our canonical zone identifier)
-# eia_respondent: EIA Form 930 balancing authority code (US only)
-# gridstatus_iso: GridStatus.io ISO identifier for fuel mix dataset (NA only)
 #
 # Providers by zone:
 #   US zones:     EIA (live) -> GridStatus -> Mock
@@ -16,28 +14,21 @@
 aws:
   us-east-1:
     grid_zone: US-MIDA-PJM
-    eia_respondent: PJM
-    gridstatus_iso: pjm
     location: N. Virginia
     latitude: 39.0
     longitude: -77.5
   us-east-2:
     grid_zone: US-MIDA-PJM
-    eia_respondent: PJM
-    gridstatus_iso: pjm
     location: Ohio
     latitude: 40.4
     longitude: -82.9
   us-west-1:
     grid_zone: US-CAL-CISO
-    eia_respondent: CISO
-    gridstatus_iso: caiso
     location: N. California
     latitude: 37.4
     longitude: -121.9
   us-west-2:
     grid_zone: US-NW-BPAT
-    eia_respondent: BPAT
     location: Oregon
     latitude: 45.8
     longitude: -119.3
@@ -155,73 +146,56 @@ aws:
 gcp:
   us-central1:
     grid_zone: US-MIDW-MISO
-    eia_respondent: MISO
-    gridstatus_iso: miso
     location: Iowa
     latitude: 41.6
     longitude: -93.6
   us-east1:
     grid_zone: US-SE-SOCO
-    eia_respondent: SOCO
     location: South Carolina
     latitude: 33.8
     longitude: -81.1
   us-east4:
     grid_zone: US-MIDA-PJM
-    eia_respondent: PJM
-    gridstatus_iso: pjm
     location: N. Virginia
     latitude: 39.0
     longitude: -77.5
   us-east5:
     grid_zone: US-MIDA-PJM
-    eia_respondent: PJM
-    gridstatus_iso: pjm
     location: Columbus
     latitude: 39.9
     longitude: -82.9
   us-west1:
     grid_zone: US-NW-BPAT
-    eia_respondent: BPAT
     location: Oregon
     latitude: 45.6
     longitude: -121.2
   us-west2:
     grid_zone: US-CAL-CISO
-    eia_respondent: CISO
-    gridstatus_iso: caiso
     location: Los Angeles
     latitude: 34.1
     longitude: -118.2
   us-west3:
     grid_zone: US-CAL-CISO
-    eia_respondent: CISO
-    gridstatus_iso: caiso
     location: Salt Lake City
     latitude: 40.8
     longitude: -111.9
   us-west4:
     grid_zone: US-SW-NEVP
-    eia_respondent: NEVP
     location: Las Vegas
     latitude: 36.2
     longitude: -115.1
   us-south1:
     grid_zone: US-TEX-ERCO
-    eia_respondent: ERCO
-    gridstatus_iso: ercot
     location: Dallas
     latitude: 32.8
     longitude: -96.8
   northamerica-northeast1:
     grid_zone: CA-QC
-    gridstatus_iso: ieso
     location: Montreal
     latitude: 45.5
     longitude: -73.6
   northamerica-northeast2:
     grid_zone: CA-ON
-    gridstatus_iso: ieso
     location: Toronto
     latitude: 43.7
     longitude: -79.4
@@ -359,61 +333,46 @@ gcp:
 azure:
   eastus:
     grid_zone: US-MIDA-PJM
-    eia_respondent: PJM
-    gridstatus_iso: pjm
     location: Virginia
     latitude: 37.4
     longitude: -79.5
   eastus2:
     grid_zone: US-MIDA-PJM
-    eia_respondent: PJM
-    gridstatus_iso: pjm
     location: Virginia
     latitude: 36.7
     longitude: -78.9
   westus:
     grid_zone: US-CAL-CISO
-    eia_respondent: CISO
-    gridstatus_iso: caiso
     location: California
     latitude: 37.8
     longitude: -122.4
   westus2:
     grid_zone: US-NW-BPAT
-    eia_respondent: BPAT
     location: Washington
     latitude: 47.2
     longitude: -119.9
   westus3:
     grid_zone: US-SW-AZPS
-    eia_respondent: AZPS
     location: Arizona
     latitude: 33.4
     longitude: -112.1
   centralus:
     grid_zone: US-MIDW-MISO
-    eia_respondent: MISO
-    gridstatus_iso: miso
     location: Iowa
     latitude: 41.6
     longitude: -93.6
   southcentralus:
     grid_zone: US-TEX-ERCO
-    eia_respondent: ERCO
-    gridstatus_iso: ercot
     location: Texas
     latitude: 29.4
     longitude: -98.5
   northcentralus:
     grid_zone: US-MIDW-MISO
-    eia_respondent: MISO
-    gridstatus_iso: miso
     location: Illinois
     latitude: 41.9
     longitude: -87.6
   canadacentral:
     grid_zone: CA-ON
-    gridstatus_iso: ieso
     location: Toronto
     latitude: 43.7
     longitude: -79.4
@@ -615,8 +574,6 @@ ovh:
     longitude: 103.82
   vin:
     grid_zone: US-MIDA-PJM
-    eia_respondent: PJM
-    gridstatus_iso: pjm
     location: Vint Hill, Virginia
     latitude: 38.76
     longitude: -77.66
@@ -639,15 +596,11 @@ hetzner:
     longitude: 24.94
   ash:
     grid_zone: US-MIDA-PJM
-    eia_respondent: PJM
-    gridstatus_iso: pjm
     location: Ashburn, Virginia
     latitude: 39.04
     longitude: -77.49
   hil:
     grid_zone: US-NW-BPAT
-    eia_respondent: BPAT
-    gridstatus_iso: bpat
     location: Hillsboro, Oregon
     latitude: 45.52
     longitude: -122.99

@@ -1,15 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "../api/client";
-import { type CarbonSnapshot, snapshotEnabled, useSnapshot } from "../api/snapshot";
+import { type CarbonSnapshot, snapshotEnabled, useRegions, useSnapshot } from "../api/snapshot";
 import type { CarbonIntensity, CarbonUpdate, CloudRegion } from "../api/types";
 import { CustomZoneLookup } from "../components/CustomZoneLookup";
 import { InfoTip } from "../components/InfoTip";
 import { ShiftabilityPanel } from "../components/ShiftabilityPanel";
 import { SitingPicker } from "../components/SitingPicker";
+import { StatCard } from "../components/StatCard";
 import { DATA_QUALITY_TIP, DATA_QUALITY_TIP_RICH, MARGINAL_TIP } from "../copy";
 import { formatLoad, timeAgo } from "../lib/format";
 import { intensityVarColor } from "../lib/intensity";
+import { HYPERSCALERS, PROVIDERS } from "../lib/providers";
 import { card, providerChip, sectionStyle } from "../styles";
 
 const section = sectionStyle(1100);
@@ -278,31 +280,16 @@ export function Dashboard() {
   const usingSnapshot = !!snapshot;
 
   const {
-    data: apiRegions,
-    isLoading: apiRegionsLoading,
+    data: regions,
+    isLoading: regionsLoading,
     isError: apiRegionsError,
-  } = useQuery({
-    queryKey: ["regions", provider],
-    queryFn: () => api.regions(provider || undefined),
-    // Gate on the config flag rather than the runtime `usingSnapshot`: the snapshot
-    // resolves a tick after mount, so `!usingSnapshot` was briefly true and fired
-    // a regions request that woke the API. When a snapshot is configured, regions
-    // always come from it, so never hit the API.
-    enabled: !snapshotEnabled,
-  });
-
-  const regions = usingSnapshot
-    ? provider
-      ? snapshot.regions.filter((r) => r.provider === provider)
-      : snapshot.regions
-    : apiRegions;
-  const regionsLoading = usingSnapshot ? false : apiRegionsLoading;
+  } = useRegions(provider);
 
   const queryClient = useQueryClient();
   const routeSample = useMutation({
     mutationFn: () =>
       api.route({
-        constraints: { providers: ["aws", "gcp", "azure"], carbon_weight: 1.0 },
+        constraints: { providers: HYPERSCALERS, carbon_weight: 1.0 },
       }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["savings"] }),
   });
@@ -424,82 +411,26 @@ export function Dashboard() {
             marginBottom: "2rem",
           }}
         >
-          <div style={card}>
-            <div
-              style={{
-                fontSize: "0.8rem",
-                color: "var(--gray-500)",
-                display: "flex",
-                alignItems: "center",
-              }}
-            >
-              Recommendations made
-              <InfoTip
-                label="Recommendations made"
-                text="How many routing recommendations this demo server has produced - each click of 'Route a sample workload' counts. Tracked in memory, so it resets whenever the server restarts. It's this instance's activity since the last restart."
-              />
-            </div>
-            <div
-              style={{
-                fontSize: "2rem",
-                fontWeight: 700,
-                color: "var(--green-text)",
-              }}
-            >
-              {savings.total_requests}
-            </div>
-          </div>
-          <div style={card}>
-            <div
-              style={{
-                fontSize: "0.8rem",
-                color: "var(--gray-500)",
-                display: "flex",
-                alignItems: "center",
-              }}
-            >
-              Avg intensity reduction
-              <InfoTip
-                label="Average intensity reduction"
-                text="Per recommendation, how much cleaner (gCO₂/kWh) the chosen region was than the average of the candidates considered - i.e. versus picking among the same options without carbon-awareness - averaged across recommendations. It's a rate: per-kWh intensities aren't additive across workloads, and real grams also depend on each job's energy use. In-memory for this server instance, resets on restart."
-              />
-            </div>
-            <div
-              style={{
-                fontSize: "2rem",
-                fontWeight: 700,
-                color: "var(--green-text)",
-              }}
-            >
-              {savings.avg_intensity_reduction_gco2_kwh.toFixed(1)}{" "}
-              <span style={{ fontSize: "0.9rem", fontWeight: 400 }}>gCO₂/kWh avg</span>
-            </div>
-          </div>
-          <div style={card}>
-            <div
-              style={{
-                fontSize: "0.8rem",
-                color: "var(--gray-500)",
-                display: "flex",
-                alignItems: "center",
-              }}
-            >
-              Avg renewable % chosen
-              <InfoTip
-                label="Average renewable % chosen"
-                text="Average renewable share of the regions this server has recommended so far."
-              />
-            </div>
-            <div
-              style={{
-                fontSize: "2rem",
-                fontWeight: 700,
-                color: "var(--green-text)",
-              }}
-            >
-              {savings.avg_renewable_percentage}%
-            </div>
-          </div>
+          <StatCard
+            label="Recommendations made"
+            value={savings.total_requests}
+            positive
+            tip="How many routing recommendations this demo server has produced - each click of 'Route a sample workload' counts. Tracked in memory, so it resets whenever the server restarts. It's this instance's activity since the last restart."
+          />
+          <StatCard
+            label="Avg intensity reduction"
+            value={savings.avg_intensity_reduction_gco2_kwh.toFixed(1)}
+            unit="gCO₂/kWh avg"
+            positive
+            tip="Per recommendation, how much cleaner (gCO₂/kWh) the chosen region was than the average of the candidates considered - i.e. versus picking among the same options without carbon-awareness - averaged across recommendations. It's a rate: per-kWh intensities aren't additive across workloads, and real grams also depend on each job's energy use. In-memory for this server instance, resets on restart."
+          />
+          <StatCard
+            label="Avg renewable % chosen"
+            value={savings.avg_renewable_percentage}
+            unit="%"
+            positive
+            tip="Average renewable share of the regions this server has recommended so far."
+          />
         </div>
       )}
 
@@ -522,7 +453,7 @@ export function Dashboard() {
           alignItems: "center",
         }}
       >
-        {["", "aws", "gcp", "azure", "scaleway", "ovh", "hetzner"].map((p) => (
+        {["", ...PROVIDERS].map((p) => (
           <button
             type="button"
             key={p}
@@ -818,42 +749,26 @@ function LivePanel() {
 }
 
 function useRegionIntensities(regions: CloudRegion[]) {
-  const [data, setData] = useState<Record<string, CarbonIntensity>>({});
-
-  useEffect(() => {
-    if (regions.length === 0) return;
-    let cancelled = false;
-
-    const lookups = regions.map((r) => ({
-      provider: r.provider,
-      region: r.region,
-    }));
-    api
-      .carbonIntensityBatch(lookups)
-      .then((result) => {
-        if (!cancelled) setData(result);
-      })
-      .catch(async () => {
+  const { data } = useQuery({
+    queryKey: ["region-intensities", regions.map((r) => `${r.provider}/${r.region}`)],
+    queryFn: async () => {
+      const lookups = regions.map((r) => ({ provider: r.provider, region: r.region }));
+      try {
+        return await api.carbonIntensityBatch(lookups);
+      } catch {
         // Batch failed - fall back to individual calls
+        const result: Record<string, CarbonIntensity> = {};
         for (const r of regions) {
           try {
-            const intensity = await api.carbonIntensity(r.provider, r.region);
-            if (!cancelled) {
-              setData((prev) => ({
-                ...prev,
-                [`${r.provider}/${r.region}`]: intensity,
-              }));
-            }
+            result[`${r.provider}/${r.region}`] = await api.carbonIntensity(r.provider, r.region);
           } catch {
             /* swallow */
           }
         }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [regions]);
-
-  return data;
+        return result;
+      }
+    },
+    enabled: regions.length > 0,
+  });
+  return data ?? {};
 }

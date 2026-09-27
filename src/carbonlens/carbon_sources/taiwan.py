@@ -111,4 +111,8 @@ class TaiwanCarbonSource:
         fuel_mix = fuel_mix_from_rows(rows)
         if sum(fuel_mix.values()) <= 0:
             return {}
-        return {"TW": intensity_from_fuel_mix("TW", fuel_mix, "taipower", datetime.now(UTC))}
+        return {
+            "TW": intensity_from_fuel_mix(
+                grid_zone="TW", fuel_mix=fuel_mix, source="taipower", timestamp=datetime.now(UTC)
+            )
+        }

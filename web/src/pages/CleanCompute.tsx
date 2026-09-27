@@ -22,7 +22,7 @@ export function CleanCompute() {
       <h1 style={{ fontSize: "1.6rem", margin: "0 0 0.25rem" }}>State of Clean Compute</h1>
       <p style={{ color: "var(--gray-500)", margin: "0 0 1.5rem", fontSize: "0.95rem" }}>
         Where carbon-aware computing pays off, from the last {data?.days_analyzed ?? 14} days of
-        real grid data. Updated about every 30 minutes.{" "}
+        real grid data. Updated every hour.{" "}
         {data && <span>Last updated {timeAgo(data.generated_at)}.</span>}
       </p>
 
@@ -69,7 +69,7 @@ export function CleanCompute() {
             Calibration ratio <strong>{cal.calibration_ratio.toFixed(2)}</strong>{" "}
             <span
               style={{
-                color: calVerdict === "well-calibrated" ? "var(--green-text)" : "#b45309",
+                color: calVerdict === "well-calibrated" ? "var(--green-text)" : "var(--amber)",
               }}
             >
               ({calVerdict})
@@ -111,7 +111,7 @@ export function CleanCompute() {
                       style={{
                         marginLeft: 6,
                         fontSize: "0.78rem",
-                        color: r.trend_pct < 0 ? "var(--green-text)" : "#b45309",
+                        color: r.trend_pct < 0 ? "var(--green-text)" : "var(--amber)",
                       }}
                       title="Trend over the analysed window (negative = getting cleaner)"
                     >

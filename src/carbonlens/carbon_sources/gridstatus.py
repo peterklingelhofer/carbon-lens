@@ -37,7 +37,7 @@ class GridStatusCarbonSource:
             timeout=15.0,
         )
 
-    def _can_handle(self, grid_zone: str) -> bool:
+    def can_handle(self, grid_zone: str) -> bool:
         return grid_zone in _GRID_ZONE_TO_ISO
 
     async def get_carbon_intensity(self, grid_zone: str) -> CarbonIntensity:
@@ -107,7 +107,7 @@ class GridStatusCarbonSource:
     async def get_carbon_intensity_batch(self, grid_zones: list[str]) -> dict[str, CarbonIntensity]:
         results: dict[str, CarbonIntensity] = {}
         for zone in grid_zones:
-            if not self._can_handle(zone):
+            if not self.can_handle(zone):
                 continue
             try:
                 results[zone] = await self.get_carbon_intensity(zone)

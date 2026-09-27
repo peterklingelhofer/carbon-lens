@@ -12,7 +12,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 
-def _parse_utc(ts: str | None) -> datetime | None:
+def parse_utc(ts: str | None) -> datetime | None:
     """Parse an ISO-8601 timestamp to a UTC-aware datetime, or None if unparseable.
 
     Handles a trailing Z, treats naive timestamps as UTC, and normalizes any
@@ -41,7 +41,7 @@ def rank_hours_utc(points: list[dict]) -> list[dict]:
         t, c = p.get("t"), p.get("c")
         if c is None:
             continue
-        parsed = _parse_utc(t)
+        parsed = parse_utc(t)
         if parsed is None:
             continue
         buckets.setdefault(parsed.hour, []).append(float(c))

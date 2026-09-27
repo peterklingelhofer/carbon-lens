@@ -3,19 +3,19 @@ name: Carbon snapshot
 # Pulls real carbon data from grid-operator APIs on a schedule and publishes a
 # static JSON to the `data` branch. The frontend reads that JSON from a CDN, so
 # viewer traffic never hits upstream providers: quota cost is fixed at
-# (zones x runs/day) regardless of how many people view the site.
+# (zones x runs/day) regardless of how many people view the site
 
 on:
   schedule:
     # Hourly. Grid carbon updates every ~30-60 min, so this tracks it while
     # halving runner energy and Actions minutes vs the old 30-min cadence (and
     # carry-forward + the "last updated" badge cover the wider gap). Bump back to
-    # "*/30 * * * *" if fresher data is worth the extra runner cost.
+    # "*/30 * * * *" if fresher data is worth the extra runner cost
     - cron: "0 * * * *"
   workflow_dispatch: {}
 
 # GitHub scheduled crons are best-effort and may be delayed under load. The
-# frontend shows a "last updated" badge so staleness is always visible.
+# frontend shows a "last updated" badge so staleness is always visible
 
 permissions:
   contents: write
@@ -36,7 +36,7 @@ jobs:
 
       - name: Install dependencies
         # The snapshot only needs core deps (httpx + carbonlens). The dev/cloud
-        # extras aren't imported here, so installing them every run is pure waste.
+        # extras aren't imported here, so installing them every run is pure waste
         run: uv sync
 
       - name: Build snapshot
@@ -48,11 +48,11 @@ jobs:
         run: uv run python scripts/build_snapshot.py --out snapshot.json --min-live 5
 
       # A small, citable 'state of clean compute' artifact: which grids reward
-      # carbon-aware scheduling most, and which regions are greenest to host on.
-      # Computed from the freshly-built history. Reuses this cron, no extra cost.
+      # carbon-aware scheduling most, and which regions are greenest to host on
+      # Computed from the freshly-built history. Reuses this cron, no extra cost
       # Pull the live deployment's org-statement (which carries forecast_calibration)
-      # so the public report shows how accurate our forecasts have actually been.
-      # Best-effort: if the API is unreachable or has no ledger, calibration is omitted.
+      # so the public report shows how accurate our forecasts have actually been
+      # Best-effort: if the API is unreachable or has no ledger, calibration is omitted
       - name: Build clean-compute report
         env:
           REPORT_API_URL: ${{ secrets.CARBON_LENS_REPORT_API_URL || 'https://carbonlens-gssa.onrender.com' }}

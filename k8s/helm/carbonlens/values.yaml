@@ -53,13 +53,6 @@ database:
       postgresPassword: carbonlens
       database: carbonlens
 
-# Stripe billing (optional)
-stripe:
-  secretKey: ""
-  webhookSecret: ""
-  priceIdPro: ""
-  priceIdEnterprise: ""
-
 # App settings
 config:
   carbonSource: hybrid

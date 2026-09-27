@@ -8,10 +8,13 @@ on:
 
 # Cancel superseded runs on a branch/PR so rapid pushes don't keep whole
 # pipelines (incl. the Docker builds) burning runners to no purpose. Never
-# cancel main pushes (they publish images).
+# cancel main pushes (they publish images)
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
 
 jobs:
   backend:
@@ -43,8 +46,8 @@ jobs:
 
       - name: Lint
         run: |
-          uv run ruff check src
-          uv run ruff format --check src
+          uv run ruff check .
+          uv run ruff format --check .
 
       - name: Type check
         run: uv run pyright src

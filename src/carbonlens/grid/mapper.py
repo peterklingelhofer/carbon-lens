@@ -15,8 +15,6 @@ def _parse_region(provider: str, region_name: str, region_data: dict) -> CloudRe
         location=region_data["location"],
         latitude=region_data["latitude"],
         longitude=region_data["longitude"],
-        eia_respondent=region_data.get("eia_respondent"),
-        gridstatus_iso=region_data.get("gridstatus_iso"),
     )
 
 
@@ -39,7 +37,6 @@ class GridMapper:
         self._by_key: dict[tuple[str, str], CloudRegion] = {}
         self._by_provider: dict[str, list[CloudRegion]] = {}
         self._providers: list[str] = list(data.keys())
-        self._eia_respondents: dict[str, str] = {}
         self._regions_payload: dict[str | None, tuple[list[dict], str]] = {}
 
         for provider in data:
@@ -49,8 +46,6 @@ class GridMapper:
                 self._regions.append(region)
                 self._by_key[(provider, region_name)] = region
                 bucket.append(region)
-                if region.eia_respondent:
-                    self._eia_respondents[region.eia_respondent] = region.grid_zone
 
         # One representative region per distinct grid zone, sorted by zone.
         zone_reps: dict[str, CloudRegion] = {}
@@ -91,7 +86,3 @@ class GridMapper:
     def get_grid_zone(self, provider: str, region: str) -> str | None:
         region_obj = self.get_region(provider, region)
         return region_obj.grid_zone if region_obj else None
-
-    def get_eia_respondents(self) -> dict[str, str]:
-        """Return mapping of EIA respondent -> grid_zone for all regions that have one."""
-        return dict(self._eia_respondents)

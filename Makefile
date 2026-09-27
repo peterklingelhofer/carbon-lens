@@ -1,11 +1,11 @@
-.PHONY: help dev test lint fix hooks openapi migrate docker up down clean
+.PHONY: help dev api web test test-fast lint fix hooks citations openapi migrate migrate-new docker up down logs install setup clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 # ── Local Development ──────────────────────────────────────────
 
-dev: ## Start API + frontend in dev mode (hot reload)
+dev: ## Start API + frontend in dev mode (hot reload for the web app)
 	@echo "API -> http://localhost:8000   |   App -> http://localhost:5173/dashboard"
 	@set -a; [ -f .env ] && . ./.env; set +a; \
 		lsof -ti:8000 | xargs kill 2>/dev/null || true; \
@@ -30,13 +30,13 @@ test-fast: ## Run tests without verbose output
 	uv run pytest tests/ -q
 
 lint: ## Run linters (ruff + biome) and typecheck
-	uv run ruff check src tests
+	uv run ruff check .
 	uv run python scripts/generate_citations.py --check
-	cd web && npm run lint && npx tsc --noEmit
+	cd web && npm run lint && npx tsc -b
 
 fix: ## Auto-fix lint errors (ruff + biome)
-	uv run ruff check src tests --fix
-	uv run ruff format src tests
+	uv run ruff check . --fix
+	uv run ruff format .
 	cd web && npm run format
 
 hooks: ## Install git hooks (pre-commit + commit-msg)

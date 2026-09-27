@@ -807,31 +807,9 @@
       },
       "CloudRegion": {
         "properties": {
-          "eia_respondent": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Eia Respondent"
-          },
           "grid_zone": {
             "title": "Grid Zone",
             "type": "string"
-          },
-          "gridstatus_iso": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Gridstatus Iso"
           },
           "latitude": {
             "title": "Latitude",

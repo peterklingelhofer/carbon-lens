@@ -70,3 +70,27 @@ export const th: React.CSSProperties = {
 };
 
 export const td: React.CSSProperties = { padding: "0.5rem", fontSize: "0.85rem" };
+
+// The primary green action button (Create/Find/Send/Generate…): spread this first,
+// then override `cursor` (and anything else that differs, e.g. a disabled state)
+export const primaryButton: React.CSSProperties = {
+  padding: "0.75rem 2rem",
+  borderRadius: 8,
+  border: "none",
+  background: "var(--btn-green)",
+  color: "white",
+  fontWeight: 500,
+  cursor: "pointer",
+};
+
+// The large green CTA link back to the globe, used at the foot of the long-form pages
+export const ctaLink: React.CSSProperties = {
+  display: "inline-block",
+  padding: "0.85rem 2.5rem",
+  borderRadius: 8,
+  background: "var(--btn-green)",
+  color: "white",
+  fontWeight: 500,
+  fontSize: "1.05rem",
+  textDecoration: "none",
+};

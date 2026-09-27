@@ -4,13 +4,14 @@ import { api } from "../api/client";
 import { InfoTip } from "../components/InfoTip";
 import { StatCard } from "../components/StatCard";
 import { intensityVarColor } from "../lib/intensity";
-import { card, inputStyle, labelStyle, sectionStyle, td, th } from "../styles";
+import { HYPERSCALERS } from "../lib/providers";
+import { card, inputStyle, labelStyle, primaryButton, sectionStyle, td, th } from "../styles";
 
 const section = sectionStyle(1100);
+const ORG_ID = "demo";
 
 export function SLAMonitor() {
   const queryClient = useQueryClient();
-  const [orgId] = useState("demo");
   const [showCreate, setShowCreate] = useState(false);
 
   // Form state
@@ -19,8 +20,8 @@ export function SLAMonitor() {
   const [minRenewable, setMinRenewable] = useState(50);
 
   const { data: slas } = useQuery({
-    queryKey: ["slas", orgId],
-    queryFn: () => api.sla.list(orgId),
+    queryKey: ["slas", ORG_ID],
+    queryFn: () => api.sla.list(ORG_ID),
   });
 
   const { data: monitorStatus } = useQuery({
@@ -33,11 +34,11 @@ export function SLAMonitor() {
   const createMutation = useMutation({
     mutationFn: () =>
       api.sla.create({
-        org_id: orgId,
+        org_id: ORG_ID,
         name,
         max_carbon_intensity_gco2_kwh: maxCarbon,
         min_renewable_percentage: minRenewable,
-        providers: ["aws", "gcp", "azure"],
+        providers: HYPERSCALERS,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["slas"] });
@@ -60,7 +61,7 @@ export function SLAMonitor() {
 
   const monitorMutation = useMutation({
     mutationFn: (action: "start" | "stop") =>
-      action === "start" ? api.sla.startMonitor(orgId) : api.sla.stopMonitor(),
+      action === "start" ? api.sla.startMonitor(ORG_ID) : api.sla.stopMonitor(),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["sla-monitor"] }),
   });
 
@@ -224,13 +225,9 @@ export function SLAMonitor() {
           type="button"
           onClick={() => setShowCreate(!showCreate)}
           style={{
+            ...primaryButton,
             padding: "0.5rem 1.5rem",
             borderRadius: 6,
-            border: "none",
-            background: "var(--btn-green)",
-            color: "white",
-            fontWeight: 500,
-            cursor: "pointer",
             fontSize: "0.85rem",
           }}
         >
@@ -316,15 +313,7 @@ export function SLAMonitor() {
             type="button"
             onClick={() => createMutation.mutate()}
             disabled={createMutation.isPending}
-            style={{
-              padding: "0.75rem 2rem",
-              borderRadius: 8,
-              border: "none",
-              background: "var(--btn-green)",
-              color: "white",
-              fontWeight: 500,
-              cursor: createMutation.isPending ? "wait" : "pointer",
-            }}
+            style={{ ...primaryButton, cursor: createMutation.isPending ? "wait" : "pointer" }}
           >
             {createMutation.isPending ? "Creating..." : "Create SLA"}
           </button>

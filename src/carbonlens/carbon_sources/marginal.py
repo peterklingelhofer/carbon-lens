@@ -16,6 +16,7 @@ import httpx
 
 from carbonlens.carbon_sources.http_pool import shared_client
 from carbonlens.citations_generated import CitationId
+from carbonlens.engine.recurring import parse_utc
 
 # A measured marginal rate is what the literature actually argues for when the
 # decision is "should this load run now" (hawkes-2010). The merit-order estimate in
@@ -61,12 +62,9 @@ def _parse_forecast(
         t, v = pt.get(time_key), pt.get(value_key)
         if not t or v is None:
             continue
-        try:
-            ts = datetime.fromisoformat(str(t).replace("Z", "+00:00"))
-        except (TypeError, ValueError):
+        ts = parse_utc(str(t))
+        if ts is None:
             continue
-        if ts.tzinfo is None:
-            ts = ts.replace(tzinfo=UTC)
         offset = round((ts - now).total_seconds() / 3600)
         if 0 <= offset <= hours:
             curve[offset] = convert(float(v))

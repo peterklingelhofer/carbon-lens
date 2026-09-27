@@ -29,6 +29,7 @@ from pathlib import Path
 
 import httpx
 
+from carbonlens.engine.recurring import parse_utc
 from carbonlens.sdk import impact_from_signal, soonest_clean_window_hours
 
 logger = logging.getLogger("carbon_suspend")
@@ -50,14 +51,9 @@ def _ann_float(annotations: dict, key: str) -> float | None:
 
 def _hours_since(ts_iso: str | None, now: datetime) -> float | None:
     """Hours between an RFC3339 timestamp (e.g. a CronJob's lastScheduleTime) and now."""
-    if not ts_iso:
+    ts = parse_utc(ts_iso)
+    if ts is None:
         return None
-    try:
-        ts = datetime.fromisoformat(ts_iso.replace("Z", "+00:00"))
-    except (TypeError, ValueError):
-        return None
-    if ts.tzinfo is None:
-        ts = ts.replace(tzinfo=UTC)
     return (now - ts).total_seconds() / 3600
 
 

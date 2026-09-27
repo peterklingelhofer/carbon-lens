@@ -112,8 +112,8 @@ def test_provider_status(client: TestClient):
     data = resp.json()
     assert "configured" in data
     assert "missing" in data
-    assert data["total_available"] == 10
-    assert data["total_configured"] >= 6  # At least the no-key providers
+    assert data["total_available"] == 12
+    assert data["total_configured"] >= 8  # At least the no-key providers
 
 
 def test_provider_status_counts(client: TestClient):

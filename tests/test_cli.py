@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 from typer.testing import CliRunner
 
+from carbonlens.auth.api_keys import generate_api_key as _generate_api_key
 from carbonlens.cli import client
 from carbonlens.cli.green_run import choose_run_index, choose_run_plan
 from carbonlens.cli.main import app
@@ -15,16 +16,6 @@ from carbonlens.cli.main import app
 # ---------------------------------------------------------------------------
 # generate_api_key tests
 # ---------------------------------------------------------------------------
-
-
-def _generate_api_key() -> str:
-    """Local reimplementation to avoid importing the full auth module
-    (which pulls in SQLAlchemy models that fail to resolve on some Python versions).
-    Mirrors carbonlens.auth.api_keys.generate_api_key exactly.
-    """
-    import secrets
-
-    return "cmesh_" + secrets.token_hex(24)
 
 
 class TestGenerateApiKey:
@@ -49,7 +40,7 @@ class TestGenerateApiKey:
         key = _generate_api_key()
         hex_part = key[len("cmesh_") :]
         # Should be valid hex
-        int(hex_part, 16)
+        assert int(hex_part, 16) >= 0
 
 
 # ---------------------------------------------------------------------------

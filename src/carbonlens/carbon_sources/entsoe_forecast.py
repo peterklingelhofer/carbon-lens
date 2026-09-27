@@ -11,11 +11,9 @@ import time
 from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 
-from carbonlens.carbon_sources.entsoe import ENTSOE_ZONE_MAP
-from carbonlens.carbon_sources.http_pool import ENTSOE_SEMAPHORE, get_with_retry, shared_client
+from carbonlens.carbon_sources.entsoe import ENTSOE_ZONE_MAP, entsoe_get, entsoe_period
+from carbonlens.carbon_sources.http_pool import shared_client
 from carbonlens.carbon_sources.xml_safe import entsoe_ns, safe_parse_xml
-
-API_URL = "https://web-api.tp.entsoe.eu/api"
 
 # Wind onshore (B19), wind offshore (B18), solar (B16): the variable renewables
 # ENTSO-E publishes a day-ahead forecast for.
@@ -76,14 +74,7 @@ class ENTSOEForecastSource:
         return bool(self._token) and grid_zone in ENTSOE_ZONE_MAP
 
     async def _fetch(self, params: dict) -> str:
-        resp = await get_with_retry(
-            self._client,
-            API_URL,
-            params={"securityToken": self._token, **params},
-            semaphore=ENTSOE_SEMAPHORE,
-        )
-        resp.raise_for_status()
-        return resp.text
+        return await entsoe_get(self._client, self._token, **params)
 
     async def _zone_series(self, grid_zone: str) -> dict[datetime, float]:
         """Forecasted VRE share of load per absolute UTC hour, cached per zone."""
@@ -96,8 +87,8 @@ class ENTSOEForecastSource:
             return {}
 
         now = datetime.now(UTC).replace(minute=0, second=0, microsecond=0)
-        period_start = now.strftime("%Y%m%d%H00")
-        period_end = (now + timedelta(hours=48)).strftime("%Y%m%d%H00")
+        period_start = entsoe_period(now)
+        period_end = entsoe_period(now + timedelta(hours=48))
 
         try:
             gen_xml = await self._fetch(

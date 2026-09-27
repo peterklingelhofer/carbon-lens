@@ -31,7 +31,7 @@ class EIACarbonSource:
         self._api_key = api_key
         self._client = shared_client(base_url=API_BASE, timeout=15.0)
 
-    def _can_handle(self, grid_zone: str) -> bool:
+    def can_handle(self, grid_zone: str) -> bool:
         return grid_zone in _GRID_ZONE_TO_EIA
 
     async def get_carbon_intensity(self, grid_zone: str) -> CarbonIntensity:
@@ -73,7 +73,9 @@ class EIACarbonSource:
         except ValueError:
             ts = datetime.now(UTC)
 
-        return intensity_from_fuel_mix(grid_zone, fuel_mix_mw, "eia", ts)
+        return intensity_from_fuel_mix(
+            grid_zone=grid_zone, fuel_mix=fuel_mix_mw, source="eia", timestamp=ts
+        )
 
     async def get_carbon_intensity_batch(self, grid_zones: list[str]) -> dict[str, CarbonIntensity]:
         # Group the requested zones by EIA respondent (multiple cloud regions can

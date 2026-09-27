@@ -1,6 +1,6 @@
 # Example: a carbon-aware Argo CronWorkflow. It re-evaluates the grid on a schedule
 # and runs the flexible step only when the grid is clean: a skip-and-retry pattern
-# (never blocks, never fails for being dirty). Replace `run-batch` with your work.
+# (never blocks, never fails for being dirty). Replace `run-batch` with your work
 #
 #   kubectl apply -f deploy/argo/carbon-gate-template.yaml      # the reusable gate
 #   kubectl apply -f deploy/argo/carbon-aware-cronworkflow.yaml
@@ -9,7 +9,7 @@ kind: CronWorkflow
 metadata:
   name: nightly-batch-carbon-aware
 spec:
-  # Re-check every 30 min. The work runs only on the ticks where the grid is clean.
+  # Re-check every 30 min. The work runs only on the ticks where the grid is clean
   schedule: "*/30 * * * *"
   concurrencyPolicy: Forbid
   workflowSpec:

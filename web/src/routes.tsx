@@ -19,7 +19,7 @@ const globe = (
     fallback={
       <div
         style={{
-          height: "calc(100vh - 56px)",
+          height: "calc(100vh - var(--nav-h))",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",

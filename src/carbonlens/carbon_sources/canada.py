@@ -149,4 +149,6 @@ class CanadaCarbonSource:
         )
 
     def _build(self, zone: str, fuel_mix: dict[str, float], source: str) -> CarbonIntensity:
-        return intensity_from_fuel_mix(zone, fuel_mix, source, datetime.now(UTC))
+        return intensity_from_fuel_mix(
+            grid_zone=zone, fuel_mix=fuel_mix, source=source, timestamp=datetime.now(UTC)
+        )

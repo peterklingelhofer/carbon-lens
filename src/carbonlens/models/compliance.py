@@ -42,18 +42,6 @@ class CloudUsageRecord(BaseModel):
     source: str = "manual"  # "aws_cur", "gcp_billing", "azure_cost", "manual"
 
 
-class EmissionFactor(BaseModel):
-    """Grid emission factor for a specific zone and time period."""
-
-    grid_zone: str
-    carbon_intensity_gco2_kwh: float = Field(ge=0)
-    renewable_percentage: float = Field(ge=0, le=100)
-    method: AccountingMethod
-    timestamp: datetime
-    source: str  # Which data provider supplied this
-    data_quality: str = "measured"  # "measured", "modeled", "estimated", "default"
-
-
 class EmissionsCalculation(BaseModel):
     """A single emissions calculation with full audit trail."""
 

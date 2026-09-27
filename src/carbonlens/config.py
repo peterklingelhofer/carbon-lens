@@ -5,6 +5,25 @@ from typing import Annotated
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, NoDecode
 
+# Display name -> (Settings attribute holding its credential, or None for a free
+# source that needs no key, probe zone for a live health check, or None when no
+# single zone can represent it, e.g. Electricity Maps' global fallback). Single
+# source of truth for both Settings.configured_providers and /status/sources
+PROVIDER_SOURCES: dict[str, tuple[str | None, str | None]] = {
+    "EIA (US grid)": ("eia_api_key", "US-MIDA-PJM"),
+    "GridStatus (US ISOs)": ("grid_status_api_key", "US-CAL-CISO"),
+    "ENTSO-E (Europe)": ("entsoe_token", "DE"),
+    "Electricity Maps (global)": ("electricity_maps_api_key", None),
+    "UK Carbon Intensity": (None, "GB"),
+    "AEMO (Australia)": (None, "AU-NSW"),
+    "Grid India": (None, "IN-NO"),
+    "ONS Brazil": (None, "BR-SE"),
+    "Eskom (South Africa)": (None, "ZA"),
+    "Canada": (None, "CA-ON"),
+    "Taiwan": (None, "TW"),
+    "Open-Meteo (weather)": (None, "DE"),
+}
+
 
 class Settings(BaseSettings):
     model_config = {"env_prefix": "CARBON_LENS_"}
@@ -95,16 +114,8 @@ class Settings(BaseSettings):
     def configured_providers(self) -> dict[str, bool]:
         """Return which data providers have credentials configured."""
         return {
-            "EIA (US grid)": bool(self.eia_api_key),
-            "GridStatus (US ISOs)": bool(self.grid_status_api_key),
-            "ENTSO-E (Europe)": bool(self.entsoe_token),
-            "Electricity Maps (global)": bool(self.electricity_maps_api_key),
-            "UK Carbon Intensity": True,  # No key needed
-            "AEMO (Australia)": True,  # No key needed
-            "Grid India": True,  # Heuristic, no key
-            "ONS Brazil": True,  # Heuristic, no key
-            "Eskom (South Africa)": True,  # Heuristic, no key
-            "Open-Meteo (weather)": True,  # Free, no key
+            name: bool(getattr(self, credential)) if credential else True
+            for name, (credential, _probe_zone) in PROVIDER_SOURCES.items()
         }
 
     @property

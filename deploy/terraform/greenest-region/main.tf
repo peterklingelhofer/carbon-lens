@@ -1,7 +1,7 @@
 # Pick the greenest cloud region to deploy into, at `terraform apply` time, from
 # CarbonLens' /carbon/siting (greenest region by TYPICAL carbon intensity: the
 # right basis for an always-on deployment). The http data source is read during
-# plan, so the outputs are known early enough to configure a cloud provider's region.
+# plan, so the outputs are known early enough to configure a cloud provider's region
 
 locals {
   query = join("&", compact([

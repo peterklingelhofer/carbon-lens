@@ -1,18 +1,17 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { API_BASE, api } from "../api/client";
-import type { CarbonIntensity, RouteResponse } from "../api/types";
+import { useRegions } from "../api/snapshot";
 import { InfoTip } from "../components/InfoTip";
 import { StatCard } from "../components/StatCard";
 import { TableHeadCell } from "../components/TableHeadCell";
 import { EMISSIONS_TIP, GRID_ZONE_TIP, SOURCE_TIP, TABLE_RENEWABLE_TIP } from "../copy";
 import { mutationErrorMessage } from "../lib/format";
 import { intensityVarColor } from "../lib/intensity";
-import { card, inputStyle, labelStyle, sectionStyle, td } from "../styles";
+import { HYPERSCALERS } from "../lib/providers";
+import { card, inputStyle, labelStyle, primaryButton, sectionStyle, td } from "../styles";
 
 const section = sectionStyle(1100);
-
-const PROVIDERS = ["aws", "gcp", "azure"] as const;
 
 const POPULAR_REGIONS: Record<string, string[]> = {
   aws: ["us-east-1", "us-west-2", "eu-west-1", "eu-central-1", "ap-southeast-1", "ca-central-1"],
@@ -30,8 +29,6 @@ const POPULAR_REGIONS: Record<string, string[]> = {
 export function ApiExplorer() {
   const [provider, setProvider] = useState("aws");
   const [region, setRegion] = useState("us-east-1");
-  const [intensityResult, setIntensityResult] = useState<CarbonIntensity | null>(null);
-  const [routeResult, setRouteResult] = useState<RouteResponse | null>(null);
   const [activeTab, setActiveTab] = useState<"intensity" | "route" | "batch">("intensity");
   const TAB_KEYS = ["intensity", "route", "batch"] as const;
   const handleTabKeyDown = (e: React.KeyboardEvent, tabKey: (typeof TAB_KEYS)[number]) => {
@@ -48,32 +45,21 @@ export function ApiExplorer() {
     document.getElementById(`api-tab-${nextKey}`)?.focus();
   };
 
-  const { data: allRegions } = useQuery({
-    queryKey: ["regions"],
-    queryFn: () => api.regions(),
-  });
+  const { data: allRegions } = useRegions();
 
   const intensityMutation = useMutation({
     mutationFn: () => api.carbonIntensity(provider, region),
-    onSuccess: (data) => {
-      setIntensityResult(data);
-      setRouteResult(null);
-    },
   });
 
   const routeMutation = useMutation({
     mutationFn: () =>
       api.route({
         constraints: {
-          providers: ["aws", "gcp", "azure"],
+          providers: HYPERSCALERS,
           carbon_weight: 1.0,
           cost_weight: 0.0,
         },
       }),
-    onSuccess: (data) => {
-      setRouteResult(data);
-      setIntensityResult(null);
-    },
   });
 
   const batchMutation = useMutation({
@@ -87,6 +73,9 @@ export function ApiExplorer() {
         { provider: "azure", region: "eastus" },
       ]),
   });
+
+  const intensityResult = intensityMutation.data;
+  const routeResult = routeMutation.data;
 
   return (
     <div style={section}>
@@ -210,7 +199,7 @@ export function ApiExplorer() {
                 }}
                 style={inputStyle}
               >
-                {PROVIDERS.map((p) => (
+                {HYPERSCALERS.map((p) => (
                   <option key={p} value={p}>
                     {p.toUpperCase()}
                   </option>
@@ -254,7 +243,9 @@ export function ApiExplorer() {
 
           <button
             type="button"
-            onClick={() => intensityMutation.mutate()}
+            onClick={() =>
+              intensityMutation.mutate(undefined, { onSuccess: () => routeMutation.reset() })
+            }
             disabled={intensityMutation.isPending}
             style={buttonStyle(intensityMutation.isPending)}
           >
@@ -299,7 +290,9 @@ export function ApiExplorer() {
 
           <button
             type="button"
-            onClick={() => routeMutation.mutate()}
+            onClick={() =>
+              routeMutation.mutate(undefined, { onSuccess: () => intensityMutation.reset() })
+            }
             disabled={routeMutation.isPending}
             style={buttonStyle(routeMutation.isPending)}
           >
@@ -610,13 +603,5 @@ const codeBlockStyle: React.CSSProperties = {
 };
 
 function buttonStyle(pending: boolean): React.CSSProperties {
-  return {
-    padding: "0.75rem 2rem",
-    borderRadius: 8,
-    border: "none",
-    background: "var(--btn-green)",
-    color: "white",
-    fontWeight: 500,
-    cursor: pending ? "wait" : "pointer",
-  };
+  return { ...primaryButton, cursor: pending ? "wait" : "pointer" };
 }

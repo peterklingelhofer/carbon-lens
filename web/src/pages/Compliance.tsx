@@ -4,10 +4,12 @@ import { API_BASE, api } from "../api/client";
 import type { ComplianceReport } from "../api/types";
 import { InfoTip } from "../components/InfoTip";
 import { StatCard } from "../components/StatCard";
+import { TableHeadCell } from "../components/TableHeadCell";
 import { DATA_QUALITY_TIP_RICH } from "../copy";
-import { card, providerChip, sectionStyle } from "../styles";
+import { card, primaryButton, providerChip, sectionStyle } from "../styles";
 
 const section = sectionStyle(1100);
+const ORG_ID = "demo";
 
 // A ready-to-edit example matching the exact columns the upload expects, so users can
 // shape their own spreadsheet to match instead of guessing. Rows mirror the demo data.
@@ -33,14 +35,13 @@ function downloadSampleCsv() {
 
 export function Compliance() {
   const queryClient = useQueryClient();
-  const [orgId] = useState("demo");
   const [orgName] = useState("Demo Organization");
   const [activeReport, setActiveReport] = useState<ComplianceReport | null>(null);
   const [csvFile, setCsvFile] = useState<File | null>(null);
 
   const { data: reports } = useQuery({
-    queryKey: ["compliance-reports", orgId],
-    queryFn: () => api.compliance.listReports(orgId),
+    queryKey: ["compliance-reports", ORG_ID],
+    queryFn: () => api.compliance.listReports(ORG_ID),
   });
 
   // Kept as their own mutations (rather than folded into demoPipeline below) because
@@ -48,7 +49,7 @@ export function Compliance() {
   const ingestMutation = useMutation({
     mutationFn: () =>
       api.compliance.ingestUsage({
-        org_id: orgId,
+        org_id: ORG_ID,
         provider: "mock",
         period_start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
         period_end: new Date().toISOString(),
@@ -56,13 +57,13 @@ export function Compliance() {
   });
 
   const calculateMutation = useMutation({
-    mutationFn: () => api.compliance.calculate(orgId),
+    mutationFn: () => api.compliance.calculate(ORG_ID),
   });
 
   // Loading a past report from history - separate from demoPipeline/csvPipeline so
   // an error here (e.g. cold-start timeout) doesn't get attributed to either
   const getReportMutation = useMutation({
-    mutationFn: (reportId: string) => api.compliance.getReport(reportId, orgId),
+    mutationFn: (reportId: string) => api.compliance.getReport(reportId, ORG_ID),
     onSuccess: (full) => setActiveReport(full),
   });
 
@@ -74,7 +75,7 @@ export function Compliance() {
       await ingestMutation.mutateAsync();
       await calculateMutation.mutateAsync();
       return api.compliance.generateReport({
-        org_id: orgId,
+        org_id: ORG_ID,
         org_name: orgName,
         report_name: `CSRD Report - ${new Date().toISOString().slice(0, 10)}`,
       });
@@ -90,10 +91,10 @@ export function Compliance() {
   const csvPipeline = useMutation({
     mutationFn: async () => {
       if (!csvFile) throw new Error("Choose a CSV file first.");
-      await api.compliance.uploadCsv(orgId, csvFile);
-      await api.compliance.calculate(orgId);
+      await api.compliance.uploadCsv(ORG_ID, csvFile);
+      await api.compliance.calculate(ORG_ID);
       return api.compliance.generateReport({
-        org_id: orgId,
+        org_id: ORG_ID,
         org_name: orgName,
         report_name: `Usage CSV Report - ${new Date().toISOString().slice(0, 10)}`,
       });
@@ -146,12 +147,7 @@ export function Compliance() {
             onClick={() => demoPipeline.mutate()}
             disabled={demoPipeline.isPending || csvPipeline.isPending}
             style={{
-              padding: "0.75rem 2rem",
-              borderRadius: 8,
-              border: "none",
-              background: "var(--btn-green)",
-              color: "white",
-              fontWeight: 500,
+              ...primaryButton,
               cursor: demoPipeline.isPending ? "wait" : "pointer",
               opacity: demoPipeline.isPending ? 0.7 : 1,
             }}
@@ -279,12 +275,8 @@ export function Compliance() {
             onClick={() => csvPipeline.mutate()}
             disabled={!csvFile || csvPipeline.isPending || demoPipeline.isPending}
             style={{
+              ...primaryButton,
               padding: "0.6rem 1.5rem",
-              borderRadius: 8,
-              border: "none",
-              background: "var(--btn-green)",
-              color: "white",
-              fontWeight: 500,
               cursor: !csvFile || csvPipeline.isPending ? "not-allowed" : "pointer",
               opacity: !csvFile || csvPipeline.isPending || demoPipeline.isPending ? 0.6 : 1,
             }}
@@ -557,9 +549,9 @@ function ReportView({ report }: { report: ComplianceReport }) {
         >
           <thead>
             <tr style={{ borderBottom: "2px solid var(--gray-200)" }}>
-              <th style={{ textAlign: "left", padding: "0.5rem" }}>Scope</th>
-              <th style={{ textAlign: "left", padding: "0.5rem" }}>Method</th>
-              <th style={{ textAlign: "right", padding: "0.5rem" }}>kgCO₂e</th>
+              <TableHeadCell label="Scope" />
+              <TableHeadCell label="Method" />
+              <TableHeadCell label="kgCO₂e" align="right" />
             </tr>
           </thead>
           <tbody>

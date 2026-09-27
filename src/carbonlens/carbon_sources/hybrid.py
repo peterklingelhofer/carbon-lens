@@ -7,19 +7,19 @@ provider covering a zone wins, with Mock as the static last resort.
 import asyncio
 import logging
 
-from carbonlens.carbon_sources.aemo import AEMO_ZONES, AEMOCarbonSource
+from carbonlens.carbon_sources.aemo import AEMOCarbonSource
 from carbonlens.carbon_sources.base import CarbonDataSource
-from carbonlens.carbon_sources.canada import CANADA_ZONES, CanadaCarbonSource
-from carbonlens.carbon_sources.eia import _GRID_ZONE_TO_EIA, EIACarbonSource
-from carbonlens.carbon_sources.entsoe import ENTSOE_ZONES, ENTSOECarbonSource
-from carbonlens.carbon_sources.eskom import ESKOM_ZONES, EskomCarbonSource
-from carbonlens.carbon_sources.grid_india import INDIA_ZONES, GridIndiaCarbonSource
-from carbonlens.carbon_sources.gridstatus import _GRID_ZONE_TO_ISO, GridStatusCarbonSource
+from carbonlens.carbon_sources.canada import CanadaCarbonSource
+from carbonlens.carbon_sources.eia import EIACarbonSource
+from carbonlens.carbon_sources.entsoe import ENTSOECarbonSource
+from carbonlens.carbon_sources.eskom import EskomCarbonSource
+from carbonlens.carbon_sources.grid_india import GridIndiaCarbonSource
+from carbonlens.carbon_sources.gridstatus import GridStatusCarbonSource
 from carbonlens.carbon_sources.mock import MockCarbonSource
-from carbonlens.carbon_sources.ons_brazil import BRAZIL_ZONES, ONSBrazilCarbonSource
-from carbonlens.carbon_sources.open_meteo import ZONE_COORDINATES, OpenMeteoCarbonSource
-from carbonlens.carbon_sources.taiwan import TAIWAN_ZONES, TaiwanCarbonSource
-from carbonlens.carbon_sources.uk import UK_ZONES, UKCarbonSource
+from carbonlens.carbon_sources.ons_brazil import ONSBrazilCarbonSource
+from carbonlens.carbon_sources.open_meteo import OpenMeteoCarbonSource
+from carbonlens.carbon_sources.taiwan import TaiwanCarbonSource
+from carbonlens.carbon_sources.uk import UKCarbonSource
 from carbonlens.models.carbon import CarbonIntensity
 
 logger = logging.getLogger(__name__)
@@ -56,42 +56,43 @@ class HybridCarbonSource:
         # Precompute the provider chain once (immutable after init)
         self._chain = self._build_provider_chain()
 
-    def _build_provider_chain(self) -> list[tuple[str, CarbonDataSource, set[str]]]:
+    def can_handle(self, grid_zone: str) -> bool:
+        # Always resolves: falls back to the static mock when nothing else covers it
+        return True
+
+    def _build_provider_chain(self) -> list[tuple[str, CarbonDataSource]]:
         """Build the ordered provider chain once at init time.
 
-        Providers with ``None`` instances (missing API key) are skipped.
-        Electricity Maps accepts any zone so uses an empty sentinel set handled
-        specially by callers.
+        Providers with ``None`` instances (missing API key) are skipped. Each
+        provider's own ``can_handle`` decides zone coverage.
         """
-        chain: list[tuple[str, CarbonDataSource, set[str]]] = [
-            ("UK", self._uk, UK_ZONES),
+        chain: list[tuple[str, CarbonDataSource]] = [
+            ("UK", self._uk),
         ]
         if self._eia:
-            chain.append(("EIA", self._eia, set(_GRID_ZONE_TO_EIA.keys())))
+            chain.append(("EIA", self._eia))
         chain.extend(
             [
-                ("AEMO", self._aemo, AEMO_ZONES),
-                ("Canada", self._canada, CANADA_ZONES),
-                ("Taiwan", self._taiwan, TAIWAN_ZONES),
-                ("Grid India", self._grid_india, INDIA_ZONES),
-                ("ONS Brazil", self._ons_brazil, BRAZIL_ZONES),
-                ("Eskom", self._eskom, ESKOM_ZONES),
+                ("AEMO", self._aemo),
+                ("Canada", self._canada),
+                ("Taiwan", self._taiwan),
+                ("Grid India", self._grid_india),
+                ("ONS Brazil", self._ons_brazil),
+                ("Eskom", self._eskom),
             ]
         )
         if self._gridstatus:
-            chain.append(("GridStatus", self._gridstatus, set(_GRID_ZONE_TO_ISO.keys())))
+            chain.append(("GridStatus", self._gridstatus))
         if self._entsoe:
-            chain.append(("ENTSO-E", self._entsoe, ENTSOE_ZONES))
-        chain.append(("Open-Meteo", self._open_meteo, set(ZONE_COORDINATES.keys())))
+            chain.append(("ENTSO-E", self._entsoe))
+        chain.append(("Open-Meteo", self._open_meteo))
         if self._electricity_maps:
-            # Electricity Maps is a global fallback: accepts any zone
-            chain.append(("Electricity Maps", self._electricity_maps, set()))
+            chain.append(("Electricity Maps", self._electricity_maps))
         return chain
 
     async def get_carbon_intensity(self, grid_zone: str) -> CarbonIntensity:
-        for name, provider, supported_zones in self._chain:
-            # Empty supported_zones means "accepts any zone" (e.g. Electricity Maps)
-            if supported_zones and grid_zone not in supported_zones:
+        for name, provider in self._chain:
+            if not provider.can_handle(grid_zone):
                 continue
             try:
                 result = await provider.get_carbon_intensity(grid_zone)
@@ -123,12 +124,8 @@ class HybridCarbonSource:
 
         # Build (priority, name, coroutine) for each provider that has matching zones
         tasks: list[tuple[int, str, asyncio.Task]] = []
-        for priority, (name, provider, supported_zones) in enumerate(self._chain):
-            batch_zones = (
-                list(zone_set)
-                if not supported_zones
-                else [z for z in zone_set if z in supported_zones]
-            )
+        for priority, (name, provider) in enumerate(self._chain):
+            batch_zones = [z for z in zone_set if provider.can_handle(z)]
             if not batch_zones:
                 continue
             coro = provider.get_carbon_intensity_batch(batch_zones)

@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 
 from carbonlens.carbon_sources.base import SingleZoneCarbonSource
 from carbonlens.carbon_sources.http_pool import shared_client
+from carbonlens.engine.recurring import parse_utc
 from carbonlens.models.carbon import CarbonIntensity
 
 API_URL = "https://api.open-meteo.com/v1/forecast"
@@ -90,14 +91,16 @@ _BASELINE_INTENSITY: dict[str, float] = {
 }
 
 
+_weather_client = shared_client(timeout=10.0)
+
+
 async def fetch_weather(lat: float, lon: float) -> tuple[float, float]:
     """Current wind speed (km/h) and shortwave solar irradiance (W/m2) at a point.
 
     Returns ``(wind_speed_kmh, solar_irradiance_w_m2)``. These are the physical
     drivers behind a grid's renewable output, surfaced directly so a region can
     show *why* its intensity is what it is. Free Open-Meteo, no key."""
-    client = shared_client(timeout=10.0)
-    resp = await client.get(
+    resp = await _weather_client.get(
         API_URL,
         params={
             "latitude": lat,
@@ -203,12 +206,9 @@ class OpenMeteoForecastSource:
         now = datetime.now(UTC).replace(minute=0, second=0, microsecond=0)
         curve: dict[int, float] = {}
         for i, t in enumerate(times):
-            try:
-                ts = datetime.fromisoformat(t)
-            except (TypeError, ValueError):
+            ts = parse_utc(t)
+            if ts is None:
                 continue
-            if ts.tzinfo is None:
-                ts = ts.replace(tzinfo=UTC)
             offset = round((ts - now).total_seconds() / 3600)
             if 0 <= offset <= max_hours:
                 r = radiation[i] if i < len(radiation) else 0

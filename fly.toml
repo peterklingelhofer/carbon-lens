@@ -1,7 +1,7 @@
 # Fly.io deployment config
 # Deploy: fly launch --copy-config --yes
 # Set secrets: fly secrets set CARBON_LENS_EIA_API_KEY=xxx ...
-# Attach Postgres: fly postgres create && fly postgres attach
+# Attach Postgres: fly postgres create && fly postgres attach --variable-name CARBON_LENS_DATABASE_URL
 
 app = "carbon-mesh"
 # Seattle sits on the BPA / Pacific Northwest hydro grid (~90 gCO2/kWh) rather
@@ -13,16 +13,14 @@ primary_region = "sea"
   dockerfile = "Dockerfile"
 
 [env]
-  CARBON_LENS_HOST = "0.0.0.0"
-  CARBON_LENS_PORT = "8000"
   CARBON_LENS_USE_DATABASE = "false"
   CARBON_LENS_LOG_FORMAT = "json"
   # Set to "true" and issue API keys via the CLI before opening to the public
   CARBON_LENS_API_KEY_REQUIRED = "false"
   CARBON_LENS_CARBON_SOURCE = "hybrid"
-  # Allow the Cloudflare Pages frontend to call this API from the browser.
-  # Update if your Pages project name differs from "carbon-mesh".
-  CARBON_LENS_CORS_ORIGINS = '["https://carbon-mesh.pages.dev"]'
+  # Allow the Cloudflare Worker frontend to call this API from the browser
+  # Update if your Worker's hostname differs from "carbonlens.peterklingelhofer.workers.dev"
+  CARBON_LENS_CORS_ORIGINS = '["https://carbonlens.peterklingelhofer.workers.dev"]'
 
 [http_service]
   internal_port = 8000

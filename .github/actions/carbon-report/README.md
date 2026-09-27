@@ -2,7 +2,7 @@
 
 Surface the **State of Clean Compute** report in your own CI: as a job summary, and
 optionally a PR comment. The report (greenest regions to deploy, where carbon-aware
-scheduling helps most) is published every ~30 min from real grid history, so this is
+scheduling helps most) is published hourly from real grid history, so this is
 a zero-cost read.
 
 ## Usage

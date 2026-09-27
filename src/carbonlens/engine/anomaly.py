@@ -10,7 +10,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from statistics import median
 
-from carbonlens.engine.recurring import _parse_utc
+from carbonlens.engine.recurring import parse_utc
 
 _MIN_HOUR_SAMPLES = 3
 _MIN_RECENT_SAMPLES = 6
@@ -43,7 +43,7 @@ def compute_anomaly(current: float, points: list[dict], now: datetime) -> dict:
         if c is None or not t:
             continue
         all_values.append(c)
-        ts = _parse_utc(t)
+        ts = parse_utc(t)
         if ts is None:
             continue
         if ts.hour == target_hour:

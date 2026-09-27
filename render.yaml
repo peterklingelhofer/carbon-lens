@@ -1,10 +1,10 @@
 # Render Blueprint: one-click deploy at https://render.com/deploy
-# Click "New Blueprint Instance" and point to this repo.
+# Click "New Blueprint Instance" and point to this repo
 
 # Oregon is Render's greenest free region (Pacific Northwest / BPA hydro grid,
 # ~90-150 gCO2/kWh) vs Ohio/Virginia (~360-400). Pin it explicitly so the
 # service can't silently drift onto a dirtier default. A carbon tool should
-# run on a clean grid, and Oregon is free. Services and DB must share a region.
+# run on a clean grid, and Oregon is free. Services and DB must share a region
 databases:
   - name: carbon-mesh-db
     plan: free
@@ -31,10 +31,6 @@ services:
           property: connectionString
         # Render provides postgres://; we need postgresql+asyncpg://
         # The app handles this transformation at startup
-      - key: CARBON_LENS_HOST
-        value: "0.0.0.0"
-      - key: CARBON_LENS_PORT
-        value: "8000"
       - key: CARBON_LENS_LOG_FORMAT
         value: json
       - key: CARBON_LENS_CORS_ORIGINS

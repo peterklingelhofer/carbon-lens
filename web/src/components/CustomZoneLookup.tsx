@@ -1,10 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "../api/client";
 import {
   gridZonesFromSnapshot,
-  snapshotEnabled,
   useSnapshot,
+  useSnapshotOrApi,
   zoneIntensityFromSnapshot,
 } from "../api/snapshot";
 import { card, muted } from "../styles";
@@ -19,26 +18,23 @@ export function CustomZoneLookup() {
   const { data: snapshot } = useSnapshot();
   const [zone, setZone] = useState("DE");
 
-  const { data: apiZones } = useQuery({
-    queryKey: ["carbon-zones"],
-    queryFn: () => api.carbonZones(),
-    staleTime: 60 * 60_000,
-    enabled: !snapshotEnabled,
-  });
+  const { data: zones } = useSnapshotOrApi(
+    snapshot ? gridZonesFromSnapshot(snapshot) : undefined,
+    ["carbon-zones"],
+    () => api.carbonZones(),
+    { staleTime: 60 * 60_000 },
+  );
   const {
-    data: apiCi,
+    data: ci,
     isLoading,
     isError,
-  } = useQuery({
-    queryKey: ["carbon-zone", zone],
-    queryFn: () => api.carbonZone(zone),
-    enabled: !snapshotEnabled && !!zone,
-    staleTime: 5 * 60_000,
-    retry: 1,
-  });
+  } = useSnapshotOrApi(
+    snapshot ? zoneIntensityFromSnapshot(snapshot, zone) : undefined,
+    ["carbon-zone", zone],
+    () => api.carbonZone(zone),
+    { staleTime: 5 * 60_000, retry: 1 },
+  );
 
-  const zones = snapshot ? gridZonesFromSnapshot(snapshot) : apiZones;
-  const ci = snapshot ? zoneIntensityFromSnapshot(snapshot, zone) : apiCi;
   const selected = zones?.find((z) => z.grid_zone === zone);
 
   return (

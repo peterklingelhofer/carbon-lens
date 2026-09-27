@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import { useSnapshot } from "../api/snapshot";
 import { InfoTip } from "../components/InfoTip";
 import { RegionSpread } from "../components/RegionSpread";
-import { card as baseCard, sectionStyle } from "../styles";
+import { TableHeadCell } from "../components/TableHeadCell";
+import { card as baseCard, ctaLink, sectionStyle } from "../styles";
 
 const section: React.CSSProperties = { ...sectionStyle(), padding: "3rem 2rem" };
 const card: React.CSSProperties = { ...baseCard, padding: "2rem" };
@@ -383,10 +384,10 @@ export function Landing() {
           >
             <thead>
               <tr style={{ borderBottom: "2px solid var(--gray-200)" }}>
-                <th style={{ textAlign: "left", padding: "0.5rem" }}>Source</th>
-                <th style={{ textAlign: "left", padding: "0.5rem" }}>Coverage</th>
-                <th style={{ textAlign: "left", padding: "0.5rem" }}>Type</th>
-                <th style={{ textAlign: "left", padding: "0.5rem" }}>On this site</th>
+                <TableHeadCell label="Source" />
+                <TableHeadCell label="Coverage" />
+                <TableHeadCell label="Type" />
+                <TableHeadCell label="On this site" />
               </tr>
             </thead>
             <tbody>
@@ -432,19 +433,7 @@ export function Landing() {
 
         {/* CTA */}
         <div style={{ textAlign: "center", margin: "3rem 0 1rem" }}>
-          <Link
-            to="/"
-            style={{
-              display: "inline-block",
-              padding: "0.85rem 2.5rem",
-              borderRadius: 8,
-              background: "var(--btn-green)",
-              color: "white",
-              fontWeight: 500,
-              fontSize: "1.1rem",
-              textDecoration: "none",
-            }}
-          >
+          <Link to="/" style={{ ...ctaLink, fontSize: "1.1rem" }}>
             See it live on the globe
           </Link>
           <p
