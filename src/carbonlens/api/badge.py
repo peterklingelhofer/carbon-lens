@@ -1,8 +1,8 @@
 """Live carbon-intensity status badges (SVG), for embedding in READMEs.
 
 Shields-style two-segment SVG: a "carbon" label and the region's current intensity,
-coloured green->red. Backed by the cached/snapshot source so rendering a badge never
-hits upstream quotas. Note: GitHub serves README images through its camo proxy,
+coloured from green to red. Backed by the cached/snapshot source so rendering a badge
+never hits upstream quotas. GitHub serves README images through its camo proxy,
 which caches aggressively, so "live" means within camo's cache window.
 """
 
@@ -21,7 +21,7 @@ _CACHE_CONTROL = "public, max-age=600, s-maxage=600"
 
 
 def _seg_width(text: str) -> int:
-    # Verdana ~6.5px/char at 11px, plus 10px padding. Good enough for layout.
+    # Verdana ~6.5px/char at 11px, plus 10px padding. Good enough for layout
     return round(len(text) * 6.5) + 10
 
 

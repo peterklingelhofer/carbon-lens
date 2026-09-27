@@ -12,8 +12,8 @@ const section = sectionStyle();
 
 // The free Render server sleeps when idle and takes ~50s to wake. The
 // requests are same-origin (proxied by the Worker), so they never fail to CORS
-// or get blocked - they just wait while the server boots. Retry patiently so a
-// cold start resolves instead of giving up.
+// or get blocked. They wait while the server boots. Retry patiently so a
+// cold start resolves instead of giving up
 const COLD_START_RETRY = {
   retry: 24,
   retryDelay: () => 6000,
@@ -22,7 +22,7 @@ const COLD_START_RETRY = {
 
 // The dot conveys state by colour, so where there's no adjacent text saying the
 // same thing (the provider lists), pass `label` to add a screen-reader-only word
-// like "configured" / "not configured". Without it the dot is decorative.
+// like "configured" / "not configured". Without it the dot is decorative
 function StatusDot({ ok, label }: { ok: boolean; label?: string }) {
   return (
     <>
@@ -115,8 +115,8 @@ export function Settings() {
       <h1 style={{ marginBottom: "0.5rem" }}>Status</h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
         Live system health, data freshness, and the sources behind every reading. The public API is
-        free and open - no key required - and rate-limited to keep it responsive for everyone.
-        Browse every endpoint in the{" "}
+        free with no key required, and rate-limited to keep it responsive for everyone. Browse every
+        endpoint in the{" "}
         <a
           href={`${API_BASE}/docs`}
           target="_blank"
@@ -127,12 +127,12 @@ export function Settings() {
             textDecoration: "underline",
           }}
         >
-          interactive Swagger docs ↗
+          interactive Swagger docs
         </a>
         .
       </p>
 
-      {/* System Status - live from the API (same-origin via the Worker proxy) */}
+      {/* System Status: live from the API (same-origin via the Worker proxy) */}
       <div style={card}>
         <h2 style={{ margin: "0 0 1rem", fontSize: "1.1rem" }}>System Status</h2>
         {health ? (
@@ -188,7 +188,7 @@ export function Settings() {
                 Carbon Source
                 <InfoTip
                   label="carbon source"
-                  text="Which data-source mode the API is running. 'hybrid' cascades through all providers (live feeds first, then estimates) - the normal setting."
+                  text="Which data-source mode the API is running. 'hybrid' cascades through all providers (live feeds first, then estimates) and is the normal setting."
                 />
               </div>
               <div style={{ fontWeight: 500 }}>{health.carbon_source}</div>
@@ -201,7 +201,7 @@ export function Settings() {
         )}
       </div>
 
-      {/* Live data - from the published snapshot (GitHub CDN), always available */}
+      {/* Live data: from the published snapshot (GitHub CDN), always available */}
       <div style={card}>
         <h2
           style={{
@@ -248,7 +248,7 @@ export function Settings() {
         )}
       </div>
 
-      {/* Provider status - live from the API */}
+      {/* Provider status: live from the API */}
       <div style={card}>
         <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.1rem" }}>
           Carbon Data Providers
@@ -327,8 +327,8 @@ export function Settings() {
             marginBottom: "1rem",
           }}
         >
-          All data providers are free. A self-hosted deployment adds keys to its <code>.env</code>{" "}
-          file or platform dashboard:
+          The keyed providers below are free except where marked paid. A self-hosted deployment adds
+          keys to its <code>.env</code> file or platform dashboard:
         </p>
         <table
           className="settings-table"
@@ -362,7 +362,7 @@ export function Settings() {
               },
               {
                 name: "ENTSO-E",
-                coverage: "Europe (35 countries)",
+                coverage: "Europe (36+ countries)",
                 env: "CARBON_LENS_ENTSOE_TOKEN",
                 url: "https://transparency.entsoe.eu/",
               },
@@ -398,7 +398,7 @@ export function Settings() {
                       textDecoration: "none",
                     }}
                   >
-                    Get free key
+                    Get a key
                   </a>
                 </td>
               </tr>

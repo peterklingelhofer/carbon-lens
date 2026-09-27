@@ -122,7 +122,7 @@ async def refresh_carbon_metrics() -> None:
         mapper = get_grid_mapper()
         source = _maybe_snapshot(get_carbon_source())
 
-        # One representative region per zone (multiple regions can share a zone).
+        # One representative region per zone (multiple regions can share a zone)
         all_regions = [{"provider": r.provider, "region": r.region} for r in mapper.list_regions()]
         zone_to_region = {
             zone: (regions[0]["provider"], regions[0]["region"])

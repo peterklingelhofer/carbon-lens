@@ -13,7 +13,7 @@ from carbonlens.carbon_sources.uk import (
     renewable_pct_from_mix,
 )
 
-# The shape NESO's /regional endpoint actually returns: forecast and index only.
+# The shape NESO's /regional endpoint actually returns: forecast and index only
 REGIONAL = {
     "regionid": 1,
     "shortname": "North Scotland",

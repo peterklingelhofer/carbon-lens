@@ -36,7 +36,7 @@ export function Methodology() {
         <h2 style={h2}>What we measure</h2>
         <p style={p}>
           <strong>Carbon intensity</strong> is the grams of CO₂-equivalent emitted per kilowatt-hour
-          of electricity on a given grid right now (gCO₂/kWh) - a <em>rate</em> per kWh. It's a
+          of electricity on a given grid right now (gCO₂/kWh), a <em>rate</em> per kWh. It's a
           <strong> location-based</strong> figure: the average intensity of the physical grid a
           region draws from, regardless of any renewable certificates bought against it. Lower is
           cleaner.
@@ -80,11 +80,12 @@ export function Methodology() {
       <div style={{ ...card, marginTop: "1.5rem" }}>
         <h2 style={h2}>Renewable % isn't the same as "clean"</h2>
         <p style={p}>
-          "Renewable %" counts wind, solar, and hydro - but <strong>not nuclear</strong>. So a
-          low-carbon nuclear/hydro grid (France, Sweden, Ontario) can show a modest renewable %
-          while emitting little CO₂, and a grid can be high-renewable yet still dirty when the rest
-          is coal. <strong>Carbon intensity is the rigorous "how clean" measure</strong> - it's why
-          the globe colours by it and the region table sorts by it by default. Treat renewable % as
+          "Renewable %" counts wind, solar and hydro. <strong>Nuclear's</strong> low emissions show
+          up in carbon intensity instead, so a low-carbon nuclear/hydro grid (France, Sweden) can
+          show a modest renewable % while emitting little CO₂, and a grid can be high-renewable yet
+          still dirty when the rest is coal.{" "}
+          <strong>Carbon intensity is the rigorous "how clean" measure</strong>, which is why the
+          globe colours by it and the region table sorts by it by default. Treat renewable % as
           context.
         </p>
       </div>
@@ -93,8 +94,8 @@ export function Methodology() {
         <h2 style={h2}>Production vs consumption (flow tracing)</h2>
         <p style={{ ...p, margin: 0 }}>
           The headline figure is <strong>production-based</strong>: the intensity of what a zone
-          generates. But grids import and export power, so what a region actually <em>consumes</em>{" "}
-          can be cleaner or dirtier. For the interconnected European grid we also compute a{" "}
+          generates. But grids import and export power, so what a region <em>consumes</em> can be
+          cleaner or dirtier. For the interconnected European grid we also compute a{" "}
           <strong>consumption-based</strong> intensity by flow-tracing imports and exports across
           the network (Tranberg et al.), solving it so every zone's consumption carries the
           intensity of its real import mix. Shown as "consumed ~Xg" on the region table and globe
@@ -107,8 +108,8 @@ export function Methodology() {
         <p style={{ ...p, margin: 0 }}>
           The main number is the <strong>average</strong> intensity of the whole mix. For deciding{" "}
           <em>when to shift load</em>, the <strong>marginal</strong> intensity matters more: what an
-          extra kWh of demand would actually emit, set by the price-setting "marginal" generator
-          (usually the flexible gas peaker). We estimate it from the fuel mix as a clearly-labelled{" "}
+          extra kWh of demand would emit, set by the price-setting "marginal" generator (usually the
+          flexible gas peaker). We estimate it from the fuel mix as a clearly-labelled{" "}
           <strong>heuristic</strong>: the emission factor of the most flexible fossil currently
           running. There's no dispatch model behind it.
         </p>
@@ -130,10 +131,9 @@ export function Methodology() {
         <ul style={{ paddingLeft: "1.2rem", margin: 0 }}>
           <li style={li}>
             The weather-based estimate infers renewables from <em>current</em> solar irradiance and
-            wind only, so it understates steady hydro/nuclear baseload - it can read a near-zero
-            renewable % for a grid that's actually clean. Where a live grid-operator feed exists we
-            use it in preference. A self-hosted copy can switch on further feeds with its own API
-            keys.
+            wind only, so it understates steady hydro/nuclear baseload and can read a near-zero
+            renewable % for a clean grid. Where a live grid-operator feed exists we use it in
+            preference. A self-hosted copy can switch on further feeds with its own API keys.
           </li>
           <li style={li}>
             Integer-looking values don't imply integer accuracy, especially for estimated zones.
@@ -163,10 +163,10 @@ export function Methodology() {
       </div>
 
       <div style={{ ...card, marginTop: "1.5rem" }}>
-        <h2 style={h2}>What this isn't</h2>
+        <h2 style={h2}>What this is for</h2>
         <p style={{ ...p, margin: 0 }}>
-          A free public tool for orientation and first drafts - not assured/audited reporting, and
-          not financial, legal, or compliance advice. Where it estimates, it says so.
+          A free public tool for orientation and first drafts. Assured reporting and professional
+          advice come from your auditor and advisers. Where it estimates, it says so.
         </p>
       </div>
 

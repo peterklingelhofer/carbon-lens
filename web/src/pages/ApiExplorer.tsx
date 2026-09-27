@@ -93,12 +93,12 @@ export function ApiExplorer() {
         />
       </h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "1rem" }}>
-        Try the carbon API by hand. Each query returns the latest reading - live where a
-        grid-operator feed exists, a clearly-labelled estimate otherwise. No key required;
+        Try the carbon API by hand. Each query returns the latest reading: live where a
+        grid-operator feed exists, a clearly-labelled estimate otherwise. No key required, and
         rate-limited to 100 requests/min per IP.
       </p>
       <p style={{ marginBottom: "2rem", fontSize: "0.9rem" }}>
-        Prefer the full reference?{" "}
+        The full reference is in the{" "}
         <a
           href={`${API_BASE}/docs`}
           target="_blank"
@@ -109,10 +109,10 @@ export function ApiExplorer() {
             textDecoration: "underline",
           }}
         >
-          Open the interactive Swagger docs ↗
+          interactive Swagger docs
         </a>{" "}
         <span style={{ color: "var(--gray-500)" }}>
-          (every endpoint, with request/response schemas - also at{" "}
+          (every endpoint with request/response schemas, also at{" "}
           <code style={{ fontSize: "0.8rem" }}>/redoc</code> and{" "}
           <code style={{ fontSize: "0.8rem" }}>/openapi.json</code>)
         </span>

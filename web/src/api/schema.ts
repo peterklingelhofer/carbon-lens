@@ -217,10 +217,10 @@ export interface paths {
         };
         /**
          * Get Methodology
-         * @description How each number is derived, and how honest it is: measured vs estimated.
+         * @description How each number is derived, and whether it's measured or estimated.
          *
          *     A machine-readable transparency contract. The marginal entry reflects this
-         *     deployment's actual config (measured when an operator wired a source, else the
+         *     deployment's running config (measured when an operator wired a source, else the
          *     labelled heuristic).
          */
         get: operations["get_methodology_api_v1_carbon_methodology_get"];
@@ -287,7 +287,7 @@ export interface paths {
         };
         /**
          * Get Carbon Signal
-         * @description One-call traffic-light decision: run a flexible job here now, or wait?
+         * @description One-call run-now-or-wait decision for a flexible job, as a traffic light.
          *
          *     Returns a green/yellow/red state plus, when meaningfully cleaner power is
          *     coming, how many hours until that window. The minimal primitive for the
@@ -645,12 +645,12 @@ export interface paths {
         };
         /**
          * Honesty
-         * @description Machine-readable honesty probe: is the marginal signal measured or heuristic?
+         * @description Machine-readable probe reporting whether the marginal signal is measured or heuristic.
          *
-         *     Cheap and deterministic (no upstream calls), so it is safe as a Kubernetes
+         *     Cheap and deterministic (no upstream calls), so it's safe as a Kubernetes
          *     readinessProbe. With ``require_measured=true`` it returns 503 unless an operator
-         *     has wired a measured marginal source, letting a deployment *enforce* "don't shift
-         *     load on a guess" rather than merely report it.
+         *     has wired a measured marginal source, which lets a deployment fail readiness
+         *     until the marginal signal is measured.
          */
         get: operations["honesty_api_v1_healthz_honesty_get"];
         put?: never;
@@ -921,7 +921,7 @@ export interface paths {
          * Start Monitor
          * @description Start the background SLA monitor for an organization's SLAs.
          *
-         *     Note: the in-process monitor only runs while the API is awake. For durable,
+         *     The in-process monitor runs only while the API is awake. For durable,
          *     scheduled checking on a scale-to-zero host, use POST /monitor/run from a cron.
          */
         post: operations["start_monitor_api_v1_sla_monitor_start_post"];
@@ -1351,7 +1351,7 @@ export interface components {
         CarbonForecast: {
             /**
              * Clean Surplus Hours
-             * @description Hour offsets (0 = now) projected to be clean surplus: renewables dominant and very low carbon, so extra load likely soaks up power that would otherwise be curtailed. The highest-value windows to shift flexible load into. A heuristic from the projected mix. Curtailment isn't measured.
+             * @description Hour offsets (0 = now) projected to be clean surplus: renewables at 85% or more and intensity at or below 80 gCO2/kWh, so extra load likely soaks up power that would otherwise be curtailed. The highest-value windows to shift flexible load into. A heuristic from the projected mix. Curtailment isn't measured.
              */
             clean_surplus_hours?: number[];
             /**
@@ -1411,7 +1411,7 @@ export interface components {
             carbon_intensity_gco2_kwh: number;
             /**
              * Grid Load Mw
-             * @description Total grid generation/load for the balancing authority in MW (whole grid, all consumers, including load outside the datacenter). None when the source does not report it.
+             * @description Total grid generation/load for the balancing authority in MW (whole grid, all consumers, including load outside the datacenter). None when the source doesn't report it.
              */
             grid_load_mw?: number | null;
             /** Grid Zone */
@@ -1423,7 +1423,7 @@ export interface components {
             marginal_intensity_gco2_kwh?: number | null;
             /**
              * Power Breakdown Mw
-             * @description Live generation breakdown by fuel type in MW (e.g. {"wind": 4200, "natural_gas": 1800, "nuclear": 9500}). Only the fuels actually generating are listed. None for sources without a real fuel mix (heuristic and weather-based estimates).
+             * @description Live generation breakdown by fuel type in MW (e.g. {"wind": 4200, "natural_gas": 1800, "nuclear": 9500}). Only the fuels that are generating are listed. None for sources without a real fuel mix (heuristic and weather-based estimates).
              */
             power_breakdown_mw?: {
                 [key: string]: number;
@@ -1444,7 +1444,7 @@ export interface components {
         CarbonSavingsReport: {
             /**
              * Avg Intensity Reduction Gco2 Kwh
-             * @description Average per-recommendation carbon-intensity reduction vs the baseline. A rate (gCO2/kWh), not a total: per-kWh intensities aren't additive across workloads, and real grams also depend on each job's energy use.
+             * @description Average per-recommendation carbon-intensity reduction vs the baseline, as a rate in gCO2/kWh. Per-kWh intensities aren't additive across workloads, and real grams also depend on each job's energy use.
              */
             avg_intensity_reduction_gco2_kwh: number;
             /** Avg Renewable Percentage */
@@ -1461,9 +1461,9 @@ export interface components {
         };
         /**
          * CarbonSignal
-         * @description A one-call decision primitive: should a flexible job run here now, or wait?
+         * @description A one-call run-now-or-wait decision primitive for a flexible job.
          *
-         *     Designed for the carbon-aware-dispatcher and any script/status page that just
+         *     Designed for the carbon-aware-dispatcher and any script or status page that
          *     wants a traffic-light answer plus the next cleaner window.
          */
         CarbonSignal: {
@@ -1474,7 +1474,7 @@ export interface components {
             advice: string;
             /**
              * Clean Surplus
-             * @description True when the grid looks like clean oversupply now: renewables dominant, very low carbon, clean margin, so extra load likely soaks up power that would otherwise be curtailed. The highest-value moment to run flexible jobs. A heuristic from the fuel mix. Curtailment isn't measured.
+             * @description True when the grid looks like clean oversupply now: renewables at 85% or more, intensity at or below 80 gCO2/kWh and a marginal estimate (when known) at or below 100, so extra load likely soaks up power that would otherwise be curtailed. The highest-value moment to run flexible jobs. A heuristic from the fuel mix. Curtailment isn't measured.
              * @default false
              */
             clean_surplus: boolean;
@@ -1497,7 +1497,7 @@ export interface components {
             marginal_basis: string;
             /**
              * Marginal Intensity Gco2 Kwh
-             * @description Estimated emissions of an extra kWh of demand now: the number that actually responds to shifting load. Heuristic from the fuel mix, null when no live fuel mix is available.
+             * @description Estimated emissions of an extra kWh of demand now: the number that responds to shifting load. Heuristic from the fuel mix, null when no live fuel mix is available.
              */
             marginal_intensity_gco2_kwh?: number | null;
             /**
@@ -2125,10 +2125,10 @@ export interface components {
         };
         /**
          * Methodology
-         * @description Machine-readable provenance: how each number is derived, and how honest it is.
+         * @description Machine-readable provenance: how each number is derived and whether it's measured.
          *
-         *     The transparency contract, so a user or auditor can see exactly what's measured
-         *     vs estimated, and what the caveats are, without reading the code.
+         *     The transparency contract, so a user or auditor can see what's measured, what's
+         *     estimated and what the caveats are, without reading the code.
          */
         Methodology: {
             /** Fields */
@@ -2161,7 +2161,7 @@ export interface components {
         Provenance: {
             /**
              * Accounting Basis
-             * @description Which quantity this actually is. production_lifecycle = weighted average over the fuel mix using IPCC AR5 lifecycle factors. production_direct = the operator's own direct-combustion intensity, in which renewables and nuclear score 0. consumption_lifecycle = flow-traced, accounting for imports. none = not a grid-mix computation at all. READ THIS BEFORE COMPARING TWO ZONES: a production_direct number is not the same quantity as a production_lifecycle one.
+             * @description Which quantity this is. production_lifecycle = weighted average over the fuel mix using IPCC AR5 lifecycle factors. production_direct = the operator's own direct-combustion intensity, in which renewables and nuclear score 0. consumption_lifecycle = flow-traced, accounting for imports. none = not a grid-mix computation at all. Check it before comparing two zones: a production_direct number and a production_lifecycle one measure different quantities.
              */
             accounting_basis: string;
             /**
@@ -2201,7 +2201,7 @@ export interface components {
             source: string;
             /**
              * Source Class
-             * @description live (a real grid-operator response) | modeled (a curve or fixed estimate, no live feed) | estimated (inferred from something that is not generation data) | mock (a labelled fixture)
+             * @description live (a real grid-operator response) | modeled (a curve or fixed estimate, no live feed) | estimated (inferred from something other than generation data) | mock (a labelled fixture)
              */
             source_class: string;
         };
@@ -2558,7 +2558,7 @@ export interface components {
             carbon_intensity_gco2_kwh: number;
             /**
              * Clean Surplus
-             * @description True when this slot looks like clean oversupply: renewables dominant, very low carbon, so it's the highest-value time to run (near-zero marginal). Given a bounded ranking edge. A heuristic from the fuel mix. Curtailment isn't measured.
+             * @description True when this slot looks like clean oversupply: renewables at 85% or more and intensity at or below 80 gCO2/kWh, so it's the highest-value time to run (near-zero marginal). Given a bounded ranking edge. A heuristic from the fuel mix. Curtailment isn't measured.
              * @default false
              */
             clean_surplus: boolean;

@@ -1,7 +1,7 @@
 import { PanelLabel } from "./RegionDetail";
 
 // Stable colour + label per normalized fuel key (matches the backend's
-// emission_factors vocabulary). Fuels not listed fall back to a neutral grey.
+// emission_factors vocabulary). Fuels not listed fall back to a neutral grey
 const FUEL_META: Record<string, { label: string; color: string }> = {
   solar: { label: "Solar", color: "#fbbf24" },
   wind: { label: "Wind", color: "#38bdf8" },
@@ -20,7 +20,7 @@ const FUEL_META: Record<string, { label: string; color: string }> = {
 export const fuelMeta = (key: string) => FUEL_META[key] ?? { label: key, color: "#64748b" };
 
 // Live generation breakdown as a stacked share bar plus a top-fuel legend. Only
-// shown for zones whose source reports a real fuel mix.
+// shown for zones whose source reports a real fuel mix
 export function PowerMix({ breakdown }: { breakdown: Record<string, number> }) {
   const entries = Object.entries(breakdown)
     .filter(([, mw]) => mw > 0)

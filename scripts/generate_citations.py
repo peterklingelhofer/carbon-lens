@@ -43,7 +43,7 @@ MARKDOWN = ROOT / "docs" / "CITATIONS.md"
 
 CITEKEY = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 
-# Section order in the rendered bibliography.
+# Section order in the rendered bibliography
 GROUPS = [
     ("emission-factors", "Emission factors"),
     ("methodology", "Methodology"),

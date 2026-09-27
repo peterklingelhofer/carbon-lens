@@ -3,7 +3,7 @@ import { PROVIDERS, providerButtonStyle } from "../lib/providers";
 
 // The provider-pill row + region <select> shared by the clean-window heatmap and
 // the region-comparison panel. Selecting a provider resets the region to that
-// provider's default. The region list comes from the snapshot/API.
+// provider's default. The region list comes from the snapshot/API
 export function ProviderRegionPicker({
   provider,
   region,

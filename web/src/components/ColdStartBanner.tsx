@@ -4,13 +4,13 @@ import { getLastApiResponseAt } from "../api/client";
 
 // The free-tier API (Render) sleeps after ~15 min idle and takes ~50s to wake.
 // When an API request stays in flight past this threshold, show a banner so the
-// wait reads as a deliberate state, not "broken".
+// wait reads as a deliberate state, not "broken"
 const DELAY_MS = 4000;
 
 // If the API answered within this window it's almost certainly still awake
-// (Render's idle timeout is ~15 min), so a slow request is just slow - show a
+// (Render's idle timeout is ~15 min), so a slow request is only slow: show a
 // neutral spinner instead of the "waking up" copy. Only show the cold-start
-// message when we have NOT heard from the API recently (first request / long idle).
+// message when we have NOT heard from the API recently (first request / long idle)
 const LIKELY_AWAKE_MS = 10 * 60 * 1000;
 
 type Mode = "hidden" | "loading" | "waking";
@@ -18,7 +18,7 @@ type Mode = "hidden" | "loading" | "waking";
 // Queries that must NOT trigger the banner: the CDN-backed static files (snapshot,
 // history archive, clean-compute report) are fast and unrelated to the API waking up,
 // and weather is an optional late-loading driver that should never make the page look
-// like it's waiting on a cold start.
+// like it's waiting on a cold start
 const QUIET_QUERY_KEYS = new Set([
   "snapshot",
   "history-archive",
@@ -66,7 +66,7 @@ export function ColdStartBanner() {
         style={{
           // Pinned just below the sticky 56px nav as an overlay (not in normal
           // flow), so appearing/disappearing never reflows the page beneath it.
-          // z below the nav's 20 keeps the menu usable.
+          // z below the nav's 20 keeps the menu usable
           position: "fixed",
           top: 56,
           left: 0,

@@ -1,11 +1,11 @@
-"""Minimal carbon-aware dispatcher: the loosely-coupled pattern the companion
-`carbon-aware-dispatcher` follows. Polls /carbon/signal and decides run vs wait,
-honouring clean surplus and an optional intensity cap. Loop it as a sidecar/cron.
+"""Minimal carbon-aware dispatcher. Polls this API's /carbon/signal for one region and
+decides run vs wait, honouring clean surplus and an optional intensity cap. Re-checks
+every ten minutes and exits once the answer is run. Use it as a sidecar or cron step.
 
     uv run python examples/dispatcher/dispatch.py aws/us-east-1
 
-Decoupling: this only depends on the stable /carbon/signal contract (guarded by
-tests/test_signal_contract.py), not CarbonLens internals.
+Depends only on the stable /carbon/signal contract guarded by
+tests/test_signal_contract.py.
 """
 
 from __future__ import annotations

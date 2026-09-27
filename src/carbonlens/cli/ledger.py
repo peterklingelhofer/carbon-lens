@@ -1,5 +1,6 @@
-"""Local impact ledger for `carbonlens run`: an honest, on-disk record of what
-each carbon-aware run did and roughly how much it avoided. No server, no account:
+"""Local impact ledger for `carbonlens run`: an on-disk record of what each
+carbon-aware run did and roughly how much it avoided, with real kg counted only for
+runs that supplied job energy. No server, no account:
 one JSON line per run under the CLI config dir. The pure ``summarize`` is kept
 separate from I/O so it's unit-testable without touching the disk or the clock.
 """
@@ -64,7 +65,7 @@ def verdict(ratio: float) -> str:
 def fleet_summary(entries: list[dict], now: datetime, days: int, top: int = 20) -> dict:
     """Org-level rollup across many hosts' ledgers, broken down by region.
 
-    Same honest rules as ``summarize``: real kg avoided only from runs that supplied
+    Same counting rules as ``summarize``: real kg avoided only from runs that supplied
     energy. Run-now jobs avoid nothing. Concatenate each host's ``read_file`` output
     and pass it here for a fleet view.
     """
@@ -127,7 +128,7 @@ def adjusted_prediction(predicted: float, ratio: float) -> float:
 def calibration(entries: list[dict], now: datetime, days: int) -> dict:
     """How well submit-time forecasts predicted the run-time actual reduction.
 
-    Honest scope: only shifted jobs whose reduction was re-measured at execution
+    Scope: only shifted jobs whose reduction was re-measured at execution
     (``basis == "measured"``) and that recorded a submit-time prediction. Those are
     the only entries where predicted and actual are both real. ``calibration_ratio`` is
     actual / predicted: >1 means the forecast under-promised, <1 means it over-promised.
@@ -270,10 +271,10 @@ def disclosure_markdown(stmt: dict) -> str:
 
 
 def summarize(entries: list[dict], now: datetime, days: int) -> dict:
-    """Aggregate ledger entries from the last ``days`` into an honest summary.
+    """Aggregate ledger entries from the last ``days`` into a summary.
 
     The counterfactual is 'running at the moment you invoked', so a run-now job
-    avoids nothing by definition. Real grams avoided are summed ONLY for runs that
+    avoids nothing by definition. Real grams avoided are summed only for runs that
     supplied job energy (kWh). Per-kWh intensity reductions aren't additive
     without it. Everything else is reported as an average rate.
     """
@@ -290,7 +291,7 @@ def summarize(entries: list[dict], now: datetime, days: int) -> dict:
         for e in with_energy
     )
     # How many shifted jobs have a verified (re-measured at run time) reduction
-    # rather than a forecast estimate.
+    # rather than a forecast estimate
     measured = sum(1 for e in shifted if e.get("basis") == "measured")
 
     return {

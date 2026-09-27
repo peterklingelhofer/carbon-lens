@@ -6,8 +6,8 @@ deployable demos, but hardening for production is still missing. Read this befor
 ## What's here and what works
 
 - **`helm/carbonlens/`** is a real, `helm template`-able chart: Deployment, Service,
-  Ingress, HPA (2–10 replicas @ 70% CPU), ConfigMap, and Secret templates with
-  sane resource requests/limits. This is the part you can actually `helm install`.
+  Ingress, HPA (2 to 10 replicas @ 70% CPU), ConfigMap, and Secret templates with
+  sane resource requests/limits. This is the part you can `helm install`.
 - **`helmfile.yaml`** + **`environments/`**: three environments (default/staging/production)
   wiring the chart together with a Bitnami Postgres subchart.
 

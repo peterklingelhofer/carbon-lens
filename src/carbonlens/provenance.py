@@ -10,19 +10,19 @@ This registry is the single source of truth for source classification. The
 compliance calculator's GHG Protocol data-quality grade is derived from it rather
 than from a second, separately-maintained list of source names.
 
-One thing worth reading the `accounting_basis` field for. CarbonLens does NOT
-report every zone on the same basis:
+Read the `accounting_basis` field as well. CarbonLens reports zones on two
+different bases:
 
 * Most zones are `production_lifecycle`: a weighted average over the live fuel mix
   using IPCC AR5 lifecycle factors, in which wind is 11 and nuclear is 12.
 * UK zones are `production_direct`: NESO publishes its own intensity, computed with
-  its own DIRECT combustion factors, in which wind, solar, hydro, nuclear and
+  its own direct combustion factors, in which wind, solar, hydro, nuclear and
   pumped storage are all exactly 0.
 
-A UK number and a German number are therefore not the same quantity, and comparing
-them (which `/route` does) flatters whichever zone is reported on the direct basis
-at times of high renewable output. The field exists so a caller can see that rather
-than discover it. See docs/VERIFICATION.md.
+A UK number and a German number therefore measure different quantities, and
+comparing them (which `/route` does) flatters whichever zone is reported on the
+direct basis at times of high renewable output. The field exists so a caller can
+see that up front. See docs/VERIFICATION.md.
 """
 
 from __future__ import annotations
@@ -48,7 +48,7 @@ AccountingBasis = Literal[
 ]
 
 # Worst (highest-letter) tier wins when a number rests on several sources: a chain
-# is only as strong as its weakest link.
+# is only as strong as its weakest link
 _TIER_ORDER: dict[EvidenceTier, int] = {"A": 0, "B": 1, "C": 2, "D": 3, "E": 4}
 
 _IPCC_FACTORS: CitationId = "ipcc-ar5-wg3-annex3"
@@ -105,7 +105,7 @@ def _p(
     )
 
 
-# Keyed by the exact `source` string each provider stamps on a reading.
+# Keyed by the exact `source` string each provider stamps on a reading
 _REGISTRY: dict[str, SourceProvenance] = {
     # ── Live grid-operator feeds, our factors ──
     "eia": _p("eia", "live", _FUEL_MIX_METHOD, ("eia-hourly-grid-monitor", _IPCC_FACTORS), "A"),
@@ -275,8 +275,8 @@ _REGISTRY: dict[str, SourceProvenance] = {
     ),
 }
 
-# What an unrecognised source string gets. Deliberately the worst tier: a source
-# nobody has classified is not a source anybody has checked.
+# What an unrecognised source string gets. Deliberately the worst tier, since nobody
+# has checked a source that nobody has classified
 _UNKNOWN = _p(
     "unknown",
     "estimated",
@@ -293,15 +293,14 @@ def for_source(source: str) -> SourceProvenance:
     """Provenance for a reading's `source` string.
 
     A snapshot carries forward the originating source's own string, so snapshot
-    reads resolve to the provider that actually produced the number. A source
-    with no record resolves to an explicitly unverified record rather than to
-    silence.
+    reads resolve to the provider that produced the number. A source with no
+    record resolves to an explicitly unverified record.
     """
     known = _REGISTRY.get(source)
     if known is not None:
         return known
     # The snapshot builder may prefix or suffix, so fall back to a prefix match before
-    # giving up, so a carried-forward reading is not downgraded to unknown.
+    # giving up, so a carried-forward reading keeps its classification
     for key, value in _REGISTRY.items():
         if source.startswith(key):
             return value
@@ -348,7 +347,7 @@ def assumed_factor_keys() -> tuple[str, ...]:
 
 
 # GHG Protocol data-quality grade per source class. Derived from the registry so it
-# cannot drift from the source classification the way a separate hardcoded list did.
+# can't drift from the source classification the way a separate hardcoded list did
 _QUALITY_BY_CLASS: dict[SourceClass, str] = {
     "live": "measured",
     "modeled": "modeled",

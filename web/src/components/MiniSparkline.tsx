@@ -7,7 +7,7 @@ import { intensityColor } from "../lib/intensity";
 //
 // Hover (or press/drag on touch) to inspect any point: a guide line + dot snap to
 // the nearest sample and the readout below shows its time and value. Min/max are
-// labelled on the y-axis and the first/last `labels` on the x-axis.
+// labelled on the y-axis and the first/last `labels` on the x-axis
 export function MiniSparkline({
   values,
   labels,
@@ -18,7 +18,7 @@ export function MiniSparkline({
 }: {
   values: number[];
   labels?: string[];
-  // Optional per-point [low, high] envelope drawn as a shaded area behind the line.
+  // Optional per-point [low, high] envelope drawn as a shaded area behind the line
   band?: [number, number][];
   mark?: "first" | "last";
   ariaLabel: string;
@@ -27,7 +27,7 @@ export function MiniSparkline({
   const [active, setActive] = useState<number | null>(null);
 
   // Tick labels / readout use the value range. The plot domain also includes the
-  // band so a wide envelope doesn't clip.
+  // band so a wide envelope doesn't clip
   const min = Math.min(...values);
   const max = Math.max(...values);
   const domainMin = band ? Math.min(min, ...band.map((b) => b[0])) : min;
@@ -49,7 +49,7 @@ export function MiniSparkline({
   const lineColor = intensityColor(values[values.length - 1]);
   const markIdx = mark === "first" ? 0 : values.length - 1;
 
-  // Band polygon: high edge left to right, then low edge right to left, closed.
+  // Band polygon: high edge left to right, then low edge right to left, closed
   const bandPath = band
     ? `M ${[
         ...band.map(([, hi], i) => `${x(i).toFixed(1)},${y(hi).toFixed(1)}`),
@@ -151,7 +151,7 @@ export function MiniSparkline({
 }
 
 // Direction of a series start -> end, with a 5% deadband so small wiggles read
-// as "steady" rather than flapping between cleaner/dirtier.
+// as "steady" rather than flapping between cleaner/dirtier
 export function trendLabel(first: number, last: number): string {
   const pct = first > 0 ? Math.round(((last - first) / first) * 100) : 0;
   if (pct <= -5) return `cleaner (${pct}%)`;

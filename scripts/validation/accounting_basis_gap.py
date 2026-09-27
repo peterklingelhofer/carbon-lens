@@ -32,7 +32,7 @@ NESO_BASE = "https://api.carbonintensity.org.uk"
 
 # NESO fuel label -> our normalized fuel key. NESO's "imports" has no equivalent in
 # a production-based table. It lands in the unsourced `other` bucket, which is
-# itself a limitation worth seeing (NESO prices each interconnector separately).
+# itself a limitation worth seeing (NESO prices each interconnector separately)
 NESO_FUEL_MAP = {
     "biomass": "biomass",
     "coal": "coal",
@@ -68,7 +68,7 @@ def run() -> dict:
     lifecycle = calculate_carbon_intensity(mix)
 
     # Part of the gap is the unsourced `other` factor standing in for imports.
-    # Recompute with imports at NESO's own per-interconnector figures as a bound.
+    # Recompute with imports at NESO's own per-interconnector figures as a bound
     without_imports = {k: v for k, v in mix.items() if k != "other"}
     import_pct = mix.get("other", 0.0)
     non_import_total = sum(without_imports.values())

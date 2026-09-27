@@ -20,7 +20,7 @@ def test_choose_by_state():
     assert choose_by_state({"state": "green"}, "full", "mid", "lean") == "full"
     assert choose_by_state({"state": "yellow"}, "full", "mid", "lean") == "mid"
     assert choose_by_state({"state": "red"}, "full", "mid", "lean") == "lean"
-    # Unknown/missing state -> the lowest-carbon (red) choice.
+    # Unknown/missing state -> the lowest-carbon (red) choice
     assert choose_by_state({}, "full", "mid", "lean") == "lean"
 
 
@@ -92,7 +92,7 @@ def test_signal_reads_from_snapshot_without_calling_api():
     snap = {"signals": {"aws/us-east-1": {"advice": "run_now", "state": "green"}}}
     cl._load_snapshot = lambda: snap  # type: ignore
 
-    # Any API call would explode this, proving the snapshot path is used.
+    # Any API call would explode this, proving the snapshot path is used
     cl_api_called = []
     import carbonlens.sdk as sdk_mod
 
@@ -124,7 +124,7 @@ def test_signal_falls_back_to_api_when_region_absent_from_snapshot(monkeypatch):
         return _Resp()
 
     monkeypatch.setattr("carbonlens.sdk.httpx.get", fake_get)
-    # zone/FR isn't in the snapshot -> API fallback.
+    # zone/FR isn't in the snapshot -> API fallback
     sig = cl.signal("zone/FR")
     assert sig == {"advice": "wait_for_cleaner", "from": "api"}
     assert "/api/v1/carbon/signal/zone/FR" in called["url"]
@@ -151,7 +151,7 @@ def test_load_snapshot_caches_and_serves_stale_on_error():
     try:
         clock = [1000.0]
         first = cl._load_snapshot(_clock=lambda: clock[0])
-        # Within TTL -> cached, no second fetch.
+        # Within TTL -> cached, no second fetch
         clock[0] = 1000.0 + 100
         second = cl._load_snapshot(_clock=lambda: clock[0])
         assert first is second

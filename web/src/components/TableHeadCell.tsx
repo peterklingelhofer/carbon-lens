@@ -2,7 +2,7 @@ import { th } from "../styles";
 import { InfoTip } from "./InfoTip";
 
 // A table header cell with an optional info tooltip, right- or left-aligned.
-// Shared by the route-demo and API-explorer result tables.
+// Shared by the route-demo and API-explorer result tables
 export function TableHeadCell({
   label,
   tip,

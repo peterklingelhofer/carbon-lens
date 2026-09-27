@@ -28,7 +28,7 @@ export function PanelNote({ children }: { children: ReactNode }) {
 // signal on the CDN: no API call, so it's instant even when the server is asleep.
 // Renders nothing when there's no signal (snapshot disabled, or region not covered),
 // and suppresses "run now" unless the region is in the lowest 2% intensity across all
-// regions or has >= 98% renewable share.
+// regions or has >= 98% renewable share
 export function RegionSignal({ provider, region }: { provider: string; region: string }) {
   const { data: snapshot } = useSnapshot();
   const signal = snapshot?.signals?.[`${provider}/${region}`];
@@ -41,7 +41,7 @@ export function RegionSignal({ provider, region }: { provider: string; region: s
         .sort((a, b) => a - b)
     : [];
   // p2Count: how many regions fall in the lowest 2%. 0 means the pool is too small
-  // to make a meaningful percentile call (< 50 regions), so skip that path.
+  // to make a meaningful percentile call (< 50 regions), so skip that path
   const p2Count = Math.floor(allIntensities.length * 0.02);
   const isInLowest2Pct = p2Count > 0 && signal.intensity_gco2_kwh < allIntensities[p2Count];
   const isExceptional = renewablePct >= 98 || isInLowest2Pct;
@@ -54,7 +54,7 @@ export function RegionSignal({ provider, region }: { provider: string; region: s
 
   return (
     <div style={{ marginTop: 10 }}>
-      <PanelLabel>Shift flexible work here?</PanelLabel>
+      <PanelLabel>Flexible work here</PanelLabel>
       <div style={{ fontSize: "0.85rem", fontWeight: 500, color }}>
         {signal.clean_surplus ? "Clean surplus · " : ""}
         {runNow
@@ -77,7 +77,7 @@ export function RegionSignal({ provider, region }: { provider: string; region: s
   );
 }
 
-// "Cleaner / dirtier than usual" badge from the history baseline, when available.
+// "Cleaner / dirtier than usual" badge from the history baseline, when available
 function UsualBadge({
   current,
   points,
@@ -107,7 +107,7 @@ function UsualBadge({
 // Past-7-days carbon intensity for the selected region. Read from the published
 // history archive on the CDN when available (a single cached fetch, no API call);
 // otherwise from /carbon/history. The archive accumulates over time, so a region
-// shows nothing until observed, and says "still accumulating" instead of showing a gap.
+// shows nothing until observed, and says "still accumulating" instead of showing a gap
 export function RegionHistory({
   provider,
   region,
@@ -140,7 +140,7 @@ export function RegionHistory({
   // Render nothing while the source is still loading: the API query when self-
   // hosted, or the shared history archive (a separate lazy fetch with no per-call
   // isLoading) in snapshot mode. Otherwise we'd flash the "accumulating" copy
-  // before the archive lands.
+  // before the archive lands
   if (!points && (isLoading || snapshotEnabled)) return null;
   if (!points || points.length < 2) {
     return (
@@ -175,7 +175,7 @@ export function RegionHistory({
 // Wind speed + solar irradiance at the region's coordinates (Open-Meteo): the
 // physical drivers behind a grid's renewable output, so they explain *why* the
 // intensity moves as it does. Read from the precomputed snapshot when available (no API
-// call). Otherwise fetched on-demand from /carbon/weather when a region is opened.
+// call). Otherwise fetched on-demand from /carbon/weather when a region is opened
 export function RegionWeather({ provider, region }: { provider: string; region: string }) {
   const snap = useWeatherSnapshot(provider, region);
   const { data, isLoading, isError } = useSnapshotOrApi(
@@ -185,7 +185,7 @@ export function RegionWeather({ provider, region }: { provider: string; region: 
     { staleTime: 10 * 60_000, retry: 1 },
   );
 
-  // Stay quiet on load/error: weather is a nice-to-have driver, safe to omit.
+  // Stay quiet on load/error: weather is a nice-to-have driver, safe to omit
   if ((!snap && (isLoading || isError)) || !data) return null;
 
   const wind = Math.round(data.wind_speed_kmh);
@@ -221,7 +221,7 @@ export function RegionWeather({ provider, region }: { provider: string; region: 
 
 // The greenest hour-of-day to schedule a recurring job here: a one-time cron
 // change with permanent savings. From /carbon/best-time (history, or the forecast
-// curve as a fallback). Hidden when there's no usable signal yet.
+// curve as a fallback). Hidden when there's no usable signal yet
 export function RegionBestTime({ provider, region }: { provider: string; region: string }) {
   const snap = useBestTimeSnapshot(provider, region);
   const { data, isLoading, isError } = useSnapshotOrApi(
@@ -274,7 +274,7 @@ export function RegionBestTime({ provider, region }: { provider: string; region:
 // Next-24h carbon-intensity forecast for the selected region, drawn as a sparkline.
 // Read from the precomputed snapshot curve when available (no API call). Otherwise
 // fetched live from /carbon/forecast. EU zones get a real ENTSO-E day-ahead curve,
-// elsewhere it's the labelled time-of-day model.
+// elsewhere it's the labelled time-of-day model
 export function RegionForecast({ provider, region }: { provider: string; region: string }) {
   const forecastSnap = useForecastSnapshot(provider, region);
   // Snapshot curve and API forecast carry different point shapes ({t, c} vs
@@ -329,7 +329,7 @@ export function RegionForecast({ provider, region }: { provider: string; region:
 
   // Illustrative uncertainty that widens with the horizon, narrowest for the real
   // day-ahead forecast and widest for the bare time-of-day model. Not a measured
-  // error band.
+  // error band
   const [base, perHour] =
     method === "entsoe_day_ahead"
       ? [0.04, 0.004]
@@ -356,7 +356,7 @@ export function RegionForecast({ provider, region }: { provider: string; region:
       </div>
       {(() => {
         // Soonest upcoming clean-surplus hour (renewables abundant): the
-        // highest-value window to shift a flexible job into.
+        // highest-value window to shift a flexible job into
         const soonest = surplusHours?.find((h) => h >= 1);
         return soonest != null ? (
           <div style={{ fontSize: "0.66rem", color: "#4ade80", marginTop: 3 }}>

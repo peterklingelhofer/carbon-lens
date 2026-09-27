@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 DEMO_ORG_ID = "demo"
 DEMO_SLA_ID = "demo-seed-sla"
-# A small, fixed region set of 3 zones, so the seed check stays cheap.
+# A small, fixed region set of 3 zones, so the seed check stays cheap
 DEMO_REGIONS = ["us-east-1", "us-west-2", "eu-west-3"]
 
 

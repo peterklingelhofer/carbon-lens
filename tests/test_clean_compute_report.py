@@ -28,19 +28,19 @@ def test_report_ranks_shiftability_and_greenness():
     }
     report = build_clean_compute_report(history, meta, now, days=14)
 
-    # Most-shiftable: the big-swing grid ranks first.
+    # Most-shiftable: the big-swing grid ranks first
     assert report["most_shiftable"][0]["grid_zone"] == "US-CAL-CISO"
-    # Greenest: the low-average region ranks first.
+    # Greenest: the low-average region ranks first
     assert report["greenest_regions"][0]["region"] == "cleanflat"
     assert report["greenest_regions"][0]["typical_gco2_kwh"] == 65.0  # (60 + 70) / 2
-    # Each greenest entry carries a within-window trend (cleaner/dirtier).
+    # Each greenest entry carries a within-window trend (cleaner/dirtier)
     assert "trend_pct" in report["greenest_regions"][0]
 
 
 def test_trend_pct_detects_direction():
     from carbonlens.engine.clean_compute import _trend_pct
 
-    # Later half cleaner than earlier half -> negative (greening).
+    # Later half cleaner than earlier half -> negative (greening)
     pts = [
         {"t": "2026-06-10T00:00:00+00:00", "c": 400},
         {"t": "2026-06-11T00:00:00+00:00", "c": 400},
@@ -64,13 +64,13 @@ def test_update_clean_compute_history_appends_replaces_and_caps():
         "greenest_mean_gco2_kwh": 70.0,
         "top_shiftability_pct": 50,
     }
-    # Same day replaces (no duplicate).
+    # Same day replaces (no duplicate)
     h2 = update_clean_compute_history(
         h, {"greenest_regions": [{"typical_gco2_kwh": 40}], "most_shiftable": []}, "2026-06-18"
     )
     same_day = [d for d in h2["days"] if d["date"] == "2026-06-18"]
     assert len(same_day) == 1 and same_day[0]["greenest_mean_gco2_kwh"] == 40.0
-    # Capped to max_points.
+    # Capped to max_points
     big = {"days": [{"date": f"2026-01-{i:02d}"} for i in range(1, 10)]}
     assert len(update_clean_compute_history(big, report, "2026-06-18", max_points=3)["days"]) == 3
 
@@ -87,7 +87,7 @@ def test_report_includes_calibration_only_when_it_has_samples():
     now = datetime(2026, 6, 16, tzinfo=UTC)
     history = {"series": {}}
 
-    # Empty / zero-sample calibration -> omitted entirely (no fabricated accuracy).
+    # Empty / zero-sample calibration -> omitted entirely (no fabricated accuracy)
     none_report = build_clean_compute_report(history, {}, now, calibration={"samples": 0})
     assert "forecast_calibration" not in none_report
     assert "forecast_calibration" not in build_clean_compute_report(history, {}, now)

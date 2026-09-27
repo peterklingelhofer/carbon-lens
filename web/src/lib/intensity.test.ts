@@ -3,7 +3,7 @@ import { intensityColor, intensityRGB, renewableRGB } from "./intensity";
 
 describe("intensityRGB", () => {
   it("maps intensity to a green->red scale by threshold (boundaries inclusive)", () => {
-    expect(intensityRGB(0)).toEqual([34, 197, 94]); // green, very clean
+    expect(intensityRGB(0)).toEqual([34, 197, 94]); // green, cleanest
     expect(intensityRGB(50)).toEqual([34, 197, 94]); // upper edge of green
     expect(intensityRGB(150)).toEqual([132, 204, 22]); // lime
     expect(intensityRGB(300)).toEqual([234, 179, 8]); // amber

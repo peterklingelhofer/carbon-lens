@@ -32,4 +32,4 @@ scrape_configs:
 Run Alertmanager with `--config.file=alertmanager.example.yml` (after pointing its
 receivers at your real pager/Slack/email). The Grafana dashboard in
 [`../../grafana/carbonlens-dashboard.json`](../../grafana/carbonlens-dashboard.json)
-visualises the same gauges, including the `carbon_marginal_unmapped` honesty panel.
+visualises the same gauges, including the `carbon_marginal_unmapped` panel for a marginal key with no zone mapped.

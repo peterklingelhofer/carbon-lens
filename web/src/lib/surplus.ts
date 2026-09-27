@@ -2,7 +2,7 @@
 // Renewables dominant, very low carbon, and a clean margin together imply extra
 // load soaks up power that might otherwise be curtailed - the highest-value time
 // to run flexible jobs. A heuristic from share + intensity + marginal. It doesn't measure
-// curtailment. Kept in sync with the backend so the globe reads the same as the API.
+// curtailment. Kept in sync with the backend so the globe reads the same as the API
 export function isCleanSurplus(
   renewablePct: number,
   intensityGco2Kwh: number,

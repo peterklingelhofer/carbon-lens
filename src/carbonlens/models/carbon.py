@@ -14,16 +14,17 @@ class Provenance(BaseModel):
     source: str = Field(description="The upstream that produced the reading")
     source_class: str = Field(
         description="live (a real grid-operator response) | modeled (a curve or fixed "
-        "estimate, no live feed) | estimated (inferred from something that is not "
+        "estimate, no live feed) | estimated (inferred from something other than "
         "generation data) | mock (a labelled fixture)",
     )
     accounting_basis: str = Field(
-        description="Which quantity this actually is. production_lifecycle = weighted "
+        description="Which quantity this is. production_lifecycle = weighted "
         "average over the fuel mix using IPCC AR5 lifecycle factors. production_direct = "
         "the operator's own direct-combustion intensity, in which renewables and nuclear "
         "score 0. consumption_lifecycle = flow-traced, accounting for imports. none = not "
-        "a grid-mix computation at all. READ THIS BEFORE COMPARING TWO ZONES: a "
-        "production_direct number is not the same quantity as a production_lifecycle one.",
+        "a grid-mix computation at all. Check it before comparing two zones: a "
+        "production_direct number and a production_lifecycle one measure different "
+        "quantities.",
     )
     method: str = Field(description="Plain-English description of the computation")
     factors: str | None = Field(
@@ -61,7 +62,7 @@ class CarbonIntensity(BaseModel):
         ge=0,
         description="Total grid generation/load for the balancing authority in MW "
         "(whole grid, all consumers, including load outside the datacenter). None when the "
-        "source does not report it.",
+        "source doesn't report it.",
     )
     marginal_intensity_gco2_kwh: float | None = Field(
         default=None,
@@ -74,7 +75,7 @@ class CarbonIntensity(BaseModel):
         default=None,
         description="Live generation breakdown by fuel type in MW (e.g. "
         '{"wind": 4200, "natural_gas": 1800, "nuclear": 9500}). Only the fuels '
-        "actually generating are listed. None for sources without a real fuel mix "
+        "that are generating are listed. None for sources without a real fuel mix "
         "(heuristic and weather-based estimates).",
     )
     provenance: Provenance | None = Field(
@@ -89,13 +90,13 @@ class CarbonIntensity(BaseModel):
 
         Done here rather than at each call site so that every path that can produce
         a CarbonIntensity (provider, snapshot, cache, test fixture) carries
-        provenance by construction. A new provider cannot forget to add it.
+        provenance by construction, including providers added later.
         """
         if self.provenance is not None:
             return self
 
         # Imported lazily: the provenance registry reads the factor corpus, which
-        # has no business being pulled in when this module is imported for typing.
+        # has no business being pulled in when this module is imported for typing
         from carbonlens.provenance import assumed_factor_keys, for_source
 
         record = for_source(self.source)
@@ -134,17 +135,18 @@ class CarbonForecast(BaseModel):
     )
     clean_surplus_hours: list[int] = Field(
         default_factory=list,
-        description="Hour offsets (0 = now) projected to be clean surplus: renewables "
-        "dominant and very low carbon, so extra load likely soaks up power that would "
-        "otherwise be curtailed. The highest-value windows to shift flexible load into. "
+        description="Hour offsets (0 = now) projected to be clean surplus: renewables at "
+        "85% or more and intensity at or below 80 gCO2/kWh, so extra load likely soaks "
+        "up power that would otherwise be curtailed. The highest-value windows to shift "
+        "flexible load into. "
         "A heuristic from the projected mix. Curtailment isn't measured.",
     )
 
 
 class CarbonSignal(BaseModel):
-    """A one-call decision primitive: should a flexible job run here now, or wait?
+    """A one-call run-now-or-wait decision primitive for a flexible job.
 
-    Designed for the carbon-aware-dispatcher and any script/status page that just
+    Designed for the carbon-aware-dispatcher and any script or status page that
     wants a traffic-light answer plus the next cleaner window.
     """
 
@@ -162,7 +164,7 @@ class CarbonSignal(BaseModel):
     marginal_intensity_gco2_kwh: float | None = Field(
         default=None,
         description="Estimated emissions of an extra kWh of demand now: the number that "
-        "actually responds to shifting load. Heuristic from the fuel mix, null when no live "
+        "responds to shifting load. Heuristic from the fuel mix, null when no live "
         "fuel mix is available.",
     )
     marginal_note: str | None = Field(
@@ -177,8 +179,9 @@ class CarbonSignal(BaseModel):
     )
     clean_surplus: bool = Field(
         default=False,
-        description="True when the grid looks like clean oversupply now: renewables "
-        "dominant, very low carbon, clean margin, so extra load likely soaks up power "
+        description="True when the grid looks like clean oversupply now: renewables at "
+        "85% or more, intensity at or below 80 gCO2/kWh and a marginal estimate (when "
+        "known) at or below 100, so extra load likely soaks up power "
         "that would otherwise be curtailed. The highest-value moment to run flexible jobs. "
         "A heuristic from the fuel mix. Curtailment isn't measured.",
     )
@@ -323,10 +326,10 @@ class MethodologyField(BaseModel):
 
 
 class Methodology(BaseModel):
-    """Machine-readable provenance: how each number is derived, and how honest it is.
+    """Machine-readable provenance: how each number is derived and whether it's measured.
 
-    The transparency contract, so a user or auditor can see exactly what's measured
-    vs estimated, and what the caveats are, without reading the code."""
+    The transparency contract, so a user or auditor can see what's measured, what's
+    estimated and what the caveats are, without reading the code."""
 
     fields: list[MethodologyField]
     note: str

@@ -210,7 +210,7 @@ async def compute_region_data(
         lon = rep.get("longitude") or 0.0
         try:
             # One 7-day projection: the first 24h drives the panel forecast + signal (so
-            # they match the 24h API exactly), the full 168h feeds the week heatmap.
+            # they match the 24h API exactly), the full 168h feeds the week heatmap
             method, points = await engine.forecast_zone(zone, lon, 168)
         except Exception as e:
             print(f"  (forecast for {zone} unavailable: {e})", file=sys.stderr)
@@ -303,7 +303,7 @@ async def build_snapshot(
     regions = mapper.list_regions()
 
     # Map each grid zone to all region keys that share it (same logic as
-    # POST /api/v1/carbon/batch: multiple regions can map to one zone).
+    # POST /api/v1/carbon/batch: multiple regions can map to one zone)
     zone_to_keys: dict[str, list[str]] = {}
     region_meta: dict[str, dict] = {}
     for r in regions:
@@ -328,7 +328,7 @@ async def build_snapshot(
         counts[quality] += 1
         for key in zone_to_keys.get(zone, []):
             if quality == "mock":
-                # Never publish fresh mock data. It stays out of the demo.
+                # Never publish fresh mock data. It stays out of the demo
                 continue
             snapshot_intensities[key] = {
                 "grid_zone": intensity.grid_zone,
@@ -346,7 +346,7 @@ async def build_snapshot(
 
     # Consumption-based intensity for European zones via flow tracing. Best-effort
     # and additive: annotates the relevant entries with consumption_intensity and
-    # never blocks the build (a failure just omits the extra field).
+    # never blocks the build (a failure just omits the extra field)
     if settings.entsoe_token:
         try:
             consumption = await ConsumptionIntensitySource(settings.entsoe_token).compute()
@@ -358,7 +358,7 @@ async def build_snapshot(
                 entry["consumption_intensity_gco2_kwh"] = consumption[zone]
 
     # Rebuild the region list from the final published set (carry-forward may have
-    # re-added regions that this run's fetch dropped).
+    # re-added regions that this run's fetch dropped)
     snapshot_regions = sorted(
         (region_meta[k] for k in snapshot_intensities),
         key=lambda r: (r["provider"], r["region"]),
@@ -367,7 +367,7 @@ async def build_snapshot(
 
     # Precompute the run-now/wait signal and 24h forecast per region so the frontend and
     # SDK can read decisions and curves straight from the CDN: no live API, no cold
-    # start. Best-effort: a failure here never blocks publishing the snapshot itself.
+    # start. Best-effort: a failure here never blocks publishing the snapshot itself
     signals: dict[str, dict] = {}
     forecasts: dict[str, dict] = {}
     forecasts_week: dict[str, dict] = {}
@@ -398,7 +398,7 @@ async def build_snapshot(
         "best_time": {},  # filled in by _main once the rolling history is built
         # The 7-day curve per region is big and only the Scheduler heatmap needs it, so
         # _main pops this out to its own lazy-loaded forecast_week.json. It never ships
-        # in the site-wide snapshot.json.
+        # in the site-wide snapshot.json
         "forecast_week": forecasts_week,
         "summary": {
             "live_zones": counts["live"],
@@ -414,7 +414,7 @@ async def build_snapshot(
     }
 
 
-# Roughly 7 days at the 30-min publish cadence. Bounds history.json size per region.
+# Roughly 7 days at the 30-min publish cadence. Bounds history.json size per region
 _HISTORY_MAX_POINTS = 336
 
 
@@ -529,7 +529,7 @@ async def _main() -> int:
     )
 
     # Build the rolling history first so we can fold the greenest-hour BestTime into the
-    # snapshot too (it ranks history, with each region's forecast curve as the fallback).
+    # snapshot too (it ranks history, with each region's forecast curve as the fallback)
     prev_history = _load_baseline(args.history_baseline) if args.history_baseline else {}
     history = append_history(prev_history, snapshot)
     if not args.no_signals:
@@ -539,7 +539,7 @@ async def _main() -> int:
         snapshot["summary"]["best_time_published"] = len(snapshot["best_time"])
 
     # The 7-day forecast is large and only the heatmap needs it -> its own lazy file,
-    # never in the site-wide snapshot.json.
+    # never in the site-wide snapshot.json
     forecast_week = snapshot.pop("forecast_week", {})
     if args.forecast_week_out and forecast_week:
         with open(args.forecast_week_out, "w") as f:
@@ -553,7 +553,7 @@ async def _main() -> int:
         with open(args.history_out, "w") as f:
             json.dump(history, f, separators=(",", ":"))
         # Publish the same data as a tidy CSV open dataset (history.csv) for anyone
-        # to download and analyse.
+        # to download and analyse
         csv_out = (
             args.history_out[:-5] + ".csv"
             if args.history_out.endswith(".json")

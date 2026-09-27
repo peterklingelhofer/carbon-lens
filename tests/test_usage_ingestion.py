@@ -136,7 +136,7 @@ async def test_aws_adapter_parses_and_paginates(monkeypatch):
 
 
 async def test_aws_adapter_missing_sdk_raises(monkeypatch):
-    # Injecting None makes `import boto3` raise ImportError deterministically.
+    # Injecting None makes `import boto3` raise ImportError deterministically
     monkeypatch.setitem(sys.modules, "boto3", None)
     with pytest.raises(CloudIngestionError, match="boto3"):
         await AWSCostExplorerAdapter().fetch_usage("org1", START, END, {})
@@ -251,7 +251,7 @@ def _install_fake_azure(monkeypatch, columns, rows, *, boom=False):
 
 
 async def test_azure_adapter_maps_columns_by_name(monkeypatch):
-    # Deliberately put the aggregation column NOT first, to prove name-based mapping.
+    # Deliberately put the aggregation column NOT first, to prove name-based mapping
     columns = ["ServiceName", "ResourceLocation", "UsageQuantity", "UsageDate", "Currency"]
     rows = [
         ["Virtual Machines", "eastus", 3600.0, "20260501", "USD"],

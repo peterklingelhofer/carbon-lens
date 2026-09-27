@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 
 // A wrong URL is a dead end, so point people at the places they most likely
-// wanted instead of just an apology.
+// wanted instead of just an apology
 const SUGGESTIONS: { to: string; label: string; desc: string }[] = [
   { to: "/intro", label: "Intro", desc: "What the site measures and where the data comes from" },
   { to: "/regions", label: "All regions", desc: "Every region, sortable and searchable" },

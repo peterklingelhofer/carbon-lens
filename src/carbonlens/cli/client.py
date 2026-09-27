@@ -11,7 +11,7 @@ CONFIG_FILE = CONFIG_DIR / "config.json"
 
 # Directory used before the carbon_mesh -> carbonlens rename. Read as a fallback so
 # an existing user's saved api_url and api_key survive the change rather than
-# silently reverting to defaults.
+# silently reverting to defaults
 LEGACY_CONFIG_FILE = Path.home() / ".carbon-mesh" / "config.json"
 
 

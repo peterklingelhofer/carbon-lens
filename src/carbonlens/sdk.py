@@ -3,7 +3,7 @@
 For data pipelines (Airflow, Prefect, Dagster, Celery) and scripts that run flexible
 work: ask whether now is a clean time, block until a clean window, or wrap a function
 so it runs only when the grid is green. Talks to a CarbonLens API over httpx (the only
-dependency) and reuses the same marginal/clean-surplus intelligence as the rest of the
+dependency) and reuses the same marginal and clean-surplus signal as the rest of the
 tool. The decision logic is a pure function so it's trivial to test.
 
 Example
@@ -19,7 +19,7 @@ Example
     def nightly_etl():
         ...
 
-Honest limit: ``wait_for_clean_window`` BLOCKS the calling thread. For a pipeline
+Limit: ``wait_for_clean_window`` blocks the calling thread. For a pipeline
 worker that holds a slot (e.g. an Airflow task), prefer a short poll or your
 framework's deferrable/reschedule mechanism over blocking for hours.
 """
@@ -36,7 +36,7 @@ import httpx
 DEFAULT_API_URL = "https://carbonlens-gssa.onrender.com"
 
 # How long a fetched CDN snapshot is reused before refetching (matches the publish
-# cadence). Reading signals from the snapshot avoids waking the API on every call.
+# cadence). Reading signals from the snapshot avoids waking the API on every call
 _SNAPSHOT_TTL_SECONDS = 300.0
 
 
@@ -209,7 +209,7 @@ class CarbonClient:
         Returns ``{"reason": "clean"|"deadline", "signal": <last signal>,
         "initial_signal": <first signal>, "waited_hours": <float>}``. Polls every
         ``poll_seconds``. With ``report=True``, posts the predicted impact to the org
-        ledger when the wait actually shifted the job (best-effort, never raises).
+        ledger when the wait shifted the job (best-effort, never raises).
         ``_sleep``/``_clock`` are injectable for testing.
         """
         start = _clock()

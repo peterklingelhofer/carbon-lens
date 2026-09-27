@@ -33,27 +33,27 @@ def choose_run_index(
 
     surplus = sorted(h for h in (surplus_hours or []) if 0 <= h < len(window))
 
-    # Now is clean surplus: the best possible case, run immediately.
+    # Now is clean surplus: the best possible case, run immediately
     if surplus and surplus[0] == 0:
         return 0, "surplus_now"
 
     if max_intensity is not None:
-        # Run as soon as the grid is acceptable to the caller.
+        # Run as soon as the grid is acceptable to the caller
         for i, value in enumerate(window):
             if value <= max_intensity:
                 return i, "threshold"
-        # Nothing meets the cap: prefer a clean-surplus window, else the cleanest.
+        # Nothing meets the cap: prefer a clean-surplus window, else the cleanest
         if surplus:
             return surplus[0], "surplus"
         cleanest = min(range(len(window)), key=lambda i: window[i])
         return cleanest, "cleanest_fallback"
 
-    # No threshold: a clean-surplus window is the highest-value time to run.
+    # No threshold: a clean-surplus window is the highest-value time to run
     if surplus:
         return surplus[0], "surplus"
 
     # Otherwise the cleanest hour, but waiting has its own cost (delayed results,
-    # idle infra), so only defer for a meaningful improvement over running now.
+    # idle infra), so only defer for a meaningful improvement over running now
     cleanest = min(range(len(window)), key=lambda i: window[i])
     if cleanest == 0:
         return 0, "now"
@@ -94,7 +94,7 @@ def choose_run_plan(
     now_cands = [c for c in cands if c[1] == 0]
     best_now = min(now_cands, key=lambda c: c[2]) if now_cands else None
 
-    # 1) Clean surplus: run-now surplus beats deferring, else soonest, then cleanest.
+    # 1) Clean surplus: run-now surplus beats deferring, else soonest, then cleanest
     surplus = [c for c in cands if c[3]]
     if surplus:
         now_surplus = [c for c in surplus if c[1] == 0]
@@ -104,7 +104,7 @@ def choose_run_plan(
         best = min(surplus, key=lambda c: (c[1], c[2]))
         return best[0], best[1], "surplus"
 
-    # 2) Threshold: soonest hour at/under the cap (then cleanest), across regions.
+    # 2) Threshold: soonest hour at/under the cap (then cleanest), across regions
     if max_intensity is not None:
         under = [c for c in cands if c[2] <= max_intensity]
         if under:
@@ -113,7 +113,7 @@ def choose_run_plan(
         best = min(cands, key=lambda c: c[2])
         return best[0], best[1], "cleanest_fallback"
 
-    # 3) Globally cleanest, but don't defer for a trivial gain over the best now.
+    # 3) Globally cleanest, but don't defer for a trivial gain over the best now
     best = min(cands, key=lambda c: c[2])
     if best[1] == 0:
         return best[0], 0, "now"

@@ -1,15 +1,15 @@
 """Loader for the versioned emission-factor corpus at ``data/emission-factors.json``.
 
 The corpus is the single source of truth for lifecycle emission factors, shared
-with carbon-aware-dispatcher so the two repositories cannot publish different
-numbers for the same physical quantity under the same citation. This module owns
+with carbon-aware-dispatcher so both repositories publish the same number for a
+given physical quantity under a given citation. This module owns
 the file, and the dispatcher vendors a copy.
 
 Loading is strict and happens at import time. A factor record must either resolve
 its ``citation`` against a citekey in ``docs/CITATIONS.csl.json``, or declare
 itself an assumption (``citation: null`` plus an ``assumption`` string and
-evidence tier E). Anything else raises, so a factor can never reach the API with
-no stated basis at all.
+evidence tier E). Anything else raises, so every factor that reaches the API has a
+stated basis.
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ from typing import Any, Literal
 
 EvidenceTier = Literal["A", "B", "C", "D", "E"]
 
-# data/ and docs/ sit next to src/, so walk up out of the installed package.
+# data/ and docs/ sit next to src/, so walk up out of the installed package
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 _CORPUS_PATH = _REPO_ROOT / "data" / "emission-factors.json"
 _CITATIONS_PATH = _REPO_ROOT / "docs" / "CITATIONS.csl.json"
@@ -111,7 +111,7 @@ def _parse_factor(raw: dict[str, Any], citekeys: set[str]) -> EmissionFactor:
     assumption = raw.get("assumption")
     if citation is None:
         # No source. Only allowed as an explicitly declared tier-E assumption, so
-        # an unsourced number can never pass silently as a cited one.
+        # an unsourced number can never pass silently as a cited one
         if not assumption:
             raise FactorCorpusError(
                 f"{key!r} has no citation and no 'assumption' explaining why. "
@@ -169,7 +169,7 @@ def load_corpus() -> FactorCorpus:
         raise FactorCorpusError("corpus must define an 'other' fallback factor")
 
     # `petroleum` is an alias of `oil`; a silent drift between them would mean the
-    # same fuel scoring differently depending on which provider reported it.
+    # same fuel scoring differently depending on which provider reported it
     oil, petroleum = factors.get("oil"), factors.get("petroleum")
     if oil and petroleum and oil.value != petroleum.value:
         raise FactorCorpusError(

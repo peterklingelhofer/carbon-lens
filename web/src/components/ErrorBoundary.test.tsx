@@ -13,7 +13,7 @@ describe("ErrorBoundary", () => {
   });
 
   it("shows the fallback on a render error and recovers via Try again", () => {
-    // React logs caught render errors. Silence it so the test output stays clean.
+    // React logs caught render errors. Silence it so the test output stays clean
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
     let shouldThrow = true;
     function Maybe() {

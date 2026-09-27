@@ -69,7 +69,7 @@ def main() -> int:
     if args.calibration:
         try:
             loaded = _load(args.calibration)
-            # Accept either a bare calibration block or an org-statement wrapping one.
+            # Accept either a bare calibration block or an org-statement wrapping one
             calibration = loaded.get("forecast_calibration", loaded)
         except Exception:
             calibration = None
@@ -85,7 +85,7 @@ def main() -> int:
         f"{len(report['greenest_regions'])} regions"
     )
 
-    # Maintain the rolling daily-summary history for the trend chart (one point/day).
+    # Maintain the rolling daily-summary history for the trend chart (one point/day)
     if args.history_out:
         baseline: dict = {}
         if args.history_baseline:

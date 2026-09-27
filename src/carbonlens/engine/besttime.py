@@ -10,7 +10,7 @@ from __future__ import annotations
 from carbonlens.engine.recurring import rank_hours_utc, shiftability_pct
 from carbonlens.models.carbon import BestTime, HourRank
 
-# Minimum hourly observations before we trust history over the forecast-curve fallback.
+# Minimum hourly observations before we trust history over the forecast-curve fallback
 _MIN_HISTORY_SAMPLES = 8
 
 
@@ -45,7 +45,7 @@ def build_best_time(
         best_mean = ranked[0]["mean_gco2_kwh"]
         worst_mean = ranked[-1]["mean_gco2_kwh"]
         if energy_kwh:
-            # gCO2/kWh delta x kWh/day x 365 days, to kg.
+            # gCO2/kWh delta x kWh/day x 365 days, to kg
             annual_kg_saved = round((worst_mean - best_mean) * energy_kwh * 365 / 1000, 1)
 
     return BestTime(

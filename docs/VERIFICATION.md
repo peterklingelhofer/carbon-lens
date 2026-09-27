@@ -9,7 +9,7 @@ the code changed. **PARTIALLY RESOLVED**: some sub-claims proven, others not.
 **UNRESOLVABLE**: searched properly, no source located, and the product now says so rather than
 implying a source exists.
 
-Fourteen claims audited against primary sources. Eight produced fixes, three of which
+Fourteen claims audited against primary sources. Seven produced fixes, three of which
 changed numbers the API served. The rest are confirmed, or declared as assumptions where no
 source exists.
 
@@ -34,7 +34,7 @@ source exists.
 
 ## 1. The IPCC AR5 factor table
 
-**Verdict: FIXED from primary text. Two values corrected, a third confirmed and its row
+**Verdict: FIXED from primary text. Three values corrected, a fourth confirmed and its row
 documented.**
 
 `emission_factors.py` cited "IPCC AR5 WG3 (2014), Annex III, Table A.III.2" for its whole
@@ -109,13 +109,13 @@ row's published range, and a reason for any deviation. A test asserts every valu
 an IPCC row falls inside that row's published min/max. The loader refuses to start if any
 factor has neither a resolvable citekey nor a declared assumption.
 
-## 2. Where `650` for oil actually comes from
+## 2. Where `650` for oil comes from
 
 **Verdict: RESOLVED. The 650 is a 2006 UK POSTnote figure, and both this project and its
 companion implied it was an IPCC value.**
 
 **Table A.III.2 has no oil row at all.** It has no lignite row and no waste row either. The
-code's honest inline note (`no IPCC median row; mid-range diesel/HFO lifecycle estimate`)
+code's inline note (`no IPCC median row; mid-range diesel/HFO lifecycle estimate`)
 was right that there's no row, and wrong to describe the value as an estimate: 650 was
 inherited from another table.
 
@@ -129,7 +129,7 @@ retrieved through the Wayback Machine. **POSTnote 268, October 2006**, page 2, v
 > The average carbon footprint of oil-fired electricity generation plants in the UK is
 > ~650gCO2eq/kWh.
 
-Note what that actually is, because it's much weaker than the use it's put to. The same
+The figure is weaker than the use it's put to. The same
 page states oil supplied **1% of UK generation** and ran mainly as peaking back-up. So the
 figure is a **UK-fleet average, from 2006, for a marginal fuel**, twenty years old, with
 no AR5 row behind it. It's tiered **C** accordingly, the
@@ -151,14 +151,14 @@ carried 45, which means its table was copied from there rather than read out of 
 | `thermal_mix` | 750 | A blended coal+gas bucket for feeds reporting undifferentiated "thermal". Implies roughly a 79/21 coal/gas split. Never derived from published generation shares. |
 | `other` | 300 | The catch-all, and **the largest single unquantified uncertainty in the system**. |
 
-`other` deserves its own paragraph. The old comment called 300 a "conservative placeholder".
+The old comment called 300 a "conservative placeholder".
 The direction of that conservatism is backwards: if the unknown bucket is in fact thermal,
 300 *understates* it badly. Electricity Maps assigns 700 to the comparable bucket on a
 stated assumption of thermal generation, so the plausible range spans **300 to 700**. It was
 left at 300 because there's no evidence to prefer either end and moving it would be an
 unforced behavioural change, but the uncertainty is now visible rather than implied.
 
-One lead worth recording: NESO's published UK factor table assigns its own "Other" bucket
+One lead: NESO's published UK factor table assigns its own "Other" bucket
 exactly **300**. This value may have been taken from there rather than assumed
 independently. Unconfirmed, and NESO's table is direct-combustion rather than lifecycle, so
 it wouldn't license the number on this corpus's basis even if true.
@@ -195,9 +195,9 @@ Two notes on the fix:
 - The companion project already got this right (`EIA_STORAGE_FUELS = {"BAT", "PS"}`) and
   this project didn't. The shared corpus now enforces one answer for both.
 - **Electricity Maps takes a different, also-defensible line**: they assign battery
-  discharge the world-average intensity (301). That attributes rather than excludes, and it
-  is better than exclusion *if* you have charge-source attribution. Without it, exclusion is
-  the more honest of the two. Recorded in the corpus so the choice is visible.
+  discharge the world-average intensity (301). That attributes rather than excludes, and it's
+  better than exclusion *if* you have charge-source attribution. Without it, exclusion avoids
+  guessing a charge source. Recorded in the corpus so the choice is visible.
 
 `pumped_storage` was added as a second storage key. EIA reports it as `PS` and this project
 previously had no mapping for it at all, so it fell to the `other` bucket at 300.
@@ -275,13 +275,13 @@ Precisely:
   have hit it.
 - **No API consumer was served a degraded UK regional number**, because no API consumer
   could request one.
-- What was actually wrong for users was the **README's coverage claim**. "UK (18 zones)"
+- What was wrong for users was the **README's coverage claim**. "UK (18 zones)"
   described a provider capability that didn't work and that the API didn't expose.
 
 Had those zones been reachable, the failure would still have been well-handled rather than
 loud: they would have fallen through the cascade to an Open-Meteo estimate or mock data with
 the `source` field reporting `open_meteo` or `mock`. The provenance labelling was
-working correctly throughout. Only the README's claim was wrong.
+working correctly throughout.
 
 Fixed with a `_region_intensity` helper that prefers `actual`, falls back to `forecast`, and
 raises rather than inventing a value when neither is present. It deliberately does **not**
@@ -289,7 +289,7 @@ use an `or` chain: `0` is a legitimate NESO value for a wind-dominated region on
 direct basis (North Scotland reported exactly 0 during testing, with a 99.8% wind mix), and
 an `or` chain would silently discard it. All 18 zones now return live NESO data at the
 provider level (verified directly: `GB-1` 0 gCO2/kWh at 99.8% wind, `GB-13` 171, `GB-17`
-331). Five tests cover the payload shapes. Exposing them through the API would additionally
+331). Five tests cover the payload shapes. Exposing them through the API would also
 require mapping cloud regions onto them, which this change doesn't do.
 
 ## 7. Publishing `0.0 gCO2/kWh` for a hollow feed
@@ -303,8 +303,7 @@ zero-summing fuel mix returns.
 
 This is worse than a zone going dark, because **0.0 is the best score a carbon-aware router
 can see**. A zone whose feed goes hollow is handed the routing decision, and wins every
-one of them. For 23 hours the correct answer to "where should I run this job" was being
-outranked by a broken feed.
+one of them.
 
 The adapters guarded `if not fuel_mix: raise` but a mix that's *present and entirely zero*
 is a truthy dict. `intensity_from_fuel_mix` now raises when nothing is generating, using the
@@ -312,7 +311,7 @@ same definition of "generating" the average uses, so a mix of nothing but discha
 storage is caught too. The provider cascade then falls through to the next source, exactly
 as it already does for a failed fetch.
 
-Scale: 72 points, 0.18% of the published archive, 3 of 116 series. Rare and severe.
+Scale: 72 points, 0.18% of the published archive, 3 of 116 series.
 
 ## 8. The mixed accounting basis
 
@@ -337,7 +336,7 @@ authoritative figure for the UK, so the difference is surfaced. Every reading no
 `consumption_lifecycle`), UK readings carry an explicit caveat naming the problem, and a
 contract test asserts the two bases stay distinguishable.
 
-This is the finding most likely to matter to someone actually using the API to choose a
+This is the finding most likely to matter to someone using the API to choose a
 region, and it was invisible before this audit.
 
 ## 9. GHG Protocol data-quality grades
@@ -359,16 +358,16 @@ Four of those eight strings match nothing any provider emits. Providers stamp
   `measured` had its string matched.
 
 The existing test passed because it asserted on `_data_quality("uk")`, a string that never
-occurs in production. It encoded the bug.
+occurs in production, so it encoded the bug.
 
 Fixed by deriving the grade from the provenance registry, so there's one source of truth
 for source classification instead of two lists that could drift. The test now asserts on the
-strings providers actually emit, and a contract test asserts the calculator and the registry
+strings providers emit, and a contract test asserts the calculator and the registry
 agree for every classified source.
 
 ## 10. Provider PUE constants
 
-**Verdict: RESOLVED. All three were stale, and all three corrected.**
+**Verdict: FIXED. All three were stale, and all three corrected.**
 
 ```python
 "aws": 1.135,   # AWS 2023 sustainability report
@@ -436,8 +435,8 @@ judgement. The standard doesn't enumerate cloud services.
 **Verdict: UNRESOLVABLE. No source exists, because the method is this project's own
 invention. Tier E and flagged in every response.**
 
-The README already says this is "not a carbon measurement", which was honest. The audit's
-job was to establish whether anything backs the mapping. Nothing does:
+The README already says this is "not a carbon measurement". The audit's job was to
+establish whether anything backs the mapping, and nothing does:
 
 ```python
 solar_pct = min(40.0, (radiation / 1000) * 40)
@@ -471,8 +470,8 @@ None of these is indefensible as demo coverage. All four were presented with the
 notice. All four now carry `source_class: "modeled"`, `evidence_tier: "E"`, and a caveat
 beginning "ASSUMED".
 
-Québec is the weakest: a fixed number that never varies can only be a constant wearing
-an estimate's clothes, because the quantity it claims to estimate varies with time.
+Québec is the weakest: it's a constant presented as an estimate of a quantity that varies
+with time.
 
 ## 14. The REC-matching argument
 
@@ -483,7 +482,7 @@ The README's opening argument, that annual REC matching is a weaker claim than h
 matching, was asserted with no source. It's a real position in the literature and is now
 backed by `riepin-2024-247-cfe`, `ricks-2023-hourly-matching`, `miller-2022-hourly-accounting`
 and `google-2021-247-cfe` (tier D, a corporate white paper with an obvious interest in the
-conclusion, cited for the argument's canonical statement and not as evidence for it).
+conclusion, cited only for the argument's canonical statement).
 
 **One caveat carried over and re-checked.** `energytag-gc-standard-v2` is in the corpus and
 does **not** support the argument. It defines the granular-certificate machinery that makes
@@ -509,7 +508,7 @@ Recorded so the document works as an audit as well as a defect list.
   al. (2019), the paper was already named in the docstring, and the Gauss-Seidel convergence
   argument from diagonal dominance is correct. The proportional-sharing assumption it
   inherits from Bialek (1996) was undocumented and is now stated.
-- The `source` field: already honest everywhere it was checked. When the UK regional zones
+- The `source` field: already accurate everywhere it was checked. When the UK regional zones
   were silently failing (§6), the fallback readings correctly reported themselves as
   `open_meteo` or `mock`. The labelling was right, but the README's claim above it was wrong.
 - XML parsing via `defusedxml`: as described.

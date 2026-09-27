@@ -38,7 +38,7 @@ def plan_estimate(
     after_region_kg = annual_kg(best_typical)
     region_saving = naive_kg - after_region_kg
 
-    # Shiftability of the chosen region's grid zone (0 if we have no read for it).
+    # Shiftability of the chosen region's grid zone (0 if we have no read for it)
     pct = 0.0
     for z in shiftability.get("zones", []):
         if z.get("grid_zone") == best.get("grid_zone"):

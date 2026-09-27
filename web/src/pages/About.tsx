@@ -10,7 +10,7 @@ const card: React.CSSProperties = { ...baseCard, padding: "2rem" };
 
 // The API runs on Render's Oregon region, which draws from the Pacific
 // Northwest grid (Bonneville Power Administration). AWS us-west-2 is the same
-// Oregon / US-NW-BPAT zone, so its live reading stands in for our own grid.
+// Oregon / US-NW-BPAT zone, so its live reading stands in for our own grid
 const OREGON = { provider: "aws", region: "us-west-2" };
 
 function OregonGridLive() {
@@ -90,7 +90,7 @@ function OregonGridLive() {
             }}
           >
             Measured from {i.source}
-            {i.quality === "estimated" && " (estimated - upstream feed intermittent)"} · updated{" "}
+            {i.quality === "estimated" && " (estimated, upstream feed intermittent)"} · updated{" "}
             {timeAgo(i.timestamp)}
           </div>
         </>
@@ -126,10 +126,10 @@ export function About() {
         <h2 style={{ marginTop: 0, fontSize: "1.2rem" }}>Why it's free</h2>
         <p style={{ color: "var(--gray-600)", fontSize: "0.95rem" }}>
           Most of what Carbon Lens needs already exists: grid operators publish what they're
-          generating, and the readings are public. Carbon Lens just reads those official feeds,
-          turns them into one comparable number per region, and shows it. Keeping that open felt
-          more useful than locking it behind a sign-up - the whole point is to make the grid's real
-          carbon cost easy to see.
+          generating, and the readings are public. Carbon Lens reads those official feeds and turns
+          them into one comparable number per region. Keeping that open felt more useful than
+          locking it behind a sign-up, since the point is to make the grid's real carbon cost easy
+          to see.
         </p>
         <ul
           style={{
@@ -140,10 +140,9 @@ export function About() {
             margin: "0.5rem 0 0",
           }}
         >
-          <li>No account, no card, no trial clock - open the site and use it.</li>
+          <li>No account or card needed: open the site and use it.</li>
           <li>
-            The API answers without a key on the public demo. There's a generous fair-use limit so
-            the service stays responsive for everyone.
+            The API answers without a key on the public demo, up to 100 requests a minute per IP.
           </li>
           <li>
             Built on free, public data sources. Where a region has no live feed, the estimate is
@@ -157,9 +156,9 @@ export function About() {
         <p style={{ color: "var(--gray-600)", fontSize: "0.95rem" }}>
           Carbon Lens tries to practise what it measures. It's a deliberately lightweight service: a
           small API that reads public grid feeds and caches the results, plus a static site served
-          from a CDN. There's no heavy compute behind it - no model training, no crypto, no
-          sprawling data pipeline - so it draws little power to run, and it sleeps after a short
-          idle period and wakes on demand. The few-second wait on the first request is that wake-up.
+          from a CDN. There's no heavy compute behind it (no model training or sprawling data
+          pipeline), so it draws little power to run, and it sleeps after a short idle period and
+          wakes on demand. The few-second wait on the first request is that wake-up.
         </p>
         <p
           style={{
@@ -171,8 +170,8 @@ export function About() {
           The API runs on a free Render instance in their Oregon region, which draws from the
           Pacific Northwest grid (Bonneville Power Administration, zone US-NW-BPAT). That grid is
           hydro-heavy and usually among the cleaner ones in North America. Rather than ask you to
-          take that on faith, here's what it's emitting right now - the same live, measured reading
-          the rest of the site uses, hour by hour:
+          take that on faith, here's its live, measured reading right now, the same one the rest of
+          the site uses:
         </p>
 
         <OregonGridLive />

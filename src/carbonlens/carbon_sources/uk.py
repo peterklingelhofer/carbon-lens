@@ -34,7 +34,7 @@ class UKCarbonSource:
             data = resp.json()["data"][0]
             intensity = data["intensity"]["actual"] or data["intensity"]["forecast"]
             # /intensity carries no mix, so fetch the national mix NESO publishes
-            # alongside it rather than inferring the renewable share from intensity.
+            # alongside it rather than inferring the renewable share from intensity
             renewable = await self._national_renewable_pct()
             return CarbonIntensity(
                 grid_zone="GB",
@@ -116,7 +116,7 @@ class UKCarbonSource:
 
 # NESO fuel labels counted as renewable. Biomass is deliberately excluded, matching
 # the treatment in the emission-factor corpus: it is combustion, and the biogenic-CO2
-# accounting that would make it renewable is contested.
+# accounting that would make it renewable is contested
 _RENEWABLE_FUELS = {"wind", "solar", "hydro"}
 
 
@@ -174,10 +174,10 @@ def _estimate_renewable_pct(intensity: float) -> float:
     at "450 gCO2/kWh = 0% renewable". Measured against NESO's own published
     generation mix over 97 half-hour settlement periods (2026-08-21 to 2026-08-23),
     it overstated the renewable share by a mean of **+46.9 percentage points**, and
-    never once understated it. Its output ranged 60.7-87.8% while the truth ranged
-    10.3-51.2%: the two ranges do not overlap at all.
+    never understated it. Its output ranged 60.7-87.8% while the truth ranged
+    10.3-51.2%, with no overlap between the two ranges.
 
-    The cause is a system-boundary error. NESO's intensity is DIRECT combustion, so
+    The cause is a system-boundary error. NESO's intensity is direct combustion, so
     wind, solar, hydro and nuclear all score 0 and UK intensity is structurally far
     below 450. A 450 anchor therefore reads almost any UK half-hour as
     predominantly renewable. Nuclear-heavy periods are read as renewable for the

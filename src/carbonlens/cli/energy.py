@@ -3,9 +3,9 @@
 `carbonlens run --measure-energy` reads the CPU-package energy counter before and
 after the command and records the real kWh consumed, turning the impact ledger's
 avoided-CO2 from an operator estimate into a measurement. RAPL covers the CPU package
-(and DRAM where exposed), not the whole machine, so it's labelled as such, but still far
-better than a guess, and free on most Linux servers. Unavailable elsewhere -> we fall
-back to the operator-supplied --energy-kwh.
+(and DRAM where exposed) and is labelled that way. It's free on most Linux servers and
+beats a guess. Where RAPL is unavailable we fall back to the operator-supplied
+--energy-kwh.
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ from __future__ import annotations
 import glob
 
 # Package-level RAPL domains (intel-rapl:0, intel-rapl:1, ...), not their subdomains
-# (intel-rapl:0:0), so we don't double-count.
+# (intel-rapl:0:0), so we don't double-count
 _RAPL_GLOB = "/sys/class/powercap/intel-rapl:[0-9]*/energy_uj"
 
 

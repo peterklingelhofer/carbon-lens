@@ -4,8 +4,8 @@
 
 A **deferrable** sensor that gates a downstream task on the grid: it succeeds only
 once the region is a good time to run, and because it's deferrable it **frees the
-worker slot while waiting** (the poll runs in the triggerer). That's the correct way
-to make a DAG carbon-aware. A blocking call would hold a worker for hours.
+worker slot while waiting** (the poll runs in the triggerer), where a blocking call
+would hold a worker for hours.
 
 ```python
 from carbonlens.integrations.airflow import CarbonAwareSensor
@@ -66,7 +66,7 @@ GitHub Action, Kubernetes, and Airflow surfaces.
 
 ## Celery: `apply_when_clean`
 
-Schedule a task for the next clean window using Celery's own `countdown`; **no worker
+Schedule a task for the next clean window using Celery's own `countdown`, so **no worker
 is blocked** while waiting:
 
 ```python

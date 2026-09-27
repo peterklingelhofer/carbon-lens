@@ -148,7 +148,7 @@ async def ingest_usage(
             credentials=req.credentials,
         )
     except CloudIngestionError as e:
-        # Missing SDK (cloud extra) or upstream credential/permission/API failure.
+        # Missing SDK (cloud extra) or upstream credential/permission/API failure
         raise HTTPException(status_code=502, detail=str(e)) from e
 
     return _store_and_summarize(org_id, records)

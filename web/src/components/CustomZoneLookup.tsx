@@ -13,7 +13,7 @@ import { IntensityValue } from "./IntensityValue";
 // Look up carbon intensity for any covered grid zone directly, for on-prem /
 // colocation workloads that aren't a cloud region but sit on a grid we cover. Reads the
 // zone list and intensities from the CDN snapshot when available (no API call). Falls
-// back to /carbon/zones + /carbon/{zone} without it.
+// back to /carbon/zones + /carbon/{zone} without it
 export function CustomZoneLookup() {
   const { data: snapshot } = useSnapshot();
   const [zone, setZone] = useState("DE");
@@ -45,7 +45,7 @@ export function CustomZoneLookup() {
         On-prem or any grid zone
         <InfoTip
           label="grid zone"
-          text="Not on a big cloud? Pick the electricity grid zone your datacenter sits on to see its live carbon intensity: same data, no cloud region required."
+          text="Pick the electricity grid zone your datacenter sits on to see its live carbon intensity. Same data, no cloud region required."
         />
       </h2>
       <p style={{ ...muted, margin: "0 0 0.75rem" }}>

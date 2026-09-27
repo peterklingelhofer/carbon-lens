@@ -79,7 +79,7 @@ class ImpactRecordDB(Base):
 # --- Green SLA tables ---
 # Each row stores its domain model as JSON (payload) plus a few indexed columns
 # for querying. The nested shape (breached_regions, checks_by_day, ...) round-trips
-# losslessly via pydantic, so the schema stays stable as those details evolve.
+# losslessly via pydantic, so the schema stays stable as those details evolve
 
 
 class GreenSLADB(Base):

@@ -11,7 +11,7 @@ import { Scheduler } from "./pages/Scheduler";
 import { Settings } from "./pages/Settings";
 import { SLAMonitor } from "./pages/SLAMonitor";
 
-// Lazy-loaded so three.js / globe.gl stay out of the main bundle.
+// Lazy-loaded so three.js / globe.gl stay out of the main bundle
 const CarbonGlobe = lazy(() => import("./pages/CarbonGlobe"));
 
 const globe = (
@@ -51,7 +51,7 @@ export interface AppRoute {
 }
 
 // The one place routes, nav labels and page titles are defined. App, Nav and
-// RouteAnnouncer all read from here so the three can't drift apart.
+// RouteAnnouncer all read from here so the three can't drift apart
 export const ROUTES: AppRoute[] = [
   {
     path: "/",

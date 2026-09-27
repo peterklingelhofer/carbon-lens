@@ -69,7 +69,7 @@ def _classify(zone: str, delta_pct: float, borders: list[dict]) -> str:
     imports = 0.0
     for b in evaluable:
         net = b["net_b_to_a_mw"] or 0.0
-        # net_b_to_a is positive when power flows b -> a.
+        # net_b_to_a is positive when power flows b -> a
         if b["a"] == zone and net > 0:
             imports += net
         elif b["b"] == zone and net < 0:
@@ -109,7 +109,7 @@ async def run(token: str) -> dict:
 
     rows.sort(key=lambda r: abs(r["delta_pct"]), reverse=True)
     # Only zones whose imports were actually measurable say anything about whether
-    # flow tracing matters. The rest only report a gap in the data.
+    # flow tracing matters. The rest only report a gap in the data
     measured = [r for r in rows if r["interpretation"].startswith("importer")]
     deltas = [abs(r["delta_pct"]) for r in measured]
     return {

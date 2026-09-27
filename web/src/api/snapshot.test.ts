@@ -7,7 +7,7 @@ import {
   zoneIntensityFromSnapshot,
 } from "./snapshot";
 
-// Minimal snapshot fixture exercising the derive-from-snapshot helpers.
+// Minimal snapshot fixture exercising the derive-from-snapshot helpers
 const SNAP = {
   regions: [
     { provider: "aws", region: "us-east-1", grid_zone: "US-MIDA-PJM", location: "Virginia" },

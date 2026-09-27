@@ -2,7 +2,7 @@
 // the accumulated history, which is more motivating than a bare absolute number.
 //
 // Pure and side-effect-free so it's unit-testable. The globe feeds it the history
-// it already fetched, so there's no extra request.
+// it already fetched, so there's no extra request
 
 export type UsualComparison = {
   status: "cleaner" | "typical" | "dirtier";
@@ -26,7 +26,7 @@ function median(values: number[]): number {
 // Compare `current` intensity to the historical baseline. Prefers the same
 // hour-of-day (UTC) when there's enough of it (diurnal patterns dominate grid
 // carbon). Otherwise falls back to all recent points. Returns null when there
-// isn't enough history yet to say anything honest.
+// isn't enough history yet to say anything honest
 export function relativeToUsual(
   current: number,
   points: Point[],

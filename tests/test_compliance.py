@@ -78,7 +78,7 @@ def test_scope_managed_is_scope3():
 def test_data_quality_measured():
     # Use the exact strings providers stamp on a reading. This test previously
     # asserted on "uk", which no provider emits (it is "uk_carbon_intensity"), so it
-    # passed while every real UK reading was graded "estimated".
+    # passed while every real UK reading was graded "estimated"
     assert _data_quality("uk_carbon_intensity") == "measured"
     assert _data_quality("eia") == "measured"
     assert _data_quality("entsoe") == "measured"

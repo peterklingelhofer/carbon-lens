@@ -12,7 +12,7 @@ import {
 } from "./RegionDetail";
 
 // Mock the HTTP client so the container components resolve from fixtures instead of a
-// real fetch. vi.mock is hoisted, so the import below receives the mock.
+// real fetch. vi.mock is hoisted, so the import below receives the mock
 vi.mock("../api/client", () => ({
   api: {
     carbonHistory: vi.fn(),
@@ -24,7 +24,7 @@ vi.mock("../api/client", () => ({
 
 // The region components read precomputed snapshot/CDN data (no API call), so mock them.
 // snapshotEnabled: false exercises the self-hosted path where the components are
-// allowed to fall back to the live API (in production it's true and they never do).
+// allowed to fall back to the live API (in production it's true and they never do)
 vi.mock("../api/snapshot", async () => {
   const { useQuery } = await import("@tanstack/react-query");
   return {
@@ -35,7 +35,7 @@ vi.mock("../api/snapshot", async () => {
     useRegionHistoryArchive: vi.fn(),
     useWeatherSnapshot: vi.fn(),
     // Faithful re-implementation of the real helper for the snapshotEnabled:false
-    // path: prefer the snapshot value, else run the query (no snapshot configured).
+    // path: prefer the snapshot value, else run the query (no snapshot configured)
     useSnapshotOrApi: <T,>(
       snap: T | undefined,
       queryKey: unknown[],
@@ -77,7 +77,7 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-// Fresh QueryClient per render (retry off so error/empty states settle at once).
+// Fresh QueryClient per render (retry off so error/empty states settle at once)
 function renderWithClient(ui: ReactElement) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);

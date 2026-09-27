@@ -12,7 +12,7 @@ def _is_num(v):
 def test_signal_contract(client: TestClient):
     body = client.get("/api/v1/carbon/signal/aws/us-east-1").json()
 
-    # Identity + the run-now/wait decision the dispatcher keys on.
+    # Identity + the run-now/wait decision the dispatcher keys on
     for key in ("provider", "region", "grid_zone", "state", "advice", "marginal_basis"):
         assert isinstance(body[key], str), key
     assert body["state"] in {"green", "yellow", "red"}
@@ -21,7 +21,7 @@ def test_signal_contract(client: TestClient):
     assert _is_num(body["intensity_gco2_kwh"])
     assert isinstance(body["clean_surplus"], bool)
 
-    # Optional/nullable fields: present in the schema, null or typed.
+    # Optional/nullable fields: present in the schema, null or typed
     assert body["surplus_window_in_hours"] is None or isinstance(
         body["surplus_window_in_hours"], int
     )

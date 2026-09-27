@@ -15,7 +15,7 @@ from carbonlens.carbon_sources.emission_factors import intensity_from_fuel_mix
 from carbonlens.carbon_sources.http_pool import shared_client
 from carbonlens.models.carbon import CarbonIntensity
 
-# Per-region power, grouped by fuel-tech. One request returns every NEM region.
+# Per-region power, grouped by fuel-tech. One request returns every NEM region
 API_URL = (
     "https://api.openelectricity.org.au/v4/data/network/NEM"
     "?metrics=power&primary_grouping=network_region&secondary_grouping=fueltech_group"
@@ -34,7 +34,7 @@ _REGION_MAP = {
 
 # OpenElectricity fueltech_group -> normalized fuel. Storage/charging groups
 # (battery*, pumps) are deliberately omitted: they're loads or net-zero stores
-# and counting them would double-count or push the mix negative.
+# and counting them would double-count or push the mix negative
 _FUELTECH_MAP = {
     "coal": "coal",
     "gas": "natural_gas",
@@ -102,7 +102,7 @@ class AEMOCarbonSource:
                 )
             except ValueError:
                 # A region reporting no generation is dropped so the cascade can
-                # try the next source, rather than taking the whole batch down.
+                # try the next source, rather than taking the whole batch down
                 continue
 
         return results

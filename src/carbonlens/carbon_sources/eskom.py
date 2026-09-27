@@ -3,9 +3,9 @@
 Covers 1 zone: ZA (South Africa national grid).
 South Africa's grid is ~85% coal, making it one of the dirtiest in the world.
 
-NOTE: This is a static time-of-day heuristic. Eskom does
-not publish a free real-time fuel-mix / carbon-intensity API, so this returns a
-modeled estimate tagged `source="eskom_heuristic"`. Treat it as illustrative.
+This is a static time-of-day heuristic. Eskom publishes no free real-time fuel-mix
+or carbon-intensity API, so this returns a modeled estimate tagged
+`source="eskom_heuristic"`. Treat it as illustrative.
 """
 
 from datetime import UTC, datetime

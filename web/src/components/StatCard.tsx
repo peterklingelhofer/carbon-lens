@@ -4,7 +4,7 @@ import { InfoTip } from "./InfoTip";
 // A bordered metric tile: small label (with optional info tooltip) over a large
 // value with an optional unit suffix. `positive` greens the value, `mono` shrinks
 // it to a monospace identifier. Shared across the scheduler, SLA, compliance,
-// settings and API-explorer result cards.
+// settings and API-explorer result cards
 export function StatCard({
   label,
   value,

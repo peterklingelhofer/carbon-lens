@@ -28,7 +28,7 @@ _schedule_store: dict[str, CronSchedule] = {}
 
 def _get_engine() -> SchedulingEngine:
     # Shared wiring (snapshot-backed current intensity + ENTSO-E forecast) lives
-    # in deps so the public /carbon/forecast endpoint uses the same engine.
+    # in deps so the public /carbon/forecast endpoint uses the same engine
     from carbonlens.api.deps import get_scheduling_engine
 
     return get_scheduling_engine()

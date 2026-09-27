@@ -7,7 +7,7 @@ const FALLBACK = "Carbon Lens";
 // On every SPA navigation: set the document title and move focus to <main> so
 // assistive tech announces the new page and keyboard focus doesn't get stranded
 // on the link that was just activated. Skips the initial mount (the page already
-// has focus at the top and index.html's title is correct for "/").
+// has focus at the top and index.html's title is correct for "/")
 export function RouteAnnouncer() {
   const { pathname } = useLocation();
 
@@ -18,12 +18,12 @@ export function RouteAnnouncer() {
 
     // Move focus to <main> on navigation so AT announces the new page and focus
     // doesn't stay on the just-clicked link, but not on the initial mount,
-    // where the browser's default top-of-document focus is correct.
+    // where the browser's default top-of-document focus is correct
     if (firstRender.current) {
       firstRender.current = false;
       return;
     }
-    // Focus without scrolling (ScrollToTop already handles scroll position).
+    // Focus without scrolling (ScrollToTop already handles scroll position)
     document.getElementById("main")?.focus({ preventScroll: true });
   }, [pathname]);
 

@@ -13,7 +13,7 @@ async def test_ensure_demo_sla_is_idempotent_and_self_heals():
     assert sla is not None and sla.org_id == "demo"
 
     # Self-heal: after a wipe (DB reset, redeploy, or a visitor deleting it) the
-    # next call recreates it.
+    # next call recreates it
     await repo.delete_sla(DEMO_SLA_ID)
     assert await ensure_demo_sla(repo) is True
 

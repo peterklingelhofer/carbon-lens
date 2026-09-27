@@ -4,7 +4,7 @@ import { timeAgo } from "../lib/format";
 
 // A public, citable "State of Clean Compute": which grids reward carbon-aware
 // scheduling most (biggest intra-day swing) and which regions are greenest to host
-// on (lowest typical intensity), from the published rolling history.
+// on (lowest typical intensity), from the published rolling history
 export function CleanCompute() {
   const { data, isLoading, isError } = useCleanComputeReport();
   const { data: history } = useCleanComputeHistory();

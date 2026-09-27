@@ -1,161 +1,26 @@
-# CarbonLens SaaS Roadmap
+# Roadmap
 
-## Where Things Stand Now (Control Plane MVP)
+[README.md](../README.md) describes what's built and is kept current.
+This page lists what isn't built yet.
 
-The [README](../README.md) is the source of truth for what ships and is kept current.
-This file tracks what's *next*, and the boxes below record which of those have landed.
+## What's next
 
-What's missing to become a real SaaS:
-
----
-
-## Phase 1: API-as-a-Service (Month 1-2)
-
-**Goal:** People can sign up, get an API key, and integrate CarbonLens into their existing deployment pipelines.
-
-### Auth & Multi-tenancy
-- [x] API key authentication (`carbonlens/auth`)
-- [ ] Optional per-key rate limits for self-hosters (per-IP limiting is already enabled)
-- [ ] Tenant isolation for carbon accounting (each org sees only their data). The `org_id` field exists but nothing enforces it yet
-
-### Persistence
-- [x] PostgreSQL for accounting records, API keys, org data (Alembic-migrated)
-- [x] Replace in-memory tracker with DB-backed tracker (`DBCarbonTracker`)
-- [ ] Historical carbon intensity in the DB. The snapshot cron publishes a rolling
-      history archive today, so nothing queries a stored per-request series
-
-### CLI Tool
-- [x] `carbonlens route`, `intensity`, `regions`, `run`, `best-time`, `calibration`
-- [x] `carbonlens report` (lifetime savings, without a `--last` window) and `impact --days 30`
-- [ ] Publish to PyPI: `pip install carbonlens`
-
-### CI/CD Integrations
-- [x] GitHub Actions: [`carbon-signal`](../.github/actions/carbon-signal/README.md) gates on the
-      grid, [`route`](../.github/actions/route/README.md) picks the region,
-      [`carbon-report`](../.github/actions/carbon-report/README.md) posts the clean-compute summary
-- [ ] GitLab CI template. The companion
-      [carbon-aware-dispatcher](https://github.com/peterklingelhofer/carbon-aware-dispatcher)
-      already ships GitLab, CircleCI and Bitbucket templates against its own providers,
-      so this is only worth doing for people who want it against this API
-- [ ] Terraform *provider*: `data "carbonlens_greenest_region" {}`. A
-      [module](../deploy/terraform/greenest-region/README.md) ships today
-
----
-
-## Phase 2: Managed Compute (Month 3-6)
-
-**Goal:** Users deploy workloads directly to CarbonLens. We handle placement on the cleanest infrastructure. Think "Hetzner meets green routing."
-
-### Compute Provisioning
-- [ ] Hetzner Cloud API integration (cheapest bare-metal provider, EU-focused, actual green DC in Finland)
-- [ ] AWS spot instance provisioning via boto3
-- [ ] GCP preemptible VM provisioning
-- [ ] Azure spot VM provisioning
-- [ ] Unified compute API: `POST /compute/deploy` and we pick the region
-
-### Pricing Model (Hetzner-competitive)
-Target: match or beat Hetzner on price for equivalent specs, with the green guarantee as the differentiator.
-
-| Tier | vCPU | RAM | Storage | Price | Notes |
-|------|------|-----|---------|-------|-------|
-| Starter | 2 | 4 GB | 40 GB SSD | $4.50/mo | Hetzner CX22 is $4.35 |
-| Standard | 4 | 8 GB | 80 GB SSD | $8.50/mo | Hetzner CX32 is $7.85 |
-| Performance | 8 | 16 GB | 160 GB SSD | $16/mo | Hetzner CX42 is $14.75 |
-| Compute | 16 | 32 GB | 320 GB SSD | $30/mo | Hetzner CX52 is $28.55 |
-
-The premium over Hetzner (~5-15%) pays for:
-- Carbon-verified placement (provable, auditable)
-- Multi-cloud redundancy across providers
-- Automatic region migration when grid gets dirty
-- Carbon SLA (contractual guarantee)
-
-For batch/flexible workloads (CI/CD, ML training), prices can be *lower* than Hetzner by using spot instances in green regions during off-peak hours.
-
-### Container Platform
-- [ ] Docker container deployment: `carbonlens deploy --image myapp:latest`
-- [ ] Automatic region selection based on current grid conditions
-- [ ] Container registry (or integrate with existing: GHCR, DockerHub, ECR)
-- [ ] Health checks, auto-restart, logging
-
-### Temporal Shifting (for non-urgent jobs)
-- [ ] `POST /compute/queue` with `deadline_hours: 24`
-- [ ] System finds the greenest window within the deadline
-- [ ] Returns `scheduled_at` and `estimated_carbon_intensity`
-- [ ] Webhook notification when job completes
-- [ ] Ideal for: ML training, video transcoding, nightly builds, data pipelines
-
----
-
-## Phase 3: Platform (Month 6-12)
-
-**Goal:** Full platform with dashboard, Kubernetes integration, and carbon SLAs.
-
-### Carbon Dashboard (Frontend)
-- [ ] Real-time world map showing grid carbon intensity
-- [ ] Per-org dashboard: total carbon saved, greenest jobs, trends
-- [ ] Badge generator: "Powered by CarbonLens: 94% renewable this month"
-- [ ] Scope 3 emissions report export (PDF/CSV) for ESG compliance
-
-### Kubernetes Operator
-- [ ] `CarbonMeshCluster` CRD: define multi-region cluster pool
-- [ ] Scheduler plugin: pods get placed on greenest available node
-- [ ] `carbonlens.io/min-renewable: "80%"` annotation on deployments
-- [ ] Auto-migration: reschedule pods when grid conditions change
-- [ ] Works with EKS, GKE, AKS
-
-### Carbon SLA
-- [ ] Contractual guarantee: "Your workload ran on >X% renewable energy"
-- [ ] Backed by auditable government grid data
-- [ ] SLA breach -> automatic credit
-- [ ] Tiers: 80% renewable ($X), 90% ($X+), 95% ($X++)
-
-### Live Migration
-- [ ] For long-running workloads (web apps, databases)
-- [ ] Monitor grid conditions continuously
-- [ ] When current region drops below threshold, migrate to cleaner region
-- [ ] Requires stateless or replicated workloads (or managed DB replication)
-
----
-
-## Phase 4: Scale (Month 12+)
-
-### Edge Network
-- [ ] CDN-like edge nodes in the greenest locations
-- [ ] Static asset serving from renewable-powered edge
-- [ ] Anycast DNS routing to cleanest healthy edge
-
-### Carbon API Marketplace
-- [ ] Third-party developers build on CarbonLens data
-- [ ] "Carbon intensity as a service" for non-compute use cases
-- [ ] IoT, EV charging, smart home energy optimization
-
-### Carbon Credits
-- [ ] Issue verifiable carbon reduction certificates
-- [ ] Based on actual measured savings (counterfactual vs. chosen region)
-
----
-
-## Technical Decisions
-
-### Why Hetzner as First Compute Provider
-1. **Price leader**: Cheapest reliable cloud in Europe
-2. **Green data centers**: Hetzner's Finland DC (Helsinki) runs on the Nordic grid (~95% clean)
-3. **No "green premium" markup**: They don't charge extra for it
-4. **Simple API**: Easy to provision programmatically
-5. **EU data residency**: GDPR-friendly by default
-
-### Why Not Just Wrap Existing Providers
-Wrapping AWS/GCP/Azure adds their markup (~3-10x over bare metal). For CarbonLens to be price-competitive with Hetzner:
-- Use bare-metal/VPS providers (Hetzner, OVH, Vultr) as the primary compute layer
-- Use hyperscalers only for regions where bare-metal isn't available
-- Pass through near-cost pricing
-
----
-
-## Key Competitive Advantages
-
-1. **Government-verified data**: We use official grid operator data (EIA, ENTSO-E, AEMO) instead of corporate self-reporting
-2. **Hourly resolution**: We track actual grid conditions per hour instead of annual averages
-3. **Multi-cloud**: We arbitrage across all supported providers.
-4. **Open source control plane**: Transparent methodology. Anyone can verify our claims.
-5. **Price competitive**: Green doesn't have to cost more. Clean energy during off-peak is often the cheapest energy.
+- Market-based Scope 2 accounting (RECs/PPAs) and supplier-specific Scope 3 factors
+- Utilization-aware energy modeling. The current model assumes a flat draw per vCPU-hour
+- Signed PDF reports and a recognized attestation standard
+- Report templates for CSRD (as PDF), SEC climate disclosure and California SB 253
+- Live-account validation of the billing adapters
+- Global consumption-based intensity. It needs paid cross-border flow data, so tracing
+  is EU-only (free ENTSO-E) today
+- A sharper "cleaner than usual" baseline as the history archive accumulates
+- More cloud providers and on-prem coverage
+- Measured marginal emissions in place of the fuel-mix heuristic, if a data budget appears
+- Email and Slack alerting for SLA breaches
+- Per-key API usage metering and rate limits (queries per key per day)
+- Historical intensity in Postgres. The archive is a set of published snapshot files today
+- Workload region tracking from AWS CloudWatch or GCP Monitoring
+- A GitLab CI template against this API. The companion
+  [carbon-aware-dispatcher](https://github.com/peterklingelhofer/carbon-aware-dispatcher)
+  already ships one against its own providers
+- A Terraform *provider*: `data "carbonlens_greenest_region" {}`. A
+  [module](../deploy/terraform/greenest-region/README.md) ships today

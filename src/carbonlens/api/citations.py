@@ -2,8 +2,8 @@
 
 Any number this API returns carries a `provenance` block naming citekeys. These
 endpoints resolve them, so a consumer can trace a figure to its basis without
-leaving the API. That is the point of the whole apparatus: provenance a caller
-cannot follow is decoration.
+leaving the API. Provenance only helps a caller who can follow it, so every
+citekey the API emits resolves here.
 """
 
 from __future__ import annotations

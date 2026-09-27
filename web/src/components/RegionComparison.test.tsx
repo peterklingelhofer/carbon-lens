@@ -61,7 +61,7 @@ describe("RegionComparison", () => {
 
     // (400 - 100) / 400 = 75%
     expect(await screen.findByText(/~75%/)).toBeTruthy();
-    // Greenest region appears (in both the stat card and the savings banner).
+    // Greenest region appears (in both the stat card and the savings banner)
     expect(screen.getAllByText(/scaleway\/fr-par/).length).toBeGreaterThanOrEqual(1);
   });
 

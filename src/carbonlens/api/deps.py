@@ -99,9 +99,9 @@ def _maybe_snapshot(source: CarbonDataSource) -> CarbonDataSource:
 _carbon_source = _build_carbon_source()
 _cached_source = _CachedCarbonSource(_carbon_source, _cache)
 _history_store = HistoryStore(settings.history_url)
-# Optional measured-marginal source (None unless an operator configured WattTime).
+# Optional measured-marginal source (None unless an operator configured WattTime)
 _marginal_source = marginal_source_from_settings(settings)
-# Demo/test fallback store. The DB-backed repo is used per-request when a DB is on.
+# Demo/test fallback store. The DB-backed repo is used per-request when a DB is on
 _in_memory_sla_repo = InMemorySLARepository()
 _engine = RoutingEngine(
     carbon_source=_carbon_source,

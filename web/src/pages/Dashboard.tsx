@@ -40,13 +40,13 @@ function QualityTag({ quality }: { quality?: CarbonIntensity["quality"] }) {
 // Surfaces data freshness: a "last live reading" badge when the snapshot
 // bridged a transient upstream gap with this zone's last live reading,
 // otherwise just the reading's age when it's noticeably stale. Keeps fresh rows
-// uncluttered.
+// uncluttered
 function FreshnessTag({ intensity }: { intensity: CarbonIntensity }) {
   const ageMs = Date.now() - new Date(intensity.timestamp).getTime();
   if (intensity.carried_forward) {
     return (
       <span
-        title={`Last live reading from ${timeAgo(intensity.timestamp)} - its upstream feed was briefly unavailable, so the snapshot kept the real value rather than dropping to an estimate.`}
+        title={`Last live reading from ${timeAgo(intensity.timestamp)}. Its upstream feed was briefly unavailable, so the snapshot kept the real value rather than dropping to an estimate.`}
         style={{
           display: "block",
           fontSize: "0.7rem",
@@ -158,7 +158,7 @@ function RegionRow({ region, intensity }: { region: CloudRegion; intensity?: Car
                 consumed ~{intensity.consumption_intensity_gco2_kwh} gCO₂
                 <InfoTip
                   label="consumption-based intensity"
-                  text="Flow-traced across the European grid: what this region actually consumes after imports and exports, versus what it generates locally (the figure above). They diverge when a region imports notably cleaner or dirtier power than it produces."
+                  text="Flow-traced across the European grid: what this region consumes after imports and exports, versus what it generates locally (the figure above). They diverge when a region imports notably cleaner or dirtier power than it produces."
                 />
               </span>
             )}
@@ -218,25 +218,25 @@ const COLUMNS: {
     key: "grid_zone",
     label: "Grid Zone",
     align: "left",
-    info: "The electricity grid (balancing authority) that powers this cloud region - e.g. PJM for US-East, CAISO for California.",
+    info: "The electricity grid (balancing authority) that powers this cloud region, e.g. PJM for US-East, CAISO for California.",
   },
   { key: "location", label: "Location", align: "left" },
   {
     key: "intensity",
     label: "Carbon Intensity",
     align: "left",
-    info: "Carbon emitted per unit of electricity, in gCO₂/kWh (grams of CO₂ per kilowatt-hour). Lower is greener. This captures ALL low-carbon sources - including nuclear - so it's the most accurate 'how clean' measure, which is why it's the default sort.",
+    info: "Carbon emitted per unit of electricity, in gCO₂/kWh (grams of CO₂ per kilowatt-hour). Lower is greener. It captures every low-carbon source, nuclear included, so it's the most accurate 'how clean' measure and the default sort.",
   },
   {
     key: "renewable",
     label: "Renewable %",
     align: "center",
-    info: "Share of the grid's electricity from renewables - wind, solar, hydro - right now. Important: this EXCLUDES nuclear, so renewable % won't always track carbon intensity. A nuclear-heavy grid like France can be low-carbon yet show a low renewable %, and a high-renewable grid can still be dirty if the rest is coal. For the true 'cleanest' ranking, sort by Carbon Intensity (lower = greener).",
+    info: "Share of the grid's electricity from renewables (wind, solar, hydro) right now. It leaves out nuclear, so renewable % won't always track carbon intensity. A nuclear-heavy grid like France can be low-carbon yet show a low renewable %, and a high-renewable grid can still be dirty if the rest is coal. For the 'cleanest' ranking, sort by Carbon Intensity (lower = greener).",
   },
 ];
 
 // Text columns sort alphabetically, and numeric columns (intensity, renewable) sort
-// by value. Rows missing intensity data sort last in both directions.
+// by value. Rows missing intensity data sort last in both directions
 function sortRegions(
   rows: CloudRegion[],
   intensities: Record<string, CarbonIntensity>,
@@ -264,8 +264,8 @@ function sortRegions(
 export function Dashboard() {
   const [provider, setProvider] = useState<string>("");
   const [search, setSearch] = useState<string>("");
-  // Default to carbon intensity ascending - lowest gCO₂/kWh first is the rigorous
-  // "greenest" (counts nuclear/hydro), unlike renewable % which excludes nuclear.
+  // Default to carbon intensity ascending: lowest gCO₂/kWh first is the rigorous
+  // "greenest" (counts nuclear/hydro), unlike renewable % which excludes nuclear
   const [sortKey, setSortKey] = useState<SortKey | null>("intensity");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const toggleSort = (key: SortKey) => {
@@ -298,16 +298,16 @@ export function Dashboard() {
   // it just to show a stats counter on page load. Regions already come from the
   // CDN snapshot. Fetch the savings ledger only when there's no snapshot (self-
   // hosted, always-on API) or after the user deliberately routes a sample, which
-  // hits the API anyway. That keeps Grid Data fully CDN-backed on first view.
+  // hits the API anyway. That keeps Grid Data fully CDN-backed on first view
   const { data: savings } = useQuery({
     queryKey: ["savings"],
     queryFn: () => api.savings(),
     enabled: !snapshotEnabled || routeSample.isSuccess,
   });
 
-  // Fetch intensities for ALL regions (in snapshot mode they're already present),
-  // sort the FULL set, THEN slice to 20 - otherwise "greenest" would only sort the
-  // first 20 as-fetched, showing the wrong regions.
+  // Fetch intensities for all regions (in snapshot mode they're already present),
+  // sort the full set, then slice to 20. Otherwise "greenest" would only sort the
+  // first 20 as-fetched, showing the wrong regions
   const allRegions = regions ?? [];
   const apiIntensities = useRegionIntensities(usingSnapshot ? [] : allRegions);
   const intensities = usingSnapshot ? snapshot.intensities : apiIntensities;
@@ -358,7 +358,7 @@ export function Dashboard() {
           </button>
           <InfoTip
             label="Route a sample workload"
-            text="Asks the API for the greenest region right now, using a sample carbon-first setting, and shows what it recommends. Nothing is deployed or run - it's the recommendation you'd act on yourself (e.g. from a deploy script or a scheduler that re-checks before each run)."
+            text="Asks the API for the greenest region right now, using a sample carbon-first setting, and shows what it recommends. Nothing is deployed or run. It's the recommendation you'd act on yourself (e.g. from a deploy script or a scheduler that re-checks before each run)."
           />
         </span>
       </div>
@@ -378,7 +378,7 @@ export function Dashboard() {
           Live data straight from the API, read through cascading sources
           <InfoTip
             label="cascading sources"
-            text="The API tries data sources in priority order and uses the first that covers a zone - a real grid-operator feed where one exists, then a regional heuristic or weather-based estimate, falling back to labelled sample data. So coverage is broad and every reading is tagged with where it came from."
+            text="The API tries data sources in priority order and uses the first that covers a zone: a real grid-operator feed where one exists, then a regional heuristic or weather-based estimate, falling back to labelled sample data. So coverage is broad and every reading is tagged with where it came from."
           />
           .
         </p>
@@ -395,7 +395,7 @@ export function Dashboard() {
           <strong style={{ textTransform: "uppercase" }}>
             {routeSample.data.recommended.provider}
           </strong>{" "}
-          <code>{routeSample.data.recommended.region}</code> -{" "}
+          <code>{routeSample.data.recommended.region}</code>,{" "}
           {routeSample.data.recommended.carbon_intensity_gco2_kwh} gCO₂/kWh,{" "}
           {routeSample.data.recommended.renewable_percentage}% renewable.
         </p>
@@ -415,14 +415,14 @@ export function Dashboard() {
             label="Recommendations made"
             value={savings.total_requests}
             positive
-            tip="How many routing recommendations this demo server has produced - each click of 'Route a sample workload' counts. Tracked in memory, so it resets whenever the server restarts. It's this instance's activity since the last restart."
+            tip="How many routing recommendations this demo server has produced. Each click of 'Route a sample workload' counts. Tracked in memory, so it resets whenever the server restarts. It's this instance's activity since the last restart."
           />
           <StatCard
             label="Avg intensity reduction"
             value={savings.avg_intensity_reduction_gco2_kwh.toFixed(1)}
             unit="gCO₂/kWh avg"
             positive
-            tip="Per recommendation, how much cleaner (gCO₂/kWh) the chosen region was than the average of the candidates considered - i.e. versus picking among the same options without carbon-awareness - averaged across recommendations. It's a rate: per-kWh intensities aren't additive across workloads, and real grams also depend on each job's energy use. In-memory for this server instance, resets on restart."
+            tip="Per recommendation, how much cleaner (gCO₂/kWh) the chosen region was than the average of the candidates considered (i.e. versus picking among the same options without carbon-awareness), averaged across recommendations. It's a rate: per-kWh intensities aren't additive across workloads, and real grams also depend on each job's energy use. In-memory for this server instance, resets on restart."
           />
           <StatCard
             label="Avg renewable % chosen"
@@ -434,7 +434,7 @@ export function Dashboard() {
         </div>
       )}
 
-      {/* Live WebSocket feed - only when a live API backs it (not in static snapshot mode) */}
+      {/* Live WebSocket feed: only when a live API backs it (not in static snapshot mode) */}
       {!snapshotEnabled && <LivePanel />}
 
       <CustomZoneLookup />
@@ -498,7 +498,7 @@ export function Dashboard() {
           <p style={{ color: "var(--gray-400)" }}>Loading regions…</p>
         ) : apiRegionsError && displayRegions.length === 0 ? (
           <p style={{ color: "var(--gray-500)" }}>
-            Couldn't reach the API to load regions. It may be waking up (free tier, ~50s) - refresh
+            Couldn't reach the API to load regions. It may be waking up (free tier, ~50s). Refresh
             in a moment.
           </p>
         ) : displayRegions.length === 0 ? (
@@ -756,7 +756,7 @@ function useRegionIntensities(regions: CloudRegion[]) {
       try {
         return await api.carbonIntensityBatch(lookups);
       } catch {
-        // Batch failed - fall back to individual calls
+        // Batch failed: fall back to individual calls
         const result: Record<string, CarbonIntensity> = {};
         for (const r of regions) {
           try {

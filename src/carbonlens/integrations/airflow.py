@@ -142,5 +142,5 @@ class CarbonAwareSensor(BaseSensorOperator):
         )
 
     def execute_complete(self, context: Any, event: dict | None = None) -> dict | None:
-        # Clean or deadline -> let the DAG proceed. The event carries the reason.
+        # Clean or deadline -> let the DAG proceed. The event carries the reason
         return event

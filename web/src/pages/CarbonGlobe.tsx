@@ -24,7 +24,7 @@ import { isCleanSurplus } from "../lib/surplus";
 
 // Some browsers/machines can't create a WebGL context (hardware acceleration
 // off, GPU blocklisted, headless). Detect it up front so we can show a graceful
-// fallback instead of letting three.js throw and crash into the ErrorBoundary.
+// fallback instead of letting three.js throw and crash into the ErrorBoundary
 function webglAvailable(): boolean {
   try {
     const canvas = document.createElement("canvas");
@@ -44,8 +44,8 @@ function webglAvailable(): boolean {
 // A spinnable 3D globe plotting every cloud region at its real datacenter
 // coordinates, glowing by carbon intensity (green = clean, red = dirty), with
 // bar height = renewable share and a radar pulse per site. Data is the same
-// real/estimated snapshot the dashboard uses - no continuous-surface coloring,
-// so empty regions are simply dark (honest), not faked.
+// real/estimated snapshot the dashboard uses. There's no continuous-surface
+// coloring, so regions without data stay dark
 
 // Self-hosted from public/textures: three-globe's images re-encoded as WebP, so
 // the first paint isn't waiting on 2 MB of PNG/JPEG. Phones get the 2k Earth
@@ -63,7 +63,7 @@ const NIGHT_SKY = "/textures/night-sky.webp";
 // VIIRS rather than MODIS on purpose: VIIRS's ~3000 km swath overlaps pass-to-pass,
 // so its daily mosaic is gap-free, where MODIS leaves triangular inter-orbit gaps
 // that would show through as bands of missing cloud. A date a couple of days back
-// gives the mosaic time to fill in.
+// gives the mosaic time to fill in
 function gibsCloudUrl(): string {
   const day = new Date(Date.now() - 2 * 86_400_000).toISOString().slice(0, 10);
   const params = new URLSearchParams({
@@ -84,7 +84,7 @@ function gibsCloudUrl(): string {
 // The globe's own Earth mesh, found by matching its radius (it carries the night
 // texture). We hang the cloud sphere off this mesh and reuse ITS geometry, so the
 // clouds inherit the exact same UVs and world transform, guaranteeing the cloud
-// image lines up with the continents without re-deriving any rotation.
+// image lines up with the continents without re-deriving any rotation
 function findEarthMesh(globe: GlobeInstance): THREE.Mesh | null {
   const radius = globe.getGlobeRadius();
   let found: THREE.Mesh | null = null;
@@ -96,7 +96,7 @@ function findEarthMesh(globe: GlobeInstance): THREE.Mesh | null {
     const geom = mesh.geometry as THREE.BufferGeometry;
     if (!geom.boundingSphere) geom.computeBoundingSphere();
     const r = (geom.boundingSphere?.radius ?? 0) * mesh.scale.x;
-    // Skip the far larger background-sky sphere, and keep the one sized like the globe.
+    // Skip the far larger background-sky sphere, and keep the one sized like the globe
     if (Math.abs(r - radius) < radius * 0.1) found = mesh;
   });
   return found;
@@ -120,7 +120,7 @@ interface GlobePoint {
 }
 
 // Map a region + its carbon reading to the flat GlobePoint the layers consume.
-// Returns null when the reading is missing, so the caller can drop the point.
+// Returns null when the reading is missing, so the caller can drop the point
 function toGlobePoint(region: CloudRegion, i: CarbonIntensity | undefined): GlobePoint | null {
   if (!i) return null;
   return {
@@ -147,25 +147,25 @@ function metricRGB(p: GlobePoint, metric: Metric): [number, number, number] {
   return metric === "renewable" ? renewableRGB(p.renewable) : intensityRGB(p.intensity);
 }
 
-// Altitude (in globe-radius units) of each beam for the selected metric.
+// Altitude (in globe-radius units) of each beam for the selected metric
 function beamAltitude(p: GlobePoint, metric: Metric): number {
   const frac = metric === "intensity" ? Math.min(1, p.intensity / 800) : p.renewable / 100;
   return 0.04 + frac * 0.5;
 }
 
-// A beam's cylinder radius as a fraction of the globe radius.
+// A beam's cylinder radius as a fraction of the globe radius
 const BEAM_RADIUS_FRAC = 0.0075;
 
 // A tapered, open-ended beam of UNIT height whose color fades to transparent at
-// the tip - it reads as a glowing light shaft with a soft, tapered edge. The
+// the tip, so it reads as a glowing light shaft with a soft, tapered edge. The
 // height is applied per-frame via mesh.scale.y so the metric toggle just
-// rescales existing meshes (no geometry rebuild).
+// rescales existing meshes (no geometry rebuild)
 function buildBeam(p: GlobePoint, globeRadius: number, colorMetric: Metric): THREE.Mesh {
   const radius = globeRadius * BEAM_RADIUS_FRAC;
   // Straight cylinder (no taper), unit height (scaled per-frame). Capped ends
   // (not open) so it reads as a filled volume: looking down from above, the
   // line of sight passes the transparent tip and lands on the full-color base
-  // cap, so the beam appears filled with color rather than hollow.
+  // cap, so the beam appears filled with color rather than hollow
   const geom = new THREE.CylinderGeometry(radius, radius, 1, 20, 8, false);
   geom.translate(0, 0.5, 0); // base at the origin (globe surface), tip near y=1
 
@@ -174,7 +174,7 @@ function buildBeam(p: GlobePoint, globeRadius: number, colorMetric: Metric): THR
   // Subtle, unique ripple on the tip so beams don't end in a perfect flat cut.
   // Build-time only (once per beam, never per frame): a gentle wave around the
   // rim with a per-beam random phase/amplitude shortens the top vertices, so
-  // each beam fades out along its own uneven edge.
+  // each beam fades out along its own uneven edge
   const phase = Math.random() * Math.PI * 2;
   const lobes = 2 + Math.floor(Math.random() * 2); // 2–3 lobes
   const amp = 0.05 + Math.random() * 0.04;
@@ -192,15 +192,15 @@ function buildBeam(p: GlobePoint, globeRadius: number, colorMetric: Metric): THR
   for (let i = 0; i < pos.count; i++) {
     const t = Math.min(1, Math.max(0, pos.getY(i))); // 0 base -> 1 tip (unit height)
     // Full, saturated color through the lower ~⅔ of the beam, fading to
-    // transparent only near the tip - so the hue reads clearly even zoomed out.
+    // transparent only near the tip, so the hue reads clearly even zoomed out
     const alpha = Math.min(1, (1 - t) * 1.5);
     colors.set([r, g, b, alpha], i * 4);
   }
   geom.setAttribute("color", new THREE.BufferAttribute(colors, 4));
 
   // Normal (alpha) blending preserves the true hue. Additive blending washed
-  // colors toward white - yellow especially - and over the bright city-lights
-  // texture. depthWrite:false keeps overlapping beams compositing cleanly.
+  // colors toward white (yellow especially), and over the bright city-lights
+  // texture. depthWrite:false keeps overlapping beams compositing cleanly
   const mat = new THREE.MeshBasicMaterial({
     vertexColors: true,
     transparent: true,
@@ -247,10 +247,10 @@ function useGlobePoints() {
   }, [snapshot, apiRegions, apiIntensities]);
 }
 
-// Shared width so the metric toggles and the colour legend always line up.
+// Shared width so the metric toggles and the colour legend always line up
 const PANEL_W = 250;
-const EARTH_KM = 6371; // mean Earth radius - globe radius (world units) maps to this
-// Radial height of a full (max-value) beam, in globe-radius units (= beamAltitude max).
+const EARTH_KM = 6371; // mean Earth radius: globe radius (world units) maps to this
+// Radial height of a full (max-value) beam, in globe-radius units (= beamAltitude max)
 const MAX_BEAM_ALT = 0.04 + 0.5;
 
 function MetricToggle({
@@ -304,8 +304,8 @@ function MetricToggle({
               cursor: "pointer",
               padding: "3px 6px",
               fontSize: "0.68rem",
-              // Constant weight - the green fill signals "active", so we don't
-              // bold (which would widen the text and wrap it to two lines).
+              // Constant weight: the green fill signals "active", so we don't
+              // bold (which would widen the text and wrap it to two lines)
               fontWeight: 500,
               background: value === m ? "var(--btn-green)" : "transparent",
               color: value === m ? "#fff" : "#cbd5e1",
@@ -320,7 +320,7 @@ function MetricToggle({
 }
 
 // A minimal one-line layer switch (label only), struck through and dimmed when
-// off. Used for the cloud and daylight overlays in the legend.
+// off. Used for the cloud and daylight overlays in the legend
 function LayerToggle({
   on,
   onToggle,
@@ -364,9 +364,9 @@ export default function CarbonGlobe() {
   const points = useGlobePoints();
   const { data: snapshot, isError: dataError } = useSnapshot();
   const [selected, setSelected] = useState<GlobePoint | null>(null);
-  // Default to a BIVARIATE view: colour = carbon intensity (the rigorous metric -
+  // Default to a bivariate view: colour = carbon intensity (the rigorous metric:
   // lower gCO₂/kWh is cleaner, nuclear included), height = renewable %.
-  // Two channels, two variables - each carries its own signal.
+  // Two channels, two variables, each carrying its own signal
   const [heightMetric, setHeightMetric] = useState<Metric>("renewable");
   const [colorMetric, setColorMetric] = useState<Metric>("intensity");
   // Map scale + beam reference, recomputed as the camera zooms (shared px↔km basis):
@@ -377,25 +377,25 @@ export default function CarbonGlobe() {
     px: number;
     beamPx: number;
   } | null>(null);
-  // Set when WebGL can't be created - we render a fallback instead of the globe.
+  // Set when WebGL can't be created, so we render a fallback instead of the globe.
   // Probed lazily on mount so the fallback shows on the first render, with the
-  // try/catch below as a backup for context-lost-after-probe.
+  // try/catch below as a backup for context-lost-after-probe
   const [webglError, setWebglError] = useState(() => !webglAvailable());
   // The bottom-left legend is collapsed by default on small screens (it's tall);
-  // a toggle expands it. Open by default on desktop.
+  // a toggle expands it. Open by default on desktop
   const [legendOpen, setLegendOpen] = useState(
     () => typeof window === "undefined" || !window.matchMedia("(max-width: 720px)").matches,
   );
   // The top-right "what is this" explainer, for visitors who land on the globe cold
   const [introOpen, setIntroOpen] = useState(false);
 
-  // Read inside globe.gl accessors so a toggle takes effect without re-init.
+  // Read inside globe.gl accessors so a toggle takes effect without re-init
   const heightMetricRef = useRef<Metric>(heightMetric);
   const colorMetricRef = useRef<Metric>(colorMetric);
 
   // Layer toggles. Both meshes come up asynchronously (clouds load over the network;
   // daylight is revealed on globe-ready), so each toggle drives a ref the reveal path
-  // reads for its initial state, plus a live effect that flips visibility after.
+  // reads for its initial state, plus a live effect that flips visibility after
   const [showClouds, setShowClouds] = useState(true);
   const showCloudsRef = useRef(true);
   const cloudMeshRef = useRef<THREE.Mesh | null>(null);
@@ -403,12 +403,12 @@ export default function CarbonGlobe() {
   const showSolarRef = useRef(true);
   const sunMeshRef = useRef<THREE.Mesh | null>(null);
 
-  // Instantiate the globe once.
+  // Instantiate the globe once
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
 
-    // Initial state already reflects the probe, so just skip globe init if no WebGL.
+    // Initial state already reflects the probe, so just skip globe init if no WebGL
     if (!webglAvailable()) return;
 
     let globe: GlobeInstance;
@@ -416,7 +416,7 @@ export default function CarbonGlobe() {
       globe = new Globe(el);
     } catch {
       // WebGL context creation failed even though the probe passed (e.g. context
-      // lost / driver exhausted) - fall back gracefully rather than crash. This
+      // lost / driver exhausted), so fall back gracefully rather than crash. This
       // is a one-shot error path, so the state set here settles immediately.
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setWebglError(true);
@@ -429,8 +429,8 @@ export default function CarbonGlobe() {
       .showAtmosphere(true)
       .atmosphereColor("#3a9efd")
       .atmosphereAltitude(0.18)
-      // Points are invisible - they exist only as hover/click hit-targets that
-      // span each beam. The visible beams are the custom layer below.
+      // Points are invisible: they exist only as hover/click hit-targets that
+      // span each beam. The visible beams are the custom layer below
       .pointLat("lat")
       .pointLng("lng")
       .pointAltitude((d) => beamAltitude(d as GlobePoint, heightMetricRef.current))
@@ -458,7 +458,7 @@ export default function CarbonGlobe() {
       .ringLng("lng")
       // Rings are subtle pulse animations per region. At far zoom, 60+ rings overlap
       // in screen space and create visual noise, so keep them small, slow, and fading
-      // fast so they read as a gentle pulse when zoomed in but don't pile up when out.
+      // fast so they read as a gentle pulse when zoomed in but don't pile up when out
       .ringMaxRadius((d) => 1 + ((d as GlobePoint).renewable / 100) * 1.5)
       .ringPropagationSpeed(0.9)
       .ringRepeatPeriod((d: object) => 3000 - ((d as GlobePoint).renewable / 100) * 1000)
@@ -471,7 +471,7 @@ export default function CarbonGlobe() {
         setSelected(p);
         globe.pointOfView({ lat: p.lat, lng: p.lng, altitude: 1.6 }, 900);
       })
-      // Glowing light-shaft beams (replaces the blocky default cylinders).
+      // Glowing light-shaft beams (replaces the blocky default cylinders)
       .customThreeObject((d: object) =>
         buildBeam(d as GlobePoint, globe.getGlobeRadius(), colorMetricRef.current),
       )
@@ -479,16 +479,16 @@ export default function CarbonGlobe() {
         const p = d as GlobePoint;
         const mesh = obj as THREE.Mesh;
         // Lift slightly above the surface to prevent z-fighting with the globe
-        // geometry, which becomes visible as flickering pixels when zoomed far out.
+        // geometry, which becomes visible as flickering pixels when zoomed far out
         const c = globe.getCoords(p.lat, p.lng, 0.002);
         mesh.position.set(c.x, c.y, c.z);
-        // Orient the beam (+Y) radially outward from the globe center.
+        // Orient the beam (+Y) radially outward from the globe center
         const radial = new THREE.Vector3(c.x, c.y, c.z).normalize();
         mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), radial);
-        // Scale unit-height beam to the selected metric's altitude.
+        // Scale unit-height beam to the selected metric's altitude
         mesh.scale.y = beamAltitude(p, heightMetricRef.current) * globe.getGlobeRadius();
         // Recolor in place (keeps the per-vertex alpha gradient) so the color
-        // metric toggle updates without rebuilding geometry.
+        // metric toggle updates without rebuilding geometry
         const colorAttr = (mesh.geometry as THREE.BufferGeometry).getAttribute(
           "color",
         ) as THREE.BufferAttribute;
@@ -508,12 +508,12 @@ export default function CarbonGlobe() {
 
     // Respect the OS "reduce motion" setting: no continuous auto-rotation. A
     // carbon tool shouldn't spin a GPU-bound globe for users who've opted out of
-    // motion. It's both an accessibility and an energy concern.
+    // motion. It's both an accessibility and an energy concern
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     // Capture mode: `?lng=120` (optionally &lat=&alt=) freezes the camera at an
     // exact longitude, so screenshot frames have perfectly uniform rotation for
-    // building a smooth GIF. With no params, the live app auto-rotates.
+    // building a smooth GIF. With no params, the live app auto-rotates
     const params = new URLSearchParams(window.location.search);
     const capLng = params.get("lng");
     if (capLng !== null) {
@@ -532,7 +532,7 @@ export default function CarbonGlobe() {
 
     // Kill the globe's specular highlight: the default Phong material throws a
     // camera-relative glare on the surface, which now reads as wrong next to the
-    // physically-placed daylight. Matte the surface so only our daylight lights it.
+    // physically-placed daylight. Matte the surface so only our daylight lights it
     const globeMat = globe.globeMaterial() as THREE.MeshPhongMaterial;
     if (globeMat && "shininess" in globeMat) {
       globeMat.specular = new THREE.Color(0x000000);
@@ -543,7 +543,7 @@ export default function CarbonGlobe() {
     // Soft daylight: a thin transparent overlay sphere whose warmth follows the
     // real irradiance falloff: brightest where the sun is overhead and fading by
     // cos(solar zenith) to nothing at the day/night edge. dot(surfaceNormal, sunDir)
-    // IS that cosine, so the shader is just that, additively blended and subtle.
+    // IS that cosine, so the shader is just that, additively blended and subtle
     const sunMat = new THREE.ShaderMaterial({
       uniforms: {
         uSunDir: { value: new THREE.Vector3(1, 0, 0) },
@@ -574,7 +574,7 @@ export default function CarbonGlobe() {
       sunMat,
     );
     // Hidden until the globe texture is ready, so the daylight never shows before
-    // the Earth it's meant to be lighting (no cart before the horse on spawn).
+    // the Earth it's meant to be lighting (no cart before the horse on spawn)
     sunMesh.visible = false;
     globe.scene().add(sunMesh);
 
@@ -582,7 +582,7 @@ export default function CarbonGlobe() {
     // (clouds and ice), drawn on a thin concentric shell over the Earth. Built once
     // the globe is ready (so the Earth mesh exists to hang it off and reuse its UVs)
     // and only after the image loads. If NASA is unreachable, the globe is fine
-    // without it. `disposed` guards the async load against an unmount mid-flight.
+    // without it. `disposed` guards the async load against an unmount mid-flight
     let disposed = false;
     let cloudMesh: THREE.Mesh | null = null;
     let cloudMat: THREE.ShaderMaterial | null = null;
@@ -611,7 +611,7 @@ export default function CarbonGlobe() {
               void main() {
                 vec3 c = texture2D(uClouds, vUv).rgb;
                 // The achromatic floor: high only for white/grey (clouds, ice),
-                // low for coloured land and dark ocean / no-data gaps.
+                // low for coloured land and dark ocean / no-data gaps
                 float white = min(c.r, min(c.g, c.b));
                 float a = smoothstep(0.5, 0.85, white) * uOpacity;
                 // The daily true-color mosaic is daytime only, so a winter pole is
@@ -620,7 +620,7 @@ export default function CarbonGlobe() {
                 // ragged edge actually falls), sample poleward and dissolve the cloud
                 // INTO the void: the more no-data sits just toward the pole, the more
                 // this pixel fades. Gated to high latitude so the gap-free rest of the
-                // globe is untouched.
+                // globe is untouched
                 float lat = (vUv.y - 0.5) * 180.0;
                 float poleDir = sign(lat);
                 float voidNear = 0.0;
@@ -638,7 +638,7 @@ export default function CarbonGlobe() {
             side: THREE.FrontSide,
           });
           // Reuse the Earth's geometry/UVs, a hair larger so it sits just above the
-          // surface. As a child of the Earth mesh it inherits the same transform.
+          // surface. As a child of the Earth mesh it inherits the same transform
           cloudMesh = new THREE.Mesh(earth.geometry, cloudMat);
           cloudMesh.scale.setScalar(1.003);
           cloudMesh.renderOrder = 1;
@@ -648,7 +648,7 @@ export default function CarbonGlobe() {
         },
         undefined,
         () => {
-          // NASA unreachable / blocked: skip clouds silently, keep the globe.
+          // NASA unreachable / blocked: skip clouds silently, keep the globe
         },
       );
     };
@@ -659,7 +659,7 @@ export default function CarbonGlobe() {
       addClouds();
     });
 
-    // Point the daylight at the subsolar point, and refresh each minute (~15°/h).
+    // Point the daylight at the subsolar point, and refresh each minute (~15°/h)
     const refreshSun = () => {
       const s = subsolarPoint(new Date());
       const c = globe.getCoords(s.lat, s.lng, 0);
@@ -669,7 +669,7 @@ export default function CarbonGlobe() {
     const sunTimer = setInterval(refreshSun, 60_000);
 
     // Map scale bar: measure how many km a screen pixel covers near the view
-    // centre (1° of latitude ≈ 111.32 km), then pick a nice round distance.
+    // centre (1° of latitude ≈ 111.32 km), then pick a nice round distance
     const computeScale = () => {
       const pov = globe.pointOfView();
       const a = globe.getScreenCoords(pov.lat, pov.lng, 0);
@@ -680,7 +680,7 @@ export default function CarbonGlobe() {
       const kmPerPx = 111.32 / px;
       const km = niceKm(70 * kmPerPx); // aim for a ~70px bar
       // A full beam's radial height (MAX_BEAM_ALT × Earth radius) measured in the
-      // same km↔px basis, so the height ruler and the distance bar track zoom together.
+      // same km↔px basis, so the height ruler and the distance bar track zoom together
       const beamPx = (MAX_BEAM_ALT * EARTH_KM) / kmPerPx;
       setScale({ km, px: km / kmPerPx, beamPx });
     };
@@ -694,7 +694,7 @@ export default function CarbonGlobe() {
     window.addEventListener("resize", onResize);
 
     // Pause auto-rotation while the user is interacting, and resume after (unless the
-    // user has asked for reduced motion, in which case it never auto-spins).
+    // user has asked for reduced motion, in which case it never auto-spins)
     let resumeTimer: ReturnType<typeof setTimeout>;
     const pause = () => {
       controls.autoRotate = false;
@@ -711,7 +711,7 @@ export default function CarbonGlobe() {
     // regardless of whether anything moved, so an open-but-unwatched globe
     // otherwise pins a GPU core indefinitely: the biggest continuous energy
     // cost in the app. pauseAnimation() takes it to zero. We resume only when
-    // it's both visible and on-screen.
+    // it's both visible and on-screen
     let onScreen = true;
     let pageVisible = !document.hidden;
     const applyRunState = () => {
@@ -744,7 +744,7 @@ export default function CarbonGlobe() {
       sunMesh.geometry.dispose();
       sunMat.dispose();
       // Tear down the cloud shell if it loaded. Guard the in-flight load too. Do
-      // NOT dispose its geometry. It's the Earth mesh's, shared and still in use.
+      // NOT dispose its geometry. It's the Earth mesh's, shared and still in use
       disposed = true;
       cloudMeshRef.current = null;
       sunMeshRef.current = null;
@@ -760,7 +760,7 @@ export default function CarbonGlobe() {
   // The globe.gl accessors read the metric refs, and they only re-run when the
   // layer data is re-digested, so a metric toggle must re-feed here too, or the
   // beams never rescale/recolor. We sync the refs first so the re-digest below
-  // reads the new metric.
+  // reads the new metric
   useEffect(() => {
     const globe = globeRef.current;
     if (!globe) return;
@@ -768,7 +768,7 @@ export default function CarbonGlobe() {
     colorMetricRef.current = colorMetric;
     // Fresh array copies force globe.gl to re-digest, so the accessors re-read
     // the metric refs: beams rescale (height) and recolor (color), rings and
-    // hit-targets update too.
+    // hit-targets update too
     globe
       .pointsData([...(points as object[])])
       .ringsData([...(points as object[])])
@@ -776,14 +776,14 @@ export default function CarbonGlobe() {
   }, [points, heightMetric, colorMetric]);
 
   // Toggle the cloud veil. The mesh may not have loaded yet, so also stash the
-  // desired state in a ref the loader reads when it finishes.
+  // desired state in a ref the loader reads when it finishes
   useEffect(() => {
     showCloudsRef.current = showClouds;
     if (cloudMeshRef.current) cloudMeshRef.current.visible = showClouds;
   }, [showClouds]);
 
   // Toggle the daylight glow. sunMeshRef is set only on globe-ready, so flipping it
-  // here can't reveal the daylight before the globe (the ref is null until then).
+  // here can't reveal the daylight before the globe (the ref is null until then)
   useEffect(() => {
     showSolarRef.current = showSolar;
     if (sunMeshRef.current) sunMeshRef.current.visible = showSolar;
@@ -791,17 +791,17 @@ export default function CarbonGlobe() {
 
   const liveCount = points.filter((p) => p.quality === "live").length;
   const estCount = points.filter((p) => p.quality === "estimated").length;
-  // `?bare` hides the overlays - used only for capturing clean globe screenshots.
+  // `?bare` hides the overlays, used only for capturing clean globe screenshots
   const bare = typeof window !== "undefined" && window.location.search.includes("bare");
 
-  // Height ruler geometry - a 100% beam's true on-screen length at this zoom.
+  // Height ruler geometry: a 100% beam's true on-screen length at this zoom.
   // The bar is drawn at that length but capped to the panel. Ticks beyond the
-  // panel are dropped and a "+" marks that the full 100% sits off-panel.
+  // panel are dropped and a "+" marks that the full 100% sits off-panel
   const beamPx = scale?.beamPx ?? PANEL_W;
   const heightBarW = Math.min(beamPx, PANEL_W);
   const heightCapped = beamPx > PANEL_W + 1;
   // Pick a nice tick step for the *visible* value range so 4–6 labels always
-  // span the bar - even when it's capped and only a slice of the beam shows.
+  // span the bar, even when it's capped and only a slice of the beam shows
   const heightMax = heightMetric === "renewable" ? 100 : 800; // value at full beam
   const heightSteps = heightMetric === "renewable" ? [2, 5, 10, 25, 50] : [25, 50, 100, 200, 400];
   const heightVisibleMax = heightMax * Math.min(1, PANEL_W / beamPx);
@@ -855,7 +855,7 @@ export default function CarbonGlobe() {
       `}</style>
       <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
 
-      {/* WebGL unavailable - graceful fallback instead of a crashed page */}
+      {/* WebGL unavailable: graceful fallback instead of a crashed page */}
       {webglError && (
         <div
           style={{
@@ -966,12 +966,12 @@ export default function CarbonGlobe() {
         )}
         {snapshot && (
           // #94a3b8 (not #64748b) so this small timestamp clears AA 4.5:1 on the
-          // dark globe: #64748b measured 4.41:1, just under.
+          // dark globe: #64748b measured 4.41:1, just under
           <p style={{ margin: "3px 0 0", fontSize: "0.7rem", color: "#94a3b8" }}>
             Data updated {timeAgo(snapshot.generated_at)}
           </p>
         )}
-        {/* Always-available text alternative - for keyboard, screen-reader and
+        {/* Always-available text alternative for keyboard, screen-reader and
             colour-vision users who can't read the colour-coded beams. Hidden on
             mobile to declutter. Both destinations live in the nav (Grid Data,
             Methodology), and the no-WebGL fallback keeps its own table link. */}
@@ -1006,7 +1006,7 @@ export default function CarbonGlobe() {
         <>
           <button
             type="button"
-            aria-label="What is this?"
+            aria-label="About this globe"
             aria-expanded={introOpen}
             aria-controls="globe-intro"
             onClick={() => setIntroOpen((o) => !o)}
@@ -1110,7 +1110,7 @@ export default function CarbonGlobe() {
           display: bare || webglError ? "none" : undefined,
         }}
       >
-        {/* Collapse toggle - visible only on small screens (CSS), sits above the
+        {/* Collapse toggle: visible only on small screens (CSS), sits above the
             keys so collapsing it reclaims the vertical space they take. */}
         <button
           type="button"
@@ -1128,8 +1128,8 @@ export default function CarbonGlobe() {
           onChange={setColorMetric}
           tip={
             colorMetric === "intensity"
-              ? "Beam colour shows carbon intensity - gCO₂/kWh, grams of CO₂ per kilowatt-hour of electricity. Green = lower (cleaner), red = higher (dirtier)."
-              : "Beam colour shows renewable share - the % from renewables (wind, solar, hydro) right now, greener = higher. Note: this excludes nuclear, so a clean nuclear/hydro grid (France, Sweden) can read low here yet still emit little CO₂. Carbon intensity is the better 'how clean' measure."
+              ? "Beam colour shows carbon intensity in gCO₂/kWh (grams of CO₂ per kilowatt-hour of electricity). Green = lower (cleaner), red = higher (dirtier)."
+              : "Beam colour shows renewable share: the % from renewables (wind, solar, hydro) right now, greener = higher. It leaves out nuclear, so a clean nuclear/hydro grid (France, Sweden) can read low here yet still emit little CO₂. Carbon intensity is the better 'how clean' measure."
           }
         />
         {colorMetric === "intensity" ? (
@@ -1189,11 +1189,11 @@ export default function CarbonGlobe() {
           onChange={setHeightMetric}
           tip={
             heightMetric === "renewable"
-              ? "Beam height shows renewable share. Compare a beam to the scale below to read its value - a full-height beam ≈ 100%, flat ≈ 0%. On a globe on-screen height also depends on where a beam sits, so it's approximate."
-              : "Beam height shows carbon intensity (gCO₂/kWh). Compare a beam to the scale below to read its value - a full-height beam ≈ 800+ gCO₂/kWh, flat ≈ 0. On a globe on-screen height also depends on where a beam sits, so it's approximate."
+              ? "Beam height shows renewable share. Compare a beam to the scale below to read its value: a full-height beam ≈ 100%, flat ≈ 0%. On a globe on-screen height also depends on where a beam sits, so it's approximate."
+              : "Beam height shows carbon intensity (gCO₂/kWh). Compare a beam to the scale below to read its value: a full-height beam ≈ 800+ gCO₂/kWh, flat ≈ 0. On a globe on-screen height also depends on where a beam sits, so it's approximate."
           }
         />
-        {/* A full beam laid flat at its true on-screen length - lay a beam against it. */}
+        {/* A full beam laid flat at its true on-screen length, to lay a beam against */}
         <div aria-hidden style={{ position: "relative", width: PANEL_W, height: 12 }}>
           <div
             style={{
@@ -1266,11 +1266,11 @@ export default function CarbonGlobe() {
             color: "#94a3b8",
           }}
         >
-          {heightMetric === "renewable" ? "% renewable - beam height" : "gCO₂/kWh - beam height"}
+          {heightMetric === "renewable" ? "% renewable (beam height)" : "gCO₂/kWh (beam height)"}
           {heightCapped && " · zoom out for full 100%"}
         </div>
 
-        {/* Map scale bar - real surface distance at the current zoom. Part of the
+        {/* Map scale bar: real surface distance at the current zoom. Part of the
             legend, so it collapses with everything else when the legend is hidden. */}
         {/* One row: distance ruler on the left, the two layer toggles side by side on
             the right. Centre-aligned so the toggles sit against the ruler's middle. */}
@@ -1328,7 +1328,7 @@ export default function CarbonGlobe() {
         </div>
       </div>
 
-      {/* Empty / loading / error state - distinguish a failed fetch from loading */}
+      {/* Empty / loading / error state: distinguish a failed fetch from loading */}
       {!webglError && points.length === 0 && (
         <div
           role="status"
@@ -1381,12 +1381,12 @@ export default function CarbonGlobe() {
             // maxHeight budget: globe container = 100vh - 56px (nav), panel top = 20px;
             // bottom margin = 20px -> 100vh - 56 - 20 - 20 = 100vh - 96px. The old
             // calc(100vh - 40px) overshot the container bottom by 36px and was clipped
-            // by overflow:hidden on the globe div, hiding the last lines of the panel.
+            // by overflow:hidden on the globe div, hiding the last lines of the panel
             maxHeight: "calc(100vh - 96px)",
             overflowY: "auto",
             overscrollBehavior: "contain",
             // Sit above the cold-start banner (z 15, fixed at the top) so on mobile the
-            // panel and its close button aren't covered by it, and stays below the nav (20).
+            // panel and its close button aren't covered by it, and stays below the nav (20)
             zIndex: 16,
           }}
         >
@@ -1448,7 +1448,7 @@ export default function CarbonGlobe() {
           {selected.consumptionIntensity != null && (
             <div
               style={{ color: "#cbd5e1", marginTop: 6, fontSize: "0.85rem" }}
-              title="Flow-traced across the European grid: what this region actually consumes after imports and exports, versus what it generates locally (the figure above)."
+              title="Flow-traced across the European grid: what this region consumes after imports and exports, versus what it generates locally (the figure above)."
             >
               Consumed: ~{selected.consumptionIntensity}
               <span style={{ color: "#6b7280" }}> gCO₂/kWh · flow-traced</span>

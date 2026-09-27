@@ -4,14 +4,14 @@ from carbonlens.cli.energy import energy_kwh_between
 
 
 def test_energy_kwh_between_basic():
-    # 3.6e9 microjoules = 3600 J = 0.001 kWh.
+    # 3.6e9 microjoules = 3600 J = 0.001 kWh
     assert energy_kwh_between(0, 3_600_000_000, 0) == 0.001
 
 
 def test_energy_kwh_between_handles_wrap():
-    # Counter wrapped: after < before, add max_range once.
+    # Counter wrapped: after < before, add max_range once
     kwh = energy_kwh_between(before_uj=9, after_uj=1, max_range_uj=3_600_000_009)
-    # delta = (1 - 9) + 3_600_000_009 = 3_600_000_001 uj ≈ 3600 J = 0.001 kWh.
+    # delta = (1 - 9) + 3_600_000_009 = 3_600_000_001 uj ≈ 3600 J = 0.001 kWh
     assert round(kwh, 6) == 0.001
 
 
