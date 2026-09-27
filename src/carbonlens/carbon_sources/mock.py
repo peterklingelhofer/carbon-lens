@@ -1,5 +1,6 @@
 from datetime import UTC, datetime
 
+from carbonlens.carbon_sources.base import SingleZoneCarbonSource
 from carbonlens.models.carbon import CarbonIntensity
 
 # Realistic mock data based on typical grid carbon intensities (gCO2/kWh)
@@ -113,7 +114,10 @@ _MOCK_DATA: dict[str, tuple[float, float]] = {
 }
 
 
-class MockCarbonSource:
+class MockCarbonSource(SingleZoneCarbonSource):
+    def can_handle(self, grid_zone: str) -> bool:
+        return True
+
     async def get_carbon_intensity(self, grid_zone: str) -> CarbonIntensity:
         data = _MOCK_DATA.get(grid_zone, (250, 30))
         return CarbonIntensity(
@@ -123,9 +127,3 @@ class MockCarbonSource:
             timestamp=datetime.now(UTC),
             source="mock",
         )
-
-    async def get_carbon_intensity_batch(self, grid_zones: list[str]) -> dict[str, CarbonIntensity]:
-        results = {}
-        for zone in grid_zones:
-            results[zone] = await self.get_carbon_intensity(zone)
-        return results

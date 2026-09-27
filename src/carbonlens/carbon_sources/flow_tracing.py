@@ -28,8 +28,13 @@ from __future__ import annotations
 import asyncio
 from datetime import UTC, datetime, timedelta
 
-from carbonlens.carbon_sources.entsoe import API_URL, ENTSOE_ZONE_MAP, ENTSOECarbonSource
-from carbonlens.carbon_sources.http_pool import ENTSOE_SEMAPHORE, get_with_retry, shared_client
+from carbonlens.carbon_sources.entsoe import (
+    ENTSOE_ZONE_MAP,
+    ENTSOECarbonSource,
+    entsoe_get,
+    entsoe_period,
+)
+from carbonlens.carbon_sources.http_pool import shared_client
 from carbonlens.carbon_sources.xml_safe import entsoe_ns, safe_parse_xml
 from carbonlens.citations_generated import CitationId
 
@@ -166,21 +171,16 @@ class ConsumptionIntensitySource:
     async def _flow(self, in_eic: str, out_eic: str, period_start: str, period_end: str) -> float:
         """Latest physical flow out_eic -> in_eic (MW), or 0 on any failure."""
         try:
-            resp = await get_with_retry(
+            text = await entsoe_get(
                 self._client,
-                API_URL,
-                params={
-                    "securityToken": self._token,
-                    "documentType": "A11",
-                    "in_Domain": in_eic,
-                    "out_Domain": out_eic,
-                    "periodStart": period_start,
-                    "periodEnd": period_end,
-                },
-                semaphore=ENTSOE_SEMAPHORE,
+                self._token,
+                documentType="A11",
+                in_Domain=in_eic,
+                out_Domain=out_eic,
+                periodStart=period_start,
+                periodEnd=period_end,
             )
-            resp.raise_for_status()
-            return _parse_flow_latest(resp.text) or 0.0
+            return _parse_flow_latest(text) or 0.0
         except Exception:
             return 0.0
 
@@ -196,8 +196,8 @@ class ConsumptionIntensitySource:
             return {}
 
         now = datetime.now(UTC).replace(minute=0, second=0, microsecond=0)
-        period_start = (now - timedelta(hours=2)).strftime("%Y%m%d%H00")
-        period_end = now.strftime("%Y%m%d%H00")
+        period_start = entsoe_period(now - timedelta(hours=2))
+        period_end = entsoe_period(now)
 
         pairs = [(a, b) for a, b in BORDERS if a in production_mw and b in production_mw]
         tasks = []

@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import type { ReactNode } from "react";
 import { api } from "../api/client";
 import {
   snapshotEnabled,
@@ -13,6 +13,16 @@ import { relativeToUsual } from "../lib/anomaly";
 import { MiniSparkline, trendLabel } from "./MiniSparkline";
 
 const SIGNAL_COLOR = { green: "#4ade80", yellow: "#fbbf24", red: "#f87171" } as const;
+
+// Small section label used atop each dark-panel block (history, forecast, weather, …)
+export function PanelLabel({ children }: { children: ReactNode }) {
+  return <div style={{ fontSize: "0.72rem", color: "#9ca3af", marginBottom: 4 }}>{children}</div>;
+}
+
+// Small muted footnote used under a dark-panel block's main reading
+export function PanelNote({ children }: { children: ReactNode }) {
+  return <div style={{ fontSize: "0.75rem", color: "#6b7280", marginTop: 2 }}>{children}</div>;
+}
 
 // The run-now/wait decision for a region, read straight from the precomputed snapshot
 // signal on the CDN: no API call, so it's instant even when the server is asleep.
@@ -44,9 +54,7 @@ export function RegionSignal({ provider, region }: { provider: string; region: s
 
   return (
     <div style={{ marginTop: 10 }}>
-      <div style={{ fontSize: "0.72rem", color: "#9ca3af", marginBottom: 4 }}>
-        Shift flexible work here?
-      </div>
+      <PanelLabel>Shift flexible work here?</PanelLabel>
       <div style={{ fontSize: "0.85rem", fontWeight: 500, color }}>
         {signal.clean_surplus ? "Clean surplus · " : ""}
         {runNow
@@ -64,9 +72,7 @@ export function RegionSignal({ provider, region }: { provider: string; region: s
           {signal.marginal_note}
         </div>
       )}
-      <div style={{ fontSize: "0.75rem", color: "#6b7280", marginTop: 2 }}>
-        precomputed signal · marginal {signal.marginal_basis}
-      </div>
+      <PanelNote>precomputed signal · marginal {signal.marginal_basis}</PanelNote>
     </div>
   );
 }
@@ -111,31 +117,26 @@ export function RegionHistory({
   region: string;
   current?: number;
 }) {
-  const archive = useRegionHistoryArchive(provider, region);
-  const { data: apiData, isLoading } = useQuery({
-    queryKey: ["history", provider, region],
-    queryFn: () => api.carbonHistory(provider, region, 168),
-    staleTime: 10 * 60_000,
-    retry: 1,
-    // Only ever fall back to the live API when snapshots are off (self-hosted).
-    // With a snapshot configured, the archive is a separate lazy fetch, so during
-    // the gap before it loads `!archive` was briefly true and woke the API: the
-    // source of the "waking the API" banner on the globe. Never hit it in prod.
-    enabled: !archive && !snapshotEnabled,
-  });
-
-  // Normalize either source to points with timestamp + carbon (+ renewable).
-  const points = archive
-    ? archive.map((p) => ({
-        timestamp: p.t,
-        carbon_intensity_gco2_kwh: p.c,
-        renewable_percentage: p.r,
-      }))
-    : apiData?.points;
-
-  const label = (
-    <div style={{ fontSize: "0.72rem", color: "#9ca3af", marginBottom: 4 }}>Past 7 days</div>
+  const rawArchive = useRegionHistoryArchive(provider, region);
+  // Normalize the archive to the same point shape the API returns, so both sources
+  // can share one useSnapshotOrApi call below
+  const archive = rawArchive?.map((p) => ({
+    timestamp: p.t,
+    carbon_intensity_gco2_kwh: p.c,
+    renewable_percentage: p.r,
+  }));
+  // Only ever fall back to the live API when snapshots are off (self-hosted).
+  // With a snapshot configured, the archive is a separate lazy fetch, so during
+  // the gap before it loads `!archive` was briefly true and woke the API: the
+  // source of the "waking the API" banner on the globe. Never hit it in prod
+  const { data: points, isLoading } = useSnapshotOrApi(
+    archive,
+    ["history", provider, region],
+    async () => (await api.carbonHistory(provider, region, 168)).points,
+    { staleTime: 10 * 60_000, retry: 1 },
   );
+
+  const label = <PanelLabel>Past 7 days</PanelLabel>;
   // Render nothing while the source is still loading: the API query when self-
   // hosted, or the shared history archive (a separate lazy fetch with no per-call
   // isLoading) in snapshot mode. Otherwise we'd flash the "accumulating" copy
@@ -203,7 +204,7 @@ export function RegionWeather({ provider, region }: { provider: string; region: 
 
   return (
     <div style={{ marginTop: 10 }}>
-      <div style={{ fontSize: "0.72rem", color: "#9ca3af", marginBottom: 4 }}>Weather now</div>
+      <PanelLabel>Weather now</PanelLabel>
       <div style={{ display: "flex", gap: 14, fontSize: "0.8rem" }}>
         <span title="Surface wind speed at 10 m (drives wind generation)">
           {wind} <span style={{ color: "#9ca3af", fontSize: "0.7rem" }}>km/h wind</span>
@@ -213,9 +214,7 @@ export function RegionWeather({ provider, region }: { provider: string; region: 
         </span>
       </div>
       <div style={{ fontSize: "0.65rem", color: "#9ca3af", marginTop: 3 }}>{read}</div>
-      <div style={{ fontSize: "0.75rem", color: "#6b7280", marginTop: 2 }}>
-        Single-point estimate · Open-Meteo
-      </div>
+      <PanelNote>Single-point estimate · Open-Meteo</PanelNote>
     </div>
   );
 }
@@ -238,9 +237,7 @@ export function RegionBestTime({ provider, region }: { provider: string; region:
 
   return (
     <div style={{ marginTop: 10 }}>
-      <div style={{ fontSize: "0.72rem", color: "#9ca3af", marginBottom: 4 }}>
-        Greenest hour to schedule
-      </div>
+      <PanelLabel>Greenest hour to schedule</PanelLabel>
       <div style={{ fontSize: "0.8rem", color: "#4ade80", fontWeight: 500 }}>
         {hh}:00 UTC
         {savings != null && savings > 0 && (
@@ -265,11 +262,11 @@ export function RegionBestTime({ provider, region }: { provider: string; region:
           {data.suggested_cron}
         </code>
       )}
-      <div style={{ fontSize: "0.75rem", color: "#6b7280", marginTop: 2 }}>
+      <PanelNote>
         {data.basis === "history"
           ? `from ${data.days_analyzed}-day history · for recurring jobs`
           : "from forecast (history still accumulating)"}
-      </div>
+      </PanelNote>
     </div>
   );
 }
@@ -279,28 +276,34 @@ export function RegionBestTime({ provider, region }: { provider: string; region:
 // fetched live from /carbon/forecast. EU zones get a real ENTSO-E day-ahead curve,
 // elsewhere it's the labelled time-of-day model.
 export function RegionForecast({ provider, region }: { provider: string; region: string }) {
-  const snap = useForecastSnapshot(provider, region);
-  // Snapshot curve and API forecast carry different point shapes, so keep them
-  // separate here (the hook would type them as one) and normalize below.
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ["forecast", provider, region],
-    queryFn: () => api.carbonForecast(provider, region, 24),
-    staleTime: 5 * 60_000,
-    retry: 1,
-    enabled: !snap && !snapshotEnabled, // snapshot has the curve, so never wake the API in prod
-  });
-
-  const label = (
-    <div style={{ fontSize: "0.72rem", color: "#9ca3af", marginBottom: 4 }}>Next 24h</div>
+  const forecastSnap = useForecastSnapshot(provider, region);
+  // Snapshot curve and API forecast carry different point shapes ({t, c} vs
+  // CarbonIntensity), so normalize both to {ts, c} before sharing one
+  // useSnapshotOrApi call below
+  const snap = forecastSnap && {
+    points: forecastSnap.points.map((p) => ({ ts: p.t, c: p.c })),
+    method: forecastSnap.method,
+    clean_surplus_hours: forecastSnap.clean_surplus_hours,
+  };
+  const { data, isLoading, isError } = useSnapshotOrApi(
+    snap,
+    ["forecast", provider, region],
+    async () => {
+      const res = await api.carbonForecast(provider, region, 24);
+      return {
+        points: res.points.map((p) => ({ ts: p.timestamp, c: p.carbon_intensity_gco2_kwh })),
+        method: res.method,
+        clean_surplus_hours: res.clean_surplus_hours,
+      };
+    },
+    { staleTime: 5 * 60_000, retry: 1 },
   );
 
-  // Normalize either source to {ts, c}; the snapshot's compact {t, c} or the API's
-  // CarbonIntensity points.
-  const points = snap
-    ? snap.points.map((p) => ({ ts: p.t, c: p.c }))
-    : (data?.points ?? []).map((p) => ({ ts: p.timestamp, c: p.carbon_intensity_gco2_kwh }));
-  const method = snap?.method ?? data?.method;
-  const surplusHours = snap?.clean_surplus_hours ?? data?.clean_surplus_hours;
+  const label = <PanelLabel>Next 24h</PanelLabel>;
+
+  const points = data?.points ?? [];
+  const method = data?.method;
+  const surplusHours = data?.clean_surplus_hours;
 
   if (!snap && isLoading) {
     return (

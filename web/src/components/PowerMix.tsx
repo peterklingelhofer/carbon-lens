@@ -1,6 +1,8 @@
+import { PanelLabel } from "./RegionDetail";
+
 // Stable colour + label per normalized fuel key (matches the backend's
 // emission_factors vocabulary). Fuels not listed fall back to a neutral grey.
-export const FUEL_META: Record<string, { label: string; color: string }> = {
+const FUEL_META: Record<string, { label: string; color: string }> = {
   solar: { label: "Solar", color: "#fbbf24" },
   wind: { label: "Wind", color: "#38bdf8" },
   hydro: { label: "Hydro", color: "#22d3ee" },
@@ -28,7 +30,7 @@ export function PowerMix({ breakdown }: { breakdown: Record<string, number> }) {
   const pct = (mw: number) => Math.round((mw / total) * 100);
   return (
     <div style={{ marginTop: 10 }}>
-      <div style={{ fontSize: "0.72rem", color: "#9ca3af", marginBottom: 4 }}>Generation mix</div>
+      <PanelLabel>Generation mix</PanelLabel>
       <div style={{ display: "flex", height: 8, borderRadius: 4, overflow: "hidden" }}>
         {entries.map(([fuel, mw]) => (
           <div

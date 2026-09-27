@@ -1,5 +1,4 @@
 from collections.abc import AsyncGenerator
-from typing import TYPE_CHECKING
 
 from fastapi import Depends
 
@@ -8,19 +7,20 @@ from carbonlens.carbon_sources.base import CarbonDataSource
 from carbonlens.carbon_sources.eia import EIACarbonSource
 from carbonlens.carbon_sources.electricity_maps import ElectricityMapsCarbonSource
 from carbonlens.carbon_sources.entsoe import ENTSOECarbonSource
+from carbonlens.carbon_sources.entsoe_forecast import ENTSOEForecastSource
 from carbonlens.carbon_sources.gridstatus import GridStatusCarbonSource
 from carbonlens.carbon_sources.history_store import HistoryStore
 from carbonlens.carbon_sources.hybrid import HybridCarbonSource
 from carbonlens.carbon_sources.marginal import MarginalSource, marginal_source_from_settings
 from carbonlens.carbon_sources.mock import MockCarbonSource
+from carbonlens.carbon_sources.open_meteo import OpenMeteoForecastSource
+from carbonlens.carbon_sources.snapshot_source import SnapshotBackedSource
 from carbonlens.config import settings
 from carbonlens.engine.cache import IntensityCache
 from carbonlens.engine.router import RoutingEngine
 from carbonlens.grid.mapper import GridMapper
+from carbonlens.scheduler.engine import SchedulingEngine
 from carbonlens.sla.repository import DBSLARepository, InMemorySLARepository, SLARepository
-
-if TYPE_CHECKING:
-    from carbonlens.scheduler.engine import SchedulingEngine
 
 # Singletons: initialized once at import time
 _grid_mapper = GridMapper(settings.region_map_path)
@@ -37,6 +37,9 @@ class _CachedCarbonSource:
     def __init__(self, source: CarbonDataSource, cache: IntensityCache) -> None:
         self._source = source
         self._cache = cache
+
+    def can_handle(self, grid_zone: str) -> bool:
+        return self._source.can_handle(grid_zone)
 
     async def get_carbon_intensity(self, grid_zone: str):
         return await self._cache.get_or_fetch(grid_zone, self._source.get_carbon_intensity)
@@ -84,6 +87,15 @@ def _build_carbon_source() -> CarbonDataSource:
     return MockCarbonSource()
 
 
+def _maybe_snapshot(source: CarbonDataSource) -> CarbonDataSource:
+    """Wrap a source so current intensity is read from the published CDN snapshot
+    (one cached fetch of all zones) when configured, instead of live-fetching each
+    zone. Pass-through for the mock source or when no snapshot is set."""
+    if settings.snapshot_url and settings.carbon_source != "mock":
+        return SnapshotBackedSource(settings.snapshot_url, source)
+    return source
+
+
 _carbon_source = _build_carbon_source()
 _cached_source = _CachedCarbonSource(_carbon_source, _cache)
 _history_store = HistoryStore(settings.history_url)
@@ -95,6 +107,18 @@ _engine = RoutingEngine(
     carbon_source=_carbon_source,
     grid_mapper=_grid_mapper,
     cache=_cache,
+)
+# Scheduling engine wired to the cached source (snapshot-backed for current
+# intensity when configured) and the ENTSO-E day-ahead forecast. Shared by the
+# scheduler routes and the public /carbon/forecast endpoint. Built once here
+# rather than per-request, so it doesn't stand up a fresh forecast source (and
+# fresh unclosed httpx.AsyncClient) on every call
+_scheduling_engine = SchedulingEngine(
+    carbon_source=_maybe_snapshot(_cached_source),
+    grid_mapper=_grid_mapper,
+    forecast_source=ENTSOEForecastSource(settings.entsoe_token),
+    weather_forecast_source=OpenMeteoForecastSource(),
+    marginal_source=_marginal_source,
 )
 
 
@@ -119,17 +143,6 @@ def get_marginal_source() -> MarginalSource | None:
     return _marginal_source
 
 
-def _maybe_snapshot(source: CarbonDataSource) -> CarbonDataSource:
-    """Wrap a source so current intensity is read from the published CDN snapshot
-    (one cached fetch of all zones) when configured, instead of live-fetching each
-    zone. Pass-through for the mock source or when no snapshot is set."""
-    from carbonlens.carbon_sources.snapshot_source import SnapshotBackedSource
-
-    if settings.snapshot_url and settings.carbon_source != "mock":
-        return SnapshotBackedSource(settings.snapshot_url, source)
-    return source
-
-
 def group_regions_by_zone(
     mapper: GridMapper, regions: list[dict[str, str]]
 ) -> dict[str, list[dict[str, str]]]:
@@ -144,23 +157,8 @@ def group_regions_by_zone(
     return by_zone
 
 
-def get_scheduling_engine() -> "SchedulingEngine":
-    """Build a scheduling engine wired to the cached source (snapshot-backed for
-    current intensity when configured) and the ENTSO-E day-ahead forecast. Shared
-    by the scheduler routes and the public /carbon/forecast endpoint."""
-    from carbonlens.carbon_sources.entsoe_forecast import ENTSOEForecastSource
-    from carbonlens.carbon_sources.open_meteo import OpenMeteoForecastSource
-    from carbonlens.scheduler.engine import SchedulingEngine
-
-    source = _maybe_snapshot(_cached_source)
-
-    return SchedulingEngine(
-        carbon_source=source,
-        grid_mapper=_grid_mapper,
-        forecast_source=ENTSOEForecastSource(settings.entsoe_token),
-        weather_forecast_source=OpenMeteoForecastSource(),
-        marginal_source=_marginal_source,
-    )
+def get_scheduling_engine() -> SchedulingEngine:
+    return _scheduling_engine
 
 
 def get_tracker() -> CarbonTracker:

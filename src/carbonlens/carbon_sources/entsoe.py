@@ -6,6 +6,8 @@ Docs: https://transparency.entsoe.eu/content/static_content/Static%20content/web
 
 from datetime import UTC, datetime, timedelta
 
+import httpx
+
 from carbonlens.carbon_sources.base import SingleZoneCarbonSource
 from carbonlens.carbon_sources.emission_factors import intensity_from_fuel_mix
 from carbonlens.carbon_sources.http_pool import ENTSOE_SEMAPHORE, get_with_retry, shared_client
@@ -59,6 +61,25 @@ ENTSOE_ZONE_MAP: dict[str, str] = {
 
 ENTSOE_ZONES = set(ENTSOE_ZONE_MAP.keys())
 
+
+async def entsoe_get(client: httpx.AsyncClient, token: str, **params: str) -> str:
+    """Shared ENTSO-E request shape: securityToken, bounded retry, rate-limit
+    semaphore, and the raw XML body every caller wants."""
+    resp = await get_with_retry(
+        client,
+        API_URL,
+        params={"securityToken": token, **params},
+        semaphore=ENTSOE_SEMAPHORE,
+    )
+    resp.raise_for_status()
+    return resp.text
+
+
+def entsoe_period(dt: datetime) -> str:
+    """Format a datetime as the ENTSO-E query period string."""
+    return dt.strftime("%Y%m%d%H00")
+
+
 # ENTSO-E production type -> normalized fuel
 _PRODUCTION_TYPE_MAP = {
     "B01": "biomass",  # Biomass
@@ -98,29 +119,23 @@ class ENTSOECarbonSource(SingleZoneCarbonSource):
 
         # Request actual generation per type for the last hour
         now = datetime.now(UTC)
-        period_start = (now - timedelta(hours=1)).strftime("%Y%m%d%H00")
-        period_end = now.strftime("%Y%m%d%H00")
-
-        resp = await get_with_retry(
+        text = await entsoe_get(
             self._client,
-            API_URL,
-            params={
-                "securityToken": self._token,
-                "documentType": "A75",  # Actual generation per type
-                "processType": "A16",  # Realised
-                "in_Domain": eic,
-                "periodStart": period_start,
-                "periodEnd": period_end,
-            },
-            semaphore=ENTSOE_SEMAPHORE,
+            self._token,
+            documentType="A75",  # Actual generation per type
+            processType="A16",  # Realised
+            in_Domain=eic,
+            periodStart=entsoe_period(now - timedelta(hours=1)),
+            periodEnd=entsoe_period(now),
         )
-        resp.raise_for_status()
 
-        fuel_mix = self._parse_generation_xml(resp.text)
+        fuel_mix = self._parse_generation_xml(text)
         if not fuel_mix:
             raise ValueError(f"No generation data for {grid_zone}")
 
-        return intensity_from_fuel_mix(grid_zone, fuel_mix, "entsoe", now)
+        return intensity_from_fuel_mix(
+            grid_zone=grid_zone, fuel_mix=fuel_mix, source="entsoe", timestamp=now
+        )
 
     def _parse_generation_xml(self, xml_text: str) -> dict[str, float]:
         """Parse ENTSO-E XML response into fuel mix dict."""

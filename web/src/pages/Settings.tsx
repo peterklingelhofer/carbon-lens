@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { API_BASE, api } from "../api/client";
 import { snapshotEnabled, useSnapshot } from "../api/snapshot";
 import { InfoTip } from "../components/InfoTip";
+import { StatCard } from "../components/StatCard";
+import { TableHeadCell } from "../components/TableHeadCell";
 import { DATA_QUALITY_TIP_RICH } from "../copy";
 import { timeAgo } from "../lib/format";
 import { card, sectionStyle } from "../styles";
@@ -38,39 +40,6 @@ function StatusDot({ ok, label }: { ok: boolean; label?: string }) {
       />
       {label ? <span className="sr-only">{label}</span> : null}
     </>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  positive,
-}: {
-  label: string;
-  value: string | number;
-  positive?: boolean;
-}) {
-  return (
-    <div>
-      <div
-        style={{
-          fontSize: "0.75rem",
-          color: "var(--gray-500)",
-          textTransform: "uppercase",
-        }}
-      >
-        {label}
-      </div>
-      <div
-        style={{
-          fontWeight: 700,
-          fontSize: "1.5rem",
-          color: positive ? "var(--green-text)" : "inherit",
-        }}
-      >
-        {value}
-      </div>
-    </div>
   );
 }
 
@@ -254,10 +223,10 @@ export function Settings() {
                 gap: "1rem",
               }}
             >
-              <Stat label="Grid zones live" value={snapshot.summary.live_zones} positive />
-              <Stat label="Estimated" value={snapshot.summary.estimated_zones} />
-              <Stat label="Cloud regions" value={snapshot.regions.length} />
-              <Stat label="Updated" value={timeAgo(snapshot.generated_at)} />
+              <StatCard label="Grid zones live" value={snapshot.summary.live_zones} positive />
+              <StatCard label="Estimated" value={snapshot.summary.estimated_zones} />
+              <StatCard label="Cloud regions" value={snapshot.regions.length} />
+              <StatCard label="Updated" value={timeAgo(snapshot.generated_at)} />
             </div>
             <p
               style={{
@@ -371,10 +340,10 @@ export function Settings() {
         >
           <thead>
             <tr style={{ borderBottom: "2px solid var(--gray-200)" }}>
-              <th style={{ textAlign: "left", padding: "0.5rem" }}>Provider</th>
-              <th style={{ textAlign: "left", padding: "0.5rem" }}>Coverage</th>
-              <th style={{ textAlign: "left", padding: "0.5rem" }}>Env Variable</th>
-              <th style={{ textAlign: "left", padding: "0.5rem" }}>Sign Up</th>
+              <TableHeadCell label="Provider" />
+              <TableHeadCell label="Coverage" />
+              <TableHeadCell label="Env Variable" />
+              <TableHeadCell label="Sign Up" />
             </tr>
           </thead>
           <tbody>

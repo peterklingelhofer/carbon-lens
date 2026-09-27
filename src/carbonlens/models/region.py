@@ -8,5 +8,3 @@ class CloudRegion(BaseModel):
     location: str
     latitude: float
     longitude: float
-    eia_respondent: str | None = None
-    gridstatus_iso: str | None = None

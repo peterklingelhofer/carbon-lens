@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
-import { FORECAST_WEEK_URL, snapshotEnabled, useSnapshot, useWeekForecast } from "../api/snapshot";
+import { FORECAST_WEEK_URL, useRegions, useWeekForecast } from "../api/snapshot";
 import { intensityColor } from "../lib/intensity";
 import { DEFAULT_REGION } from "../lib/providers";
 import { card, muted } from "../styles";
@@ -226,14 +226,7 @@ export function CleanWindowHeatmap() {
   const [provider, setProvider] = useState("aws");
   const [region, setRegion] = useState(DEFAULT_REGION.aws);
 
-  const { data: snapshot } = useSnapshot();
-  const { data: apiRegions } = useQuery({
-    queryKey: ["regions", provider],
-    queryFn: () => api.regions(provider),
-    staleTime: 60 * 60_000,
-    enabled: !snapshotEnabled, // region list comes from the snapshot in production
-  });
-  const regions = snapshot ? snapshot.regions.filter((r) => r.provider === provider) : apiRegions;
+  const { data: regions } = useRegions(provider);
 
   return (
     <div style={{ ...card, marginTop: "1.5rem" }}>

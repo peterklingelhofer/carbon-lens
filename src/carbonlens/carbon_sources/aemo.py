@@ -97,7 +97,9 @@ class AEMOCarbonSource:
             if not fuel_mix:
                 continue
             try:
-                results[zone] = intensity_from_fuel_mix(zone, fuel_mix, "openelectricity", now)
+                results[zone] = intensity_from_fuel_mix(
+                    grid_zone=zone, fuel_mix=fuel_mix, source="openelectricity", timestamp=now
+                )
             except ValueError:
                 # A region reporting no generation is dropped so the cascade can
                 # try the next source, rather than taking the whole batch down.

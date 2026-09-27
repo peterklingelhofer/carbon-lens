@@ -1576,12 +1576,8 @@ export interface components {
         };
         /** CloudRegion */
         CloudRegion: {
-            /** Eia Respondent */
-            eia_respondent?: string | null;
             /** Grid Zone */
             grid_zone: string;
-            /** Gridstatus Iso */
-            gridstatus_iso?: string | null;
             /** Latitude */
             latitude: number;
             /** Location */

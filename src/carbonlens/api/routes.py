@@ -25,7 +25,7 @@ from carbonlens.carbon_sources.history_store import HistoryStore
 from carbonlens.carbon_sources.marginal import MarginalSource
 from carbonlens.carbon_sources.open_meteo import fetch_weather
 from carbonlens.cli.ledger import org_statement
-from carbonlens.config import settings
+from carbonlens.config import PROVIDER_SOURCES, settings
 from carbonlens.db.models import ApiKeyRecord
 from carbonlens.engine.anomaly import compute_anomaly
 from carbonlens.engine.besttime import build_best_time
@@ -244,7 +244,13 @@ async def get_zone_signal(
     that sit on a grid we cover but aren't a cloud region. Use IDs from /carbon/zones."""
     rep = _require_zone(mapper, grid_zone)
     return await build_signal(
-        "zone", grid_zone, grid_zone, rep.longitude, engine, source, marginal_source
+        provider="zone",
+        region=grid_zone,
+        zone=grid_zone,
+        longitude=rep.longitude,
+        engine=engine,
+        source=source,
+        marginal_source=marginal_source,
     )
 
 
@@ -264,7 +270,15 @@ async def get_carbon_signal(
     carbon-aware-dispatcher or any script, loosely coupled via a stable contract.
     """
     zone, longitude = _resolve_zone(mapper, provider, region)
-    return await build_signal(provider, region, zone, longitude, engine, source, marginal_source)
+    return await build_signal(
+        provider=provider,
+        region=region,
+        zone=zone,
+        longitude=longitude,
+        engine=engine,
+        source=source,
+        marginal_source=marginal_source,
+    )
 
 
 @router.get(
@@ -398,7 +412,15 @@ async def get_zone_best_time(
     rep = _require_zone(mapper, grid_zone)
     history_key = f"{rep.provider}/{rep.region}"
     return await _build_best_time(
-        "zone", grid_zone, grid_zone, rep.longitude, history_key, days, energy_kwh, store, engine
+        provider="zone",
+        region=grid_zone,
+        zone=grid_zone,
+        longitude=rep.longitude,
+        history_key=history_key,
+        days=days,
+        energy_kwh=energy_kwh,
+        store=store,
+        engine=engine,
     )
 
 
@@ -423,7 +445,15 @@ async def get_best_time(
     """
     zone, longitude = _resolve_zone(mapper, provider, region)
     return await _build_best_time(
-        provider, region, zone, longitude, f"{provider}/{region}", days, energy_kwh, store, engine
+        provider=provider,
+        region=region,
+        zone=zone,
+        longitude=longitude,
+        history_key=f"{provider}/{region}",
+        days=days,
+        energy_kwh=energy_kwh,
+        store=store,
+        engine=engine,
     )
 
 
@@ -684,21 +714,15 @@ async def source_health(
     import asyncio
     import time
 
-    # Test zones: one per major source
+    # One probe zone per configured source. A source with no credential setting
+    # needs none; one with no single representative zone (Electricity Maps'
+    # global fallback) is skipped, since any answer for it may really have come
+    # from an earlier provider in the hybrid chain
     test_zones = {
-        "UK Carbon Intensity": "GB",
-        "EIA (US grid)": "US-MIDA-PJM",
-        "AEMO (Australia)": "AU-NSW",
-        "Grid India": "IN-NO",
-        "ONS Brazil": "BR-SE",
-        "Eskom (South Africa)": "ZA",
-        "Open-Meteo (weather)": "DE",
+        name: probe_zone
+        for name, (credential, probe_zone) in PROVIDER_SOURCES.items()
+        if probe_zone is not None and (credential is None or getattr(settings, credential))
     }
-
-    if settings.grid_status_api_key:
-        test_zones["GridStatus (US ISOs)"] = "US-CAL-CISO"
-    if settings.entsoe_token:
-        test_zones["ENTSO-E (Europe)"] = "DE"
 
     results: dict[str, dict] = {}
 

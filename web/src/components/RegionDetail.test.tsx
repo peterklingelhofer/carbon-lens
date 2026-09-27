@@ -30,7 +30,6 @@ vi.mock("../api/snapshot", async () => {
   return {
     snapshotEnabled: false,
     useSnapshot: vi.fn(),
-    useSignal: vi.fn(),
     useForecastSnapshot: vi.fn(),
     useBestTimeSnapshot: vi.fn(),
     useRegionHistoryArchive: vi.fn(),

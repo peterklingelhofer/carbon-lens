@@ -1,17 +1,17 @@
-# Prometheus alert rules for CarbonLens.
+# Prometheus alert rules for CarbonLens
 #
 # Load alongside your Prometheus config:
 #   rule_files:
 #     - /etc/prometheus/carbonlens.rules.yml
 #
-# The gauges these reference are exported at /metrics and refreshed on each scrape.
+# The gauges these reference are exported at /metrics and refreshed on each scrape
 groups:
   - name: carbonlens-config
     rules:
       # The silent-heuristic trap: an operator wired a measured-marginal credential
       # (WattTime / Electricity Maps) but no zone map, so no source got built and the
       # marginal signal quietly falls back to heuristic. This is a misconfiguration. The
-      # alert exists so it gets fixed instead of going unnoticed.
+      # alert exists so it gets fixed instead of going unnoticed
       - alert: CarbonMarginalUnmapped
         expr: max(carbon_marginal_unmapped) >= 1
         for: 10m
@@ -43,7 +43,7 @@ groups:
 
       # No grid zone has been in the clean tier for a long stretch. Not necessarily a
       # fault (the whole fleet's grids can be dirty for hours), but if it persists for a
-      # full day it usually means a stuck/stale feed worth a look. Tune for your zones.
+      # full day it usually means a stuck/stale feed worth a look. Tune for your zones
       - alert: CarbonNeverClean
         expr: min(carbon_intensity_tier) > 0
         for: 24h

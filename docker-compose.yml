@@ -24,8 +24,6 @@ services:
     environment:
       CARBON_LENS_USE_DATABASE: "true"
       CARBON_LENS_DATABASE_URL: postgresql+asyncpg://carbonlens:carbonlens@db:5432/carbonlens
-      CARBON_LENS_HOST: "0.0.0.0"
-      CARBON_LENS_PORT: "8000"
       CARBON_LENS_LOG_FORMAT: "json"
       CARBON_LENS_API_KEY_REQUIRED: "true"
       CARBON_LENS_AUTO_MIGRATE: "true"
@@ -38,6 +36,7 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+    restart: unless-stopped
 
   web:
     build:
@@ -47,6 +46,7 @@ services:
       - "5173:80"
     depends_on:
       - api
+    restart: unless-stopped
 
 volumes:
   pgdata:

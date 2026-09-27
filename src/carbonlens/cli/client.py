@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from typing import Any
 
 import httpx
 
@@ -43,6 +44,18 @@ def _headers() -> dict:
     return headers
 
 
+def _get(path: str, params: dict | None = None, timeout: float = 15) -> Any:
+    resp = httpx.get(f"{get_api_url()}{path}", params=params, headers=_headers(), timeout=timeout)
+    resp.raise_for_status()
+    return resp.json()
+
+
+def _post(path: str, body: dict, timeout: float = 15) -> Any:
+    resp = httpx.post(f"{get_api_url()}{path}", json=body, headers=_headers(), timeout=timeout)
+    resp.raise_for_status()
+    return resp.json()
+
+
 def route(
     providers: list[str],
     residency: list[str] | None = None,
@@ -59,72 +72,35 @@ def route(
     if residency:
         body["constraints"]["data_residency"] = residency
 
-    resp = httpx.post(
-        f"{get_api_url()}/api/v1/route",
-        json=body,
-        headers=_headers(),
-        timeout=30,
-    )
-    resp.raise_for_status()
-    return resp.json()
+    return _post("/api/v1/route", body, timeout=30)
 
 
 def regions(provider: str | None = None) -> list[dict]:
-    url = f"{get_api_url()}/api/v1/regions"
-    if provider:
-        url += f"?provider={provider}"
-    resp = httpx.get(url, headers=_headers(), timeout=15)
-    resp.raise_for_status()
-    return resp.json()
+    return _get("/api/v1/regions", params={"provider": provider} if provider else None)
 
 
 def intensity(provider: str, region: str) -> dict:
-    resp = httpx.get(
-        f"{get_api_url()}/api/v1/carbon/{provider}/{region}",
-        headers=_headers(),
-        timeout=15,
-    )
-    resp.raise_for_status()
-    return resp.json()
+    return _get(f"/api/v1/carbon/{provider}/{region}")
 
 
 def savings() -> dict:
-    resp = httpx.get(
-        f"{get_api_url()}/api/v1/accounting/savings",
-        headers=_headers(),
-        timeout=15,
-    )
-    resp.raise_for_status()
-    return resp.json()
+    return _get("/api/v1/accounting/savings")
 
 
 def forecast(provider: str, region: str, hours: int = 24) -> dict:
-    resp = httpx.get(
-        f"{get_api_url()}/api/v1/carbon/forecast/{provider}/{region}",
-        params={"hours": hours},
-        headers=_headers(),
-        timeout=30,
-    )
-    resp.raise_for_status()
-    return resp.json()
+    return _get(f"/api/v1/carbon/forecast/{provider}/{region}", params={"hours": hours}, timeout=30)
 
 
 def health() -> dict:
-    resp = httpx.get(f"{get_api_url()}/health", headers=_headers(), timeout=10)
-    resp.raise_for_status()
-    return resp.json()
+    return _get("/health", timeout=10)
 
 
 def honesty() -> dict:
-    resp = httpx.get(f"{get_api_url()}/api/v1/healthz/honesty", headers=_headers(), timeout=10)
-    resp.raise_for_status()
-    return resp.json()
+    return _get("/api/v1/healthz/honesty", timeout=10)
 
 
 def source_health() -> dict:
-    resp = httpx.get(f"{get_api_url()}/api/v1/status/sources", headers=_headers(), timeout=30)
-    resp.raise_for_status()
-    return resp.json()
+    return _get("/api/v1/status/sources", timeout=30)
 
 
 def report_impact(api_url: str, entry: dict) -> dict:
@@ -148,33 +124,15 @@ def siting(
     params: dict = {"providers": providers, "days": days, "limit": limit}
     if power_watts is not None:
         params["power_watts"] = power_watts
-    resp = httpx.get(
-        f"{get_api_url()}/api/v1/carbon/siting", params=params, headers=_headers(), timeout=30
-    )
-    resp.raise_for_status()
-    return resp.json()
+    return _get("/api/v1/carbon/siting", params=params, timeout=30)
 
 
 def shiftability(days: int = 14, limit: int = 25) -> dict:
-    resp = httpx.get(
-        f"{get_api_url()}/api/v1/carbon/shiftability",
-        params={"days": days, "limit": limit},
-        headers=_headers(),
-        timeout=30,
-    )
-    resp.raise_for_status()
-    return resp.json()
+    return _get("/api/v1/carbon/shiftability", params={"days": days, "limit": limit}, timeout=30)
 
 
 def best_time(provider: str, region: str, days: int = 14, energy_kwh: float | None = None) -> dict:
     params: dict = {"days": days}
     if energy_kwh is not None:
         params["energy_kwh"] = energy_kwh
-    resp = httpx.get(
-        f"{get_api_url()}/api/v1/carbon/best-time/{provider}/{region}",
-        params=params,
-        headers=_headers(),
-        timeout=30,
-    )
-    resp.raise_for_status()
-    return resp.json()
+    return _get(f"/api/v1/carbon/best-time/{provider}/{region}", params=params, timeout=30)

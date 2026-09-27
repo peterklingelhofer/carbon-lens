@@ -4,6 +4,8 @@ from carbonlens.models.carbon import CarbonIntensity
 
 
 class CarbonDataSource(Protocol):
+    def can_handle(self, grid_zone: str) -> bool: ...
+
     async def get_carbon_intensity(self, grid_zone: str) -> CarbonIntensity: ...
 
     async def get_carbon_intensity_batch(

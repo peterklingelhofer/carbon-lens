@@ -1,12 +1,12 @@
 # Reusable carbon gate for Argo Workflows. A `script` step that asks CarbonLens
 # whether `region` is a good time to run and prints "clean" or "dirty" (captured as
 # its `outputs.result`). Gate flexible work on it with a `when:` expression, so a
-# workflow runs the heavy step only on clean power, no app changes.
+# workflow runs the heavy step only on clean power, no app changes
 #
 #   kubectl apply -f deploy/argo/carbon-gate-template.yaml
 #
 # Reuses carbonlens.sdk (same marginal/clean-surplus decision as every other
-# surface), so it needs an image with carbonlens installed (the API image works).
+# surface), so it needs an image with carbonlens installed (the API image works)
 apiVersion: argoproj.io/v1alpha1
 kind: WorkflowTemplate
 metadata:

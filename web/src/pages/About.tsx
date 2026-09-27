@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { snapshotEnabled, useSnapshot } from "../api/snapshot";
 import { timeAgo } from "../lib/format";
-import { card as baseCard, sectionStyle } from "../styles";
+import { card as baseCard, ctaLink, sectionStyle } from "../styles";
 
 const section = sectionStyle(820);
 const card: React.CSSProperties = { ...baseCard, padding: "2rem" };
@@ -192,19 +192,7 @@ export function About() {
       </div>
 
       <div style={{ textAlign: "center", marginTop: "2rem" }}>
-        <Link
-          to="/"
-          style={{
-            display: "inline-block",
-            padding: "0.85rem 2.5rem",
-            borderRadius: 8,
-            background: "var(--btn-green)",
-            color: "white",
-            fontWeight: 500,
-            fontSize: "1.05rem",
-            textDecoration: "none",
-          }}
-        >
+        <Link to="/" style={ctaLink}>
           Explore the live globe
         </Link>
       </div>

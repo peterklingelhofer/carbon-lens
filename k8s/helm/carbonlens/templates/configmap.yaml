@@ -14,5 +14,3 @@ data:
   CARBON_LENS_AUTO_MIGRATE: {{ .Values.config.autoMigrate | quote }}
   CARBON_LENS_RATE_LIMIT_DEFAULT: {{ .Values.config.rateLimit | quote }}
   CARBON_LENS_USE_DATABASE: {{ .Values.database.enabled | quote }}
-  CARBON_LENS_HOST: "0.0.0.0"
-  CARBON_LENS_PORT: "8000"

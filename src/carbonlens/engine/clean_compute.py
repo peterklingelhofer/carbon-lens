@@ -11,8 +11,8 @@ from __future__ import annotations
 from datetime import datetime
 
 from carbonlens.engine.recurring import (
-    _parse_utc,
     mean_intensity,
+    parse_utc,
     rank_hours_utc,
     shiftability_pct,
 )
@@ -21,7 +21,7 @@ _MIN_SAMPLES = 8
 
 
 def _within(ts: str | None, cutoff: datetime) -> bool:
-    t = _parse_utc(ts)
+    t = parse_utc(ts)
     return t is not None and t >= cutoff
 
 

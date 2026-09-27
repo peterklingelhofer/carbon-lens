@@ -28,9 +28,6 @@ export function Nav() {
           padding: 0.75rem clamp(0.5rem, 3vw, 2rem);
           border-bottom: 1px solid var(--gray-200);
           background: var(--nav-bg);
-          position: sticky;
-          top: 0;
-          z-index: 20;
         }
         .nav-brand {
           font-weight: 700;

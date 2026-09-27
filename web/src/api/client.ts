@@ -1,5 +1,5 @@
+import { HYPERSCALERS } from "../lib/providers";
 import type {
-  AlertEvent,
   BestTime,
   CalculationResponse,
   CarbonForecast,
@@ -9,7 +9,6 @@ import type {
   CloudRegion,
   ComplianceReport,
   ComplianceReportSummary,
-  CronSchedule,
   GreenSLA,
   GridZoneSummary,
   HealthResponse,
@@ -41,11 +40,6 @@ const BASE_URL = import.meta.env.VITE_API_URL || "";
 export const API_BASE =
   import.meta.env.VITE_API_URL || (typeof window !== "undefined" ? window.location.origin : "");
 
-const API_KEY_STORAGE_KEY = "carbonlens_api_key";
-// Key used before the carbon_mesh -> carbonlens rename. Read once so an existing
-// visitor's saved key survives the change instead of silently disappearing.
-const LEGACY_API_KEY_STORAGE_KEY = "carbon_mesh_api_key";
-
 // Turn a non-OK response into an Error, preferring the API's `detail` field
 async function parseError(res: Response): Promise<Error> {
   const body = await res.json().catch(() => ({ detail: res.statusText }));
@@ -61,42 +55,15 @@ export function getLastApiResponseAt(): number {
   return lastApiResponseAt;
 }
 
-export function getApiKey(): string {
-  try {
-    const current = localStorage.getItem(API_KEY_STORAGE_KEY);
-    if (current) return current;
-    const legacy = localStorage.getItem(LEGACY_API_KEY_STORAGE_KEY);
-    if (legacy) {
-      localStorage.setItem(API_KEY_STORAGE_KEY, legacy);
-      localStorage.removeItem(LEGACY_API_KEY_STORAGE_KEY);
-      return legacy;
-    }
-    return "";
-  } catch {
-    return "";
-  }
-}
-
-export function setApiKey(key: string): void {
-  try {
-    if (key) localStorage.setItem(API_KEY_STORAGE_KEY, key);
-    else localStorage.removeItem(API_KEY_STORAGE_KEY);
-  } catch {
-    // localStorage unavailable (SSR/private mode) - no-op
-  }
-}
-
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const apiKey = getApiKey();
   // Only attach headers that are actually needed. Sending Content-Type on a
   // bodyless GET makes it a non-"simple" request, which forces a CORS preflight
   // (OPTIONS) on every read - doubling round-trips and adding a failure point
-  // during cold starts. GETs with no key stay simple (no preflight).
+  // during cold starts. GETs with no body stay simple (no preflight)
   const headers: Record<string, string> = {
     ...(options?.headers as Record<string, string> | undefined),
   };
   if (options?.body) headers["Content-Type"] = "application/json";
-  if (apiKey) headers["X-API-Key"] = apiKey;
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
   lastApiResponseAt = Date.now(); // server answered, so it's awake
   if (!res.ok) throw await parseError(res);
@@ -176,25 +143,16 @@ export const api = {
         body: JSON.stringify(body),
       }),
 
-    get: (slaId: string) => request<GreenSLA>(`/api/v1/sla/${slaId}`),
-
     check: (slaId: string) =>
       request<SLACheck>(`/api/v1/sla/${slaId}/check`, {
         method: "POST",
       }),
-
-    status: (slaId: string) => request<SLACheck | null>(`/api/v1/sla/${slaId}/status`),
-
-    checks: (slaId: string, limit?: number) =>
-      request<SLACheck[]>(`/api/v1/sla/${slaId}/checks${limit ? `?limit=${limit}` : ""}`),
 
     generateReport: (slaId: string, body: { org_name: string; period_days?: number }) =>
       request<SLAReport>(`/api/v1/sla/${slaId}/report`, {
         method: "POST",
         body: JSON.stringify(body),
       }),
-
-    reports: (slaId: string) => request<SLAReport[]>(`/api/v1/sla/${slaId}/reports`),
 
     startMonitor: (orgId: string) =>
       request<SLAMonitorStatus>(`/api/v1/sla/monitor/start?org_id=${orgId}`, {
@@ -207,9 +165,6 @@ export const api = {
       }),
 
     monitorStatus: () => request<SLAMonitorStatus>("/api/v1/sla/monitor/status"),
-
-    alerts: (limit?: number) =>
-      request<AlertEvent[]>(`/api/v1/sla/monitor/alerts${limit ? `?limit=${limit}` : ""}`),
   },
 
   // Scheduler
@@ -228,35 +183,8 @@ export const api = {
 
     bestNow: (durationMinutes?: number, providers?: string) =>
       request<ScheduleRecommendation>(
-        `/api/v1/scheduler/now?duration_minutes=${durationMinutes ?? 30}&providers=${providers ?? "aws,gcp,azure"}`,
+        `/api/v1/scheduler/now?duration_minutes=${durationMinutes ?? 30}&providers=${providers ?? HYPERSCALERS.join(",")}`,
       ),
-
-    createSchedule: (body: {
-      name: string;
-      org_id: string;
-      job_duration_minutes?: number;
-      providers?: string[];
-      preferred_regions?: string[];
-      strategy?: "lowest_carbon" | "highest_renewable" | "balanced";
-      max_delay_hours?: number;
-    }) =>
-      request<CronSchedule>("/api/v1/scheduler/schedules", {
-        method: "POST",
-        body: JSON.stringify(body),
-      }),
-
-    listSchedules: (orgId: string) =>
-      request<CronSchedule[]>(`/api/v1/scheduler/schedules?org_id=${orgId}`),
-
-    getSchedule: (id: string) => request<CronSchedule>(`/api/v1/scheduler/schedules/${id}`),
-
-    deleteSchedule: (id: string) =>
-      request<{ deleted: string }>(`/api/v1/scheduler/schedules/${id}`, {
-        method: "DELETE",
-      }),
-
-    nextWindow: (id: string) =>
-      request<ScheduleRecommendation>(`/api/v1/scheduler/schedules/${id}/next`, { method: "POST" }),
   },
 
   // Carbon zones (on-prem / non-cloud lookups by grid zone)
@@ -264,9 +192,6 @@ export const api = {
 
   carbonZone: (gridZone: string) =>
     request<CarbonIntensity>(`/api/v1/carbon/zone/${encodeURIComponent(gridZone)}`),
-
-  // Source health
-  sourceHealth: () => request<Record<string, unknown>>("/api/v1/status/sources"),
 
   // Compliance
   compliance: {
@@ -281,12 +206,10 @@ export const api = {
     uploadCsv: async (orgId: string, file: File): Promise<UsageIngestionResponse> => {
       const form = new FormData();
       form.append("file", file);
-      const apiKey = getApiKey();
       const res = await fetch(
         `${BASE_URL}/api/v1/compliance/usage/upload-csv?org_id=${encodeURIComponent(orgId)}`,
         {
           method: "POST",
-          headers: { ...(apiKey ? { "X-API-Key": apiKey } : {}) },
           body: form,
         },
       );

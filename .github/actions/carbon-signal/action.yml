@@ -75,7 +75,7 @@ runs:
         MBASIS=$(echo "$RESPONSE" | jq -r '.marginal_basis // "heuristic"')
 
         # Clean now if the signal says run_now, or it's clean surplus, subject to an
-        # optional caller-set intensity cap.
+        # optional caller-set intensity cap
         CLEAN=false
         if [ "$ADVICE" = "run_now" ] || [ "$SURPLUS" = "true" ]; then CLEAN=true; fi
         MAXI="${{ inputs.max-intensity }}"

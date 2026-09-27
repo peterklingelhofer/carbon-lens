@@ -2,10 +2,10 @@
 # clean the grid is. Uses the `carbon_intensity_tier` gauge
 # (0 green, 1 yellow, 2 red): "2 - tier" is clean headroom (clean=2, yellow=1,
 # dirty=0). This captures the large yellow middle that the binary surplus signal
-# (see scaledobject.yaml) misses.
+# (see scaledobject.yaml) misses
 #
 # With this query x4 and threshold 1, KEDA targets ~8 replicas when green, ~4 on
-# yellow, and scales to minReplicaCount when red.
+# yellow, and scales to minReplicaCount when red
 apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
 metadata:
@@ -22,6 +22,6 @@ spec:
     - type: prometheus
       metadata:
         serverAddress: http://prometheus.monitoring.svc:9090
-        # Clean headroom (0..2) x 4 -> desired replicas = ceil(value / threshold).
+        # Clean headroom (0..2) x 4 -> desired replicas = ceil(value / threshold)
         query: (2 - max(carbon_intensity_tier{grid_zone="US-NW-BPAT"})) * 4
         threshold: "1"

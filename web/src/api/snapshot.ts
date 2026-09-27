@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { api } from "./client";
 import type { BestTime, CarbonIntensity, CloudRegion, GridZoneSummary } from "./types";
 
 // Prefer a precomputed snapshot value. Fall back to the live API only when there's
@@ -24,6 +25,26 @@ export function useSnapshotOrApi<T>(
     retry: options?.retry,
   });
   return { data: snap ?? apiData, isLoading, isError };
+}
+
+// Cloud regions for a provider (or every region, when omitted): the same
+// snapshot-first, API-fallback ["regions", provider] query the heatmap,
+// region-comparison, dashboard and API-explorer pages each ran themselves
+export function useRegions(provider?: string) {
+  const { data: snapshot } = useSnapshot();
+  const snapRegions = snapshot
+    ? provider
+      ? snapshot.regions.filter((r) => r.provider === provider)
+      : snapshot.regions
+    : undefined;
+  return useSnapshotOrApi(
+    snapRegions,
+    ["regions", provider],
+    () => api.regions(provider || undefined),
+    {
+      staleTime: 60 * 60_000,
+    },
+  );
 }
 
 // Static carbon snapshot published to a CDN by the `snapshot` GitHub Action.
@@ -110,13 +131,6 @@ export function qualityFromSource(source: string): "live" | "estimated" | "mock"
   if (source.endsWith("_heuristic") || source === "open_meteo") return "estimated";
   if (source === "mock" || source === "electricity_maps_error") return "mock";
   return "live";
-}
-
-// The precomputed signal for one region, read from the cached snapshot (no extra
-// fetch). Undefined when snapshots are disabled or this region has no signal yet.
-export function useSignal(provider: string, region: string): CarbonSignal | undefined {
-  const { data } = useSnapshot();
-  return data?.signals?.[`${provider}/${region}`];
 }
 
 // The precomputed 24h forecast for one region from the cached snapshot (no extra

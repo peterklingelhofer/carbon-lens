@@ -17,6 +17,10 @@ class ElectricityMapsCarbonSource:
             timeout=10.0,
         )
 
+    def can_handle(self, grid_zone: str) -> bool:
+        # Global fallback: accepts any zone
+        return True
+
     async def get_carbon_intensity(self, grid_zone: str) -> CarbonIntensity:
         resp = await self._client.get("/carbon-intensity/latest", params={"zone": grid_zone})
         resp.raise_for_status()

@@ -319,18 +319,16 @@ function MetricToggle({
   );
 }
 
-// A minimal one-line layer switch (icon + label), struck through and dimmed when
+// A minimal one-line layer switch (label only), struck through and dimmed when
 // off. Used for the cloud and daylight overlays in the legend.
 function LayerToggle({
   on,
   onToggle,
-  icon,
   label,
   title,
 }: {
   on: boolean;
   onToggle: () => void;
-  icon: string;
   label: string;
   title: string;
 }) {
@@ -355,7 +353,7 @@ function LayerToggle({
         textDecoration: on ? "none" : "line-through",
       }}
     >
-      <span aria-hidden>{icon}</span> {label}
+      {label}
     </button>
   );
 }
@@ -824,7 +822,7 @@ export default function CarbonGlobe() {
       style={{
         position: "relative",
         width: "100%",
-        height: "calc(100vh - 56px)",
+        height: "calc(100vh - var(--nav-h))",
         background: "#000",
         overflow: "hidden",
       }}
@@ -871,9 +869,6 @@ export default function CarbonGlobe() {
           }}
         >
           <div style={{ maxWidth: 540, color: "#cbd5e1" }}>
-            <div style={{ fontSize: "2.5rem", marginBottom: "0.5rem" }} aria-hidden>
-              {null}
-            </div>
             <h1
               style={{
                 color: "#fff",
@@ -1320,14 +1315,12 @@ export default function CarbonGlobe() {
             <LayerToggle
               on={showClouds}
               onToggle={() => setShowClouds((v) => !v)}
-              icon=""
               label="Clouds"
               title="Cloud cover: NASA VIIRS true-color reflectance, daily mosaic"
             />
             <LayerToggle
               on={showSolar}
               onToggle={() => setShowSolar((v) => !v)}
-              icon=""
               label="Daylight"
               title="Daylight: solar irradiance by cosine of the solar zenith angle"
             />
@@ -1417,6 +1410,7 @@ export default function CarbonGlobe() {
             </div>
             <button
               type="button"
+              aria-label="Close"
               onClick={() => setSelected(null)}
               style={{
                 background: "none",

@@ -1,25 +1,13 @@
-// Types generated from the API's OpenAPI spec (run `npm run gen:api` to refresh;
-// CI fails if they drift). The hand-written interfaces below predate the generator
-// and remain for existing call sites.
-export type { components, operations, paths } from "./schema";
+// These types alias the generated OpenAPI schema in schema.ts
+// Run npm run gen:api to refresh it
+import type { components } from "./schema";
 
-export interface RegionRecommendation {
-  provider: string;
-  region: string;
-  grid_zone: string;
-  carbon_intensity_gco2_kwh: number;
-  renewable_percentage: number;
-  score: number;
-  carbon_savings_vs_worst_pct: number;
-}
+export type RegionRecommendation = components["schemas"]["RegionRecommendation"];
 
-export interface RouteResponse {
-  recommended: RegionRecommendation;
-  alternatives: RegionRecommendation[];
-  request_id: string;
-  timestamp: string;
-}
+export type RouteResponse = components["schemas"]["RouteResponse"];
 
+// Hand-written: schema.JobConstraints marks carbon_weight and cost_weight as required,
+// but Dashboard.tsx and others omit them to fall back to server defaults
 export interface RouteRequest {
   constraints: {
     providers: string[];
@@ -30,15 +18,11 @@ export interface RouteRequest {
   };
 }
 
-export interface CloudRegion {
-  provider: string;
-  region: string;
-  grid_zone: string;
-  location: string;
-  latitude: number;
-  longitude: number;
-}
+export type CloudRegion = components["schemas"]["CloudRegion"];
 
+// Hand-written: the API returns quality, carried_forward and consumption_intensity_gco2_kwh,
+// which aren't in the generated schema yet. Dashboard, CarbonGlobe, RegionSpread, Landing
+// and About all read them directly
 export interface CarbonIntensity {
   grid_zone: string;
   carbon_intensity_gco2_kwh: number;
@@ -63,130 +47,43 @@ export interface CarbonIntensity {
   power_breakdown_mw?: Record<string, number>;
 }
 
-export interface CarbonForecast {
-  grid_zone: string;
-  provider: string;
-  region: string;
-  generated_at: string;
-  // "entsoe_day_ahead" (real EU day-ahead forecast) or "time_of_day_model".
-  method: string;
-  // Hour-by-hour projection. The first point is the current reading.
-  points: CarbonIntensity[];
-  // Hour offsets (0 = now) projected to be clean surplus - the highest-value
-  // windows to shift flexible load into.
-  clean_surplus_hours: number[];
-}
+export type CarbonForecast = components["schemas"]["CarbonForecast"];
 
+// Hand-written: no schema counterpart
 export interface GridZoneSummary {
   grid_zone: string;
   location: string;
   regions: string[];
 }
 
-export interface CarbonHistoryPoint {
-  timestamp: string;
-  carbon_intensity_gco2_kwh: number;
-  renewable_percentage: number;
-}
+export type CarbonHistoryPoint = components["schemas"]["CarbonHistoryPoint"];
 
-export interface CarbonHistory {
-  grid_zone: string;
-  provider: string;
-  region: string;
-  // Past readings, oldest first, from the published rolling archive. Empty until
-  // the archive accumulates for this region.
-  points: CarbonHistoryPoint[];
-}
+export type CarbonHistory = components["schemas"]["CarbonHistory"];
 
-export interface SitingOption {
-  provider: string;
-  region: string;
-  grid_zone: string;
-  location: string;
-  typical_gco2_kwh: number;
-  basis: string;
-  annual_kg: number | null;
-}
+export type SitingOption = components["schemas"]["SitingOption"];
 
-export interface SitingRecommendation {
-  recommended: SitingOption;
-  options: SitingOption[];
-  annual_kg_saved_vs_worst: number | null;
-  power_watts: number | null;
-  days_analyzed: number;
-}
+export type SitingRecommendation = components["schemas"]["SitingRecommendation"];
 
-export interface ZoneShiftability {
-  grid_zone: string;
-  location: string;
-  shift_savings_pct: number;
-  cleanest_hour_utc: number;
-  dirtiest_hour_utc: number;
-  samples: number;
-}
+export type ZoneShiftability = components["schemas"]["ZoneShiftability"];
 
-export interface ShiftabilityRanking {
-  days_analyzed: number;
-  // Most shiftable first, zones without enough history omitted.
-  zones: ZoneShiftability[];
-}
+export type ShiftabilityRanking = components["schemas"]["ShiftabilityRanking"];
 
-export interface BestTime {
-  provider: string;
-  region: string;
-  grid_zone: string;
-  // history | forecast | insufficient
-  basis: string;
-  days_analyzed: number;
-  cleanest_hour_utc: number | null;
-  dirtiest_hour_utc: number | null;
-  shift_savings_pct: number | null;
-  annual_kg_saved: number | null;
-  suggested_cron: string | null;
-  ranked_hours: { hour_utc: number; mean_gco2_kwh: number; samples: number }[];
-}
+export type BestTime = components["schemas"]["BestTime"];
 
-export interface WeatherConditions {
-  grid_zone: string;
-  provider: string;
-  region: string;
-  // Surface wind speed at 10 m (km/h) and shortwave solar irradiance (W/m2): the
-  // weather driving the zone's wind and solar generation. A single-point proxy.
-  wind_speed_kmh: number;
-  solar_irradiance_w_m2: number;
-  observed_at: string;
-  source: string;
-}
+export type WeatherConditions = components["schemas"]["WeatherConditions"];
 
-export interface EmissionsRecord {
-  request_id: string;
-  timestamp: string;
-  chosen_provider: string;
-  chosen_region: string;
-  chosen_grid_zone: string;
-  chosen_carbon_intensity: number;
-  // Mean intensity of the candidates considered (a carbon-blind pick), and the
-  // signed reduction the chosen region achieved against it.
-  baseline_carbon_intensity: number;
-  intensity_reduction_gco2_kwh: number;
-}
+export type EmissionsRecord = components["schemas"]["EmissionsRecord"];
 
-export interface CarbonSavingsReport {
-  total_requests: number;
-  // Average per-recommendation intensity reduction vs the baseline. A rate
-  // (gCO₂/kWh), not an additive total.
-  avg_intensity_reduction_gco2_kwh: number;
-  baseline: string;
-  avg_renewable_percentage: number;
-  records: EmissionsRecord[];
-}
+export type CarbonSavingsReport = components["schemas"]["CarbonSavingsReport"];
 
+// Hand-written: no schema counterpart
 export interface HealthResponse {
   status: string;
   version: string;
   carbon_source: string;
 }
 
+// Hand-written: no schema counterpart, this is a websocket message shape
 export interface CarbonUpdate {
   type: "carbon_update";
   timestamp: string;
@@ -201,6 +98,7 @@ export interface CarbonUpdate {
   }>;
 }
 
+// Hand-written: no schema counterpart
 export interface RegionLookup {
   provider: string;
   region: string;
@@ -208,40 +106,16 @@ export interface RegionLookup {
 
 // --- Compliance types ---
 
-export interface UsageIngestionRequest {
-  org_id: string;
-  provider: string;
-  period_start: string;
-  period_end: string;
-  credentials?: Record<string, string>;
-}
+export type UsageIngestionRequest = components["schemas"]["UsageIngestionRequest"];
 
-export interface UsageIngestionResponse {
-  records_ingested: number;
-  total_energy_kwh: number;
-  providers_covered: string[];
-  regions_covered: string[];
-}
+export type UsageIngestionResponse = components["schemas"]["UsageIngestionResponse"];
 
-export interface CalculationResponse {
-  calculations_count: number;
-  total_emissions_kgco2e: number;
-  scope2_kgco2e: number;
-  scope3_kgco2e: number;
-  data_sources_used: string[];
-}
+export type CalculationResponse = components["schemas"]["CalculationResponse"];
 
-export interface ComplianceReportSummary {
-  id: string;
-  report_name: string;
-  period_start: string;
-  period_end: string;
-  generated_at: string;
-  total_kgco2e: number;
-  total_energy_kwh: number;
-  carbon_saved_percentage: number;
-}
+export type ComplianceReportSummary = components["schemas"]["ComplianceReportSummary"];
 
+// Hand-written: schema marks data_sources and data_quality_summary optional,
+// but Compliance.tsx reads both without a null check
 export interface ComplianceReport {
   id: string;
   org_id: string;
@@ -281,34 +155,12 @@ export interface ComplianceReport {
 export type SLAStatusValue = "compliant" | "warning" | "breached" | "unknown";
 export type SLACheckFrequency = "hourly" | "daily" | "weekly";
 
-export interface GreenSLA {
-  id: string;
-  org_id: string;
-  name: string;
-  max_carbon_intensity_gco2_kwh: number;
-  min_renewable_percentage: number;
-  providers: string[];
-  regions: string[];
-  check_frequency: SLACheckFrequency;
-  alert_channels: string[];
-  webhook_url: string;
-  created_at: string;
-  updated_at: string;
-  active: boolean;
-}
+export type GreenSLA = components["schemas"]["GreenSLA"];
 
-export interface SLASummary {
-  id: string;
-  name: string;
-  org_id: string;
-  status: SLAStatusValue;
-  max_carbon_intensity_gco2_kwh: number;
-  min_renewable_percentage: number;
-  check_frequency: SLACheckFrequency;
-  last_checked: string | null;
-  active: boolean;
-}
+export type SLASummary = components["schemas"]["SLASummary"];
 
+// Hand-written: no schema counterpart, SLACheck's breached_regions is an
+// untyped object list in the generated schema
 export interface BreachedRegion {
   provider: string;
   region: string;
@@ -316,6 +168,8 @@ export interface BreachedRegion {
   renewable_percentage: number;
 }
 
+// Hand-written: schema types breached_regions as an optional Record<string, unknown>[],
+// but SLAMonitor.tsx reads it as a required BreachedRegion[]
 export interface SLACheck {
   id: string;
   sla_id: string;
@@ -333,34 +187,9 @@ export interface SLACheck {
   target_min_renewable: number;
 }
 
-export interface SLAReport {
-  id: string;
-  sla_id: string;
-  org_id: string;
-  org_name: string;
-  sla_name: string;
-  period_start: string;
-  period_end: string;
-  generated_at: string;
-  total_checks: number;
-  compliant_checks: number;
-  warning_checks: number;
-  breached_checks: number;
-  compliance_percentage: number;
-  avg_carbon_intensity_gco2_kwh: number;
-  max_carbon_intensity_gco2_kwh: number;
-  avg_renewable_percentage: number;
-  min_renewable_percentage: number;
-  target_max_carbon: number;
-  target_min_renewable: number;
-  checks_by_day: Record<string, Record<string, unknown>>;
-  worst_regions: Record<string, unknown>[];
-  best_regions: Record<string, unknown>[];
-  methodology: string;
-  data_sources: string[];
-  reporting_standard: string;
-}
+export type SLAReport = components["schemas"]["SLAReport"];
 
+// Hand-written: no schema counterpart
 export interface SLAMonitorStatus {
   running: boolean;
   checks_completed: number;
@@ -369,56 +198,10 @@ export interface SLAMonitorStatus {
   recent_alerts: number;
 }
 
-export interface AlertEvent {
-  id: string;
-  sla_id: string;
-  sla_name: string;
-  channel: string;
-  sent_at: string;
-  status: SLAStatusValue;
-  details: Record<string, unknown>;
-  delivery_status: string;
-}
-
 // --- Carbon-aware scheduler ---
 
 export type ScheduleStrategy = "lowest_carbon" | "highest_renewable" | "balanced";
 
-export interface TimeSlot {
-  start: string;
-  end: string;
-  provider: string;
-  region: string;
-  grid_zone: string;
-  carbon_intensity_gco2_kwh: number;
-  renewable_percentage: number;
-  score: number;
-  // True when this slot looks like clean oversupply - the highest-value time to run.
-  clean_surplus?: boolean;
-}
+export type TimeSlot = components["schemas"]["TimeSlot"];
 
-export interface ScheduleRecommendation {
-  id: string;
-  recommended: TimeSlot;
-  alternatives: TimeSlot[];
-  forecast?: TimeSlot[];
-  job_duration_minutes: number;
-  window_start: string;
-  window_end: string;
-  strategy: ScheduleStrategy;
-  carbon_saved_vs_now_pct: number;
-  evaluated_slots: number;
-}
-
-export interface CronSchedule {
-  id: string;
-  name: string;
-  org_id: string;
-  job_duration_minutes: number;
-  providers: string[];
-  preferred_regions: string[];
-  strategy: ScheduleStrategy;
-  max_delay_hours: number;
-  created_at: string;
-  active: boolean;
-}
+export type ScheduleRecommendation = components["schemas"]["ScheduleRecommendation"];

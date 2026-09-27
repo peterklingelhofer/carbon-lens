@@ -9,19 +9,13 @@ from __future__ import annotations
 
 import json
 import time
-from datetime import UTC, datetime
+from datetime import datetime
 
 import httpx
 
+from carbonlens.engine.recurring import parse_utc
+
 _CACHE_TTL_SECONDS = 300.0
-
-
-def _parse_ts(value: str) -> datetime | None:
-    try:
-        ts = datetime.fromisoformat(value)
-    except (TypeError, ValueError):
-        return None
-    return ts.replace(tzinfo=UTC) if ts.tzinfo is None else ts
 
 
 class HistoryStore:
@@ -65,7 +59,7 @@ class HistoryStore:
         points = data.get("series", {}).get(region_key, [])
         out: list[dict] = []
         for p in points:
-            ts = _parse_ts(p.get("t", ""))
+            ts = parse_utc(p.get("t", ""))
             if ts is not None and ts >= since:
                 out.append(p)
         return out

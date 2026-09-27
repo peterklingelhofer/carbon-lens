@@ -47,6 +47,9 @@ class SnapshotBackedSource:
         self._fallback = fallback
         self._client = shared_client(timeout=15.0)
 
+    def can_handle(self, grid_zone: str) -> bool:
+        return self._fallback.can_handle(grid_zone)
+
     async def _zone_map(self) -> dict[str, CarbonIntensity]:
         """zone -> current intensity from the published snapshot, cached."""
         if not self._url:

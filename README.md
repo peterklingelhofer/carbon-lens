@@ -418,7 +418,6 @@ web/                Vite + React 19 + TypeScript frontend
   src/pages/        Landing, Globe, API Explorer, Grid Data, Compliance, SLA, Scheduler, Route, About, Status
   src/api/          Typed API client + WebSocket
 
-terraform/          Terraform data source for green routing
 data/               region_grid_map.yaml (116 regions -> grid zones)
 alembic/            Database migrations
 tests/              442 tests
@@ -450,7 +449,6 @@ tests/              442 tests
 | `CARBON_LENS_ADMIN_SECRET` | | Admin endpoint secret |
 | **Limits** | | |
 | `CARBON_LENS_RATE_LIMIT_DEFAULT` | `100/minute` | Default rate limit |
-| `CARBON_LENS_RATE_LIMIT_ROUTE` | `30/minute` | Route endpoint limit |
 | **Observability** | | |
 | `CARBON_LENS_LOG_FORMAT` | `text` | `text` or `json` |
 | `CARBON_LENS_LOG_LEVEL` | `INFO` | Log level |
@@ -462,7 +460,7 @@ tests/              442 tests
 | Platform | How | Config |
 |----------|-----|--------|
 | **Docker** | `make up` | `Dockerfile`, `docker-compose.yml` |
-| **Render** (API, recommended) | New Web Service, region Oregon | `render.yaml` |
+| **Render** (API, recommended) | New Web Service, region Oregon | New Web Service |
 | **Cloudflare Workers** (frontend) | `cd web && npm run build && npx wrangler deploy` | `web/wrangler.jsonc` |
 | **Fly.io** (API, alternative) | `fly launch --copy-config --yes` | `fly.toml` |
 | **GHCR images** | published by CI on merge to `main` | `.github/workflows/ci.yml` |

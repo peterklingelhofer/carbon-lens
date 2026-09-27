@@ -8,7 +8,6 @@
   --green-600: #16a34a;
   --green-700: #15803d;
   --green-800: #166534;
-  --green-900: #14532d;
 
   --gray-50: #f9fafb;
   --gray-100: #f3f4f6;
@@ -26,10 +25,7 @@
   --red-500: #ef4444;
   --yellow-200: #fef08a;
   --yellow-300: #fde047;
-  --yellow-400: #facc15;
   --orange-400: #fb923c;
-  --blue-400: #60a5fa;
-  --blue-500: #3b82f6;
 
   /* Mid-range carbon-intensity indicator - dark gold for contrast on light,
      remapped to a bright amber in dark mode below. */
@@ -49,7 +45,6 @@
        --btn-green   solid button bg - white text is 5.0:1 in both modes
        --green-text  green text/links - dark green on light, bright on dark   */
   --btn-green: #15803d;
-  --btn-green-hover: #166534;
   --green-text: #15803d; /* on white: 5.0:1 */
 
   --surface: #ffffff;
@@ -57,6 +52,9 @@
   --nav-bg: #ffffff;
   --card-bg: #ffffff;
   --card-shadow: 0 1px 3px rgba(16, 24, 40, 0.08), 0 1px 2px rgba(16, 24, 40, 0.04);
+  /* Sticky nav's rendered height: routes.tsx and ColdStartBanner key their own
+     layout math off this so it stays in sync with Nav's actual height. */
+  --nav-h: 56px;
 
   /* Provider label chips - solid brand-colored pill with white text, identical in
      light and dark mode. Self-contained contrast (white on a dark-enough brand

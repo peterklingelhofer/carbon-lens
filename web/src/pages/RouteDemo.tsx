@@ -1,48 +1,36 @@
+import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { API_BASE, api } from "../api/client";
-import type { RouteResponse } from "../api/types";
 import { InfoTip } from "../components/InfoTip";
 import { RegionComparison } from "../components/RegionComparison";
 import { TableHeadCell } from "../components/TableHeadCell";
 import { EMISSIONS_TIP, GRID_ZONE_TIP, TABLE_RENEWABLE_TIP } from "../copy";
 import { intensityLabel } from "../lib/intensity";
-import { card, sectionStyle } from "../styles";
+import { HYPERSCALERS, PROVIDERS } from "../lib/providers";
+import { card, primaryButton, sectionStyle } from "../styles";
 
 const section = sectionStyle();
 
 export function RouteDemo() {
-  const [providers, setProviders] = useState<string[]>(["aws", "gcp", "azure"]);
+  const [providers, setProviders] = useState<string[]>(HYPERSCALERS);
   const [residency, setResidency] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<RouteResponse | null>(null);
-  const [error, setError] = useState("");
 
-  const toggleProvider = (p: string) => {
-    setProviders((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]));
-  };
-
-  const handleRoute = async () => {
-    if (providers.length === 0) {
-      setError("Select at least one provider.");
-      return;
-    }
-    setLoading(true);
-    setError("");
-    setResult(null);
-    try {
-      const res = await api.route({
+  const routeMutation = useMutation({
+    mutationFn: () => {
+      if (providers.length === 0) throw new Error("Select at least one provider.");
+      return api.route({
         constraints: {
           providers,
           data_residency: residency ? [residency] : undefined,
           carbon_weight: 1.0,
         },
       });
-      setResult(res);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Unknown error");
-    } finally {
-      setLoading(false);
-    }
+    },
+  });
+  const result = routeMutation.data;
+
+  const toggleProvider = (p: string) => {
+    setProviders((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]));
   };
 
   return (
@@ -83,7 +71,7 @@ export function RouteDemo() {
             Cloud Providers
           </legend>
           <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-            {["aws", "gcp", "azure", "scaleway", "ovh", "hetzner"].map((p) => (
+            {PROVIDERS.map((p) => (
               <button
                 type="button"
                 key={p}
@@ -159,25 +147,21 @@ export function RouteDemo() {
 
         <button
           type="button"
-          onClick={handleRoute}
-          disabled={loading}
+          onClick={() => routeMutation.mutate()}
+          disabled={routeMutation.isPending}
           style={{
-            padding: "0.75rem 2rem",
-            borderRadius: 8,
-            border: "none",
-            background: loading ? "var(--gray-300)" : "var(--btn-green)",
-            color: "white",
-            fontWeight: 500,
+            ...primaryButton,
+            background: routeMutation.isPending ? "var(--gray-300)" : "var(--btn-green)",
             fontSize: "1rem",
-            cursor: loading ? "not-allowed" : "pointer",
+            cursor: routeMutation.isPending ? "not-allowed" : "pointer",
           }}
         >
-          {loading ? "Routing..." : "Find Greenest Region"}
+          {routeMutation.isPending ? "Routing..." : "Find Greenest Region"}
         </button>
 
-        {error && (
+        {routeMutation.isError && (
           <p role="alert" style={{ color: "var(--red-500)", marginTop: "1rem" }}>
-            {error}
+            {(routeMutation.error as Error).message}
           </p>
         )}
       </div>

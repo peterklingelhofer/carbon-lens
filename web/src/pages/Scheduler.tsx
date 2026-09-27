@@ -8,8 +8,8 @@ import { InfoTip } from "../components/InfoTip";
 import { StatCard } from "../components/StatCard";
 import { RENEWABLE_TIP, SURPLUS_TIP } from "../copy";
 import { intensityColor } from "../lib/intensity";
-import { PROVIDERS } from "../lib/providers";
-import { card, labelStyle, sectionStyle, td, th } from "../styles";
+import { HYPERSCALERS, PROVIDERS } from "../lib/providers";
+import { card, labelStyle, primaryButton, sectionStyle, td, th } from "../styles";
 
 // Inline SVG line chart of the recommended region's intensity across the window,
 // with the chosen slot marked. No chart dependency, hand-drawn to match the app.
@@ -158,7 +158,7 @@ export function Scheduler() {
   const [duration, setDuration] = useState(30);
   const [maxDelay, setMaxDelay] = useState(24);
   const [strategy, setStrategy] = useState<Strategy>("lowest_carbon");
-  const [selectedProviders, setSelectedProviders] = useState<string[]>(["aws", "gcp", "azure"]);
+  const [selectedProviders, setSelectedProviders] = useState<string[]>(HYPERSCALERS);
 
   // "Greenest region now" is just the lowest-intensity region among the selected
   // providers, which the snapshot already carries. Derive it client-side so this
@@ -444,12 +444,7 @@ export function Scheduler() {
           onClick={() => findWindow.mutate()}
           disabled={findWindow.isPending || selectedProviders.length === 0}
           style={{
-            padding: "0.75rem 2rem",
-            borderRadius: 8,
-            border: "none",
-            background: "var(--btn-green)",
-            color: "white",
-            fontWeight: 500,
+            ...primaryButton,
             cursor: findWindow.isPending ? "wait" : "pointer",
             fontSize: "0.9rem",
           }}

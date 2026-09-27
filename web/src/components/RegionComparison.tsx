@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { api } from "../api/client";
-import { greenestRegion, snapshotEnabled, useSnapshot } from "../api/snapshot";
+import { greenestRegion, snapshotEnabled, useRegions, useSnapshot } from "../api/snapshot";
 import { DEFAULT_REGION, PROVIDERS } from "../lib/providers";
 import { card, muted } from "../styles";
 import { InfoTip } from "./InfoTip";
@@ -46,13 +46,8 @@ export function RegionComparison() {
   const [region, setRegion] = useState(DEFAULT_REGION.aws);
 
   const { data: snapshot } = useSnapshot();
+  const { data: regions } = useRegions(provider);
 
-  const { data: apiRegions } = useQuery({
-    queryKey: ["regions", provider],
-    queryFn: () => api.regions(provider),
-    staleTime: 60 * 60_000,
-    enabled: !snapshotEnabled,
-  });
   const { data: apiCurrent } = useQuery({
     queryKey: ["carbon", provider, region],
     queryFn: () => api.carbonIntensity(provider, region),
@@ -72,7 +67,6 @@ export function RegionComparison() {
   // Snapshot-first: region list, the chosen region's intensity, and the greenest region
   // (carbon-weighted routing = lowest current intensity) are all derived from the CDN
   // snapshot. The live API is only used when no snapshot is configured.
-  const regions = snapshot ? snapshot.regions.filter((r) => r.provider === provider) : apiRegions;
   const current = snapshot ? snapshot.intensities[`${provider}/${region}`] : apiCurrent;
   const greenest = greenestRegion(snapshot, PROVIDERS) ?? route?.recommended;
   const curV = current?.carbon_intensity_gco2_kwh;

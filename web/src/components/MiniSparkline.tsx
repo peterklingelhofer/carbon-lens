@@ -97,7 +97,7 @@ export function MiniSparkline({
           strokeLinecap="round"
         />
         {mark && active === null && (
-          <circle cx={x(markIdx)} cy={y(values[markIdx])} r={2.2} fill="#fff" />
+          <circle cx={x(markIdx)} cy={y(values[markIdx])} r={2.2} fill="currentColor" />
         )}
         {active !== null && (
           <>
@@ -114,7 +114,7 @@ export function MiniSparkline({
               cx={x(active)}
               cy={y(values[active])}
               r={3}
-              fill="#fff"
+              fill="currentColor"
               stroke={intensityColor(values[active])}
               strokeWidth={1.5}
             />
@@ -133,7 +133,15 @@ export function MiniSparkline({
         <span>{labelFor(0)}</span>
         <span>{labelFor(n)}</span>
       </div>
-      <div style={{ fontSize: "0.65rem", color: "#cbd5e1", minHeight: "1.1em", marginTop: 2 }}>
+      <div
+        style={{
+          fontSize: "0.65rem",
+          color: "inherit",
+          opacity: 0.65,
+          minHeight: "1.1em",
+          marginTop: 2,
+        }}
+      >
         {active !== null
           ? `${labelFor(active)}: ${Math.round(values[active])} ${unit}`
           : `range ${Math.round(min)}–${Math.round(max)} ${unit}`}

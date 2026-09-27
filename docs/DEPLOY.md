@@ -18,7 +18,7 @@ grid intensity. This design drives the first term to near-zero:
 - **API scales to zero**: it draws power only while actively serving a request,
   then sleeps (`min_machines_running = 0` on Fly, and free Render services spin down
   when idle).
-- **The only scheduled work is a ~1-minute snapshot job every 30 minutes.**
+- **The only scheduled work is a ~1-minute snapshot job every hour.**
 
 Using almost no power beats buying renewable certificates for power you didn't
 need to burn. That's the whole sustainability claim: no overclaiming a "100%
@@ -120,13 +120,13 @@ To serve **real** data from the providers while surviving a traffic
 spike on free API keys, the dashboard reads a pre-built snapshot instead of
 calling providers per request. The `snapshot` GitHub Action
 ([.github/workflows/snapshot.yml](../.github/workflows/snapshot.yml)) runs
-[scripts/build_snapshot.py](../scripts/build_snapshot.py) every 30 minutes,
+[scripts/build_snapshot.py](../scripts/build_snapshot.py) every hour,
 pulls every region from the real providers, and force-pushes `snapshot.json`
 to a dedicated `data` branch. The frontend fetches that file from GitHub's
 Fastly CDN (`raw.githubusercontent.com/.../data/snapshot.json`).
 
 Why this stays free and quota-safe:
-- The **only** caller of the provider APIs is the cron: `zones x 48 runs/day`,
+- The **only** caller of the provider APIs is the cron: `zones x 24 runs/day`,
   independent of how many people view the site. A CDN absorbs all viewer
   traffic, so a spike can't blow through your free keys.
 - Keys live in **GitHub Secrets**, used only in CI and never shipped to the browser.

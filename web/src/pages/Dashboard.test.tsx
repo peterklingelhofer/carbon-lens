@@ -52,6 +52,16 @@ vi.mock("../api/snapshot", () => ({
   qualityFromSource: () => "live",
   dataBranchUrl: () => "",
   useSnapshot: () => ({ data: snapshotFixture }),
+  // Generic snapshot-first passthrough: every call site in the panels this suite
+  // mounts (CustomZoneLookup, RegionComparison) only needs the snapshot value back
+  useSnapshotOrApi: (snap: unknown) => ({ data: snap, isLoading: false, isError: false }),
+  useRegions: (provider?: string) => ({
+    data: provider
+      ? snapshotFixture.regions.filter((r) => r.provider === provider)
+      : snapshotFixture.regions,
+    isLoading: false,
+    isError: false,
+  }),
   // Derive-from-snapshot helpers used by the panels Dashboard renders (CustomZoneLookup,
   // RegionComparison). Stubbed empty, since this suite only asserts the regions table.
   gridZonesFromSnapshot: () => [],
