@@ -60,7 +60,7 @@ Branch on the output instead of failing:
 ## Outputs
 
 `clean-now`, `state`, `advice`, `intensity`, `marginal`, `clean-surplus`,
-`surplus-window-hours`.
+`marginal-basis`, `surplus-window-hours`.
 
 ## Limits
 

@@ -127,19 +127,6 @@ def _check_security_posture() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    import signal
-
-    shutdown_event = asyncio.Event()
-
-    def _handle_signal(sig: int, _frame: object) -> None:
-        logger.info("Received %s, starting graceful shutdown", signal.Signals(sig).name)
-        shutdown_event.set()
-
-    for sig in (signal.SIGTERM, signal.SIGINT):
-        signal.signal(sig, _handle_signal)
-
-    app.state.shutdown_event = shutdown_event
-
     _check_security_posture()
     _log_provider_status()
 
@@ -160,14 +147,17 @@ async def lifespan(app: FastAPI):
             else:
                 logger.error("Migration failed: %s", result.stderr)
 
-        from carbonlens.db.engine import async_engine
-        from carbonlens.db.init_db import create_tables
+        from sqlalchemy import text
 
-        # Retry DB connection (PaaS databases can be slow to start)
+        from carbonlens.db.engine import AsyncSessionLocal, async_engine
+
+        # Retry DB connection (PaaS databases can be slow to start). Alembic owns
+        # the schema (see docs/DEPLOY.md), so this only probes connectivity
         for attempt in range(1, 6):
             try:
                 logger.info("Connecting to database (attempt %d/5)...", attempt)
-                await create_tables()
+                async with AsyncSessionLocal() as session:
+                    await session.execute(text("SELECT 1"))
                 logger.info("Database ready.")
                 break
             except Exception as e:
@@ -410,7 +400,7 @@ async def health() -> dict:
     db_error = await _check_db()
     result = {
         "status": "ok",
-        "version": "0.1.0",
+        "version": _VERSION,
         "carbon_source": settings.carbon_source,
         "database": "disabled"
         if not settings.use_database

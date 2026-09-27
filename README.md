@@ -446,7 +446,7 @@ tests/              442 tests
 | `CARBON_LENS_DATABASE_URL` | `postgresql+asyncpg://...` | Postgres URL |
 | `CARBON_LENS_AUTO_MIGRATE` | `false` | Auto-run migrations |
 | **Auth** | | |
-| `CARBON_LENS_API_KEY_REQUIRED` | `false` | Require API key |
+| `CARBON_LENS_API_KEY_REQUIRED` | `true` | Require API key |
 | `CARBON_LENS_ADMIN_SECRET` | | Admin endpoint secret |
 | **Limits** | | |
 | `CARBON_LENS_RATE_LIMIT_DEFAULT` | `100/minute` | Default rate limit |

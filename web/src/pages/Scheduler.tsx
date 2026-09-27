@@ -625,8 +625,8 @@ export function Scheduler() {
         <div
           style={{
             ...card,
-            border: "1px solid var(--red-300, #fca5a5)",
-            color: "var(--red-400, #f87171)",
+            border: "1px solid var(--red-300)",
+            color: "var(--red-400)",
           }}
         >
           Error: {(findWindow.error as Error).message}

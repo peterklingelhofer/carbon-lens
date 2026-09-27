@@ -36,7 +36,6 @@ export function Compliance() {
   const [orgId] = useState("demo");
   const [orgName] = useState("Demo Organization");
   const [activeReport, setActiveReport] = useState<ComplianceReport | null>(null);
-  const [step, setStep] = useState<"idle" | "ingesting" | "calculating" | "generating">("idle");
   const [csvFile, setCsvFile] = useState<File | null>(null);
 
   const { data: reports } = useQuery({
@@ -44,28 +43,36 @@ export function Compliance() {
     queryFn: () => api.compliance.listReports(orgId),
   });
 
+  // Kept as their own mutations (rather than folded into demoPipeline below) because
+  // their .data renders as intermediate step results further down
   const ingestMutation = useMutation({
-    mutationFn: () => {
-      setStep("ingesting");
-      return api.compliance.ingestUsage({
+    mutationFn: () =>
+      api.compliance.ingestUsage({
         org_id: orgId,
         provider: "mock",
         period_start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
         period_end: new Date().toISOString(),
-      });
-    },
+      }),
   });
 
   const calculateMutation = useMutation({
-    mutationFn: () => {
-      setStep("calculating");
-      return api.compliance.calculate(orgId);
-    },
+    mutationFn: () => api.compliance.calculate(orgId),
   });
 
-  const reportMutation = useMutation({
-    mutationFn: () => {
-      setStep("generating");
+  // Loading a past report from history - separate from demoPipeline/csvPipeline so
+  // an error here (e.g. cold-start timeout) doesn't get attributed to either
+  const getReportMutation = useMutation({
+    mutationFn: (reportId: string) => api.compliance.getReport(reportId, orgId),
+    onSuccess: (full) => setActiveReport(full),
+  });
+
+  // One mutation for the whole demo pipeline, same shape as csvPipeline below: the
+  // steps are awaited in sequence with no try/catch, so a failure anywhere surfaces
+  // as demoPipeline.isError instead of silently resetting the button
+  const demoPipeline = useMutation({
+    mutationFn: async () => {
+      await ingestMutation.mutateAsync();
+      await calculateMutation.mutateAsync();
       return api.compliance.generateReport({
         org_id: orgId,
         org_name: orgName,
@@ -74,20 +81,9 @@ export function Compliance() {
     },
     onSuccess: (report) => {
       setActiveReport(report);
-      setStep("idle");
       queryClient.invalidateQueries({ queryKey: ["compliance-reports"] });
     },
   });
-
-  async function runFullPipeline() {
-    try {
-      await ingestMutation.mutateAsync();
-      await calculateMutation.mutateAsync();
-      await reportMutation.mutateAsync();
-    } catch {
-      setStep("idle");
-    }
-  }
 
   // Real-data path: upload a usage CSV, then run the SAME calculate -> report
   // pipeline (live grid intensity) the demo uses.
@@ -147,8 +143,8 @@ export function Compliance() {
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
           <button
             type="button"
-            onClick={runFullPipeline}
-            disabled={step !== "idle" || csvPipeline.isPending}
+            onClick={() => demoPipeline.mutate()}
+            disabled={demoPipeline.isPending || csvPipeline.isPending}
             style={{
               padding: "0.75rem 2rem",
               borderRadius: 8,
@@ -156,15 +152,15 @@ export function Compliance() {
               background: "var(--btn-green)",
               color: "white",
               fontWeight: 500,
-              cursor: step === "idle" ? "pointer" : "wait",
-              opacity: step === "idle" ? 1 : 0.7,
+              cursor: demoPipeline.isPending ? "wait" : "pointer",
+              opacity: demoPipeline.isPending ? 0.7 : 1,
             }}
           >
-            {step === "idle"
+            {!demoPipeline.isPending
               ? "Generate Report (Demo Data)"
-              : step === "ingesting"
+              : ingestMutation.isPending
                 ? "Ingesting usage data..."
-                : step === "calculating"
+                : calculateMutation.isPending
                   ? "Calculating emissions..."
                   : "Generating report..."}
           </button>
@@ -199,6 +195,11 @@ export function Compliance() {
             Calculated {calculateMutation.data.calculations_count} emissions (
             {calculateMutation.data.total_emissions_kgco2e.toFixed(4)} kgCO₂e) - Sources:{" "}
             {calculateMutation.data.data_sources_used.join(", ")}
+          </div>
+        )}
+        {demoPipeline.isError && (
+          <div role="alert" style={{ color: "var(--red-400)", fontSize: "0.8rem" }}>
+            {(demoPipeline.error as Error).message}
           </div>
         )}
       </div>
@@ -276,7 +277,7 @@ export function Compliance() {
           <button
             type="button"
             onClick={() => csvPipeline.mutate()}
-            disabled={!csvFile || csvPipeline.isPending || step !== "idle"}
+            disabled={!csvFile || csvPipeline.isPending || demoPipeline.isPending}
             style={{
               padding: "0.6rem 1.5rem",
               borderRadius: 8,
@@ -285,14 +286,14 @@ export function Compliance() {
               color: "white",
               fontWeight: 500,
               cursor: !csvFile || csvPipeline.isPending ? "not-allowed" : "pointer",
-              opacity: !csvFile || csvPipeline.isPending || step !== "idle" ? 0.6 : 1,
+              opacity: !csvFile || csvPipeline.isPending || demoPipeline.isPending ? 0.6 : 1,
             }}
           >
             {csvPipeline.isPending ? "Calculating…" : "Generate from my CSV"}
           </button>
         </div>
         {csvPipeline.isError && (
-          <div role="alert" style={{ color: "var(--red-400, #f87171)", fontSize: "0.8rem" }}>
+          <div role="alert" style={{ color: "var(--red-400)", fontSize: "0.8rem" }}>
             {(csvPipeline.error as Error).message}
           </div>
         )}
@@ -353,10 +354,7 @@ export function Compliance() {
                     {/* A real button so the row is keyboard-operable */}
                     <button
                       type="button"
-                      onClick={async () => {
-                        const full = await api.compliance.getReport(r.id, orgId);
-                        setActiveReport(full);
-                      }}
+                      onClick={() => getReportMutation.mutate(r.id)}
                       style={{
                         background: "none",
                         border: "none",
@@ -398,6 +396,14 @@ export function Compliance() {
               ))}
             </tbody>
           </table>
+          {getReportMutation.isError && (
+            <div
+              role="alert"
+              style={{ color: "var(--red-400)", fontSize: "0.8rem", marginTop: "0.75rem" }}
+            >
+              {(getReportMutation.error as Error).message}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -675,7 +681,7 @@ function ReportView({ report }: { report: ComplianceReport }) {
           background: report.eu_taxonomy_aligned
             ? "rgba(34, 197, 94, 0.08)"
             : "rgba(234, 179, 8, 0.08)",
-          border: `1px solid ${report.eu_taxonomy_aligned ? "var(--green-200)" : "var(--yellow-200, #fef08a)"}`,
+          border: `1px solid ${report.eu_taxonomy_aligned ? "var(--green-200)" : "var(--yellow-200)"}`,
         }}
       >
         <div

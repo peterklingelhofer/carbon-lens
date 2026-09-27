@@ -667,7 +667,11 @@ function useCarbonStream() {
   const wsRef = useRef<WebSocket | null>(null);
 
   const connect = useCallback(() => {
-    const wsUrl = `${import.meta.env.VITE_WS_URL || "ws://localhost:8000"}/ws/carbon`;
+    // Same-origin fallback (proxied to the API by the Cloudflare Worker in prod and
+    // by vite.config.ts's /ws/ proxy in dev) instead of a hardcoded localhost:8000,
+    // which .env.production leaves VITE_WS_URL empty specifically to avoid
+    const wsFallback = `${location.protocol === "https:" ? "wss:" : "ws:"}//${location.host}`;
+    const wsUrl = `${import.meta.env.VITE_WS_URL || wsFallback}/ws/carbon`;
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
 

@@ -10,7 +10,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from carbonlens.api.deps import get_carbon_source, get_grid_mapper, get_sla_repository
-from carbonlens.auth.dependencies import require_admin, require_api_key
+from carbonlens.auth.dependencies import (
+    require_admin,
+    require_api_key,
+    require_org_id,
+    resolve_org_id,
+)
+from carbonlens.db.models import ApiKeyRecord
 from carbonlens.models.sla import (
     AlertChannel,
     AlertEvent,
@@ -49,11 +55,12 @@ def _get_monitor() -> SLAMonitor:
     return _monitor
 
 
-async def _require_sla(sla_id: str, repo: SLARepository) -> GreenSLA:
-    """Load an SLA or raise 404 if it doesn't exist."""
+async def _require_sla(sla_id: str, repo: SLARepository, key: ApiKeyRecord | None) -> GreenSLA:
+    """Load an SLA or raise 404 if it doesn't exist, 403 if it's another org's."""
     sla = await repo.get_sla(sla_id)
     if not sla:
         raise HTTPException(404, f"SLA {sla_id} not found")
+    resolve_org_id(key=key, org_id=sla.org_id)
     return sla
 
 
@@ -96,12 +103,14 @@ class GenerateReportRequest(BaseModel):
 async def create_sla(
     req: CreateSLARequest,
     repo: SLARepository = Depends(get_sla_repository),
+    key: ApiKeyRecord | None = Depends(require_api_key),
 ) -> GreenSLA:
     """Create a new Green SLA definition."""
+    org_id = resolve_org_id(key=key, org_id=req.org_id)
     now = datetime.now(UTC)
     sla = GreenSLA(
         id=str(uuid.uuid4()),
-        org_id=req.org_id,
+        org_id=org_id,
         name=req.name,
         max_carbon_intensity_gco2_kwh=req.max_carbon_intensity_gco2_kwh,
         min_renewable_percentage=req.min_renewable_percentage,
@@ -119,7 +128,7 @@ async def create_sla(
 
 @router.get("/list", response_model=list[SLASummary])
 async def list_slas(
-    org_id: str = Query(...),
+    org_id: str = Depends(require_org_id),
     repo: SLARepository = Depends(get_sla_repository),
 ) -> list[SLASummary]:
     """List all SLAs for an organization."""
@@ -139,7 +148,7 @@ async def list_slas(
 
 @router.post("/monitor/start")
 async def start_monitor(
-    org_id: str = Query(...),
+    org_id: str = Depends(require_org_id),
     repo: SLARepository = Depends(get_sla_repository),
 ) -> dict:
     """Start the background SLA monitor for an organization's SLAs.
@@ -210,9 +219,10 @@ async def run_due_checks(
 async def get_sla(
     sla_id: str,
     repo: SLARepository = Depends(get_sla_repository),
+    key: ApiKeyRecord | None = Depends(require_api_key),
 ) -> GreenSLA:
     """Get an SLA definition by ID."""
-    return await _require_sla(sla_id, repo)
+    return await _require_sla(sla_id, repo, key)
 
 
 @router.put("/{sla_id}", response_model=GreenSLA)
@@ -220,9 +230,10 @@ async def update_sla(
     sla_id: str,
     req: UpdateSLARequest,
     repo: SLARepository = Depends(get_sla_repository),
+    key: ApiKeyRecord | None = Depends(require_api_key),
 ) -> GreenSLA:
     """Update an existing SLA."""
-    sla = await _require_sla(sla_id, repo)
+    sla = await _require_sla(sla_id, repo, key)
 
     update_data = req.model_dump(exclude_none=True)
     update_data["updated_at"] = datetime.now(UTC)
@@ -236,8 +247,10 @@ async def update_sla(
 async def delete_sla(
     sla_id: str,
     repo: SLARepository = Depends(get_sla_repository),
+    key: ApiKeyRecord | None = Depends(require_api_key),
 ) -> dict:
     """Delete an SLA."""
+    await _require_sla(sla_id, repo, key)
     if not await repo.delete_sla(sla_id):
         raise HTTPException(404, f"SLA {sla_id} not found")
     return {"deleted": sla_id}
@@ -247,13 +260,14 @@ async def delete_sla(
 async def check_sla(
     sla_id: str,
     repo: SLARepository = Depends(get_sla_repository),
+    key: ApiKeyRecord | None = Depends(require_api_key),
 ) -> SLACheck:
     """Run an on-demand SLA compliance check.
 
     Fetches live carbon data for all monitored regions and evaluates
     against the SLA thresholds.
     """
-    sla = await _require_sla(sla_id, repo)
+    sla = await _require_sla(sla_id, repo, key)
 
     engine = _get_engine()
     check = await engine.check_sla(sla)
@@ -265,9 +279,10 @@ async def check_sla(
 async def get_sla_status(
     sla_id: str,
     repo: SLARepository = Depends(get_sla_repository),
+    key: ApiKeyRecord | None = Depends(require_api_key),
 ) -> SLACheck | None:
     """Get the most recent compliance check for an SLA."""
-    await _require_sla(sla_id, repo)
+    await _require_sla(sla_id, repo, key)
     return await repo.latest_check(sla_id)
 
 
@@ -276,9 +291,10 @@ async def list_checks(
     sla_id: str,
     limit: int = Query(50, ge=1, le=1000),
     repo: SLARepository = Depends(get_sla_repository),
+    key: ApiKeyRecord | None = Depends(require_api_key),
 ) -> list[SLACheck]:
     """List recent compliance checks for an SLA."""
-    await _require_sla(sla_id, repo)
+    await _require_sla(sla_id, repo, key)
     return await repo.list_checks(sla_id, limit=limit)
 
 
@@ -287,13 +303,14 @@ async def generate_report(
     sla_id: str,
     req: GenerateReportRequest,
     repo: SLARepository = Depends(get_sla_repository),
+    key: ApiKeyRecord | None = Depends(require_api_key),
 ) -> SLAReport:
     """Generate an attestation report for an SLA over a period.
 
     Uses stored compliance checks to build the report. If no checks exist
     for the period, runs a fresh check first.
     """
-    sla = await _require_sla(sla_id, repo)
+    sla = await _require_sla(sla_id, repo, key)
 
     now = datetime.now(UTC)
     period_start = now - timedelta(days=req.period_days)
@@ -325,7 +342,8 @@ async def generate_report(
 async def list_reports(
     sla_id: str,
     repo: SLARepository = Depends(get_sla_repository),
+    key: ApiKeyRecord | None = Depends(require_api_key),
 ) -> list[SLAReport]:
     """List all attestation reports for an SLA."""
-    await _require_sla(sla_id, repo)
+    await _require_sla(sla_id, repo, key)
     return await repo.list_reports(sla_id)

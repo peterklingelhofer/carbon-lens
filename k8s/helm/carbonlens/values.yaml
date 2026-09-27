@@ -1,9 +1,9 @@
 replicaCount: 2
 
 image:
-  repository: ghcr.io/peterklingelhofer/carbon-mesh-control-plane
+  repository: ghcr.io/peterklingelhofer/carbon-lens/api
   tag: latest
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 service:
   type: ClusterIP

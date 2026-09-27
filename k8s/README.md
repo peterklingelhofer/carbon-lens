@@ -18,8 +18,9 @@ deployable demos, but hardening for production is still missing. Read this befor
   controller/operator** in this repo to reconcile it. You can `kubectl apply` the
   CRD and create resources, but nothing will act on them or populate `status`.
 - **No migration Job.** The chart has no init-container or Job that runs
-  `alembic upgrade head`, so a fresh deploy starts against an unmigrated database.
-  (The Docker/PaaS paths handle this via `CARBON_LENS_AUTO_MIGRATE=true`.)
+  `alembic upgrade head` separately, but the ConfigMap sets
+  `CARBON_LENS_AUTO_MIGRATE=true` by default, so the app runs it itself at
+  startup before serving traffic.
 - **No pod-level `securityContext`.** Add `runAsNonRoot`/`readOnlyRootFilesystem`
   before any real deployment. (The container image itself already runs as a
   non-root `appuser`.)

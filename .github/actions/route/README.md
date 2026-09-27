@@ -4,12 +4,13 @@ Find the greenest cloud region for your deployment by querying the CarbonLens AP
 
 ## Inputs
 
-| Name             | Required | Default                  | Description                                              |
-| ---------------- | -------- | ------------------------ | -------------------------------------------------------- |
-| `providers`      | Yes      |                          | Comma-separated list of cloud providers (e.g. `aws,gcp`) |
-| `data-residency` | No       |                          | ISO 3166-1 alpha-2 country code to constrain regions     |
-| `api-url`        | No       | public instance          | CarbonLens API base URL                                  |
-| `api-key`        | No       |                          | API key for authenticated access                         |
+| Name             | Required | Default         | Description                                                                   |
+| ---------------- | -------- | --------------- | ----------------------------------------------------------------------------- |
+| `providers`      | Yes      |                 | Comma-separated list of cloud providers (e.g. `aws,gcp`)                      |
+| `data-residency` | No       |                 | Comma-separated list of ISO 3166-1 alpha-2 country codes to constrain regions |
+| `carbon-weight`  | No       | `1.0`           | Carbon optimization weight (0-1, default 1.0)                                 |
+| `api-url`        | No       | public instance | CarbonLens API base URL                                                       |
+| `api-key`        | No       |                 | API key for authenticated access                                              |
 
 ## Outputs
 

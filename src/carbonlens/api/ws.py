@@ -137,28 +137,12 @@ async def carbon_intensity_stream(websocket: WebSocket) -> None:
     )
 
     # --- Streaming loop --------------------------------------------------------
-    shutdown_event: asyncio.Event | None = getattr(websocket.app.state, "shutdown_event", None)
+    # uvicorn cancels this task on shutdown, so no manual shutdown signaling is needed
     try:
         while True:
-            # Exit cleanly if the server is shutting down
-            if shutdown_event and shutdown_event.is_set():
-                await websocket.close(code=1001, reason="Server shutting down")
-                logger.info("WebSocket closed for shutdown: %s", websocket.client)
-                return
             update = await _build_update(regions)
             await websocket.send_json(update)
-            # Use wait_for so shutdown_event can interrupt the sleep
-            if shutdown_event:
-                try:
-                    await asyncio.wait_for(shutdown_event.wait(), timeout=interval)
-                    # Event fired: shut down
-                    await websocket.close(code=1001, reason="Server shutting down")
-                    logger.info("WebSocket closed for shutdown: %s", websocket.client)
-                    return
-                except TimeoutError:
-                    pass  # Normal: interval elapsed, loop again
-            else:
-                await asyncio.sleep(interval)
+            await asyncio.sleep(interval)
     except WebSocketDisconnect:
         logger.info("WebSocket client disconnected: %s", websocket.client)
     except Exception:

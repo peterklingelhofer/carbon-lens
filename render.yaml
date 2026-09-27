@@ -23,6 +23,8 @@ services:
     envVars:
       - key: CARBON_LENS_USE_DATABASE
         value: "true"
+      - key: CARBON_LENS_AUTO_MIGRATE
+        value: "true"
       - key: CARBON_LENS_DATABASE_URL
         fromDatabase:
           name: carbon-mesh-db
@@ -49,13 +51,4 @@ services:
       - key: CARBON_LENS_ENTSOE_TOKEN
         sync: false
     healthCheckPath: /ready
-    autoDeploy: true
-
-  - type: web
-    name: carbon-mesh-web
-    runtime: docker
-    plan: free
-    region: oregon
-    dockerfilePath: ./web/Dockerfile
-    dockerContext: ./web
     autoDeploy: true

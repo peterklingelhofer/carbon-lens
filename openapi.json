@@ -4244,15 +4244,6 @@
         "parameters": [
           {
             "in": "query",
-            "name": "org_id",
-            "required": true,
-            "schema": {
-              "title": "Org Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
             "name": "scope",
             "required": false,
             "schema": {
@@ -4265,6 +4256,15 @@
                 }
               ],
               "title": "Scope"
+            }
+          },
+          {
+            "in": "query",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "title": "Org Id",
+              "type": "string"
             }
           }
         ],
@@ -4477,21 +4477,21 @@
           },
           {
             "in": "query",
-            "name": "org_id",
-            "required": true,
-            "schema": {
-              "title": "Org Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
             "name": "format",
             "required": false,
             "schema": {
               "default": "json",
               "pattern": "^(json|csv)$",
               "title": "Format",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "title": "Org Id",
               "type": "string"
             }
           }
@@ -4534,15 +4534,6 @@
         "parameters": [
           {
             "in": "query",
-            "name": "org_id",
-            "required": true,
-            "schema": {
-              "title": "Org Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "query",
             "name": "provider",
             "required": false,
             "schema": {
@@ -4555,6 +4546,15 @@
                 }
               ],
               "title": "Provider"
+            }
+          },
+          {
+            "in": "query",
+            "name": "org_id",
+            "required": true,
+            "schema": {
+              "title": "Org Id",
+              "type": "string"
             }
           }
         ],
