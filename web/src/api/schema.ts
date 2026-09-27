@@ -3417,8 +3417,8 @@ export interface operations {
     list_calculations_api_v1_compliance_calculations_get: {
         parameters: {
             query: {
-                org_id: string;
                 scope?: string | null;
+                org_id: string;
             };
             header?: never;
             path?: never;
@@ -3546,8 +3546,8 @@ export interface operations {
     export_report_api_v1_compliance_reports__report_id__export_get: {
         parameters: {
             query: {
-                org_id: string;
                 format?: string;
+                org_id: string;
             };
             header?: never;
             path: {
@@ -3580,8 +3580,8 @@ export interface operations {
     list_usage_api_v1_compliance_usage_get: {
         parameters: {
             query: {
-                org_id: string;
                 provider?: string | null;
+                org_id: string;
             };
             header?: never;
             path?: never;

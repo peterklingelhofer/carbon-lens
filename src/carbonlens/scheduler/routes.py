@@ -8,7 +8,8 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from carbonlens.auth.dependencies import require_api_key
+from carbonlens.auth.dependencies import require_api_key, require_org_id, resolve_org_id
+from carbonlens.db.models import ApiKeyRecord
 from carbonlens.scheduler.engine import (
     CronSchedule,
     ScheduleRecommendation,
@@ -31,6 +32,15 @@ def _get_engine() -> SchedulingEngine:
     from carbonlens.api.deps import get_scheduling_engine
 
     return get_scheduling_engine()
+
+
+def _require_schedule(schedule_id: str, key: ApiKeyRecord | None) -> CronSchedule:
+    """Load a schedule or raise 404 if it doesn't exist, 403 if it's another org's."""
+    schedule = _schedule_store.get(schedule_id)
+    if not schedule:
+        raise HTTPException(404, f"Schedule {schedule_id} not found")
+    resolve_org_id(key=key, org_id=schedule.org_id)
+    return schedule
 
 
 # --- Request models ---
@@ -97,16 +107,20 @@ async def best_region_now(
 
 
 @router.post("/schedules", response_model=CronSchedule)
-async def create_schedule(req: CreateScheduleRequest) -> CronSchedule:
+async def create_schedule(
+    req: CreateScheduleRequest,
+    key: ApiKeyRecord | None = Depends(require_api_key),
+) -> CronSchedule:
     """Create a recurring carbon-aware schedule.
 
     Define a job's requirements and the scheduler will recommend optimal
     execution windows each time it runs.
     """
+    org_id = resolve_org_id(key=key, org_id=req.org_id)
     schedule = CronSchedule(
         id=str(uuid.uuid4()),
         name=req.name,
-        org_id=req.org_id,
+        org_id=org_id,
         job_duration_minutes=req.job_duration_minutes,
         providers=req.providers,
         preferred_regions=req.preferred_regions,
@@ -119,38 +133,41 @@ async def create_schedule(req: CreateScheduleRequest) -> CronSchedule:
 
 
 @router.get("/schedules", response_model=list[CronSchedule])
-async def list_schedules(org_id: str = Query(...)) -> list[CronSchedule]:
+async def list_schedules(org_id: str = Depends(require_org_id)) -> list[CronSchedule]:
     """List all scheduled jobs for an organization."""
     return [s for s in _schedule_store.values() if s.org_id == org_id]
 
 
 @router.get("/schedules/{schedule_id}", response_model=CronSchedule)
-async def get_schedule(schedule_id: str) -> CronSchedule:
+async def get_schedule(
+    schedule_id: str,
+    key: ApiKeyRecord | None = Depends(require_api_key),
+) -> CronSchedule:
     """Get a specific schedule."""
-    schedule = _schedule_store.get(schedule_id)
-    if not schedule:
-        raise HTTPException(404, f"Schedule {schedule_id} not found")
-    return schedule
+    return _require_schedule(schedule_id, key)
 
 
 @router.delete("/schedules/{schedule_id}")
-async def delete_schedule(schedule_id: str) -> dict:
+async def delete_schedule(
+    schedule_id: str,
+    key: ApiKeyRecord | None = Depends(require_api_key),
+) -> dict:
     """Delete a schedule."""
-    if schedule_id not in _schedule_store:
-        raise HTTPException(404, f"Schedule {schedule_id} not found")
+    _require_schedule(schedule_id, key)
     del _schedule_store[schedule_id]
     return {"deleted": schedule_id}
 
 
 @router.post("/schedules/{schedule_id}/next", response_model=ScheduleRecommendation)
-async def get_next_window(schedule_id: str) -> ScheduleRecommendation:
+async def get_next_window(
+    schedule_id: str,
+    key: ApiKeyRecord | None = Depends(require_api_key),
+) -> ScheduleRecommendation:
     """Get the next optimal execution window for a scheduled job.
 
     Uses the schedule's configuration to find the best upcoming time slot.
     """
-    schedule = _schedule_store.get(schedule_id)
-    if not schedule:
-        raise HTTPException(404, f"Schedule {schedule_id} not found")
+    schedule = _require_schedule(schedule_id, key)
 
     engine = _get_engine()
     return await engine.find_optimal_window(

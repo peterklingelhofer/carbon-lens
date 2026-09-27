@@ -3,7 +3,7 @@ FROM python:3.12-slim AS builder
 
 WORKDIR /app
 
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.11.7 /uv /usr/local/bin/uv
 
 COPY pyproject.toml uv.lock* ./
 RUN uv sync --no-dev --no-install-project
@@ -42,4 +42,4 @@ USER appuser
 EXPOSE 8000
 
 # Use PORT env var for PaaS compatibility (Fly.io, Heroku, Railway)
-CMD ["sh", "-c", "uvicorn carbonlens.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["sh", "-c", "exec uvicorn carbonlens.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

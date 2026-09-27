@@ -1,6 +1,6 @@
 import secrets
 
-from fastapi import Depends, HTTPException, Security
+from fastapi import Depends, HTTPException, Query, Security
 from fastapi.security import APIKeyHeader
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -46,6 +46,33 @@ async def require_api_key(
     if record is None:
         raise HTTPException(status_code=403, detail="Invalid or revoked API key.")
     return record
+
+
+def resolve_org_id(key: ApiKeyRecord | None, org_id: str) -> str:
+    """Reconcile a client-supplied org_id with the authenticated key's own org.
+
+    A key's org always wins: a client-supplied org_id that disagrees with it gets
+    a 403, which keeps one org's key scoped to reading and writing only that
+    org's data. With keys off, or a key that isn't tied to any org, org_id is
+    trusted as given, keeping the keyless demo mode unchanged.
+    """
+    if key is not None and key.org_id is not None:
+        if org_id != key.org_id:
+            raise HTTPException(
+                status_code=403,
+                detail="org_id does not match the authenticated API key's organization.",
+            )
+        return key.org_id
+    return org_id
+
+
+async def require_org_id(
+    org_id: str = Query(...),
+    key: ApiKeyRecord | None = Depends(require_api_key),
+) -> str:
+    """Query-param org scoping: drop-in replacement for `org_id: str = Query(...)`
+    that resolves to the authenticated key's org (or 403s on a mismatch)."""
+    return resolve_org_id(key=key, org_id=org_id)
 
 
 async def require_admin(

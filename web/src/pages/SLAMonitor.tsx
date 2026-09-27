@@ -26,7 +26,8 @@ export function SLAMonitor() {
   const { data: monitorStatus } = useQuery({
     queryKey: ["sla-monitor"],
     queryFn: () => api.sla.monitorStatus(),
-    refetchInterval: 10000,
+    // poll only while the monitor runs, so an idle page never wakes the scale-to-zero API
+    refetchInterval: (query) => (query.state.data?.running ? 60_000 : false),
   });
 
   const createMutation = useMutation({
@@ -178,7 +179,7 @@ export function SLAMonitor() {
               role="alert"
               style={{
                 fontSize: "0.78rem",
-                color: "var(--red-400, #f87171)",
+                color: "var(--red-400)",
                 marginTop: "0.5rem",
               }}
             >
@@ -205,11 +206,11 @@ export function SLAMonitor() {
                 {slas.filter((s: { status: string }) => s.status === "compliant").length} compliant
               </span>
               {" | "}
-              <span style={{ color: "var(--orange-400, #fb923c)", fontWeight: 500 }}>
+              <span style={{ color: "var(--orange-400)", fontWeight: 500 }}>
                 {slas.filter((s: { status: string }) => s.status === "warning").length} warning
               </span>
               {" | "}
-              <span style={{ color: "var(--red-400, #f87171)", fontWeight: 500 }}>
+              <span style={{ color: "var(--red-400)", fontWeight: 500 }}>
                 {slas.filter((s: { status: string }) => s.status === "breached").length} breached
               </span>
             </div>
@@ -332,7 +333,7 @@ export function SLAMonitor() {
               role="alert"
               style={{
                 fontSize: "0.8rem",
-                color: "var(--red-400, #f87171)",
+                color: "var(--red-400)",
                 marginTop: "0.75rem",
               }}
             >
@@ -347,8 +348,8 @@ export function SLAMonitor() {
           style={{
             ...card,
             marginBottom: "2rem",
-            border: "1px solid var(--red-300, #fca5a5)",
-            color: "var(--red-400, #f87171)",
+            border: "1px solid var(--red-300)",
+            color: "var(--red-400)",
             fontSize: "0.85rem",
           }}
         >
@@ -432,8 +433,8 @@ export function SLAMonitor() {
               checkMutation.data.status === "compliant"
                 ? "1px solid var(--green-300)"
                 : checkMutation.data.status === "warning"
-                  ? "1px solid var(--yellow-300, #fde047)"
-                  : "1px solid var(--red-300, #fca5a5)",
+                  ? "1px solid var(--yellow-300)"
+                  : "1px solid var(--red-300)",
           }}
         >
           <h2 style={{ margin: "0 0 1rem", fontSize: "1.1rem" }}>
@@ -515,7 +516,7 @@ export function SLAMonitor() {
                               ...td,
                               textAlign: "right",
                               fontWeight: 500,
-                              color: "var(--red-400, #f87171)",
+                              color: "var(--red-400)",
                             }}
                           >
                             {r.carbon_intensity_gco2_kwh}
@@ -615,11 +616,11 @@ function StatusBadge({ status, style }: { status: string; style?: React.CSSPrope
     compliant: { bg: "var(--green-100)", color: "var(--green-text)" },
     warning: {
       bg: "rgba(234, 179, 8, 0.1)",
-      color: "var(--orange-400, #fb923c)",
+      color: "var(--orange-400)",
     },
     breached: {
       bg: "rgba(239, 68, 68, 0.1)",
-      color: "var(--red-400, #f87171)",
+      color: "var(--red-400)",
     },
     unknown: { bg: "var(--gray-100)", color: "var(--gray-500)" },
   };

@@ -738,6 +738,81 @@ def test_sla_run_due_checks_is_admin_gated_and_runs(client: TestClient, monkeypa
         client.delete(f"/api/v1/sla/{sid}")
 
 
+def test_sla_org_scope_rejects_mismatched_key(client: TestClient, monkeypatch):
+    """A key's own org wins over a client-supplied org_id, by query param or by
+    object id, and the keyless demo path (no key at all) is untouched."""
+    import asyncio
+
+    from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+    from sqlalchemy.pool import StaticPool
+
+    from carbonlens.auth.api_keys import generate_api_key, hash_key, key_prefix
+    from carbonlens.config import settings
+    from carbonlens.db import engine as db_engine
+    from carbonlens.db.models import ApiKeyRecord, Base
+
+    # Keyless demo mode (the suite default): org_id is trusted as given
+    assert client.get("/api/v1/sla/list?org_id=org-b").status_code == 200
+
+    test_engine = create_async_engine(
+        url="sqlite+aiosqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    session_maker = async_sessionmaker(bind=test_engine, expire_on_commit=False)
+    monkeypatch.setattr(db_engine, "async_engine", test_engine)
+    monkeypatch.setattr(db_engine, "AsyncSessionLocal", session_maker)
+    monkeypatch.setattr(settings, "use_database", True)
+
+    async def _create_schema() -> None:
+        async with test_engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+
+    asyncio.run(_create_schema())
+
+    try:
+        # Org B's own SLA, created while keys are still off
+        org_b_sla = client.post(
+            "/api/v1/sla/create",
+            json={
+                "org_id": "org-b",
+                "name": "Org B target",
+                "max_carbon_intensity_gco2_kwh": 300,
+            },
+        )
+        assert org_b_sla.status_code == 200
+        org_b_sla_id = org_b_sla.json()["id"]
+
+        raw_key = generate_api_key()
+
+        async def _seed_key() -> None:
+            async with session_maker() as session:
+                session.add(
+                    ApiKeyRecord(
+                        org_id="org-a",
+                        org_name="Org A",
+                        key_hash=hash_key(raw_key=raw_key),
+                        key_prefix=key_prefix(raw_key=raw_key),
+                    )
+                )
+                await session.commit()
+
+        asyncio.run(_seed_key())
+        monkeypatch.setattr(settings, "api_key_required", True)
+        headers = {"X-API-Key": raw_key}
+
+        # Query-param scoping: org-a's key can list its own org
+        assert client.get("/api/v1/sla/list?org_id=org-a", headers=headers).status_code == 200
+        # Asking for org-b's gets a 403: the key's own org always wins
+        assert client.get("/api/v1/sla/list?org_id=org-b", headers=headers).status_code == 403
+
+        # Id-based scoping: org-a's key can't reach org-b's SLA by id either
+        cross_org = client.get(f"/api/v1/sla/{org_b_sla_id}", headers=headers)
+        assert cross_org.status_code == 403
+    finally:
+        asyncio.run(test_engine.dispose())
+
+
 def test_sla_monitor_status_route_not_shadowed(client: TestClient):
     """GET /sla/monitor/status must hit the monitor route, not /{sla_id}/status.
 

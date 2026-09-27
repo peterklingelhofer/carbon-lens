@@ -46,7 +46,10 @@ runs:
     - name: Find greenest region
       id: route
       shell: bash
+      env:
+        API_KEY: ${{ inputs.api-key }}
       run: |
+        set -euo pipefail
         # Build providers JSON array
         PROVIDERS_JSON=$(echo "${{ inputs.providers }}" | tr ',' '\n' | jq -R . | jq -s .)
 
@@ -69,13 +72,11 @@ runs:
         # Make the request
         RESPONSE=$(curl -sf -X POST "${{ inputs.api-url }}/api/v1/route" \
           -H "Content-Type: application/json" \
-          ${API_KEY:+-H "X-API-Key: ${{ inputs.api-key }}"} \
-          -d "$BODY")
-
-        if [ $? -ne 0 ] || [ -z "${RESPONSE}" ]; then
+          ${API_KEY:+-H "X-API-Key: $API_KEY"} \
+          -d "$BODY") && [ -n "$RESPONSE" ] || {
           echo "::error::Failed to reach CarbonLens API at ${{ inputs.api-url }}"
           exit 1
-        fi
+        }
 
         # Parse and set outputs
         echo "provider=$(echo "$RESPONSE" | jq -r '.recommended.provider')" >> "$GITHUB_OUTPUT"

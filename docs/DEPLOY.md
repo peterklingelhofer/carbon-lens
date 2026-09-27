@@ -179,6 +179,12 @@ CARBON_LENS_DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/dbname
 
 Run `uv run alembic upgrade head` once (or on deploy) to create the tables.
 
+**Alembic owns the schema:** from now on, startup runs `alembic upgrade head`
+itself when `CARBON_LENS_AUTO_MIGRATE=true` (set by default in the Blueprint's
+`render.yaml` and the Helm chart). A database created earlier by the app's own
+`create_all` has no `alembic_version` row, so run `uv run alembic stamp head`
+against it once before the next deploy.
+
 **Keep it permanently free:** Render's bundled free Postgres is time-limited
 (deleted after ~30 days), so for a lasting free DB point `CARBON_LENS_DATABASE_URL`
 at a free **Neon** or **Supabase** instance instead: no code change, just the URL.
@@ -295,7 +301,7 @@ After adding keys, verify at: `GET /health/providers`
 | `CARBON_LENS_CARBON_SOURCE` | `hybrid` | Data source mode |
 | `CARBON_LENS_USE_DATABASE` | `false` | Enable Postgres persistence |
 | `CARBON_LENS_DATABASE_URL` | `postgresql+asyncpg://...` | Postgres connection string |
-| `CARBON_LENS_API_KEY_REQUIRED` | `false` | Require X-API-Key header |
+| `CARBON_LENS_API_KEY_REQUIRED` | `true` | Require X-API-Key header |
 | `CARBON_LENS_ADMIN_SECRET` | `` | Secret for admin endpoints |
 | `CARBON_LENS_AUTO_MIGRATE` | `false` | Run Alembic migrations on startup |
 | `CARBON_LENS_LOG_FORMAT` | `text` | `text` or `json` |

@@ -13,6 +13,7 @@ jobs:
   run-when-clean:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v5
       - name: Check the grid
         id: carbon
         uses: ./.github/actions/carbon-signal

@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel
 
 from carbonlens.api.deps import get_carbon_source, get_grid_mapper
-from carbonlens.auth.dependencies import require_api_key
+from carbonlens.auth.dependencies import require_api_key, require_org_id, resolve_org_id
 from carbonlens.compliance.calculator import EmissionsCalculator
 from carbonlens.compliance.reporting import ReportingEngine
 from carbonlens.compliance.usage_ingestion import (
@@ -17,6 +17,7 @@ from carbonlens.compliance.usage_ingestion import (
     ManualCSVAdapter,
     MockUsageAdapter,
 )
+from carbonlens.db.models import ApiKeyRecord
 from carbonlens.models.compliance import (
     AccountingMethod,
     CloudUsageRecord,
@@ -103,8 +104,12 @@ def _find_report(org_id: str, report_id: str) -> ComplianceReport:
 
 
 @router.post("/usage/ingest", response_model=UsageIngestionResponse)
-async def ingest_usage(req: UsageIngestionRequest) -> UsageIngestionResponse:
+async def ingest_usage(
+    req: UsageIngestionRequest,
+    key: ApiKeyRecord | None = Depends(require_api_key),
+) -> UsageIngestionResponse:
     """Ingest cloud usage data from a provider or mock data for demo."""
+    org_id = resolve_org_id(key=key, org_id=req.org_id)
     if req.provider == "mock":
         adapter = MockUsageAdapter()
     elif req.provider == "manual":
@@ -137,7 +142,7 @@ async def ingest_usage(req: UsageIngestionRequest) -> UsageIngestionResponse:
 
     try:
         records = await adapter.fetch_usage(
-            org_id=req.org_id,
+            org_id=org_id,
             period_start=req.period_start,
             period_end=req.period_end,
             credentials=req.credentials,
@@ -146,12 +151,12 @@ async def ingest_usage(req: UsageIngestionRequest) -> UsageIngestionResponse:
         # Missing SDK (cloud extra) or upstream credential/permission/API failure.
         raise HTTPException(status_code=502, detail=str(e)) from e
 
-    return _store_and_summarize(req.org_id, records)
+    return _store_and_summarize(org_id, records)
 
 
 @router.post("/usage/upload-csv", response_model=UsageIngestionResponse)
 async def upload_csv(
-    org_id: str = Query(...),
+    org_id: str = Depends(require_org_id),
     file: UploadFile = File(...),
 ) -> UsageIngestionResponse:
     """Upload a CSV file with cloud usage data."""
@@ -184,11 +189,15 @@ async def upload_csv(
 
 
 @router.post("/calculate", response_model=CalculationResponse)
-async def calculate_emissions(req: CalculateRequest) -> CalculationResponse:
+async def calculate_emissions(
+    req: CalculateRequest,
+    key: ApiKeyRecord | None = Depends(require_api_key),
+) -> CalculationResponse:
     """Calculate emissions from ingested usage data for an organization."""
-    records = _usage_store.get(req.org_id, [])
+    org_id = resolve_org_id(key=key, org_id=req.org_id)
+    records = _usage_store.get(org_id, [])
     if not records:
-        raise HTTPException(404, f"No usage data found for org {req.org_id}. Ingest usage first.")
+        raise HTTPException(404, f"No usage data found for org {org_id}. Ingest usage first.")
 
     calculator = EmissionsCalculator(
         carbon_source=get_carbon_source(),
@@ -196,9 +205,9 @@ async def calculate_emissions(req: CalculateRequest) -> CalculationResponse:
     )
     calculations = await calculator.calculate(records, method=req.method)
 
-    if req.org_id not in _calculation_store:
-        _calculation_store[req.org_id] = []
-    _calculation_store[req.org_id].extend(calculations)
+    if org_id not in _calculation_store:
+        _calculation_store[org_id] = []
+    _calculation_store[org_id].extend(calculations)
 
     scope2 = sum(c.emissions_kgco2e for c in calculations if c.scope.value == "scope_2")
     scope3 = sum(c.emissions_kgco2e for c in calculations if c.scope.value == "scope_3_cat1")
@@ -214,13 +223,17 @@ async def calculate_emissions(req: CalculateRequest) -> CalculationResponse:
 
 
 @router.post("/reports/generate", response_model=ComplianceReport)
-async def generate_report(req: GenerateReportRequest) -> ComplianceReport:
+async def generate_report(
+    req: GenerateReportRequest,
+    key: ApiKeyRecord | None = Depends(require_api_key),
+) -> ComplianceReport:
     """Generate a CSRD-aligned compliance report from calculated emissions."""
-    calculations = _calculation_store.get(req.org_id, [])
+    org_id = resolve_org_id(key=key, org_id=req.org_id)
+    calculations = _calculation_store.get(org_id, [])
     if not calculations:
         raise HTTPException(
             404,
-            f"No emissions calculations for org {req.org_id}. Run /calculate first.",
+            f"No emissions calculations for org {org_id}. Run /calculate first.",
         )
 
     # Filter by period if specified
@@ -235,21 +248,21 @@ async def generate_report(req: GenerateReportRequest) -> ComplianceReport:
 
     engine = ReportingEngine()
     report = engine.generate_report(
-        org_id=req.org_id,
+        org_id=org_id,
         org_name=req.org_name,
         calculations=filtered,
         report_name=req.report_name,
     )
 
-    if req.org_id not in _report_store:
-        _report_store[req.org_id] = []
-    _report_store[req.org_id].append(report)
+    if org_id not in _report_store:
+        _report_store[org_id] = []
+    _report_store[org_id].append(report)
 
     return report
 
 
 @router.get("/reports", response_model=list[ComplianceReportSummary])
-async def list_reports(org_id: str = Query(...)) -> list[ComplianceReportSummary]:
+async def list_reports(org_id: str = Depends(require_org_id)) -> list[ComplianceReportSummary]:
     """List all compliance reports for an organization."""
     reports = _report_store.get(org_id, [])
     engine = ReportingEngine()
@@ -257,7 +270,7 @@ async def list_reports(org_id: str = Query(...)) -> list[ComplianceReportSummary
 
 
 @router.get("/reports/{report_id}", response_model=ComplianceReport)
-async def get_report(report_id: str, org_id: str = Query(...)) -> ComplianceReport:
+async def get_report(report_id: str, org_id: str = Depends(require_org_id)) -> ComplianceReport:
     """Get a specific compliance report by ID."""
     return _find_report(org_id, report_id)
 
@@ -265,7 +278,7 @@ async def get_report(report_id: str, org_id: str = Query(...)) -> ComplianceRepo
 @router.get("/reports/{report_id}/export")
 async def export_report(
     report_id: str,
-    org_id: str = Query(...),
+    org_id: str = Depends(require_org_id),
     format: str = Query("json", pattern="^(json|csv)$"),
 ):
     """Export a compliance report as JSON or CSV."""
@@ -324,7 +337,7 @@ async def export_report(
 
 @router.get("/usage", response_model=list[CloudUsageRecord])
 async def list_usage(
-    org_id: str = Query(...),
+    org_id: str = Depends(require_org_id),
     provider: str | None = Query(None),
 ) -> list[CloudUsageRecord]:
     """List ingested usage records for an organization."""
@@ -336,7 +349,7 @@ async def list_usage(
 
 @router.get("/calculations", response_model=list[EmissionsCalculation])
 async def list_calculations(
-    org_id: str = Query(...),
+    org_id: str = Depends(require_org_id),
     scope: str | None = Query(None),
 ) -> list[EmissionsCalculation]:
     """List emissions calculations for an organization."""

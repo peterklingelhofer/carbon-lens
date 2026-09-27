@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import ipaddress
 import logging
+import socket
 import uuid
 from datetime import UTC, datetime
 from urllib.parse import urlparse
@@ -175,8 +177,21 @@ class SLAMonitor:
                 "Skipping webhook for SLA [%s]: invalid URL %r", sla.name, sla.webhook_url
             )
             return
-        if _parsed.hostname in ("localhost", "127.0.0.1", "0.0.0.0", "::1"):
-            logger.warning("Skipping webhook for SLA [%s]: localhost target blocked", sla.name)
+        try:
+            resolved = [
+                ipaddress.ip_address(address=info[4][0])
+                for info in socket.getaddrinfo(host=_parsed.hostname, port=None)
+            ]
+        except (OSError, ValueError):
+            logger.warning("Skipping webhook for SLA [%s]: could not resolve host", sla.name)
+            return
+        if any(
+            a.is_private or a.is_loopback or a.is_link_local or a.is_reserved or a.is_unspecified
+            for a in resolved
+        ):
+            logger.warning(
+                "Skipping webhook for SLA [%s]: private or local address blocked", sla.name
+            )
             return
 
         async with httpx.AsyncClient(timeout=10) as client:
