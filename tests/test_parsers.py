@@ -69,7 +69,7 @@ def test_aeso_reads_tng_column_and_maps_gas_plant_types():
         "<TR><TD>TOTAL</TD><TD>19900</TD><TD>7500</TD><TD>230</TD></TR>"
     )
     mix = aeso_fuel_mix(html)
-    # TNG (2nd number), gas plant types fold into natural_gas, TOTAL is ignored.
+    # TNG (2nd number), gas plant types fold into natural_gas, TOTAL is ignored
     assert mix["natural_gas"] == 5200.0  # 3900 + 1300
     assert mix["wind"] == 2000.0
     assert mix["hydro"] == 300.0
@@ -172,10 +172,10 @@ def test_safe_xml_blocks_entity_expansion_but_parses_normal_xml():
 
 
 def test_marginal_intensity_picks_the_price_setting_fossil():
-    # Gas is the flexible peaker, so it sets the margin even alongside cheaper coal.
+    # Gas is the flexible peaker, so it sets the margin even alongside cheaper coal
     assert calculate_marginal_intensity({"coal": 5000, "natural_gas": 1000}) == 490.0
-    # Coal as the only fossil -> coal is marginal.
+    # Coal as the only fossil -> coal is marginal
     assert calculate_marginal_intensity({"coal": 5000, "hydro": 1000}) == 820.0
-    # All-clean grid: no fossil running -> falls back to the (low) average.
+    # All-clean grid: no fossil running -> falls back to the (low) average
     assert calculate_marginal_intensity({"hydro": 1000, "wind": 1000, "nuclear": 1000}) < 30
     assert calculate_marginal_intensity({}) == 0.0

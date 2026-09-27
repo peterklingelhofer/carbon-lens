@@ -18,11 +18,11 @@ from carbonlens.carbon_sources.http_pool import shared_client
 from carbonlens.citations_generated import CitationId
 from carbonlens.engine.recurring import parse_utc
 
-# A measured marginal rate is what the literature actually argues for when the
+# A measured marginal rate is what the literature argues for when the
 # decision is "should this load run now" (hawkes-2010). The merit-order estimate in
 # emission_factors.py is a cheap substitute for the regression method of
 # siler-evans-2012. wiesner-2025 is in the corpus as the counter-argument that
-# marginal intensity is a poor metric for this purpose at all.
+# marginal intensity is a poor metric for this purpose at all
 CITATIONS: tuple[CitationId, ...] = (
     "hawkes-2010-marginal-emissions",
     "siler-evans-2012-marginal-factors",
@@ -34,7 +34,7 @@ WATTTIME_CITATIONS: tuple[CitationId, ...] = ("watttime-api",)
 ELECTRICITY_MAPS_CITATIONS: tuple[CitationId, ...] = ("electricity-maps-api",)
 
 # WattTime MOER is in lbs CO2 / MWh. Convert to g CO2 / kWh:
-#   1 lb = 453.59237 g, 1 MWh = 1000 kWh.
+#   1 lb = 453.59237 g, 1 MWh = 1000 kWh
 _LBS_PER_MWH_TO_G_PER_KWH = 453.59237 / 1000
 
 
@@ -202,7 +202,7 @@ class ElectricityMapsMarginalSource(_MeasuredMarginalSource):
 
 
 # Either measured-marginal provider. Both share the can_handle / marginal_intensity /
-# marginal_forecast shape that the signal and scheduler duck-type on.
+# marginal_forecast shape that the signal and scheduler duck-type on
 MarginalSource = WattTimeMarginalSource | ElectricityMapsMarginalSource
 
 
@@ -221,7 +221,7 @@ def marginal_source_from_settings(settings):
 
 def marginal_unmapped(settings) -> bool:
     """True when a marginal credential is set but no zone is mapped, so no source
-    builds and the signal silently stays heuristic, a misconfiguration worth alerting on.
+    builds and the signal silently stays heuristic, a misconfiguration to alert on.
     """
     if marginal_source_from_settings(settings) is not None:
         return False

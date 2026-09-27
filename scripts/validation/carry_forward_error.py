@@ -62,7 +62,7 @@ def analyse(series: dict[str, list[dict]]) -> dict:
         values = {(p["c"], p.get("r")) for p in points}
         if len(values) == 1:
             # A fixed heuristic or a mock fixture: every point is identical by
-            # construction, so it says nothing about carry-forward.
+            # construction, so it says nothing about carry-forward
             constant_series.append(key)
             continue
         varying += 1

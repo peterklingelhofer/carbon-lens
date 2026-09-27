@@ -2,7 +2,8 @@
 
 Covers 5 Brazilian power subsystems: S (South), SE (Southeast),
 NE (Northeast), N (North), CS (Centro-South).
-Data from ONS (Operador Nacional do Sistema Elétrico).
+Reads ONS (Operador Nacional do Sistema Elétrico) open data when it answers, and
+otherwise returns a fixed per-subsystem estimate tagged `source="ons_brazil_heuristic"`.
 """
 
 from datetime import UTC, datetime

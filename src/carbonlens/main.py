@@ -132,7 +132,7 @@ async def lifespan(app: FastAPI):
 
     async_engine = None
     if settings.use_database:
-        # Auto-run Alembic migrations if configured (great for PaaS deploys)
+        # Run Alembic migrations at startup when AUTO_MIGRATE is set, for PaaS deploys
         if settings.auto_migrate:
             import subprocess
 
@@ -191,7 +191,8 @@ app = FastAPI(
         "- **8 live grid-operator integrations** (UK, EIA, OpenElectricity/AEMO, IESO/AESO, "
         "Taipower, GridStatus, ENTSO-E, Electricity Maps) plus labeled heuristic and "
         "weather-based estimates, cascading\n"
-        "- **Grid carbon intensity** for 75+ cloud regions. Every response is tagged with its `source`\n"
+        "- **Grid carbon intensity** for over a hundred cloud regions. Every response is "
+        "tagged with its `source`\n"
         "- **Batch queries** for multiple regions in a single call\n\n"
         "## Compliance Reporting\n"
         "- **GHG-Protocol-structured** Scope 2 (location-based) + Scope 3 Cat 1 reporting\n"
@@ -199,11 +200,12 @@ app = FastAPI(
         "- **EU Taxonomy** eligibility flag (simplified screening)\n\n"
         "## Green SLA Monitoring (Beta)\n"
         "- **Define carbon targets**: max gCO2/kWh, min renewable %\n"
-        "- **On-demand + background checks** (in-memory state)\n"
+        "- **On-demand + background checks**, held in memory on the keyless demo and in "
+        "Postgres when a database is configured\n"
         "- **Attestation-style summary reports**\n\n"
         "## Carbon-Aware Scheduling\n"
         "- **Find optimal time windows** for batch jobs, CI/CD, ML training\n"
-        "- **Multi-region evaluation** across AWS, GCP, Azure\n"
+        "- **Multi-region evaluation** across AWS, GCP, Azure, OVHcloud, Hetzner and Scaleway\n"
         "- **Three strategies**: lowest carbon, highest renewable, balanced\n"
         "- Returns a recommendation, but it doesn't run or defer your workload itself"
     ),
@@ -215,7 +217,8 @@ app = FastAPI(
         {"name": "Routing", "description": "Find the greenest cloud region for your workload"},
         {
             "name": "Regions",
-            "description": "Explore supported cloud regions across AWS, GCP, and Azure",
+            "description": "Explore supported cloud regions across AWS, GCP, Azure, OVHcloud, "
+            "Hetzner and Scaleway",
         },
         {
             "name": "Carbon Data",
@@ -300,7 +303,7 @@ async def request_id_and_logging(request: Request, call_next):
     # Security headers
     response.headers["X-Content-Type-Options"] = "nosniff"
     if request.url.path.startswith("/embed/"):
-        # The embed widget is meant to be iframed on other sites.
+        # The embed widget is meant to be iframed on other sites
         response.headers["Content-Security-Policy"] = "frame-ancestors *"
     else:
         response.headers["X-Frame-Options"] = "DENY"
@@ -359,7 +362,7 @@ app.include_router(embed_router)  # root-level /embed/* iframe widget
 
 # Prometheus metrics at /metrics. Keep the instrumentator's HTTP middleware, but
 # serve /metrics ourselves so we can refresh the carbon gauges on each scrape
-# (cheap: cached/snapshot source) alongside the default HTTP metrics.
+# (cheap: cached/snapshot source) alongside the default HTTP metrics
 Instrumentator().instrument(app)
 
 

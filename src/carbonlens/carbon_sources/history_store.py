@@ -46,7 +46,7 @@ class HistoryStore:
                 with open(self._source) as f:
                     data = json.load(f)
         except Exception:
-            # Archive missing/unreachable: history is best-effort, never fatal.
+            # Archive missing/unreachable: history is best-effort, never fatal
             data = {}
         self._cache = data
         self._fetched_at = now

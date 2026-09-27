@@ -33,7 +33,7 @@ def _validate_bq_identifier(value: str, field: str) -> str:
 
 
 class CloudIngestionError(Exception):
-    """Raised when a live cloud-billing adapter cannot fetch usage.
+    """Raised when a live cloud-billing adapter can't fetch usage.
 
     Covers a missing optional SDK (install the ``cloud`` extra) and upstream
     API/credential/permission failures, so the API layer can surface a clear
@@ -278,7 +278,7 @@ class GCPBillingAdapter:
         )
 
         # Standard GCP path: billing data is exported to a BigQuery table. We sum
-        # usage per service+region+unit over the period.
+        # usage per service+region+unit over the period
         query = f"""
             SELECT
                 service.description AS service,
@@ -382,7 +382,7 @@ class AzureCostManagementAdapter:
         except Exception as e:
             raise CloudIngestionError(f"Azure Cost Management query failed: {e}") from e
 
-        # Map columns by name. result.columns defines the row order, which can vary.
+        # Map columns by name. result.columns defines the row order, which can vary
         columns = [getattr(c, "name", "") for c in (result.columns or [])]
 
         def _idx(*names: str) -> int | None:

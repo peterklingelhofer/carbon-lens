@@ -12,7 +12,7 @@ import { HYPERSCALERS, PROVIDERS } from "../lib/providers";
 import { card, labelStyle, primaryButton, sectionStyle, td, th } from "../styles";
 
 // Inline SVG line chart of the recommended region's intensity across the window,
-// with the chosen slot marked. No chart dependency, hand-drawn to match the app.
+// with the chosen slot marked. No chart dependency, hand-drawn to match the app
 function ForecastChart({
   slots,
   recommendedStart,
@@ -142,7 +142,7 @@ const STRATEGIES: { value: Strategy; label: string; desc: string }[] = [
 ];
 
 // Window times are shown in the viewer's local timezone, so label it explicitly
-// (e.g. "EDT", "GMT+1") so the recommended date is never ambiguous.
+// (e.g. "EDT", "GMT+1") so the recommended date is never ambiguous
 function fmtWindow(iso: string): string {
   return new Date(iso).toLocaleString(undefined, {
     month: "short",
@@ -163,7 +163,7 @@ export function Scheduler() {
   // "Greenest region now" is just the lowest-intensity region among the selected
   // providers, which the snapshot already carries. Derive it client-side so this
   // page never wakes the API. The API best-now query is the self-hosted fallback
-  // only (no snapshot). It's disabled in production so the 60s poll never runs.
+  // only (no snapshot). It's disabled in production so the 60s poll never runs
   const { data: snapshot } = useSnapshot();
   const bestNow = useQuery({
     queryKey: ["scheduler-now"],
@@ -191,7 +191,7 @@ export function Scheduler() {
   const recommended = recommendation?.recommended;
   const alternatives = recommendation?.alternatives ?? [];
   const nowRecommended = greenestRegion(snapshot, selectedProviders) ?? bestNow.data?.recommended;
-  // Snapshot mode: loading until the snapshot lands. Self-hosted: the API query.
+  // Snapshot mode: loading until the snapshot lands. Self-hosted: the API query
   const nowLoading = snapshotEnabled ? !snapshot : bestNow.isLoading;
 
   return (
@@ -206,7 +206,7 @@ export function Scheduler() {
         Best time to run
         <InfoTip
           label="carbon-aware scheduling"
-          text="Many jobs don't have to run at a fixed moment - CI/CD pipelines, ML training, nightly batch processing. Carbon-aware scheduling runs them when and where the grid is cleanest, cutting emissions for the same work. This tool finds that window for you. A CI runner or scheduler then executes the job - Carbon Lens recommends, it doesn't run anything itself."
+          text="Many jobs don't have to run at a fixed moment, such as CI/CD pipelines or ML training. Carbon-aware scheduling runs them when and where the grid is cleanest, cutting emissions for the same work. This tool finds that window, and your CI runner or scheduler executes the job."
         />
       </h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
@@ -219,7 +219,7 @@ export function Scheduler() {
         style={{
           display: "grid",
           // Collapse to a single column on narrow viewports so the two cards
-          // don't force horizontal scrolling at 320px (WCAG 1.4.10 reflow).
+          // don't force horizontal scrolling at 320px (WCAG 1.4.10 reflow)
           gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 260px), 1fr))",
           gap: "1rem",
           marginBottom: "2rem",
@@ -505,9 +505,8 @@ export function Scheduler() {
               color: "var(--gray-400)",
             }}
           >
-            Estimated from a simplified time-of-day model in place of a real grid forecast. "%
-            carbon saved" is vs the dirtiest candidate region right now. Treat it as directional
-            guidance.
+            Where no grid forecast is available, it's estimated from a time-of-day model. "% carbon
+            saved" is vs the dirtiest candidate region right now. Treat it as directional guidance.
           </p>
 
           <div

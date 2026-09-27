@@ -303,22 +303,22 @@ class TestChooseRunIndex:
         assert choose_run_index([300, 250, 280], 100, 24) == (1, "cleanest_fallback")
 
     def test_window_respects_max_wait(self):
-        # The 10 at index 3 is cleanest overall but outside a 2-hour window.
+        # The 10 at index 3 is cleanest overall but outside a 2-hour window
         assert choose_run_index([300, 290, 280, 10], None, 2) == (2, "cleanest")
 
     def test_now_surplus_runs_immediately(self):
         assert choose_run_index([30, 300], None, 24, surplus_hours=[0]) == (0, "surplus_now")
 
     def test_defers_to_soonest_surplus_window(self):
-        # Cleanest is hour 1 (50), but hour 3 is a clean-surplus window -> prefer it.
+        # Cleanest is hour 1 (50), but hour 3 is a clean-surplus window -> prefer it
         assert choose_run_index([300, 50, 200, 40], None, 24, surplus_hours=[3]) == (3, "surplus")
 
     def test_does_not_idle_for_a_trivial_gain(self):
-        # Cleanest (hour 2) is only ~3% under now -> not worth deferring.
+        # Cleanest (hour 2) is only ~3% under now -> not worth deferring
         assert choose_run_index([300, 295, 291], None, 24) == (0, "now_no_benefit")
 
     def test_threshold_still_wins_when_now_is_acceptable(self):
-        # Even with a later surplus window, an acceptable now runs immediately.
+        # Even with a later surplus window, an acceptable now runs immediately
         assert choose_run_index([40, 300, 30], 100, 24, surplus_hours=[2]) == (0, "threshold")
 
 
@@ -330,16 +330,16 @@ class TestImpactLedger:
 
         now = datetime(2026, 6, 16, tzinfo=UTC)
         entries = [
-            # Deferred, 200 gCO2/kWh avoided, 10 kWh -> 2000 g avoided.
+            # Deferred, 200 gCO2/kWh avoided, 10 kWh -> 2000 g avoided
             {
                 "ts": now.isoformat(),
                 "deferred_hours": 3,
                 "reduction_gco2_kwh": 200,
                 "energy_kwh": 10,
             },
-            # Deferred but no energy -> counts toward avg, contributes no grams.
+            # Deferred but no energy -> counts toward avg, contributes no grams
             {"ts": now.isoformat(), "deferred_hours": 2, "reduction_gco2_kwh": 100},
-            # Ran now -> not shifted, avoids nothing.
+            # Ran now -> not shifted, avoids nothing
             {"ts": now.isoformat(), "deferred_hours": 0, "reduction_gco2_kwh": 0},
         ]
         s = summarize(entries, now, days=30)
@@ -397,7 +397,7 @@ class TestImpactLedger:
                 "reduction_gco2_kwh": 120,
                 "basis": "measured",
             },
-            # Forecast-only (not re-measured) -> excluded from calibration.
+            # Forecast-only (not re-measured) -> excluded from calibration
             {
                 "ts": now.isoformat(),
                 "deferred_hours": 2,
@@ -405,7 +405,7 @@ class TestImpactLedger:
                 "reduction_gco2_kwh": 50,
                 "basis": "forecast",
             },
-            # Ran now -> excluded.
+            # Ran now -> excluded
             {"ts": now.isoformat(), "deferred_hours": 0},
         ]
         cal = calibration(entries, now, days=30)
@@ -420,7 +420,7 @@ class TestImpactLedger:
 
         # Past forecasts ran 10% high (ratio 0.9) -> a fresh 200 prediction nudges to 180.
         assert adjusted_prediction(200, 0.9) == 180.0
-        # Under-promised history (ratio 1.2) scales a prediction up.
+        # Under-promised history (ratio 1.2) scales a prediction up
         assert adjusted_prediction(100, 1.2) == 120.0
 
     def test_calibration_by_region_buckets_separately(self):
@@ -632,7 +632,7 @@ class TestPlanEstimate:
             ]
         }
         shift = {"zones": [{"grid_zone": "FI", "shift_savings_pct": 50}]}
-        # 1 kW continuous, all load flexible.
+        # 1 kW continuous, all load flexible
         est = plan_estimate(siting, shift, power_watts=1000, flexible_fraction=1.0)
         # naive: 200 gCO2/kWh * 1 kW * 8760 h / 1000 = 1752 kg
         assert est["naive_annual_kg"] == 1752.0
@@ -679,7 +679,7 @@ class TestChooseRunPlan:
             ("aws/a", [90, 90, 90], [1]),  # surplus window at +1h
             ("gcp/b", [40, 40, 40], []),  # cleaner on average, no surplus
         ]
-        # Soonest surplus is the highest-value place+time to add load.
+        # Soonest surplus is the highest-value place+time to add load
         assert choose_run_plan(regions, None, 24) == ("aws/a", 1, "surplus")
 
     def test_runs_now_in_cleanest_region_when_no_real_gain(self):
@@ -751,7 +751,7 @@ class TestRunCommand:
         assert result.exit_code == 1
 
     def test_measure_energy_records_measured_kwh(self):
-        # RAPL reads 3.6e9 uj more after the run -> 0.001 kWh, recorded as measured.
+        # RAPL reads 3.6e9 uj more after the run -> 0.001 kWh, recorded as measured
         captured: list[dict] = []
         reads = iter([(1_000_000_000, 0), (4_600_000_000, 0)])
         with (
@@ -880,5 +880,5 @@ class TestBestTimeCommand:
         with patch("carbonlens.cli.client.best_time", side_effect=fake):
             result = runner.invoke(app, ["best-time", "aws/us-east-1,gcp/europe-west1"])
         assert result.exit_code == 0
-        # gcp is cleaner (40 < 200) -> it's the greenest place.
+        # gcp is cleaner (40 < 200) -> it's the greenest place
         assert "Greenest place + time: gcp/europe-west1" in result.output

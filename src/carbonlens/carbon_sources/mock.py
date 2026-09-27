@@ -36,7 +36,7 @@ _MOCK_DATA: dict[str, tuple[float, float]] = {
     "BE": (150, 40),  # Belgium: nuclear + wind
     "AT": (100, 75),  # Austria: hydro + wind
     "CH": (25, 96),  # Switzerland: hydro + nuclear
-    "PL": (600, 18),  # Poland: very coal heavy
+    "PL": (600, 18),  # Poland: coal heavy
     "CZ": (400, 15),  # Czech Republic: coal + nuclear
     "DK-DK1": (120, 70),  # Denmark West: wind
     "DK-DK2": (130, 68),  # Denmark East: wind
@@ -57,7 +57,7 @@ _MOCK_DATA: dict[str, tuple[float, float]] = {
     "HU": (200, 15),  # Hungary: nuclear + gas
     "SK": (130, 25),  # Slovakia: nuclear + hydro
     "HR": (150, 55),  # Croatia: hydro
-    "RS": (600, 8),  # Serbia: very coal heavy
+    "RS": (600, 8),  # Serbia: coal heavy
     "SI": (200, 35),  # Slovenia: nuclear + hydro
     "EE": (400, 25),  # Estonia: oil shale
     "LV": (100, 55),  # Latvia: hydro + wind
@@ -72,7 +72,7 @@ _MOCK_DATA: dict[str, tuple[float, float]] = {
     # India
     "IN-NO": (650, 18),  # Northern: coal heavy
     "IN-SO": (500, 30),  # Southern: more solar
-    "IN-EA": (750, 10),  # Eastern: very coal heavy
+    "IN-EA": (750, 10),  # Eastern: coal heavy
     "IN-WE": (550, 25),  # Western: mixed
     "IN-NE": (400, 40),  # North-Eastern: hydro
     # Brazil

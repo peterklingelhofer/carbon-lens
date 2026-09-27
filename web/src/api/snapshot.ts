@@ -6,7 +6,7 @@ import type { BestTime, CarbonIntensity, CloudRegion, GridZoneSummary } from "./
 // no snapshot value AND snapshots are disabled (self-hosted). Collapses the
 // "snap ?? apiData" + enabled-gating + loading/error boilerplate the region-detail
 // panels all repeat. `snap` is the snapshot value (undefined if unavailable). The
-// rest mirror a `useQuery` call.
+// rest mirror a `useQuery` call
 export function useSnapshotOrApi<T>(
   snap: T | undefined,
   queryKey: unknown[],
@@ -50,11 +50,11 @@ export function useRegions(provider?: string) {
 // Static carbon snapshot published to a CDN by the `snapshot` GitHub Action.
 // When VITE_SNAPSHOT_URL is set, the dashboard reads real data from here
 // instead of calling the live API, so viewer traffic never hits upstream
-// provider quotas. Falls back to the live API when the URL is unset.
+// provider quotas. Falls back to the live API when the URL is unset
 
 // The precomputed run-now/wait decision per region, baked into the snapshot by the
 // builder so the frontend (and SDK) read it straight from the CDN: no live API call,
-// no cold start. Same shape and logic as the API's /carbon/signal endpoint.
+// no cold start. Same shape and logic as the API's /carbon/signal endpoint
 export interface CarbonSignal {
   provider: string;
   region: string;
@@ -72,7 +72,7 @@ export interface CarbonSignal {
 }
 
 // A compact 24h forecast curve baked into the snapshot (point 0 = current reading).
-// Each point is {t: timestamp, c: gCO2/kWh}, only what the sparkline needs.
+// Each point is {t: timestamp, c: gCO2/kWh}, only what the sparkline needs
 export interface CarbonSnapshotForecast {
   grid_zone: string;
   provider: string;
@@ -83,7 +83,7 @@ export interface CarbonSnapshotForecast {
   points: { t: string; c: number }[];
 }
 
-// Precomputed current weather drivers per region (Open-Meteo), baked into the snapshot.
+// Precomputed current weather drivers per region (Open-Meteo), baked into the snapshot
 export interface SnapshotWeather {
   wind_speed_kmh: number;
   solar_irradiance_w_m2: number;
@@ -94,7 +94,7 @@ export interface CarbonSnapshot {
   generated_at: string;
   regions: CloudRegion[];
   intensities: Record<string, CarbonIntensity>;
-  // Optional: older snapshots predate precomputed signals/forecasts, so may be absent.
+  // Optional: older snapshots predate precomputed signals/forecasts, so may be absent
   signals?: Record<string, CarbonSignal>;
   forecasts?: Record<string, CarbonSnapshotForecast>;
   best_time?: Record<string, BestTime>;
@@ -118,7 +118,7 @@ const SNAPSHOT_URL = import.meta.env.VITE_SNAPSHOT_URL || "";
 export const snapshotEnabled = !!SNAPSHOT_URL;
 
 // URL of a sibling file next to snapshot.json on the data branch (history.json,
-// forecast_week.json, clean_compute_report.json, …). Empty when no snapshot is set.
+// forecast_week.json, clean_compute_report.json, …). Empty when no snapshot is set
 export function dataBranchUrl(filename: string): string {
   return SNAPSHOT_URL ? SNAPSHOT_URL.replace("snapshot.json", filename) : "";
 }
@@ -126,7 +126,7 @@ export function dataBranchUrl(filename: string): string {
 // Derive data quality from a provider's source string. The snapshot builder
 // stamps `quality` server-side, but the live API does not - so the live-API
 // fallback (local dev without a snapshot) derives it here. Mirrors the Python
-// `_quality` in scripts/build_snapshot.py.
+// `_quality` in scripts/build_snapshot.py
 export function qualityFromSource(source: string): "live" | "estimated" | "mock" {
   if (source.endsWith("_heuristic") || source === "open_meteo") return "estimated";
   if (source === "mock" || source === "electricity_maps_error") return "mock";
@@ -134,7 +134,7 @@ export function qualityFromSource(source: string): "live" | "estimated" | "mock"
 }
 
 // The precomputed 24h forecast for one region from the cached snapshot (no extra
-// fetch). Undefined when snapshots are disabled or this region has no forecast yet.
+// fetch). Undefined when snapshots are disabled or this region has no forecast yet
 export function useForecastSnapshot(
   provider: string,
   region: string,
@@ -144,14 +144,14 @@ export function useForecastSnapshot(
 }
 
 // The precomputed greenest-hour BestTime for one region from the cached snapshot (no
-// extra fetch). Undefined when snapshots are disabled or this region has none yet.
+// extra fetch). Undefined when snapshots are disabled or this region has none yet
 export function useBestTimeSnapshot(provider: string, region: string): BestTime | undefined {
   const { data } = useSnapshot();
   return data?.best_time?.[`${provider}/${region}`];
 }
 
 // The precomputed weather drivers for one region from the cached snapshot (no extra
-// fetch). Undefined when snapshots are disabled or this region has no weather yet.
+// fetch). Undefined when snapshots are disabled or this region has no weather yet
 export function useWeatherSnapshot(provider: string, region: string): SnapshotWeather | undefined {
   const { data } = useSnapshot();
   return data?.weather?.[`${provider}/${region}`];
@@ -166,27 +166,27 @@ export function useSnapshot() {
       return res.json();
     },
     enabled: snapshotEnabled,
-    // CDN serves ~5-min-fresh data, so refetch on the same cadence.
+    // CDN serves ~5-min-fresh data, so refetch on the same cadence
     refetchInterval: 5 * 60 * 1000,
     staleTime: 5 * 60 * 1000,
     retry: 1,
   });
 }
 
-// One compact rolling-history point: timestamp, carbon (gCO2/kWh), renewable %.
+// One compact rolling-history point: timestamp, carbon (gCO2/kWh), renewable %
 export interface HistoryArchivePoint {
   t: string;
   c: number;
   r: number;
 }
 
-// The rolling history archive sits next to snapshot.json on the data branch.
+// The rolling history archive sits next to snapshot.json on the data branch
 export const HISTORY_ARCHIVE_URL = dataBranchUrl("history.json");
 
 // One region's rolling carbon history from the published archive (history.json on the
 // CDN), the same data /carbon/history returns, but static. The whole archive is a
 // single cached fetch shared across every region the viewer opens. Undefined when the
-// archive is unavailable (so callers can fall back to the live API).
+// archive is unavailable (so callers can fall back to the live API)
 export function useRegionHistoryArchive(
   provider: string,
   region: string,
@@ -208,12 +208,12 @@ export function useRegionHistoryArchive(
 
 // The 7-day forecast archive sits next to snapshot.json on the data branch. It's large
 // and only the clean-window heatmap needs it, so it's published separately and fetched
-// lazily (never part of the site-wide snapshot).
+// lazily (never part of the site-wide snapshot)
 export const FORECAST_WEEK_URL = dataBranchUrl("forecast_week.json");
 
 // One region's precomputed 7-day forecast curve from the CDN (forecast_week.json). The
 // whole file is a single cached fetch. Only components that mount it (the Scheduler
-// heatmap) pay for it. Undefined when unavailable, so callers fall back to the API.
+// heatmap) pay for it. Undefined when unavailable, so callers fall back to the API
 export function useWeekForecast(
   provider: string,
   region: string,
@@ -234,7 +234,7 @@ export function useWeekForecast(
 }
 
 // All covered grid zones, each with the cloud regions on it: the static equivalent of
-// GET /carbon/zones, derived from the snapshot's region list. Empty without a snapshot.
+// GET /carbon/zones, derived from the snapshot's region list. Empty without a snapshot
 export function gridZonesFromSnapshot(snapshot: CarbonSnapshot | undefined): GridZoneSummary[] {
   if (!snapshot) return [];
   const byZone = new Map<string, GridZoneSummary>();
@@ -252,7 +252,7 @@ export function gridZonesFromSnapshot(snapshot: CarbonSnapshot | undefined): Gri
 }
 
 // Carbon intensity for a grid zone, from any snapshot region on that zone: the static
-// equivalent of GET /carbon/{zone}. Undefined when the zone isn't in the snapshot.
+// equivalent of GET /carbon/{zone}. Undefined when the zone isn't in the snapshot
 export function zoneIntensityFromSnapshot(
   snapshot: CarbonSnapshot | undefined,
   zone: string,
@@ -273,7 +273,7 @@ export interface GreenestRegion {
 
 // The greenest region (lowest current intensity) among the given providers, derived from
 // the snapshot: the static equivalent of carbon-weighted /route. Undefined without a
-// snapshot or when no provider matches.
+// snapshot or when no provider matches
 export function greenestRegion(
   snapshot: CarbonSnapshot | undefined,
   providers: string[],

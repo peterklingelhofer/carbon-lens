@@ -32,18 +32,18 @@ export interface CarbonIntensity {
   quality?: "live" | "estimated" | "mock";
   grid_load_mw?: number | null;
   // Set by the snapshot builder when a transient upstream gap was bridged with
-  // this zone's last live reading (see scripts/build_snapshot.py carry-forward).
+  // this zone's last live reading (see scripts/build_snapshot.py carry-forward)
   carried_forward?: boolean;
   // Consumption-based intensity (flow-traced across imports/exports), for
   // European zones. Differs from the production-based value above when a region
-  // imports notably cleaner or dirtier power than it generates.
+  // imports notably cleaner or dirtier power than it generates
   consumption_intensity_gco2_kwh?: number;
   // Estimated marginal emission factor (what an extra kWh would emit). A
-  // heuristic from the fuel mix. Measured marginal data isn't available.
+  // heuristic from the fuel mix. Measured marginal data isn't available
   marginal_intensity_gco2_kwh?: number;
   // Live generation breakdown by fuel type in MW (only fuels actually
   // generating). Present for sources with a real fuel mix, absent for
-  // heuristic/weather-based estimates.
+  // heuristic/weather-based estimates
   power_breakdown_mw?: Record<string, number>;
 }
 

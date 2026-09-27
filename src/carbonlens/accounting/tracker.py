@@ -10,7 +10,7 @@ from carbonlens.models.routing import RouteResponse
 # The counterfactual: what you'd emit picking among the SAME candidate regions
 # without carbon-awareness. Mean of the candidates. Using the single worst
 # would assume you'd otherwise deliberately choose the dirtiest option and so
-# overstate the benefit.
+# overstate the benefit
 _BASELINE = "mean carbon intensity of the candidate regions considered (a carbon-blind pick)"
 
 # Cap on how many recent records a report aggregates, to bound query/memory cost

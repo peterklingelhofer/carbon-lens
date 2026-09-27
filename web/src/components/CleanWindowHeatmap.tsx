@@ -9,10 +9,10 @@ import { InfoTip } from "./InfoTip";
 import { ProviderRegionPicker } from "./ProviderRegionPicker";
 
 // Grid of the next ~7 days x 24 hours, each cell coloured by projected carbon
-// intensity, so the cleanest hours to run a job jump out at a glance.
+// intensity, so the cleanest hours to run a job jump out at a glance
 function Heatmap({ provider, region }: { provider: string; region: string }) {
   // Read the 7-day curve from the lazy-loaded CDN file when available (no API call);
-  // otherwise fetch it live. Only this component pays for the week file.
+  // otherwise fetch it live. Only this component pays for the week file
   const week = useWeekForecast(provider, region);
   const {
     data: apiData,
@@ -27,7 +27,7 @@ function Heatmap({ provider, region }: { provider: string; region: string }) {
   });
 
   // Hovered (desktop) / tapped (mobile) cell tooltip with the underlying value.
-  // Declared before the early returns below to respect the rules of hooks.
+  // Declared before the early returns below to respect the rules of hooks
   const [tip, setTip] = useState<{
     key: string;
     x: number;
@@ -38,7 +38,7 @@ function Heatmap({ provider, region }: { provider: string; region: string }) {
   } | null>(null);
 
   // On touch, a tap opens the tooltip. Close it again when the next pointer-down
-  // lands anywhere outside a heatmap cell.
+  // lands anywhere outside a heatmap cell
   useEffect(() => {
     if (!tip) return;
     const onDown = (e: PointerEvent) => {
@@ -48,7 +48,7 @@ function Heatmap({ provider, region }: { provider: string; region: string }) {
     return () => document.removeEventListener("pointerdown", onDown);
   }, [tip]);
 
-  // Normalize either source to {ts, c}: the CDN file's compact {t, c} or the API points.
+  // Normalize either source to {ts, c}: the CDN file's compact {t, c} or the API points
   const points = week
     ? week.points.map((p) => ({ ts: p.t, c: p.c }))
     : (apiData?.points ?? []).map((p) => ({
@@ -61,7 +61,7 @@ function Heatmap({ provider, region }: { provider: string; region: string }) {
   if ((!FORECAST_WEEK_URL && isError) || points.length < 2)
     return <p style={muted}>No forecast available for this region.</p>;
 
-  // Bucket points into local-time date -> hour -> intensity.
+  // Bucket points into local-time date -> hour -> intensity
   const byDate = new Map<string, (number | null)[]>();
   for (const p of points) {
     const d = new Date(p.ts);
@@ -82,7 +82,7 @@ function Heatmap({ provider, region }: { provider: string; region: string }) {
         ? "an Open-Meteo weather forecast"
         : "a time-of-day model";
 
-  // Hover (desktop) / tap (mobile) shows the cell's value. Toggle off on re-tap.
+  // Hover (desktop) / tap (mobile) shows the cell's value. Toggle off on re-tap
   const showTip = (
     e: React.SyntheticEvent,
     key: string,

@@ -45,12 +45,12 @@ export function RouteDemo() {
         Find a region
         <InfoTip
           label="finding a region"
-          text="Routing means choosing where to run a workload. This ranks every eligible region by your priorities and returns the greenest match. It's a recommendation you'd act on yourself (e.g. in a deploy script) - nothing is deployed or run here."
+          text="Routing means choosing where to run a workload. This ranks every eligible region by carbon intensity and returns the greenest match. It's a recommendation you'd act on yourself (e.g. in a deploy script). Nothing is deployed or run here."
         />
       </h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
-        Choose which providers you can use and how much to favour clean energy over cost, and see
-        which region comes out greenest right now.
+        Choose the providers and data residency you allow, and see which region comes out greenest
+        right now.
       </p>
 
       <RegionComparison />
@@ -108,7 +108,7 @@ export function RouteDemo() {
             Data Residency (optional)
             <InfoTip
               label="data residency"
-              text="A rule about where your data is legally allowed to live - e.g. 'EU only' for GDPR. Restricting residency limits routing to regions in that area, so the greenest pick may differ."
+              text="A rule about where your data is legally allowed to live, e.g. 'EU only' for GDPR. Restricting residency limits routing to regions in that area, so the greenest pick may differ."
             />
           </span>
           <select
@@ -131,7 +131,7 @@ export function RouteDemo() {
           </select>
         </div>
 
-        {/* Ranking basis - what the engine actually optimizes */}
+        {/* Ranking basis: what the engine optimizes */}
         <div
           style={{
             marginBottom: "1.5rem",
@@ -142,7 +142,7 @@ export function RouteDemo() {
           Regions are ranked by{" "}
           <strong style={{ color: "var(--green-text)" }}>lowest carbon intensity</strong> right now,
           within your provider and residency filters. Cost-aware ranking (trading carbon against
-          price) is on the roadmap - it isn't factored in yet.
+          price) is on the roadmap and not yet factored in.
         </div>
 
         <button
@@ -174,7 +174,7 @@ export function RouteDemo() {
               ...card,
               // A flat green tint mixed into the theme-aware --card-bg. The fixed
               // light --green-50 doesn't remap for dark mode and left the adaptive
-              // light text invisible on a near-white corner.
+              // light text invisible on a near-white corner
               background: "color-mix(in srgb, rgb(34 197 94) 8%, var(--card-bg))",
               borderColor: "var(--green-200)",
             }}
@@ -286,9 +286,8 @@ export function RouteDemo() {
                 lineHeight: 1.5,
               }}
             >
-              Ranked by <strong>carbon intensity</strong> - which counts nuclear and hydro alongside
-              renewables - so the greenest pick can show a lower renewable % than an alternative. To
-              rank by renewable share instead, raise its weight in your priorities.
+              Ranked by <strong>carbon intensity</strong>, which also credits nuclear, so the
+              greenest pick can show a lower renewable % than an alternative.
             </p>
           </div>
 
@@ -308,11 +307,11 @@ export function RouteDemo() {
                     <tr style={{ borderBottom: "2px solid var(--gray-200)" }}>
                       <TableHeadCell
                         label="#"
-                        tip="Rank by your carbon/cost priority. #1 is the recommended region above, and these are the next-best."
+                        tip="Rank by lowest carbon intensity within your filters. #1 is the recommended region above, and these are the next-best."
                       />
                       <TableHeadCell
                         label="Region"
-                        tip="The cloud provider and region - e.g. aws / eu-north-1."
+                        tip="The cloud provider and region, e.g. aws / eu-north-1."
                       />
                       <TableHeadCell label="Grid Zone" tip={GRID_ZONE_TIP} />
                       <TableHeadCell label="gCO₂/kWh" tip={EMISSIONS_TIP} align="right" />

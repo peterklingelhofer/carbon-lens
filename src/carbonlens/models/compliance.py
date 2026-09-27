@@ -156,7 +156,7 @@ class ComplianceReportSummary(BaseModel):
 
 # --- Energy coefficients for cloud resource types ---
 # These map usage units to kWh estimates.
-# Sources: Etsy Cloud Jewels, CCF, Teads, AWS/GCP/Azure sustainability reports.
+# Sources: Etsy Cloud Jewels, CCF, Teads, AWS/GCP/Azure sustainability reports
 
 # vCPU-hour -> kWh (varies by instance family, these are conservative averages)
 VCPU_HOUR_KWH: dict[str, float] = {
@@ -203,11 +203,11 @@ NETWORK_GB_KWH = 0.001  # ~1 Wh per GB (Coroama & Hilty estimates)
 # evidence tier D: they may inform a number, they may not headline one.
 #
 # All three were audited on 2026-08-23 against the vendors' current pages and all
-# three had drifted. See docs/VERIFICATION.md. Two limitations remain and are not
-# modelled: these are GLOBAL fleet averages, while AWS and Microsoft both publish
+# three had drifted. See docs/VERIFICATION.md. Two limitations remain
+# unmodelled: these are global fleet averages, while AWS and Microsoft both publish
 # per-region PUE that varies materially (Microsoft's FY25 Asia Pacific figure is
 # 1.28 against 1.16 in the Americas), and the reporting periods differ (AWS and
-# Google report calendar 2025, Microsoft reports FY25 ending 30 June 2025).
+# Google report calendar 2025, Microsoft reports FY25 ending 30 June 2025)
 PROVIDER_PUE_CITATIONS: dict[str, CitationId] = {
     "aws": "aws-pue-2025",
     "gcp": "google-pue-2025",
@@ -219,7 +219,7 @@ PROVIDER_PUE: dict[str, float] = {
     "gcp": 1.09,  # Google: 2025 fleet-wide trailing-twelve-month average
     "azure": 1.17,  # Microsoft: global FY25 (1.16 in FY24)
     # No citation: an assumed penalty for providers that publish nothing. Kept
-    # above every published figure on the reasoning that a vendor who does not
-    # report is unlikely to beat vendors who do, which is a guess.
+    # above every published figure on the reasoning that a vendor who doesn't
+    # report is unlikely to beat vendors who do, which is a guess
     "default": 1.20,
 }

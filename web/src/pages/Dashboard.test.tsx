@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // 22 regions with strictly increasing intensity (r0 = cleanest), so the default
-// "intensity ascending" sort and the 20-row cap are both observable.
+// "intensity ascending" sort and the 20-row cap are both observable
 const { snapshotFixture } = vi.hoisted(() => {
   const providers = ["aws", "gcp", "azure"];
   const regions = [];
@@ -46,7 +46,7 @@ const { snapshotFixture } = vi.hoisted(() => {
 });
 
 // snapshotEnabled=false so the LivePanel (WebSocket feed) renders. useSnapshot
-// still returns the fixture so the table is deterministic.
+// still returns the fixture so the table is deterministic
 vi.mock("../api/snapshot", () => ({
   snapshotEnabled: false,
   qualityFromSource: () => "live",
@@ -63,7 +63,7 @@ vi.mock("../api/snapshot", () => ({
     isError: false,
   }),
   // Derive-from-snapshot helpers used by the panels Dashboard renders (CustomZoneLookup,
-  // RegionComparison). Stubbed empty, since this suite only asserts the regions table.
+  // RegionComparison). Stubbed empty, since this suite only asserts the regions table
   gridZonesFromSnapshot: () => [],
   zoneIntensityFromSnapshot: () => undefined,
   greenestRegion: () => undefined,
@@ -87,7 +87,7 @@ vi.mock("../api/client", () => ({
 import { Dashboard } from "./Dashboard";
 
 // Minimal WebSocket stand-in: jsdom has no WebSocket, and we want to drive
-// open/message events by hand rather than over a real socket.
+// open/message events by hand rather than over a real socket
 class MockWebSocket {
   static instances: MockWebSocket[] = [];
   url: string;
@@ -136,7 +136,7 @@ describe("Dashboard table", () => {
     renderDashboard();
     await screen.findByText("Loc 0");
     const rows = screen.getAllByRole("row");
-    // rows[0] is the header, and the first data row is the lowest intensity (Loc 0).
+    // rows[0] is the header, and the first data row is the lowest intensity (Loc 0)
     expect(within(rows[1]).getByText("Loc 0")).toBeTruthy();
   });
 
@@ -177,7 +177,7 @@ describe("Dashboard live feed", () => {
     renderDashboard();
     await screen.findByText("Loc 0");
 
-    // LivePanel opened a socket but it hasn't connected yet.
+    // LivePanel opened a socket but it hasn't connected yet
     expect(screen.getByTitle("Disconnected")).toBeTruthy();
     const ws = MockWebSocket.instances.at(-1);
     expect(ws).toBeTruthy();

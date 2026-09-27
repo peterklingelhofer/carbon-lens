@@ -36,7 +36,7 @@ const legend: React.CSSProperties = {
 const body: React.CSSProperties = { color: "var(--gray-600)", fontSize: "0.95rem" };
 
 // The quantitative claims on this page are read from the same snapshot they
-// describe, so they can't drift out of date the way hardcoded copy does.
+// describe, so they can't drift out of date the way hardcoded copy does
 function useSiteFacts() {
   const { data: snapshot } = useSnapshot();
   return useMemo(() => {
@@ -121,8 +121,8 @@ export function Landing() {
             style={{
               padding: "0.75rem 2rem",
               borderRadius: 8,
-              // Fixed white (not --surface) - the hero background is always dark
-              // green, so dark-green text on white is high-contrast in both modes.
+              // Fixed white (not --surface): the hero background is always dark
+              // green, so dark-green text on white is high-contrast in both modes
               background: "#ffffff",
               color: "var(--green-800)",
               fontWeight: 500,
@@ -191,9 +191,9 @@ export function Landing() {
           </p>
         </div>
 
-        <h2 style={heading()}>Three things you can do with it</h2>
+        <h2 style={heading()}>What you can do with it</h2>
         <div style={card}>
-          <h3 style={{ marginTop: 0, fontSize: "1.15rem" }}>1. Pick a cleaner region</h3>
+          <h3 style={{ marginTop: 0, fontSize: "1.15rem" }}>Pick a cleaner region</h3>
           <p style={body}>
             This is the big one, and it's a one-time decision. The spread between the dirtiest and
             cleanest regions is often more than tenfold, so the same server can emit a fraction of
@@ -206,12 +206,11 @@ export function Landing() {
           </p>
 
           <h3 style={{ fontSize: "1.15rem", marginBottom: "0.5rem" }}>
-            2. Run flexible jobs at cleaner times
+            Run flexible jobs at cleaner times
           </h3>
           <p style={{ ...body, marginTop: 0 }}>
             A grid's mix shifts hour to hour with weather and demand. Work that doesn't need a fixed
-            start time (nightly batch jobs, model training, CI pipelines) can wait for a cleaner
-            window.
+            start time (nightly batch jobs or CI pipelines) can wait for a cleaner window.
             {facts?.medianShift != null && facts.bestShift != null ? (
               <>
                 {" "}
@@ -233,12 +232,12 @@ export function Landing() {
           </p>
 
           <h3 style={{ fontSize: "1.15rem", marginBottom: "0.5rem" }}>
-            3. Put real numbers in your reporting
+            Put real numbers in your reporting
           </h3>
           <p style={{ ...body, marginTop: 0, marginBottom: 0 }}>
             Greenhouse-gas reporting asks for a location-based figure: what the grid you drew from
-            actually emitted. That's the number this site measures, so it can turn your cloud usage
-            into a first draft with the method and data quality shown.{" "}
+            emitted. That's the number this site measures, so it can turn your cloud usage into a
+            first draft with the method and data quality shown.{" "}
             <Link to="/report" style={{ color: "var(--green-text)", fontWeight: 500 }}>
               Draft a report
             </Link>
@@ -248,10 +247,10 @@ export function Landing() {
 
         <p style={{ ...body, color: "var(--gray-500)", fontSize: "0.9rem" }}>
           A small website or blog emits little either way, and moving it won't change much. The
-          tonnes are in compute-heavy work, so that's where this is worth your time.
+          tonnes are in compute-heavy work, so that's where this helps most.
         </p>
 
-        {/* What makes a grid greener - the one centered interlude */}
+        {/* What makes a grid greener: the one centered interlude */}
         <h2 style={heading("center")}>What makes a grid greener</h2>
         <p
           style={{
@@ -276,8 +275,8 @@ export function Landing() {
             electricity. The <strong>GHG Protocol</strong>, the standard the whole field reports
             against, is revising its Scope 2 rules and has consulted on requiring{" "}
             <strong>hourly matching</strong>: proving clean generation in the same hour the power
-            was used, rather than over a year. If that lands, the hour-by-hour grid figure stops
-            being a nice extra and becomes the number that counts.
+            was used, rather than over a year. If that lands, reports will need the hour-by-hour
+            grid figure.
           </p>
           <p style={body}>Where the rules stand today:</p>
           <ul style={{ ...body, lineHeight: 1.7, paddingLeft: "1.2rem", margin: "0 0 1rem" }}>
@@ -300,7 +299,7 @@ export function Landing() {
           <p style={{ ...body, margin: 0 }}>
             Regulation moves in both directions, which is why the durable case here is the standard:
             measured, location-based intensity is what credible reporting is built on, and it's what
-            a company asking about its own footprint actually needs.
+            a company asking about its own footprint needs.
           </p>
         </div>
 
@@ -315,8 +314,8 @@ export function Landing() {
               },
               {
                 title: "Carbon-aware routing",
-                desc: "Rank every region by your own priorities, weighing carbon against cost, and get the best one to run in.",
-                tip: "'Routing' means choosing where to run a job. You set priorities (e.g. favour low carbon, cap cost) and it ranks every region. Acting on the result is up to you.",
+                desc: "Rank every eligible region by live carbon intensity and get the greenest one to run in.",
+                tip: "'Routing' means choosing where to run a job. You set the providers and data residency you allow, and it ranks every eligible region. Acting on the result is up to you.",
               },
               {
                 title: "Emissions reporting",
@@ -330,7 +329,7 @@ export function Landing() {
               },
               {
                 title: "Live updates feed",
-                desc: "A continuous stream of carbon-intensity updates to build on: dashboards, alerts, or shifting flexible jobs to cleaner hours.",
+                desc: "A continuous stream of carbon-intensity updates for dashboards or alerts.",
                 tip: "Delivered over a WebSocket, a connection that stays open so the server can push new readings to your app the instant they change, instead of you repeatedly asking.",
               },
               {
@@ -400,7 +399,7 @@ export function Landing() {
                 ["AESO", "Alberta, Canada", "Live feed", "Yes"],
                 ["Open-Meteo", "Worldwide", "Weather estimate", "Yes"],
                 ["Regional heuristics", "India, Brazil, South Africa, Québec", "Estimate", "Yes"],
-                ["Taipower", "Taiwan", "Live feed", "Self-host"],
+                ["Taipower", "Taiwan", "Live feed", "Estimated for now"],
                 ["GridStatus.io", "US ISOs", "Live feed", "Self-host (paid key)"],
                 ["Electricity Maps", "Global", "Live feed", "Self-host (paid key)"],
               ].map(([name, coverage, res, here]) => (
@@ -426,8 +425,9 @@ export function Landing() {
           </p>
           <p style={legend}>
             <strong>On this site.</strong> "Self-host" means the integration is built and tested but
-            needs a key this public deployment doesn't use, so those regions fall back to an
-            estimate here. Running your own copy with a key switches them on.
+            needs a paid key this public deployment doesn't use, so those regions fall back to an
+            estimate here. Running your own copy with a key switches them on. Taipower needs no key,
+            and its zone is estimated here for now.
           </p>
         </div>
 

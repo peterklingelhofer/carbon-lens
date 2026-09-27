@@ -36,7 +36,7 @@ logger = logging.getLogger("carbon_suspend")
 
 ANNOTATION_REGION = "carbonlens.dev/region"
 ANNOTATION_MAX_INTENSITY = "carbonlens.dev/max-intensity"
-# Deadline backstop: never let a job wait longer than this for a clean window.
+# Deadline backstop: never let a job wait longer than this for a clean window
 ANNOTATION_MAX_DEFER = "carbonlens.dev/max-defer-hours"
 _SA = "/var/run/secrets/kubernetes.io/serviceaccount"
 
@@ -67,7 +67,7 @@ def overdue(hours_since_run: float | None, max_defer_hours: float | None) -> boo
 
 
 def should_suspend(signal: dict, max_intensity: float | None = None) -> bool:
-    """True when a flexible job should be suspended (now is not a good time to run).
+    """True when a flexible job should be suspended (now isn't a good time to run).
 
     A good time = the signal says ``run_now`` or it's clean surplus, and (if the
     caller set a cap) intensity is at/under it.
@@ -85,7 +85,7 @@ def desired_suspend_change(
     hours_since_run: float | None = None,
 ) -> bool | None:
     """The ``.spec.suspend`` a CronJob should have, or None if it's unmanaged or
-    already correct (so we only patch when something actually changes).
+    already correct (so we only patch when something changes).
 
     Honours a ``carbonlens.dev/max-defer-hours`` deadline: if the job hasn't run
     within that window, it's force-resumed even on a dirty grid, so carbon-aware
@@ -133,7 +133,7 @@ def _api_url() -> str:
 def reconcile() -> int:
     """List annotated CronJobs in the namespace and patch suspend by the grid.
 
-    Returns the number of CronJobs actually changed. Reads the in-cluster
+    Returns the number of CronJobs it changed. Reads the in-cluster
     service-account credentials. Raises FileNotFoundError when not run in a cluster.
     """
     token = Path(f"{_SA}/token").read_text().strip()
@@ -172,7 +172,7 @@ def reconcile() -> int:
             signal = signals[region]
 
             # How long since this CronJob last fired (or was created if never), so the
-            # deadline backstop can force it to run if it's been starved too long.
+            # deadline backstop can force it to run if it's been starved too long
             last_run = item.get("status", {}).get("lastScheduleTime") or meta.get(
                 "creationTimestamp"
             )
@@ -191,7 +191,7 @@ def reconcile() -> int:
             changed += 1
 
             # Feed the org ledger on each fresh deferral (opt-in), so suspended CronJobs
-            # accrue into org-statement like the other integrations. Best-effort.
+            # accrue into org-statement like the other integrations. Best-effort
             if _report_enabled() and (entry := report_on_suspend(region, want, signal)):
                 try:
                     api.post("/api/v1/accounting/impact", json=entry).raise_for_status()

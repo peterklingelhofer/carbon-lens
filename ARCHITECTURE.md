@@ -13,7 +13,7 @@ contribution mechanics, see [CONTRIBUTING.md](CONTRIBUTING.md).
                                      │  (per-fuel mix -> emission factors)
                           ┌──────────▼───────────┐
                           │  HybridCarbonSource  │  cascade: first source that
-                          │  (priority cascade)  │  covers a zone wins; falls
+                          │  (priority cascade)  │  covers a zone wins, falls
                           └──────────┬───────────┘  through to labeled mock
         scheduled GitHub Action      │
         scripts/build_snapshot.py    │ get_carbon_intensity[_batch]

@@ -28,7 +28,7 @@ def test_should_suspend_when_dirty():
 
 
 def test_max_intensity_cap_overrides_run_now():
-    # run_now but over the caller's cap -> still suspend.
+    # run_now but over the caller's cap -> still suspend
     signal = {"advice": "run_now", "clean_surplus": False, "intensity_gco2_kwh": 300}
     assert should_suspend(signal, max_intensity=150) is True
     assert should_suspend(signal, max_intensity=400) is False
@@ -37,9 +37,9 @@ def test_max_intensity_cap_overrides_run_now():
 def test_desired_change_only_when_it_differs():
     ann = {ANNOTATION_REGION: "aws/us-east-1"}
     dirty = {"advice": "wait_for_cleaner", "clean_surplus": False}
-    # Currently running, grid dirty -> should become suspended.
+    # Currently running, grid dirty -> should become suspended
     assert desired_suspend_change(ann, current_suspend=False, signal=dirty) is True
-    # Already suspended -> no change needed.
+    # Already suspended -> no change needed
     assert desired_suspend_change(ann, current_suspend=True, signal=dirty) is None
 
 
@@ -56,7 +56,7 @@ def test_report_on_suspend_only_logs_fresh_deferrals():
         "cleaner_window_in_hours": 4,
         "marginal_basis": "heuristic",
     }
-    # Freshly suspended (deferred) -> a ledger entry with the predicted reduction.
+    # Freshly suspended (deferred) -> a ledger entry with the predicted reduction
     entry = report_on_suspend("aws/us-east-1", want=True, signal=signal)
     assert entry == {
         "region": "aws/us-east-1",
@@ -65,14 +65,14 @@ def test_report_on_suspend_only_logs_fresh_deferrals():
         "energy_kwh": None,
         "basis": "heuristic",
     }
-    # A resume reports nothing: the run happens then, with no new deferral.
+    # A resume reports nothing: the run happens then, with no new deferral
     assert report_on_suspend("aws/us-east-1", want=False, signal=signal) is None
 
 
 def test_max_intensity_annotation_is_honored():
     ann = {ANNOTATION_REGION: "aws/us-east-1", ANNOTATION_MAX_INTENSITY: "150"}
     signal = {"advice": "run_now", "clean_surplus": False, "intensity_gco2_kwh": 300}
-    # Over the annotated cap while running -> should suspend.
+    # Over the annotated cap while running -> should suspend
     assert desired_suspend_change(ann, current_suspend=False, signal=signal) is True
 
 
@@ -91,9 +91,9 @@ def test_overdue_backstop():
 def test_deadline_forces_run_despite_dirty_grid():
     ann = {ANNOTATION_REGION: "aws/us-east-1", ANNOTATION_MAX_DEFER: "12"}
     dirty = {"advice": "wait_for_cleaner", "clean_surplus": False}
-    # Suspended and only 3h since last run -> stay suspended.
+    # Suspended and only 3h since last run -> stay suspended
     assert desired_suspend_change(ann, True, dirty, hours_since_run=3) is None
-    # Suspended and 13h since last run (past the 12h deadline) -> force resume.
+    # Suspended and 13h since last run (past the 12h deadline) -> force resume
     assert desired_suspend_change(ann, True, dirty, hours_since_run=13) is False
 
 

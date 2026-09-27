@@ -11,7 +11,7 @@ non-essential work* when the grid is dirty. This middleware:
 
 The grid signal is fetched once per ``refresh_seconds`` and cached, so per-request
 overhead is nil. The SDK client is synchronous (``httpx.get``), so refreshes run in a
-worker thread and never block the event loop: the very first request awaits the fetch
+worker thread and never block the event loop: the first request awaits the fetch
 (nothing is cached yet), and every later refresh happens in the background while the
 request serves the last good signal (stale-while-revalidate). Reuses ``carbonlens.sdk``
 so the decision matches every other surface.
@@ -91,11 +91,11 @@ class CarbonAwareShedder(BaseHTTPMiddleware):
             self._refreshing = True
             if self._fetched_at is None:
                 # Nothing cached yet: await the first fetch (in a thread, so the
-                # event loop keeps serving other requests during the round-trip).
+                # event loop keeps serving other requests during the round-trip)
                 await self._fetch_signal()
             else:
                 # We have a prior signal: revalidate in the background and serve
-                # the stale value now, so no request ever waits on the network.
+                # the stale value now, so no request ever waits on the network
                 self._refresh_task = asyncio.create_task(self._fetch_signal())
         return self._signal
 

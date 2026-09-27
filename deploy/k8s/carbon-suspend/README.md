@@ -6,7 +6,7 @@ cleanest, with **no change to the workloads themselves**.
 
 The controller runs as a `CronJob`, lists annotated CronJobs in its namespace, asks
 CarbonLens whether now is a good time for each one's region, and patches
-`.spec.suspend` accordingly, using the same marginal/clean-surplus intelligence as
+`.spec.suspend` accordingly, using the same marginal/clean-surplus decision as
 the rest of the tool.
 
 ## Opt a CronJob in

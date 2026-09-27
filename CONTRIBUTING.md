@@ -93,4 +93,4 @@ existing zones need no new integration. See how Scaleway/OVH/Hetzner were added.
 - **Snapshot, don't hammer.** User-facing reads come from the published snapshot,
   keeping quota cost `O(zones × cadence)`.
 - **Keep the spec and client in sync** via `make openapi`.
-- Simplicity first, minimal footprint, find root causes.
+- Keep the footprint small and fix root causes.

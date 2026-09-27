@@ -26,7 +26,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 from carbonlens.carbon_sources.entsoe import ENTSOE_ZONES, ENTSOECarbonSource  # noqa: E402
 
 # The table carbon-lens shipped before 2026-08-23, including its treatment of
-# storage as a zero-carbon generator inside the denominator.
+# storage as a zero-carbon generator inside the denominator
 OLD_FACTORS = {
     "coal": 900,
     "natural_gas": 430,

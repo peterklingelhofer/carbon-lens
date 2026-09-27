@@ -2,8 +2,8 @@
 
 One source of truth for the colour ramp and the green/yellow/red tier so the
 badge, embed widget, and Prometheus gauges stay consistent. The two functions
-deliberately keep their own cutoffs: the 5-band colour ramp is finer than the
-3-band signal tier, so they are not unified.
+deliberately keep their own cutoffs because the 5-band colour ramp is finer than
+the 3-band signal tier.
 """
 
 from __future__ import annotations

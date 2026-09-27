@@ -4,9 +4,9 @@ Check whether *now* is a low-carbon time to run a workflow, with a
 marginal/surplus read from the live grid. Use it to **gate or annotate** jobs so
 flexible work runs when the grid is cleanest.
 
-It calls `/carbon/signal` and surfaces the same intelligence as the rest of
+It calls `/carbon/signal` and surfaces the same signal as the rest of
 CarbonLens: the average traffic light, the **marginal** intensity (what an extra
-kWh actually emits, the number that responds to shifting load), and whether the
+kWh emits, the number that responds to shifting load), and whether the
 grid is in **clean surplus** (renewables abundant, the highest-value time to run).
 
 ## Usage
@@ -52,7 +52,7 @@ Branch on the output instead of failing:
 
 | Input | Required | Default | Description |
 |-------|----------|---------|-------------|
-| `region` | yes | none | `provider/region`, e.g. `aws/us-east-1`. For a self-hosted runner, use the region it actually runs in. |
+| `region` | yes | none | `provider/region`, e.g. `aws/us-east-1`. For a self-hosted runner, use the region it runs in. |
 | `api-url` | no | public instance | CarbonLens API base URL. |
 | `max-intensity` | no | none | gCO2/kWh cap: "now" counts as clean only at/under this. |
 | `fail-if-dirty` | no | `false` | Exit 1 when now isn't a good time, so a cron workflow skips and reruns later. |

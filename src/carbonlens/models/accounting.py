@@ -34,9 +34,9 @@ class ImpactIngest(BaseModel):
 class CarbonSavingsReport(BaseModel):
     total_requests: int
     avg_intensity_reduction_gco2_kwh: float = Field(
-        description="Average per-recommendation carbon-intensity reduction vs the baseline. A "
-        "rate (gCO2/kWh), not a total: per-kWh intensities aren't additive across workloads, "
-        "and real grams also depend on each job's energy use."
+        description="Average per-recommendation carbon-intensity reduction vs the baseline, "
+        "as a rate in gCO2/kWh. Per-kWh intensities aren't additive across workloads, and "
+        "real grams also depend on each job's energy use."
     )
     baseline: str = Field(description="The counterfactual the reduction is measured against.")
     avg_renewable_percentage: float

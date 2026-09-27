@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { relativeToUsual } from "./anomaly";
 
-// Build N points all at the same UTC hour with the given intensities.
+// Build N points all at the same UTC hour with the given intensities
 function pointsAtHour(
   hour: number,
   intensities: number[],
@@ -20,7 +20,7 @@ describe("relativeToUsual", () => {
   });
 
   it("flags cleaner-than-usual against the same hour-of-day baseline", () => {
-    // baseline (same hour) median = 400, current 200 -> 50% cleaner.
+    // baseline (same hour) median = 400, current 200 -> 50% cleaner
     const cmp = relativeToUsual(200, pointsAtHour(14, [380, 400, 420]), now);
     expect(cmp).not.toBeNull();
     expect(cmp?.basis).toBe("hour");
@@ -40,7 +40,7 @@ describe("relativeToUsual", () => {
   });
 
   it("falls back to recent points when this hour is thin", () => {
-    // Only 1 point at hour 14, but 6 total at other hours -> 'recent' basis.
+    // Only 1 point at hour 14, but 6 total at other hours -> 'recent' basis
     const cmp = relativeToUsual(100, pointsAtHour(9, [300, 300, 300, 300, 300, 300]), now);
     expect(cmp?.basis).toBe("recent");
     expect(cmp?.status).toBe("cleaner");

@@ -3,16 +3,16 @@
 Follows GHG Protocol Corporate Standard, Scope 2 Guidance (2015), and Scope 3
 Category 1 methodology for purchased cloud services.
 
-Two conformance limits, both real and neither previously written down:
+Two conformance limits:
 
-1. Scope 2 Guidance §1.5.1 requires DUAL REPORTING: a company with contractual
+1. Scope 2 Guidance §1.5.1 requires dual reporting: a company with contractual
    instruments "shall report scope 2 emissions in two ways", location-based and
    market-based, labelled. This calculator takes a single `method` and returns a
-   single figure, so a caller can produce a one-method report that does not conform.
+   single figure, so a caller can produce a one-method report that doesn't conform.
    Callers wanting conformance must run it twice and report both.
 2. The Scope 2 / Scope 3 Cat 1 split below keys off a hardcoded list of managed
    service names. That split is this project's own judgement about where the
-   operational boundary falls. The standard does not enumerate cloud services.
+   operational boundary falls. The standard doesn't enumerate cloud services.
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ from carbonlens.provenance import data_quality
 
 logger = logging.getLogger(__name__)
 
-# The standards this calculator implements.
+# The standards this calculator implements
 CITATIONS: tuple[CitationId, ...] = (
     "ghg-protocol-scope2-guidance",
     "ghg-protocol-corporate-standard",
@@ -163,7 +163,7 @@ def _data_quality(source: str) -> str:
 
     Delegates to the provenance registry rather than keeping a second list of
     source names. The previous local list had drifted out of sync with the strings
-    providers actually stamp on a reading: it tested for "uk", "aemo" and "eskom"
+    providers stamp on a reading: it tested for "uk", "aemo" and "eskom"
     while the providers emit "uk_carbon_intensity", "openelectricity" and
     "eskom_heuristic", so every UK, Australian, Canadian and Taiwanese reading was
     graded "estimated" on compliance reports despite coming from a live

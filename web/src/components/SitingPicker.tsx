@@ -10,7 +10,7 @@ import { InfoTip } from "./InfoTip";
 // kg each region would emit. Distinct from per-request routing: region choice is a
 // permanent decision with a large effect (a region can be many times cleaner forever).
 // Runs fully static off the published clean-compute report on the CDN (filtering and
-// the annual-kg math happen client-side). Falls back to /carbon/siting without it.
+// the annual-kg math happen client-side). Falls back to /carbon/siting without it
 export function SitingPicker() {
   const [providers, setProviders] = useState<string[]>(PROVIDERS);
   const [watts, setWatts] = useState<number>(500);

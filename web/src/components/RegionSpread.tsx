@@ -3,7 +3,7 @@ import { intensityColor } from "../lib/intensity";
 
 // A few well-known regions spanning the range, dirtiest first, so the spread is
 // the first thing a visitor sees. All five read from live grid-operator feeds
-// (EIA and ENTSO-E), so the strip never has to caveat itself with "est.".
+// (EIA and ENTSO-E), so the strip never has to caveat itself with "est."
 const REGIONS = [
   { provider: "aws", region: "us-east-1" },
   { provider: "aws", region: "eu-central-1" },
@@ -31,7 +31,7 @@ export function RegionSpread() {
     };
   }).filter((r): r is NonNullable<typeof r> => r !== null);
 
-  // Below three the point (grids differ enormously) no longer lands, so say nothing.
+  // Below three the point (grids differ enormously) no longer lands, so say nothing
   if (rows.length < 3) return null;
 
   return (

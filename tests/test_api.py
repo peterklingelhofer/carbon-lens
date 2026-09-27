@@ -208,7 +208,7 @@ def test_region_embed_widget(client: TestClient):
     resp = client.get("/embed/aws/us-west-2")
     assert resp.status_code == 200
     assert resp.headers["content-type"].startswith("text/html")
-    # Framing must be allowed for the widget (no X-Frame-Options DENY here).
+    # Framing must be allowed for the widget (no X-Frame-Options DENY here)
     assert resp.headers.get("x-frame-options") != "DENY"
     assert "frame-ancestors" in resp.headers.get("content-security-policy", "")
     assert "gCO₂/kWh" in resp.text and "aws/us-west-2" in resp.text
@@ -227,7 +227,7 @@ def test_embed_unknown_region_is_graceful(client: TestClient):
 
 
 def test_zone_badge_not_shadowed(client: TestClient):
-    # /badge/zone/DE.svg must hit the zone route, not /badge/{provider}/{region}.svg.
+    # /badge/zone/DE.svg must hit the zone route, not /badge/{provider}/{region}.svg
     resp = client.get("/badge/zone/DE.svg")
     assert resp.status_code == 200
     assert "gCO₂/kWh" in resp.text
@@ -249,7 +249,7 @@ def test_carbon_zones_list(client: TestClient):
 
 
 def test_carbon_zone_lookup_not_shadowed(client: TestClient):
-    # /carbon/zone/DE must hit the zone route, not /carbon/{provider}/{region}.
+    # /carbon/zone/DE must hit the zone route, not /carbon/{provider}/{region}
     resp = client.get("/api/v1/carbon/zone/DE")
     assert resp.status_code == 200
     assert resp.json()["grid_zone"] == "DE"
@@ -268,7 +268,7 @@ def test_carbon_signal(client: TestClient):
     assert body["advice"] in ("run_now", "wait_for_cleaner")
     assert body["grid_zone"] == "US-NW-BPAT"
     assert isinstance(body["intensity_gco2_kwh"], (int, float))
-    # No WattTime configured in tests, so marginal is the labelled heuristic.
+    # No WattTime configured in tests, so marginal is the labelled heuristic
     assert body["marginal_basis"] == "heuristic"
     if body["advice"] == "wait_for_cleaner":
         assert body["cleaner_window_in_hours"] >= 1
@@ -279,7 +279,7 @@ def test_carbon_signal_unknown_region(client: TestClient):
 
 
 def test_org_ledger_endpoints_without_db(client: TestClient):
-    # No DB in tests: ingest reports it wasn't stored, statement is a zeroed shape.
+    # No DB in tests: ingest reports it wasn't stored, statement is a zeroed shape
     resp = client.post(
         "/api/v1/accounting/impact",
         json={"region": "aws/us-east-1", "deferred_hours": 3, "reduction_gco2_kwh": 200},
@@ -311,7 +311,7 @@ def test_methodology_endpoint(client: TestClient):
     body = resp.json()
     fields = {f["field"]: f for f in body["fields"]}
     assert "carbon_intensity_gco2_kwh" in fields
-    # No measured-marginal source configured in tests -> labelled heuristic.
+    # No measured-marginal source configured in tests -> labelled heuristic
     assert fields["marginal_intensity_gco2_kwh"]["basis"] == "heuristic"
     assert "attestation" in body["note"].lower()
 
@@ -322,12 +322,12 @@ def test_honesty_probe_heuristic_by_default(client: TestClient):
     body = resp.json()
     assert body["marginal_basis"] == "heuristic"
     assert body["ok"] is True
-    # No marginal credential configured in tests -> not the "configured but unmapped" trap.
+    # No marginal credential configured in tests -> not the "configured but unmapped" trap
     assert body["marginal_configured_but_unmapped"] is False
 
 
 def test_honesty_probe_gates_on_require_measured(client: TestClient):
-    # No measured marginal source in tests -> require_measured must fail the probe.
+    # No measured marginal source in tests -> require_measured must fail the probe
     resp = client.get("/api/v1/healthz/honesty", params={"require_measured": "true"})
     assert resp.status_code == 503
     body = resp.json()
@@ -336,7 +336,7 @@ def test_honesty_probe_gates_on_require_measured(client: TestClient):
 
 
 def test_zone_signal(client: TestClient):
-    # On-prem / colo: ask by grid zone directly, no cloud region needed.
+    # On-prem / colo: ask by grid zone directly, no cloud region needed
     resp = client.get("/api/v1/carbon/signal/zone/US-NW-BPAT")
     assert resp.status_code == 200
     body = resp.json()
@@ -352,12 +352,12 @@ def test_zone_signal_unknown_zone(client: TestClient):
 def test_marginal_note_honesty():
     from carbonlens.engine.signal import marginal_note as _marginal_note
 
-    # Clean on average (120) but fossil on the margin (380): shifting helps more.
+    # Clean on average (120) but fossil on the margin (380): shifting helps more
     note = _marginal_note(120, 380)
     assert note is not None and "margin" in note.lower()
-    # Clean on the margin too: extra demand is low-carbon, so shifting helps little.
+    # Clean on the margin too: extra demand is low-carbon, so shifting helps little
     assert "low-carbon" in _marginal_note(120, 80).lower()
-    # Unremarkable / no fuel mix: no note.
+    # Unremarkable / no fuel mix: no note
     assert _marginal_note(250, 260) is None
     assert _marginal_note(250, None) is None
 
@@ -365,13 +365,13 @@ def test_marginal_note_honesty():
 def test_clean_surplus_detection():
     from carbonlens.engine.surplus import is_clean_surplus
 
-    # Renewables dominant, very low carbon, clean margin -> surplus.
+    # Renewables dominant, very low carbon, clean margin -> surplus
     assert is_clean_surplus(95, 30, 20) is True
-    # High renewable but unknown margin still qualifies if carbon is very low.
+    # High renewable but unknown margin still qualifies if carbon is very low
     assert is_clean_surplus(90, 40, None) is True
-    # Fossil on the margin disqualifies even with high renewable share.
+    # Fossil on the margin disqualifies even with high renewable share
     assert is_clean_surplus(90, 40, 400) is False
-    # Modest renewable share or not-low-enough carbon: not surplus.
+    # Modest renewable share or not-low-enough carbon: not surplus
     assert is_clean_surplus(60, 200, 50) is False
     assert is_clean_surplus(90, 150, 20) is False
 
@@ -388,7 +388,7 @@ def test_surplus_offsets_over_forecast():
             marginal_intensity_gco2_kwh=marginal,
         )
 
-    # Dirty now, surplus at +2h and +3h (projected points carry no marginal).
+    # Dirty now, surplus at +2h and +3h (projected points carry no marginal)
     points = [pt(40, 400, 450), pt(60, 200), pt(95, 30), pt(92, 45)]
     assert surplus_offsets(points) == [2, 3]
     assert surplus_offsets([pt(50, 300), pt(55, 250)]) == []
@@ -397,7 +397,7 @@ def test_surplus_offsets_over_forecast():
 def test_carbon_anomaly_insufficient_without_history(client: TestClient):
     # With an empty archive -> honest "insufficient_history". Override the store so
     # the test is hermetic (the real history_url has live data CI would otherwise
-    # fetch, making the absent-history case impossible to assert).
+    # fetch, making the absent-history case impossible to assert)
     from carbonlens.api.deps import get_history_store
     from carbonlens.carbon_sources.history_store import HistoryStore
     from carbonlens.main import app
@@ -463,7 +463,7 @@ def test_carbon_history(client: TestClient):
         assert resp.status_code == 200
         body = resp.json()
         assert body["grid_zone"] == "US-NW-BPAT"
-        # Only the 2-hours-ago point falls inside the 24h window, and the 30-day-old drops.
+        # Only the 2-hours-ago point falls inside the 24h window, and the 30-day-old drops
         assert len(body["points"]) == 1
         assert body["points"][0]["carbon_intensity_gco2_kwh"] == 120.0
     finally:
@@ -498,7 +498,7 @@ def test_best_time_from_history(client: TestClient):
     from carbonlens.main import app
 
     now = datetime.now(UTC)
-    # Build 7 days of two readings per day: a clean 02:00 UTC and a dirty 18:00 UTC.
+    # Build 7 days of two readings per day: a clean 02:00 UTC and a dirty 18:00 UTC
     series = []
     for d in range(7):
         day = now - timedelta(days=d)
@@ -518,9 +518,9 @@ def test_best_time_from_history(client: TestClient):
         assert body["cleanest_hour_utc"] == 2
         assert body["dirtiest_hour_utc"] == 18
         assert body["suggested_cron"] == "0 2 * * *"
-        # (450 - 40) / 450 = 91.1% cleaner at the best hour.
+        # (450 - 40) / 450 = 91.1% cleaner at the best hour
         assert body["shift_savings_pct"] == 91.1
-        # (450 - 40) gCO2/kWh * 10 kWh/day * 365 / 1000 = 1496.5 kg/yr.
+        # (450 - 40) gCO2/kWh * 10 kWh/day * 365 / 1000 = 1496.5 kg/yr
         assert body["annual_kg_saved"] == 1496.5
     finally:
         app.dependency_overrides.pop(get_history_store, None)
@@ -539,7 +539,7 @@ def test_zone_best_time(client: TestClient):
     from carbonlens.main import app
 
     # History is keyed by the zone's representative region: compute it so the test
-    # doesn't depend on dict ordering.
+    # doesn't depend on dict ordering
     rep = _zone_representative(get_grid_mapper(), "US-NW-BPAT")
     assert rep is not None
     key = f"{rep.provider}/{rep.region}"
@@ -576,7 +576,7 @@ def test_mean_intensity():
 
 
 def test_siting_recommends_greenest_region(client: TestClient):
-    # Pick the region with the lowest typical (history-mean) intensity.
+    # Pick the region with the lowest typical (history-mean) intensity
     resp = client.get("/api/v1/carbon/siting?providers=aws&power_watts=500")
     assert resp.status_code == 200
     body = resp.json()
@@ -584,7 +584,7 @@ def test_siting_recommends_greenest_region(client: TestClient):
     typicals = [o["typical_gco2_kwh"] for o in body["options"]]
     assert typicals == sorted(typicals)  # greenest first
     assert body["recommended"]["typical_gco2_kwh"] == typicals[0]
-    # Annual kg is computed for the given continuous load.
+    # Annual kg is computed for the given continuous load
     assert body["recommended"]["annual_kg"] is not None
 
 
@@ -633,14 +633,14 @@ def test_shiftability_ranking(client: TestClient):
         resp = client.get("/api/v1/carbon/shiftability?days=14")
         assert resp.status_code == 200
         order = [z["grid_zone"] for z in resp.json()["zones"]]
-        # The variable grid is more shiftable, so it ranks ahead of the flat one.
+        # The variable grid is more shiftable, so it ranks ahead of the flat one
         assert order.index(z_var.grid_zone) < order.index(z_flat.grid_zone)
     finally:
         app.dependency_overrides.pop(get_history_store, None)
 
 
 def test_region_weather(client: TestClient, monkeypatch):
-    # Stub the live Open-Meteo fetch so the test is hermetic (no network).
+    # Stub the live Open-Meteo fetch so the test is hermetic (no network)
     async def fake_weather(lat: float, lon: float) -> tuple[float, float]:
         return 24.0, 480.0
 
@@ -663,17 +663,17 @@ def test_metrics_exposes_carbon_gauges(client: TestClient):
     resp = client.get("/metrics")
     assert resp.status_code == 200
     body = resp.text
-    # Carbon gauges refreshed on scrape, alongside the default HTTP metrics.
+    # Carbon gauges refreshed on scrape, alongside the default HTTP metrics
     assert "carbon_intensity_gco2_kwh" in body
     assert "carbon_renewable_percentage" in body
-    # Clean-surplus gauge: ops can alert on it to trigger carbon-aware batch scaling.
+    # Clean-surplus gauge: ops can alert on it to trigger carbon-aware batch scaling
     assert "carbon_clean_surplus" in body
-    # Org-impact gauges (DB-backed, present even at 0 so dashboards have a stable series).
+    # Org-impact gauges (DB-backed, present even at 0 so dashboards have a stable series)
     assert "carbon_impact_kg_avoided" in body
     assert "carbon_impact_jobs_shifted" in body
-    # Graded tier gauge for proportional autoscaling.
+    # Graded tier gauge for proportional autoscaling
     assert "carbon_intensity_tier" in body
-    # Config-honesty gauge: 0 here (no marginal credential), present for alerting.
+    # Config-honesty gauge: 0 here (no marginal credential), present for alerting
     assert "carbon_marginal_unmapped 0.0" in body
 
 
@@ -727,9 +727,9 @@ def test_sla_run_due_checks_is_admin_gated_and_runs(client: TestClient, monkeypa
         },
     ).json()["id"]
     try:
-        # No admin secret -> rejected.
+        # No admin secret -> rejected
         assert client.post("/api/v1/sla/monitor/run").status_code == 403
-        # With the secret -> runs and checks the never-checked (due) SLA.
+        # With the secret -> runs and checks the never-checked (due) SLA
         resp = client.post("/api/v1/sla/monitor/run", headers={"X-API-Key": "test-admin"})
         assert resp.status_code == 200
         assert resp.json()["checks_run"] >= 1

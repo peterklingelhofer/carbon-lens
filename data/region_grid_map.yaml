@@ -1,15 +1,20 @@
 # Cloud region to electricity grid zone mapping
 # grid_zone: Electricity Maps zone ID (also used as our canonical zone identifier)
 #
-# Providers by zone:
-#   US zones:     EIA (live) -> GridStatus -> Mock
-#   UK zones:     UK Carbon Intensity API (free, no key)
-#   EU zones:     ENTSO-E (free token) -> Open-Meteo -> Mock
-#   AU zones:     AEMO (free, no key)
-#   IN zones:     Grid India (free, no key)
-#   BR zones:     ONS Brazil (free, no key)
-#   ZA zone:      Eskom (heuristic)
-#   Other zones:  Open-Meteo (weather) -> Mock
+# Providers by zone, in the order of the chain in
+# src/carbonlens/carbon_sources/hybrid.py (_build_provider_chain):
+#   GB zones:      UK Carbon Intensity API (live, free, no key)
+#   US zones:      EIA (live, free key), then GridStatus for PJM, CAISO and MISO (live, key)
+#   AU zones:      OpenElectricity, republishing AEMO dispatch data (live, free, no key)
+#   CA-ON, CA-AB:  IESO and AESO (live, free, no key)
+#   CA-QC:         fixed low-carbon estimate for Hydro-Quebec (heuristic)
+#   TW:            Taipower (live, free, no key)
+#   IN zones:      Grid India feed when it answers, else a time-of-day estimate (heuristic)
+#   BR zones:      ONS Brazil feed when it answers, else a fixed per-subsystem estimate (heuristic)
+#   ZA:            Eskom time-of-day estimate, with no live feed (heuristic)
+#   EU zones:      ENTSO-E (live, free token), then Open-Meteo
+#   Other zones:   Open-Meteo solar and wind estimate (heuristic)
+#   Any zone:      Electricity Maps when a key is set, then the static Mock fallback
 
 aws:
   us-east-1:

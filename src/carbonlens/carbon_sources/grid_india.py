@@ -1,7 +1,8 @@
 """Grid India provider: free, no API key required.
 
 Covers 5 Indian power grid regions: Northern, Southern, Eastern, Western, North-Eastern.
-Data from Grid India real-time reports.
+Reads Grid India's real-time report when it answers, and otherwise returns a
+time-of-day heuristic tagged `source="grid_india_heuristic"`.
 """
 
 from datetime import UTC, datetime

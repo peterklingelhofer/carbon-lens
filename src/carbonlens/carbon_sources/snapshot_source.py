@@ -14,7 +14,7 @@ from carbonlens.carbon_sources.base import CarbonDataSource
 from carbonlens.carbon_sources.http_pool import shared_client
 from carbonlens.models.carbon import CarbonIntensity
 
-# Snapshot refreshes every few minutes, so a short shared TTL is plenty.
+# Snapshot refreshes every few minutes, so a short shared TTL is plenty
 _TTL_SECONDS = 180.0
 _CACHE: dict[str, tuple[float, dict[str, CarbonIntensity]]] = {}
 

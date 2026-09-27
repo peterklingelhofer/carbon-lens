@@ -49,6 +49,6 @@ def setup_logging() -> None:
 
     # httpx/httpcore log every request URL at INFO, and provider URLs carry
     # secrets in the query string (e.g. ENTSO-E's securityToken). Quiet them so
-    # tokens never reach the logs.
+    # tokens never reach the logs
     for noisy in ("httpx", "httpcore"):
         logging.getLogger(noisy).setLevel(logging.WARNING)

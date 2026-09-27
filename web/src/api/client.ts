@@ -31,12 +31,12 @@ import type {
 // In production the Cloudflare Worker proxies those to the Render backend. In dev
 // the Vite proxy forwards them to localhost:8000. This keeps every request
 // first-party (no CORS, and privacy extensions can't block it). Set VITE_API_URL
-// to an absolute origin only if you intentionally want cross-origin calls.
+// to an absolute origin only if you intentionally want cross-origin calls
 const BASE_URL = import.meta.env.VITE_API_URL || "";
 
 // Absolute base for display/links (curl snippets, Swagger, export hrefs): the
 // page's own origin, which the Worker proxies to the backend, so copy-pasted
-// commands and links hit a same-origin URL. Falls back to "" during SSR.
+// commands and links hit a same-origin URL. Falls back to "" during SSR
 export const API_BASE =
   import.meta.env.VITE_API_URL || (typeof window !== "undefined" ? window.location.origin : "");
 
@@ -48,7 +48,7 @@ async function parseError(res: Response): Promise<Error> {
 
 // Timestamp (ms) of the last time the API server returned ANY HTTP response.
 // A response - even a 4xx/5xx - means the server is awake, so the cold-start
-// banner can tell "first/idle request" apart from "awake but slow".
+// banner can tell "first/idle request" apart from "awake but slow"
 let lastApiResponseAt = 0;
 
 export function getLastApiResponseAt(): number {
@@ -202,7 +202,7 @@ export const api = {
       }),
 
     // Multipart upload - can't use `request` (which forces JSON), so let the browser
-    // set the multipart boundary itself.
+    // set the multipart boundary itself
     uploadCsv: async (orgId: string, file: File): Promise<UsageIngestionResponse> => {
       const form = new FormData();
       form.append("file", file);

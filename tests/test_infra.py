@@ -15,7 +15,7 @@ from carbonlens.engine.cache import IntensityCache
 from carbonlens.models.carbon import CarbonIntensity
 from carbonlens.scheduler.engine import SchedulingEngine
 
-# Load _carry_forward from the snapshot build script (not a package module).
+# Load _carry_forward from the snapshot build script (not a package module)
 _spec = importlib.util.spec_from_file_location(
     "build_snapshot", Path(__file__).resolve().parent.parent / "scripts" / "build_snapshot.py"
 )
@@ -116,12 +116,12 @@ async def test_cached_source_fetches_once_within_ttl():
 def test_project_with_forecast_scales_by_vre_change():
     engine = SchedulingEngine(carbon_source=_FakeSource({}), grid_mapper=None)
     current = _ci("DE", 300.0, renew=30.0)
-    # VRE share rises 30% -> 50%: residual share falls, so carbon falls.
+    # VRE share rises 30% -> 50%: residual share falls, so carbon falls
     out = engine._project_with_forecast(current, 0.30, 0.50, 6)
     assert out is not None
     assert out.carbon_intensity_gco2_kwh == round(300.0 * (1 - 0.5) / (1 - 0.3), 2)
     assert out.renewable_percentage == 50.0  # 30 + (0.5-0.3)*100
-    # A ~100% VRE zone has no residual to scale -> None (fall back to heuristic).
+    # A ~100% VRE zone has no residual to scale -> None (fall back to heuristic)
     assert engine._project_with_forecast(current, 0.999, 0.5, 6) is None
 
 
@@ -131,7 +131,7 @@ def test_weather_renewable_fraction_from_irradiance_and_wind():
     assert weather_renewable_fraction(0, 0) == 0.0
     assert weather_renewable_fraction(0, 5) == 0.0  # below wind cut-in
     assert weather_renewable_fraction(1000, 0) == 0.4  # full solar -> 40%
-    # Full solar (40%) + strong wind (capped 30%) = 70%.
+    # Full solar (40%) + strong wind (capped 30%) = 70%
     assert weather_renewable_fraction(1000, 45) == 0.7
 
 
@@ -151,7 +151,7 @@ async def test_forecast_zone_uses_weather_source_for_non_eu(monkeypatch):
     )
     method, points = await engine.forecast_zone("SG", longitude=103.8, hours=6)
     assert method == "open_meteo_forecast"
-    # Hour 3 scaled by the weather VRE rise (0.1 -> 0.5): cleaner than now.
+    # Hour 3 scaled by the weather VRE rise (0.1 -> 0.5): cleaner than now
     assert points[3].carbon_intensity_gco2_kwh < points[0].carbon_intensity_gco2_kwh
 
 
@@ -189,7 +189,7 @@ def test_carry_forward_replaces_estimate_with_recent_live():
 def test_carry_forward_skips_stale_and_keeps_fresh_live():
     now = datetime.now(UTC)
     region_meta = {"aws/x": {"provider": "aws", "region": "x"}}
-    # Too-old baseline is not carried.
+    # Too-old baseline is not carried
     intensities = {"aws/x": _reading("DE", 200.0, "estimated", now.isoformat())}
     baseline = {
         "intensities": {
@@ -198,7 +198,7 @@ def test_carry_forward_skips_stale_and_keeps_fresh_live():
     }
     assert build_snapshot._carry_forward(intensities, region_meta, baseline, 6.0) == 0
     assert intensities["aws/x"]["quality"] == "estimated"
-    # Fresh live this run is never overwritten.
+    # Fresh live this run is never overwritten
     intensities = {"aws/x": _reading("DE", 195.0, "live", now.isoformat())}
     build_snapshot._carry_forward(intensities, region_meta, baseline, 6.0)
     assert intensities["aws/x"]["carbon_intensity_gco2_kwh"] == 195.0
@@ -221,7 +221,7 @@ def test_append_history_accumulates_and_dedupes():
     h2 = build_snapshot.append_history(h1, snap2)
     series = h2["series"]["aws/x"]
     assert [p["c"] for p in series] == [300.0, 250.0]  # oldest first, accumulated
-    # Re-running the same snapshot replaces the last point rather than duplicating.
+    # Re-running the same snapshot replaces the last point rather than duplicating
     h3 = build_snapshot.append_history(h2, snap2)
     assert len(h3["series"]["aws/x"]) == 2
 
@@ -243,7 +243,7 @@ def test_history_to_csv_emits_tidy_rows():
 
 
 def test_compute_signals_precomputes_per_region():
-    # Forecast sources None -> pure time-of-day model, so no network in tests.
+    # Forecast sources None -> pure time-of-day model, so no network in tests
     snapshot_intensities = {
         "aws/us-east-1": {
             "grid_zone": "US-MIDA-PJM",
@@ -275,14 +275,14 @@ def test_compute_signals_precomputes_per_region():
     )
     signals, forecasts, week = data["signals"], data["forecasts"], data["forecasts_week"]
     assert set(signals) == {"aws/us-east-1", "gcp/europe-north1"}
-    # The dirty grid reads red, and the very clean one reads green and says run now.
+    # The dirty grid reads red, and the very clean one reads green and says run now
     assert signals["aws/us-east-1"]["state"] == "red"
     assert signals["aws/us-east-1"]["provider"] == "aws"
     assert signals["gcp/europe-north1"]["state"] == "green"
     assert signals["gcp/europe-north1"]["advice"] == "run_now"
     assert signals["gcp/europe-north1"]["marginal_basis"] == "heuristic"
     # The panel forecast is the 24h slice (point 0 + 24 projected hours). The week curve
-    # is the full 7-day projection (point 0 + 168 hours), kept in a separate map.
+    # is the full 7-day projection (point 0 + 168 hours), kept in a separate map
     assert set(forecasts) == {"aws/us-east-1", "gcp/europe-north1"}
     pjm = forecasts["aws/us-east-1"]
     assert len(pjm["points"]) == 25
@@ -318,7 +318,7 @@ def test_compute_best_times_ranks_history_with_forecast_fallback():
         {"provider": "aws", "region": "us-east-1", "grid_zone": "US-MIDA-PJM"},
         {"provider": "gcp", "region": "europe-north1", "grid_zone": "FI"},
     ]
-    # PJM has rich history (cleanest at 03:00 UTC), but FI has none -> forecast fallback.
+    # PJM has rich history (cleanest at 03:00 UTC), but FI has none -> forecast fallback
     history = {
         "series": {
             "aws/us-east-1": [
@@ -339,7 +339,7 @@ def test_compute_best_times_ranks_history_with_forecast_fallback():
     assert best["aws/us-east-1"]["basis"] == "history"
     assert best["aws/us-east-1"]["cleanest_hour_utc"] == 3
     assert best["aws/us-east-1"]["suggested_cron"] == "0 3 * * *"
-    # FI falls back to its forecast curve (cleanest of the two forecast hours is 05:00).
+    # FI falls back to its forecast curve (cleanest of the two forecast hours is 05:00)
     assert best["gcp/europe-north1"]["basis"] == "forecast"
     assert best["gcp/europe-north1"]["cleanest_hour_utc"] == 5
 

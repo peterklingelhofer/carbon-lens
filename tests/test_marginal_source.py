@@ -11,7 +11,7 @@ from carbonlens.carbon_sources.marginal import (
 
 
 def test_moer_conversion():
-    # 1000 lbs CO2/MWh -> 453.6 g CO2/kWh (1 lb = 453.59237 g, 1 MWh = 1000 kWh).
+    # 1000 lbs CO2/MWh -> 453.6 g CO2/kWh (1 lb = 453.59237 g, 1 MWh = 1000 kWh)
     assert moer_to_gco2_kwh(1000) == 453.6
     assert moer_to_gco2_kwh(0) == 0.0
 
@@ -37,7 +37,7 @@ async def test_watttime_source_converts_and_skips_unmapped(monkeypatch):
 
     monkeypatch.setattr(src._client, "get", fake_get)
     assert await src.marginal_intensity("US-CAL-CISO") == moer_to_gco2_kwh(800)
-    # An unmapped zone returns None (so it stays on the heuristic).
+    # An unmapped zone returns None (so it stays on the heuristic)
     assert await src.marginal_intensity("XX-UNMAPPED") is None
 
 

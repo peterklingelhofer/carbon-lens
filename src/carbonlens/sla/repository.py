@@ -18,7 +18,7 @@ from carbonlens.models.sla import GreenSLA, SLACheck, SLAReport
 
 _M = TypeVar("_M", bound=BaseModel)
 
-# Cap per-SLA check history so an in-memory instance can't grow unbounded.
+# Cap per-SLA check history so an in-memory instance can't grow unbounded
 _MAX_CHECKS = 10_000
 
 

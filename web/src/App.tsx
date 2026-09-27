@@ -33,7 +33,7 @@ export default function App() {
 
 // Page content sits behind its own error boundary, keyed on the path so a crash
 // in one page leaves the Nav intact and clears itself when the user navigates
-// elsewhere. The outer boundary only trips for app-shell (Nav) failures.
+// elsewhere. The outer boundary only trips for app-shell (Nav) failures
 function RoutedContent() {
   const location = useLocation();
   return (

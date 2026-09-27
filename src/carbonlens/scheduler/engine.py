@@ -22,13 +22,13 @@ from carbonlens.models.carbon import CarbonIntensity
 
 # Fetch real day-ahead forecasts only for the cleanest-right-now EU zones (the
 # recommendation almost always comes from these). Bounds the per-request API
-# fan-out. Other zones use the local-time heuristic.
+# fan-out. Other zones use the local-time heuristic
 _FORECAST_TOP_K = 4
 
 # A clean-surplus slot ranks as if it were this much cleaner: extra load then has
 # near-zero marginal emissions (it soaks up would-be-curtailed renewables), which
 # is the right thing to optimise for. Bounded so a substantially cleaner non-surplus
-# slot still wins: the edge breaks ties and close calls, it doesn't override big gaps.
+# slot still wins: the edge breaks ties and close calls, it doesn't override big gaps
 _SURPLUS_DISCOUNT = 0.4
 
 
@@ -53,8 +53,9 @@ class TimeSlot(BaseModel):
     score: float = Field(description="Lower is better for carbon, higher for renewable")
     clean_surplus: bool = Field(
         default=False,
-        description="True when this slot looks like clean oversupply: renewables dominant, "
-        "very low carbon, so it's the highest-value time to run (near-zero marginal). "
+        description="True when this slot looks like clean oversupply: renewables at 85% "
+        "or more and intensity at or below 80 gCO2/kWh, so it's the highest-value time to "
+        "run (near-zero marginal). "
         "Given a bounded ranking edge. A heuristic from the fuel mix. Curtailment isn't measured.",
     )
 
@@ -123,7 +124,7 @@ class SchedulingEngine:
         self._forecast_source = forecast_source
         self._weather_forecast_source = weather_forecast_source
         # Optional measured-marginal source (WattTime). When present, forecast points
-        # carry MEASURED marginal, so surplus/decisions rest on the measured margin.
+        # carry MEASURED marginal, so surplus/decisions rest on the measured margin
         self._marginal_source = marginal_source
 
     async def find_optimal_window(
@@ -160,7 +161,7 @@ class SchedulingEngine:
         current_intensities = await self._carbon_source.get_carbon_intensity_batch(zones)
 
         # Real day-ahead forecast curves for any ENTSO-E (EU) zones, fetched once
-        # per zone. Maps zone -> {hour_offset: forecasted VRE share of load}.
+        # per zone. Maps zone -> {hour_offset: forecasted VRE share of load}
         zone_curve: dict[str, dict[int, float]] = {}
         if self._forecast_source:
             eu_zones = [
@@ -168,7 +169,7 @@ class SchedulingEngine:
                 for z in zones
                 if z in current_intensities and self._forecast_source.can_forecast(z)
             ]
-            # Cleanest-now first. Only the top few get a real forecast fetch.
+            # Cleanest-now first. Only the top few get a real forecast fetch
             eu_zones.sort(key=lambda z: current_intensities[z].carbon_intensity_gco2_kwh)
             fc_zones = eu_zones[:_FORECAST_TOP_K]
             settled = await asyncio.gather(
@@ -184,10 +185,10 @@ class SchedulingEngine:
         # 1-hour slots for a 24h window, coarser for longer windows
         slot_interval_hours = max(1, max_delay_hours // 24)
 
-        # A job runs ACROSS hours, so score each candidate by the AVERAGE projected
+        # A job runs across hours, so score each candidate by the average projected
         # intensity over its whole run window, including every hour it spans: a long job
         # that starts clean but runs into a dirty morning ramp should rank by what it
-        # actually emits. (A sub-hour job -> a single hour, so behaviour is unchanged.)
+        # emits. A sub-hour job spans a single hour, so its behaviour is unchanged
         duration_hours = max(1, (job_duration_minutes + 59) // 60)
 
         for hour_offset in range(0, max_delay_hours, slot_interval_hours):
@@ -209,7 +210,7 @@ class SchedulingEngine:
                 )
                 avg_renewable = round(sum(p.renewable_percentage for p in window) / len(window), 1)
 
-                # Representative intensity over the run window (projection -> no marginal).
+                # Representative intensity over the run window (projection -> no marginal)
                 averaged = CarbonIntensity(
                     grid_zone=zone,
                     carbon_intensity_gco2_kwh=avg_carbon,
@@ -274,7 +275,7 @@ class SchedulingEngine:
         alternatives = slots[1:10]  # up to 9 runners-up (recommended + these = top 10)
 
         # The recommended region's full hourly curve over the window, so the UI
-        # can plot how its intensity evolves and where the chosen slot sits.
+        # can plot how its intensity evolves and where the chosen slot sits
         forecast = sorted(
             (
                 s
@@ -330,7 +331,7 @@ class SchedulingEngine:
         current = await self._carbon_source.get_carbon_intensity(grid_zone)
 
         # Prefer ENTSO-E's real day-ahead forecast (EU). Fall back to Open-Meteo's
-        # weather forecast for the weather-estimated zones, else a time-of-day model.
+        # weather forecast for the weather-estimated zones, else a time-of-day model
         curve: dict[int, float] = {}
         method = "time_of_day_model"
         for source, label in (
@@ -352,7 +353,7 @@ class SchedulingEngine:
 
         # Stamp MEASURED marginal across the forecast where an operator-configured
         # source has it, so surplus/decisions use measured marginal (instead of the
-        # heuristic) for future hours too. Best-effort, absent -> points stay heuristic.
+        # heuristic) for future hours too. Best-effort, absent -> points stay heuristic
         if self._marginal_source is not None and self._marginal_source.can_handle(grid_zone):
             try:
                 mcurve = await self._marginal_source.marginal_forecast(grid_zone, hours)
@@ -428,10 +429,10 @@ class SchedulingEngine:
             return current
 
         now = datetime.now(UTC)
-        # 15° of longitude == 1 hour offset from UTC -> approximate local hour.
+        # 15° of longitude == 1 hour offset from UTC -> approximate local hour
         local_hour = (now.hour + hours_ahead + longitude / 15.0) % 24
 
-        # Solar generation peaks midday local, demand peaks early evening local.
+        # Solar generation peaks midday local, demand peaks early evening local
         solar_factor = self._solar_factor(local_hour)
         demand_factor = self._demand_factor(local_hour)
 
@@ -454,7 +455,7 @@ class SchedulingEngine:
     @staticmethod
     def _solar_factor(hour: float) -> float:
         """Solar generation factor (0-1) by local hour. Peaks midday."""
-        # Parabolic bell curve peaking at local noon.
+        # Parabolic bell curve peaking at local noon
         if 6 <= hour <= 18:
             return max(0, 1 - ((hour - 12) / 6) ** 2)
         return 0.0
@@ -484,7 +485,7 @@ class SchedulingEngine:
             score = intensity.carbon_intensity_gco2_kwh
             return score * (1 - _SURPLUS_DISCOUNT) if surplus else score
         elif strategy == ScheduleStrategy.HIGHEST_RENEWABLE:
-            # Higher = better, sorted descending. Nudge surplus slots above equals.
+            # Higher = better, sorted descending. Nudge surplus slots above equals
             score = intensity.renewable_percentage
             return score + 5 if surplus else score
         else:

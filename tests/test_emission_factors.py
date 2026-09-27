@@ -40,7 +40,7 @@ def test_empty_mix():
 
 
 def test_negative_values_ignored():
-    # Storage charging shows as negative MW and is not generation.
+    # Storage charging shows as negative MW and is not generation
     mix = {"solar": 500, "battery": -100, "natural_gas": 200}
     total_positive = 500 + 200
     renewable_pct = calculate_renewable_percentage(mix)
@@ -61,19 +61,19 @@ def test_nuclear_not_renewable():
 
 def test_power_breakdown_keeps_generating_fuels_rounded():
     mix = {"wind": 4200.4, "natural_gas": 1800.6, "battery": -100, "coal": 0}
-    # Negative (storage charging) and zero fuels drop out, and rest rounds to whole MW.
+    # Negative (storage charging) and zero fuels drop out, and rest rounds to whole MW
     assert power_breakdown(mix) == {"wind": 4200, "natural_gas": 1801}
 
 
 def test_power_breakdown_empty_is_none():
-    # No real generation -> field stays absent rather than an empty dict.
+    # No real generation -> field stays absent rather than an empty dict
     assert power_breakdown({}) is None
     assert power_breakdown({"battery": -50}) is None
 
 
 # ── Storage exclusion ──────────────────────────────────────────
 # Discharge re-delivers energy whose emissions were attributed at generation.
-# Leaving it in the denominator with a factor of 0 diluted intensity downward.
+# Leaving it in the denominator with a factor of 0 diluted intensity downward
 
 
 def test_discharging_storage_does_not_dilute_intensity():
@@ -82,7 +82,7 @@ def test_discharging_storage_does_not_dilute_intensity():
 
 
 def test_discharging_storage_does_not_inflate_renewable_percentage():
-    # Half the MW on the wire is battery, but renewables are 100% of *generation*.
+    # Half the MW on the wire is battery, but renewables are 100% of *generation*
     assert calculate_renewable_percentage({"wind": 500, "battery": 500}) == 100.0
 
 
@@ -94,7 +94,7 @@ def test_storage_is_not_a_factor():
 
 
 def test_marginal_ignores_storage():
-    # Storage discharging is not the price-setting generator.
+    # Storage discharging is not the price-setting generator
     assert calculate_marginal_intensity({"battery": 500, "wind": 500}) == 11.0
     assert calculate_marginal_intensity({"battery": 500, "natural_gas": 100}) == 490.0
 
@@ -106,7 +106,7 @@ def test_corpus_values_match_the_published_factors():
     corpus = load_corpus()
     assert corpus.unit == "gCO2eq/kWh"
     assert corpus.basis == "lifecycle"
-    # Pinned so a silent edit to the JSON fails here rather than in production.
+    # Pinned so a silent edit to the JSON fails here rather than in production
     assert corpus.value("coal") == 820
     assert corpus.value("natural_gas") == 490
     assert corpus.value("wind") == 11
@@ -194,7 +194,7 @@ def test_storage_must_not_carry_a_value():
 # A zero-generation mix averages to 0.0 gCO2/kWh, the best score a carbon-aware
 # router can see, so a hollow feed would win every routing decision rather than
 # merely going dark. Measured in the published archive: three NL regions sat at
-# 0.0 for 23 hours. See docs/VALIDATION.md.
+# 0.0 for 23 hours. See docs/VALIDATION.md
 
 
 @pytest.mark.parametrize(

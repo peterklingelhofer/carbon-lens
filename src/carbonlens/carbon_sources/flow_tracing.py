@@ -1,7 +1,7 @@
 """Consumption-based carbon intensity via electricity flow tracing.
 
 Production-based intensity only counts what a zone *generates*. But grids import
-and export power, so what a region actually *consumes* can be much cleaner or
+and export power, so what a region *consumes* can be much cleaner or
 dirtier than what it produces. Flow tracing (Tranberg et al., 2019) attributes
 emissions across the interconnected network: the intensity of everything leaving
 a zone equals the intensity of its whole consumed mix, so for every zone i
@@ -13,10 +13,10 @@ flowing from j into i. That's a linear system A·c = b. The matrix is diagonally
 dominant (the diagonal P_i + imports_i is >= the off-diagonal import sum), so
 Gauss-Seidel iteration converges. No numpy needed.
 
-The equation rests on PROPORTIONAL SHARING (Bialek 1996): everything leaving a zone
-is assumed to carry that zone's whole consumed mix, so a zone cannot preferentially
-export its clean power. That is a modelling choice rather than a physical fact:
-electrons are not labelled. Kirschen et al. (1997) formulate the same problem
+The equation rests on proportional sharing (Bialek 1996): everything leaving a zone
+is assumed to carry that zone's whole consumed mix, so a zone can't preferentially
+export its clean power. That's a modelling choice, since electrons carry no label.
+Kirschen et al. (1997) formulate the same problem
 differently. This module implements the Bialek/Tranberg line, and every consumption
 figure it produces inherits that assumption.
 
@@ -38,7 +38,7 @@ from carbonlens.carbon_sources.http_pool import shared_client
 from carbonlens.carbon_sources.xml_safe import entsoe_ns, safe_parse_xml
 from carbonlens.citations_generated import CitationId
 
-# The published basis for this module, in the order the docstring introduces them.
+# The published basis for this module, in the order the docstring introduces them
 CITATIONS: tuple[CitationId, ...] = (
     "tranberg-2019-flow-tracing",
     "bialek-1996-tracing-electricity",
@@ -49,7 +49,7 @@ CITATIONS: tuple[CitationId, ...] = (
 # A connected slice of the European grid covering our cloud-region zones plus the
 # key neighbours they trade with, so imports are attributed to a real source
 # rather than ignored. Bigger sets mean more ENTSO-E calls. This is a pragmatic
-# cut of the well-interconnected continental + GB/IE network.
+# cut of the well-interconnected continental + GB/IE network
 TRACED_ZONES = [
     "FR",
     "DE",
@@ -67,7 +67,7 @@ TRACED_ZONES = [
     "DK-DK1",
 ]
 
-# Undirected interconnector borders among TRACED_ZONES.
+# Undirected interconnector borders among TRACED_ZONES
 BORDERS = [
     ("FR", "DE"),
     ("FR", "BE"),
@@ -116,7 +116,7 @@ def trace_consumption_intensity(
     if not zones:
         return {}
 
-    # imports_into[i] = list of (j, F_ji), inflow[i] = P_i + Σ F_ji.
+    # imports_into[i] = list of (j, F_ji), inflow[i] = P_i + Σ F_ji
     imports_into: dict[str, list[tuple[str, float]]] = {z: [] for z in zones}
     for (src, dst), mw in flows_mw.items():
         if mw <= 0 or src not in production_mw or dst not in production_mw:
@@ -125,7 +125,7 @@ def trace_consumption_intensity(
 
     inflow = {z: production_mw[z] + sum(mw for _, mw in imports_into[z]) for z in zones}
 
-    # Initialise consumption intensity at production intensity, then relax.
+    # Initialise consumption intensity at production intensity, then relax
     c = {z: production_intensity.get(z, 0.0) for z in zones}
     for _ in range(max_iter):
         delta = 0.0

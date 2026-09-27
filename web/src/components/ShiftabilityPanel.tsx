@@ -7,7 +7,7 @@ import { InfoTip } from "./InfoTip";
 // job would save shifting from its dirtiest to cleanest hour. High = a big intra-day
 // swing (variable wind/solar) so timing matters, low = flat grids where it barely
 // helps. Read from the published clean-compute report on the CDN when available (no API
-// call). Otherwise from /carbon/shiftability. Hidden until enough history accumulates.
+// call). Otherwise from /carbon/shiftability. Hidden until enough history accumulates
 export function ShiftabilityPanel() {
   const report = useCleanComputeReport();
   const {

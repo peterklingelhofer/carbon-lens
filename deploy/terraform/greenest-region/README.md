@@ -7,7 +7,7 @@ provider's `region` at `apply` time, so a new deployment lands on clean power by
 default.
 
 Region choice is the carbon decision with the largest effect: a region can be many times
-cleaner, forever. This makes "pick the clean one" the path of least resistance.
+cleaner, forever.
 
 ## Usage
 

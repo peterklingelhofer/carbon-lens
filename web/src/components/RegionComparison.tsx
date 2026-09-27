@@ -40,7 +40,7 @@ function Stat({
 }
 
 // "You're running here: is somewhere greener?" Compares a chosen region against
-// the greenest available right now and shows the carbon a switch would save.
+// the greenest available right now and shows the carbon a switch would save
 export function RegionComparison() {
   const [provider, setProvider] = useState("aws");
   const [region, setRegion] = useState(DEFAULT_REGION.aws);
@@ -66,7 +66,7 @@ export function RegionComparison() {
 
   // Snapshot-first: region list, the chosen region's intensity, and the greenest region
   // (carbon-weighted routing = lowest current intensity) are all derived from the CDN
-  // snapshot. The live API is only used when no snapshot is configured.
+  // snapshot. The live API is only used when no snapshot is configured
   const current = snapshot ? snapshot.intensities[`${provider}/${region}`] : apiCurrent;
   const greenest = greenestRegion(snapshot, PROVIDERS) ?? route?.recommended;
   const curV = current?.carbon_intensity_gco2_kwh;

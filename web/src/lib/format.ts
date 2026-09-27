@@ -1,5 +1,5 @@
 // Small pure formatting helpers shared across pages (kept here so they're
-// defined once and unit-testable).
+// defined once and unit-testable)
 
 /** Human "x min/hr ago" from an ISO timestamp. */
 export function timeAgo(iso: string): string {

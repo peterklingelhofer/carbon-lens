@@ -31,7 +31,7 @@ def test_list_providers(grid_mapper: GridMapper):
 
 def test_independent_providers_map_to_known_zones(grid_mapper: GridMapper):
     # New EU-heavy / global providers reuse existing grid zones (already covered
-    # by the carbon cascade), so they get real data with no new integration.
+    # by the carbon cascade), so they get real data with no new integration
     assert grid_mapper.get_grid_zone("scaleway", "fr-par") == "FR"
     assert grid_mapper.get_grid_zone("ovh", "bhs") == "CA-QC"  # Quebec hydro
     assert grid_mapper.get_grid_zone("ovh", "vin") == "US-MIDA-PJM"

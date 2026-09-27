@@ -2,18 +2,18 @@
 
 The factor values no longer live here. They come from the versioned corpus at
 ``data/emission-factors.json``, which carbon-aware-dispatcher vendors as well, so
-the two projects cannot publish different numbers for the same physical quantity
-under the same citation. Each record there names the citekey it derives from, the
+both projects publish the same number for a given physical quantity under a given
+citation. Each record there names the citekey it derives from, the
 exact row of the cited table, that row's published range, and the reason for any
 deviation. See ``factor_corpus.py`` for the loader and its validation rules.
 
 Basis: lifecycle (incl. upstream/construction) emission factors, predominantly the
 medians of IPCC AR5 WG3 (2014) Annex III, Table A.III.2. These are global,
-fuel-type lifecycle medians. They are not plant- or region-specific operational factors,
-and not US EPA eGRID (eGRID is combustion-only and US-only, so we don't use it).
+fuel-type lifecycle medians with no plant- or region-specific adjustment. US EPA eGRID
+is combustion-only and US-only, so we don't use it.
 
 The EIA_FUEL_MAP / GRIDSTATUS_FUEL_MAP below are *name mappings* from each
-provider's fuel codes onto these normalized types. They are not a second
+provider's fuel codes onto these normalized types. The corpus stays the only
 source of emission numbers.
 
 Storage (battery, pumped hydro) is excluded from the weighted average rather than
@@ -30,7 +30,7 @@ from carbonlens.models.carbon import CarbonIntensity
 _CORPUS = load_corpus()
 
 # gCO2eq per kWh, lifecycle. Derived from the corpus. Storage keys are absent
-# because no factor applies to them.
+# because no factor applies to them
 EMISSION_FACTORS: dict[str, float] = {
     key: factor.value
     for key, factor in _CORPUS.factors.items()
@@ -38,7 +38,7 @@ EMISSION_FACTORS: dict[str, float] = {
 }
 
 # Fuel types that store energy instead of generating it: excluded from intensity and
-# renewable-percentage maths entirely.
+# renewable-percentage maths entirely
 STORAGE_TYPES: frozenset[str] = frozenset(
     key for key, factor in _CORPUS.factors.items() if factor.storage
 )
@@ -102,7 +102,7 @@ def _generating_mw(fuel_mix_mw: dict[str, float]) -> dict[str, float]:
 
     Storage is dropped rather than zero-weighted so it leaves the denominator
     too. Negative entries (storage charging, or a provider netting a bucket) are
-    dropped because they are not generation.
+    dropped because they aren't generation.
     """
     return {fuel: mw for fuel, mw in fuel_mix_mw.items() if mw > 0 and fuel not in STORAGE_TYPES}
 
@@ -122,7 +122,7 @@ def calculate_carbon_intensity(fuel_mix_mw: dict[str, float]) -> float:
 # The marginal unit (what responds to a small change in demand) is usually the
 # costliest running fossil (oil peaker, then gas), with coal as marginal only when
 # it's the sole fossil. Cost order diverges from carbon order: coal is cheap baseload, gas
-# the flexible peaker, so gas (not the dirtier coal) typically sets the margin.
+# the flexible peaker, so gas (not the dirtier coal) typically sets the margin
 _MARGINAL_MERIT_ORDER = ("petroleum", "oil", "natural_gas", "coal", "biomass")
 
 
@@ -157,7 +157,7 @@ def calculate_renewable_percentage(fuel_mix_mw: dict[str, float]) -> float:
 
 def power_breakdown(fuel_mix_mw: dict[str, float]) -> dict[str, float] | None:
     """Normalize a fuel mix into the per-fuel generation breakdown carried on the
-    API response. Keeps only fuels actually generating (positive MW), rounded to
+    API response. Keeps only fuels that are generating (positive MW), rounded to
     whole MW, so storage charging (negative) and absent fuels drop out. Returns
     None for an empty/non-generating mix so the field stays absent rather than {}.
 
@@ -178,17 +178,16 @@ def intensity_from_fuel_mix(
     renewable, marginal, and per-fuel breakdown calcs in one place so the fuel-mix
     adapters (AEMO, Canada, ENTSO-E, EIA, Taiwan) stay in sync.
 
-    Raises ValueError when nothing is generating, rather than publishing 0.0.
+    Raises ValueError when nothing is generating, so a dead feed never publishes 0.0.
 
-    This is not a theoretical guard. A weighted average over a mix that sums to
-    zero is 0.0 gCO2/kWh, which is indistinguishable from a perfectly clean grid
-    and is the *best possible* score a carbon-aware router can see, so a zone
-    whose feed has gone hollow does not merely go dark, it wins every routing
-    decision. Callers already guarded against an EMPTY mix, but they did not guard
-    against a mix that is present but all-zero, which is what an upstream feed
-    reporting `<quantity>0</quantity>` for every fuel produces. Measured in the
-    published archive: three Netherlands regions sat at 0.0 for 23 hours before
-    jumping to 460.8. See docs/VALIDATION.md.
+    A weighted average over a mix that sums to zero is 0.0 gCO2/kWh, which reads as
+    a perfectly clean grid and is the best score a carbon-aware router can see, so
+    a zone whose feed has gone hollow would win every routing decision. Callers
+    already guarded against an empty mix. This also catches a mix that's present
+    but all-zero, which is what an upstream feed reporting `<quantity>0</quantity>`
+    for every fuel produces. The published archive shows it happening: three
+    Netherlands regions sat at 0.0 for 23 hours before jumping to 460.8. See
+    docs/VALIDATION.md.
 
     Raising here lets the provider cascade fall through to the next source, which
     is the behaviour the hybrid chain already implements for a failed fetch.

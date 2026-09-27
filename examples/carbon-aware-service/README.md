@@ -23,8 +23,6 @@ curl -i -H 'X-Carbon-Optional: 1' localhost:8000/recommendations
   grid mode and sheds optional requests when dirty.
 - **`choose_by_state`** (`carbonlens.sdk`) picks model tier / bitrate by the
   traffic-light state (green/yellow/red).
-- A browser client can read the same headers with
-  [`readCarbonHeaders`](../../web/src/lib/carbonMode.ts) and degrade on its side too.
 
 ## Limits
 

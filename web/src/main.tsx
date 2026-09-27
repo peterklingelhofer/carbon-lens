@@ -3,7 +3,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 // Ubuntu ships static weights (no variable build), so load only the three the UI
-// uses. It has no 600, which is why emphasis is 500 throughout (see index.css).
+// uses. It has no 600, which is why emphasis is 500 throughout (see index.css)
 import "@fontsource/ubuntu/400.css";
 import "@fontsource/ubuntu/500.css";
 import "@fontsource/ubuntu/700.css";

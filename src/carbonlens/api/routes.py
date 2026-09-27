@@ -66,7 +66,7 @@ class BatchRegionRequest(BaseModel):
 # Several endpoints have a zone-first sibling (e.g. /carbon/zone/{grid_zone})
 # declared BEFORE the same-arity /carbon/{provider}/{region} route, so a path like
 # "/carbon/zone/DE" isn't captured as provider="zone". The zone *list* lives at a
-# 2-segment path (/carbon/zones), which can't clash with the 3-segment region route.
+# 2-segment path (/carbon/zones), which can't clash with the 3-segment region route
 
 
 def _require_zone(mapper: GridMapper, grid_zone: str) -> CloudRegion:
@@ -123,7 +123,7 @@ async def list_regions(
 ):
     """List all supported cloud regions."""
     # Body + ETag are memoized on the mapper (the region list is static), so the
-    # per-request cost is just the if-none-match compare below.
+    # per-request cost is just the if-none-match compare below
     content, etag = mapper.regions_payload(provider)
     if request.headers.get("if-none-match") == etag:
         return Response(status_code=304, headers={"ETag": etag})
@@ -171,7 +171,7 @@ async def get_carbon_intensity_batch(
     Returns a map of ``"provider/region"`` to carbon intensity.
     """
     # Multiple regions can share one grid zone (e.g. aws/us-east-1 and aws/us-east-2
-    # are both US-MIDA-PJM), so map each zone to ALL of its requested region keys.
+    # are both US-MIDA-PJM), so map each zone to ALL of its requested region keys
     zone_to_keys: dict[str, list[str]] = {}
     for r in regions:
         zone = mapper.get_grid_zone(r.provider, r.region)
@@ -263,7 +263,7 @@ async def get_carbon_signal(
     source: CarbonDataSource = Depends(get_carbon_source),
     marginal_source: MarginalSource | None = Depends(get_marginal_source),
 ) -> CarbonSignal:
-    """One-call traffic-light decision: run a flexible job here now, or wait?
+    """One-call run-now-or-wait decision for a flexible job, as a traffic light.
 
     Returns a green/yellow/red state plus, when meaningfully cleaner power is
     coming, how many hours until that window. The minimal primitive for the
@@ -384,7 +384,7 @@ async def _build_best_time(
     since = datetime.now(UTC) - timedelta(days=days)
     raw = await store.series_for(history_key, since)
 
-    # Only pay for the 48h forecast fallback when history is too thin to rank.
+    # Only pay for the 48h forecast fallback when history is too thin to rank
     forecast_points: list[dict] = []
     if sum(r["samples"] for r in rank_hours_utc(raw)) < 8:
         _, points = await engine.forecast_zone(zone, longitude, 48)
@@ -575,10 +575,10 @@ async def get_shiftability(
 async def get_methodology(
     marginal_source: MarginalSource | None = Depends(get_marginal_source),
 ) -> Methodology:
-    """How each number is derived, and how honest it is: measured vs estimated.
+    """How each number is derived, and whether it's measured or estimated.
 
     A machine-readable transparency contract. The marginal entry reflects this
-    deployment's actual config (measured when an operator wired a source, else the
+    deployment's running config (measured when an operator wired a source, else the
     labelled heuristic)."""
     marginal_basis = "measured" if marginal_source is not None else "heuristic"
     marginal_source_desc = (
@@ -649,16 +649,16 @@ async def honesty(
     ),
     marginal_source: MarginalSource | None = Depends(get_marginal_source),
 ) -> dict | JSONResponse:
-    """Machine-readable honesty probe: is the marginal signal measured or heuristic?
+    """Machine-readable probe reporting whether the marginal signal is measured or heuristic.
 
-    Cheap and deterministic (no upstream calls), so it is safe as a Kubernetes
+    Cheap and deterministic (no upstream calls), so it's safe as a Kubernetes
     readinessProbe. With ``require_measured=true`` it returns 503 unless an operator
-    has wired a measured marginal source, letting a deployment *enforce* "don't shift
-    load on a guess" rather than merely report it.
+    has wired a measured marginal source, which lets a deployment fail readiness
+    until the marginal signal is measured.
     """
     basis = "measured" if marginal_source is not None else "heuristic"
     # The silent-heuristic trap: a marginal credential set but no zone map, so the signal
-    # quietly stays heuristic. Surface it (and the Prometheus gauge alerts on the same).
+    # quietly stays heuristic. Surface it (and the Prometheus gauge alerts on the same)
     from carbonlens.carbon_sources.marginal import marginal_unmapped
 
     unmapped = marginal_unmapped(settings)

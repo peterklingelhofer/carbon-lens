@@ -4,7 +4,7 @@ import type { SitingOption, SitingRecommendation } from "./types";
 
 // The "state of clean compute" report, published to the data branch every 30 min by
 // the snapshot cron (scripts/build_clean_compute_report.py). We read it from the same
-// CDN as the snapshot: no API call, fixed cost.
+// CDN as the snapshot: no API call, fixed cost
 
 export interface ShiftableGrid {
   grid_zone: string;
@@ -19,7 +19,7 @@ export interface GreenRegion {
   region: string;
   location: string;
   typical_gco2_kwh: number;
-  // Within-window trend: negative = getting cleaner, positive = dirtier. May be absent.
+  // Within-window trend: negative = getting cleaner, positive = dirtier. May be absent
   trend_pct?: number | null;
 }
 
@@ -35,7 +35,7 @@ const HOURS_PER_YEAR = 8760;
 
 // Build the same SitingRecommendation the /carbon/siting endpoint returns, but from the
 // published greenest-regions report, so the siting picker runs fully static off the CDN
-// report instead of waking the API.
+// report instead of waking the API
 export function sitingFromGreenest(
   greenest: GreenRegion[],
   providers: string[],
@@ -77,18 +77,18 @@ export function sitingFromGreenest(
 }
 
 // Forecast accuracy from a deployment's impact ledger: how submit-time predicted
-// reductions compared to the run-time re-measured actuals. Absent unless published.
+// reductions compared to the run-time re-measured actuals. Absent unless published
 export interface ForecastCalibration {
   samples: number;
   mean_predicted_gco2_kwh: number;
   mean_actual_gco2_kwh: number;
-  // actual / predicted: <1 over-promised, >1 under-promised, ~1 well-calibrated.
+  // actual / predicted: <1 over-promised, >1 under-promised, ~1 well-calibrated
   calibration_ratio: number;
   mean_abs_error_gco2_kwh: number;
   days: number;
 }
 
-// The report sits next to snapshot.json on the data branch.
+// The report sits next to snapshot.json on the data branch
 export const REPORT_URL = dataBranchUrl("clean_compute_report.json");
 
 export function useCleanComputeReport() {

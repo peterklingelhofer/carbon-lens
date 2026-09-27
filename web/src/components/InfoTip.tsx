@@ -2,8 +2,8 @@ import { type ReactNode, useCallback, useEffect, useId, useRef, useState } from 
 import { createPortal } from "react-dom";
 
 // A small "i" icon that reveals a plain-language definition on hover, focus, or
-// click - for domain jargon (gCO₂/kWh, carbon intensity, balancing authority…).
-// Keyboard-accessible: it's a real button with an aria-label and role=tooltip.
+// click, for domain jargon (gCO₂/kWh, carbon intensity, balancing authority…).
+// Keyboard-accessible: it's a real button with an aria-label and role=tooltip
 export function InfoTip({
   label,
   text,
@@ -21,7 +21,7 @@ export function InfoTip({
   // an ancestor with overflow:auto/hidden (the globe detail card, a table cell)
   // can never clip it. A callback ref measures both the icon and the tip the
   // moment it mounts (before paint, no flicker) and places the tip centred on
-  // the icon, above or below per `placement`, then clamps it into the viewport.
+  // the icon, above or below per `placement`, then clamps it into the viewport
   const positionTip = useCallback(
     (el: HTMLSpanElement | null) => {
       if (!el || !btnRef.current) return;
@@ -42,7 +42,7 @@ export function InfoTip({
   );
 
   // A fixed tip doesn't follow a scrolling ancestor, so close it on any scroll
-  // or resize rather than letting it drift away from its icon.
+  // or resize rather than letting it drift away from its icon
   useEffect(() => {
     if (!open) return;
     const close = () => setOpen(false);
@@ -128,7 +128,7 @@ export function InfoTip({
               fontWeight: 400,
               // Reset inherited text styling from the surrounding context: the
               // globe title's drop-shadow and the legend labels' uppercase /
-              // italics would otherwise bleed into the tip and garble it.
+              // italics would otherwise bleed into the tip and garble it
               fontStyle: "normal",
               textTransform: "none",
               letterSpacing: "normal",

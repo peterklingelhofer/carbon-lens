@@ -40,15 +40,15 @@ def test_dagster_op_requires_dagster():
 def test_celery_defer_seconds():
     from carbonlens.integrations.celery import defer_seconds
 
-    # Good now -> run immediately.
+    # Good now -> run immediately
     assert defer_seconds({"advice": "run_now", "clean_surplus": False}) == 0.0
-    # Dirty, surplus window in 3h -> schedule 3h out.
+    # Dirty, surplus window in 3h -> schedule 3h out
     dirty = {"advice": "wait_for_cleaner", "clean_surplus": False, "surplus_window_in_hours": 3}
     assert defer_seconds(dirty) == 3 * 3600
-    # Dirty, no surplus but a cleaner window in 5h.
+    # Dirty, no surplus but a cleaner window in 5h
     cw = {"advice": "wait_for_cleaner", "clean_surplus": False, "cleaner_window_in_hours": 5}
     assert defer_seconds(cw) == 5 * 3600
-    # Window beyond the cap is clamped to max_wait_hours.
+    # Window beyond the cap is clamped to max_wait_hours
     far = {"advice": "wait_for_cleaner", "clean_surplus": False, "surplus_window_in_hours": 40}
     assert defer_seconds(far, max_wait_hours=24) == 24 * 3600
 
@@ -65,7 +65,7 @@ class _FakeTask:
 def test_celery_apply_when_clean_dispatches_or_schedules(monkeypatch):
     from carbonlens.integrations import celery
 
-    # Clean now -> dispatched immediately (no countdown).
+    # Clean now -> dispatched immediately (no countdown)
     monkeypatch.setattr(
         CarbonClient, "signal", lambda self, region: {"advice": "run_now", "clean_surplus": False}
     )
@@ -73,7 +73,7 @@ def test_celery_apply_when_clean_dispatches_or_schedules(monkeypatch):
     celery.apply_when_clean(task, "aws/us-east-1", args=(1,))
     assert task.calls[0]["countdown"] is None
 
-    # Dirty with a surplus window -> scheduled with a countdown.
+    # Dirty with a surplus window -> scheduled with a countdown
     monkeypatch.setattr(
         CarbonClient,
         "signal",

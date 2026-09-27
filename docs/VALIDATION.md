@@ -46,19 +46,18 @@ signal.** What CarbonLens calls marginal intensity is
 `("petroleum", "oil", "natural_gas", "coal", "biomass")` and returns the emission factor
 of the first fuel currently generating.
 
-That has two consequences worth stating plainly:
+That has two consequences:
 
 1. **The output is a step function with about five possible values** (650, 490, 820, 230,
    or the grid average when no fossil runs), compared against a continuous measured
    signal. Pearson r will understate agreement, so the script reports Spearman as well, and
-   logs the distinct values actually produced.
+   logs the distinct values produced.
 2. **There's no confidence signal to gate the feature on.** If the backtest shows poor
    agreement, the remedy is to add one. There's no existing one to threshold.
 
 Until this runs, `marginal_intensity_gco2_kwh` is labelled `heuristic` in the API
-(`marginal_basis` on `/signal`) and its provenance cites the marginal literature as *the
-method it approximates*, explicitly not as evidence that the approximation is good. The
-corpus also carries `wiesner-2025-marginal-poor-metric`, which argues against the metric
+(`marginal_basis` on `/signal`) and its provenance cites the marginal literature only as
+*the method it approximates*. The corpus also carries `wiesner-2025-marginal-poor-metric`, which argues against the metric
 this project reports.
 
 ## 2. Intensity vs Electricity Maps
@@ -83,8 +82,8 @@ What is already known without running it, from their published default factor ta
   This project assigns `other` 300, an assumption with no source. On an import-heavy zone
   that single difference can move the result more than every other factor combined.
 
-So a nonzero gap is expected. The comparison is worth running to find out whether the gap
-is the size those known differences predict, or larger.
+So a nonzero gap is expected. Running the comparison would show whether the gap is the
+size those known differences predict, or larger.
 
 ## 3. Production-based vs consumption-based intensity
 
@@ -94,7 +93,7 @@ Script: [`production_vs_consumption.py`](../scripts/validation/production_vs_con
 
 Whether accounting for imports changes the number enough to justify the flow tracer:
 
-**For zones that actually import, yes, and by a lot.** Nine of thirteen zones had
+**For zones with imports, yes, and by a lot.** Nine of thirteen zones had
 measurable imports. Across those: mean absolute difference **41.5%**, maximum **289%**.
 
 | Zone | Production | Consumption | Δ | Δ% | Interpretation |
@@ -113,13 +112,12 @@ measurable imports. Across those: mean absolute difference **41.5%**, maximum **
 | PT | 80.8 | 80.8 | 0.0 | 0.0% | net exporter, no imports |
 | IE | 114.0 | 114.0 | 0.0 | 0.0% | **no evaluable border** |
 
-**Austria is the result that matters.** On a production basis Austria looks like one of
+**Austria shows the largest effect.** On a production basis Austria looks like one of
 the cleanest grids in Europe at 41 gCO2/kWh, because its own generation is overwhelmingly
 hydro. It was importing 2,170 MW from the Czech Republic and 694 MW from Germany at the
-sampled instant, and what Austrian consumers were actually using was **159 gCO2/kWh, four
+sampled instant, and what Austrian consumers were using was **159 gCO2/kWh, four
 times higher**. A caller routing a workload to Austria on the production number is making
-a decision on a figure that's wrong by 4x for their purpose. This alone justifies the
-flow-tracing feature.
+a decision on a figure that's wrong by 4x for their purpose.
 
 ### The zeros are three different things
 
@@ -162,13 +160,12 @@ brief upstream gaps rather than downgrading it to an estimate. This measures the
 intensity *and* renewable percentage. For each run we compare the carried value against the
 next different value. That difference is the error the carry had accumulated by
 the time fresh data arrived: an upper bound on the error over the run, and the quantity a
-consumer of a stale reading actually cares about.
+consumer of a stale reading cares about.
 
 **Sample.** 109 series (7 excluded as constant throughout, being fixed heuristics or mock
 fixtures), 38,976 points, 2,152 carry runs.
 
-**38.2% of all archived points are carried forward from an earlier reading.** That's the
-single most important number here and it wasn't previously stated anywhere.
+**38.2% of all archived points are carried forward from an earlier reading.**
 
 | Held for | n | Median abs error | Mean abs error | p90 | Max | Mean signed |
 |---|---|---|---|---|---|---|
@@ -184,8 +181,8 @@ All figures gCO2/kWh.
 
 - A carry under two hours is usually cheap: median error 3.2 gCO2/kWh. The design decision
   is defensible for the case it was designed for.
-- The **2-4 hour band is the worst**, median 55 gCO2/kWh. That's a real cost, and it's
-  where a diurnal solar or wind swing happens while the reading sits frozen.
+- The **2-4 hour band is the worst**, median 55 gCO2/kWh. It's where a diurnal solar or
+  wind swing happens while the reading sits frozen.
 - The tail is heavy. The p90 across all runs is **125 gCO2/kWh**, which is larger than the
   entire intensity of several clean zones. Mean error (30.6) badly understates the risk, and
   the median (8.5) understates it worse.
@@ -193,11 +190,10 @@ All figures gCO2/kWh.
   have opposite signs (-29.4 and +31.5). A stale reading is about as likely to be too clean
   as too dirty, which is small comfort: for a routing decision, wrong in either direction
   sends the job to the wrong region.
-- The 8+ hour band having the *lowest* median is an artefact. Long holds
-  concentrate in stable, low-variance zones. They're the ones where nothing was changing
-  anyway.
+- The 8+ hour band having the *lowest* median is an artefact. Long holds concentrate in
+  stable, low-variance zones where nothing was changing anyway.
 
-**Caveat, stated because it bounds the whole result:** a repeated value isn't proof of a
+**A caveat that bounds the whole result:** a repeated value isn't proof of a
 carry-forward. A stable grid can report the same rounded number twice. 423 of the
 2,152 runs are single repeats and are the most likely to be coincidental. The measurement
 excludes series that never vary at all, but it can't separate a true carry from a true
@@ -220,12 +216,10 @@ is one of Europe's dirtier grids. We measured it at 529 gCO2/kWh on the day of w
 
 This is worse than a zone going dark. **0.0 is the best score a carbon-aware router can
 see**, so a zone whose feed has gone hollow loses its data and wins every
-routing decision, every `/route` call, and every "greenest region" recommendation until
-someone notices. For 23 hours, the correct answer to "where should I run this job" was
-being outranked by a broken feed.
+`/route` call and every "greenest region" recommendation until someone notices.
 
 Scale: 72 points, 0.18% of the archive, 3 of 116 series, all Netherlands, none currently
-occurring. Rare, and severe when it happens.
+occurring.
 
 **Cause.** The ENTSO-E adapter already guarded `if not fuel_mix: raise`. But a mix that's
 *present and entirely zero* (an upstream document reporting `<quantity>0</quantity>` for
@@ -293,8 +287,7 @@ project's lifecycle factors:
 | Same mix, same instant, our lifecycle basis | **275.9** |
 | Gap | **+103.9 (+60.4%)** |
 
-Same grid, same instant, same mix. The entire difference is where the system boundary is
-drawn.
+The entire difference is where the system boundary is drawn.
 
 **Sensitivity.** 27.7% of the UK mix that period was interconnector imports, which land in
 this project's unsourced `other` bucket at 300. NESO prices each interconnector separately.
@@ -307,8 +300,8 @@ Substituting their figures bounds how much of the gap is that one assumption:
 | NESO Irish interconnector, 458 | 319.6 |
 | NESO Dutch interconnector, 474 | 324.1 |
 
-Even at the most flattering assumption the gap is **+21%**. The mixed basis is real and it
-isn't an artefact of the import factor.
+Even at the most flattering assumption the gap is **+21%**, so the import factor explains
+only part of it.
 
 **Consequence.** A UK zone is reported systematically cleaner than an equivalently dirty
 fuel-mix zone, and the gap widens as UK renewable output rises, because that's exactly

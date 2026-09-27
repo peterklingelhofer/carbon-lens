@@ -79,7 +79,7 @@ class EIACarbonSource:
 
     async def get_carbon_intensity_batch(self, grid_zones: list[str]) -> dict[str, CarbonIntensity]:
         # Group the requested zones by EIA respondent (multiple cloud regions can
-        # share one respondent, e.g. us-east-1 and eastus both map to PJM).
+        # share one respondent, e.g. us-east-1 and eastus both map to PJM)
         zones_by_respondent: dict[str, list[str]] = {}
         for zone in grid_zones:
             respondent_id = _GRID_ZONE_TO_EIA.get(zone)
@@ -93,13 +93,13 @@ class EIACarbonSource:
         # sorted by period is length-capped, so respondents reporting on time
         # crowd out any whose EIA-930 fuel-mix reporting lags (PJM/MISO/SOCO can
         # run a day-plus behind), silently dropping them. Per-respondent fetches
-        # each one's own latest period regardless of how far behind it is.
+        # each one's own latest period regardless of how far behind it is
         respondents = list(zones_by_respondent.keys())
 
         async def fetch(respondent_id: str) -> tuple[str, CarbonIntensity]:
             # Reuse the single-zone path (correct latest-period handling). The
             # representative zone only seeds the request, then we fan the reading
-            # back out to every zone on this respondent below.
+            # back out to every zone on this respondent below
             zone = zones_by_respondent[respondent_id][0]
             return respondent_id, await self.get_carbon_intensity(zone)
 

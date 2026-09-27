@@ -1,5 +1,5 @@
 // Carbon-intensity colour scale (green = clean -> red = dirty), shared by the
-// globe beams and the detail-panel sparklines.
+// globe beams and the detail-panel sparklines
 export function intensityRGB(v: number): [number, number, number] {
   if (v <= 50) return [34, 197, 94]; // green
   if (v <= 150) return [132, 204, 22]; // lime
@@ -26,15 +26,15 @@ export function intensityVarColor(v: number): string {
 
 // Human label + theme-aware colour for an intensity, on the canonical thresholds
 export function intensityLabel(v: number): { label: string; color: string } {
-  if (v <= 50) return { label: "Very Clean", color: "var(--green-text)" };
+  if (v <= 50) return { label: "Cleanest", color: "var(--green-text)" };
   if (v <= 150) return { label: "Clean", color: "var(--green-500)" };
   if (v <= 300) return { label: "Moderate", color: "var(--amber)" };
   if (v <= 500) return { label: "Dirty", color: "var(--orange-400)" };
-  return { label: "Very Dirty", color: "var(--red-500)" };
+  return { label: "Dirtiest", color: "var(--red-500)" };
 }
 
 // Renewable share: high % is greener, so the scale runs the opposite way from
-// carbon intensity (high = green, low = red).
+// carbon intensity (high = green, low = red)
 export function renewableRGB(pct: number): [number, number, number] {
   if (pct >= 80) return [34, 197, 94]; // green
   if (pct >= 60) return [132, 204, 22]; // lime

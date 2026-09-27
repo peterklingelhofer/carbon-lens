@@ -12,7 +12,7 @@ const section = sectionStyle(1100);
 const ORG_ID = "demo";
 
 // A ready-to-edit example matching the exact columns the upload expects, so users can
-// shape their own spreadsheet to match instead of guessing. Rows mirror the demo data.
+// shape their own spreadsheet to match instead of guessing. Rows mirror the demo data
 const SAMPLE_USAGE_CSV = `provider,region,service,resource_type,usage_quantity,usage_unit,period_start,period_end
 aws,us-east-1,ec2,m6i.xlarge,7200,vcpu_hours,2026-05-01,2026-06-01
 aws,eu-west-1,s3,standard,500000,gb_hours,2026-05-01,2026-06-01
@@ -60,7 +60,7 @@ export function Compliance() {
     mutationFn: () => api.compliance.calculate(ORG_ID),
   });
 
-  // Loading a past report from history - separate from demoPipeline/csvPipeline so
+  // Loading a past report from history, separate from demoPipeline/csvPipeline so
   // an error here (e.g. cold-start timeout) doesn't get attributed to either
   const getReportMutation = useMutation({
     mutationFn: (reportId: string) => api.compliance.getReport(reportId, ORG_ID),
@@ -77,7 +77,7 @@ export function Compliance() {
       return api.compliance.generateReport({
         org_id: ORG_ID,
         org_name: orgName,
-        report_name: `CSRD Report - ${new Date().toISOString().slice(0, 10)}`,
+        report_name: `CSRD Report (${new Date().toISOString().slice(0, 10)})`,
       });
     },
     onSuccess: (report) => {
@@ -87,7 +87,7 @@ export function Compliance() {
   });
 
   // Real-data path: upload a usage CSV, then run the SAME calculate -> report
-  // pipeline (live grid intensity) the demo uses.
+  // pipeline (live grid intensity) the demo uses
   const csvPipeline = useMutation({
     mutationFn: async () => {
       if (!csvFile) throw new Error("Choose a CSV file first.");
@@ -96,7 +96,7 @@ export function Compliance() {
       return api.compliance.generateReport({
         org_id: ORG_ID,
         org_name: orgName,
-        report_name: `Usage CSV Report - ${new Date().toISOString().slice(0, 10)}`,
+        report_name: `Usage CSV Report (${new Date().toISOString().slice(0, 10)})`,
       });
     },
     onSuccess: (report) => {
@@ -121,7 +121,7 @@ export function Compliance() {
         />
       </h1>
       <p style={{ color: "var(--gray-500)", marginBottom: "2rem" }}>
-        Turn your cloud usage into a draft emissions report, calculated from real grid data - with
+        Turn your cloud usage into a draft emissions report, calculated from real grid data, with
         the method and data quality shown.
       </p>
 
@@ -135,10 +135,10 @@ export function Compliance() {
           gap: "1rem",
         }}
       >
-        <h2 style={{ margin: 0, fontSize: "1.1rem" }}>Option 1 - Try it with demo data</h2>
+        <h2 style={{ margin: 0, fontSize: "1.1rem" }}>Option 1: Try it with demo data</h2>
         <p style={{ color: "var(--gray-500)", fontSize: "0.85rem", margin: 0 }}>
           Ingests a sample mid-size SaaS workload, calculates emissions using the latest grid carbon
-          intensity from the live data sources, and generates a CSRD-aligned report - so you can see
+          intensity from the live data sources, and generates a CSRD-aligned report, so you can see
           the output without uploading anything.
         </p>
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
@@ -189,7 +189,7 @@ export function Compliance() {
             }}
           >
             Calculated {calculateMutation.data.calculations_count} emissions (
-            {calculateMutation.data.total_emissions_kgco2e.toFixed(4)} kgCO₂e) - Sources:{" "}
+            {calculateMutation.data.total_emissions_kgco2e.toFixed(4)} kgCO₂e). Sources:{" "}
             {calculateMutation.data.data_sources_used.join(", ")}
           </div>
         )}
@@ -218,7 +218,7 @@ export function Compliance() {
             alignItems: "center",
           }}
         >
-          Option 2 - Use your own usage CSV
+          Option 2: Use your own usage CSV
           <InfoTip
             label="usage CSV"
             text="Upload a CSV of your real cloud usage and get the same report, calculated against live grid intensity per region. It's processed in memory for this report, and nothing is kept long-term."
@@ -403,7 +403,7 @@ export function Compliance() {
 }
 
 function ReportView({ report }: { report: ComplianceReport }) {
-  // Demo reports are built from a synthetic usage fixture (not a real CSV upload).
+  // Demo reports are built from a synthetic usage fixture (not a real CSV upload)
   const isDemo = !report.report_name.toLowerCase().includes("csv");
 
   return (
@@ -423,7 +423,7 @@ function ReportView({ report }: { report: ComplianceReport }) {
             marginBottom: "1rem",
           }}
         >
-          Demo data - synthetic usage
+          Demo data: synthetic usage
         </div>
       )}
       <div
@@ -611,8 +611,8 @@ function ReportView({ report }: { report: ComplianceReport }) {
           margin: "-0.75rem 0 1.25rem",
         }}
       >
-        Note: with no supplier-specific contracts (RECs/PPAs) supplied, market-based mirrors
-        location-based here - a real market-based figure would apply your contractual instruments.
+        With no supplier-specific contracts (RECs/PPAs) supplied, market-based mirrors
+        location-based here. A real market-based figure would apply your contractual instruments.
       </p>
 
       {/* By provider */}
@@ -689,7 +689,7 @@ function ReportView({ report }: { report: ComplianceReport }) {
           {report.eu_taxonomy_aligned ? "Aligned" : "Eligible (not yet aligned)"}
           <InfoTip
             label="EU Taxonomy status"
-            text="Simplified screening only: this flags 'aligned' purely from a high renewable share. Real EU Taxonomy alignment also requires technical screening criteria, Do-No-Significant-Harm, and minimum safeguards - none of which are assessed here. Treat as indicative."
+            text="Simplified screening only: this flags 'aligned' purely from a high renewable share. Real EU Taxonomy alignment also requires technical screening criteria, Do-No-Significant-Harm, and minimum safeguards, none of which are assessed here. Treat as indicative."
           />
         </div>
         <div style={{ fontSize: "0.8rem", color: "var(--gray-600)" }}>{report.taxonomy_notes}</div>

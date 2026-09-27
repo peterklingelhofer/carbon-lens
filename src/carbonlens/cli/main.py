@@ -347,7 +347,7 @@ def run(
 
     # Measured impact: the avoided intensity is a live read at execution time vs the
     # real reading at start. The window-picking forecast plays no part. Fall back to
-    # the forecast if the live read fails.
+    # the forecast if the live read fails
     run_intensity = now_intensity
     basis = "now" if idx == 0 else "forecast"
     if idx > 0:
@@ -370,9 +370,9 @@ def run(
     )
 
     # Self-correcting forecast: nudge the prediction by how this host's past forecasts
-    # actually landed (rolling calibration ratio from the local ledger). We keep the raw
+    # landed (rolling calibration ratio from the local ledger). We keep the raw
     # prediction too, so the adjustment never feeds back into the calibration that made it.
-    # Prefer the chosen region's own track record (grids differ). Fall back to the fleet.
+    # Prefer the chosen region's own track record (grids differ). Fall back to the fleet
     entries = ledger.read()
     now = datetime.now(UTC)
     region_cal = ledger.calibration_by_region(entries, now, 30).get(chosen_label)
@@ -395,7 +395,7 @@ def run(
     env = {**os.environ, "CARBONLENS_REGION": chosen_label} if multi else None
 
     # Optionally measure the job's actual CPU-package energy (RAPL) around the run,
-    # so the ledger's avoided-CO2 rests on a measurement of the job's energy.
+    # so the ledger's avoided-CO2 rests on a measurement of the job's energy
     rapl_before = energy.read_rapl_uj() if measure_energy else None
     result = subprocess.run(command, env=env)
     job_energy_kwh = energy_kwh
@@ -430,7 +430,7 @@ def run(
     ledger.append(entry)
 
     # Also push to the org ledger API so org-statement and the Prometheus gauges go
-    # live, no manual file gather. Best-effort: a reporting failure never fails the run.
+    # live, no manual file gather. Best-effort: a reporting failure never fails the run
     if report_to:
         try:
             client.report_impact(report_to, entry)
@@ -496,7 +496,7 @@ def calibration(
 def impact(
     days: int = typer.Option(30, "--days", help="Look back this many days"),
 ):
-    """Show the honest carbon impact of your `carbonlens run` jobs (local ledger)."""
+    """Show the carbon impact of your `carbonlens run` jobs, measured and estimated (local ledger)."""
     summary = ledger.summarize(ledger.read(), datetime.now(UTC), days)
     if summary["jobs"] == 0:
         console.print(f"No carbon-aware runs recorded in the last {days} days.")
@@ -863,7 +863,7 @@ def _render_doctor(api: str, checks: dict, ok: bool, json_output: bool) -> None:
 
     marg = checks.get("marginal", {})
     if "error" in marg:
-        console.print(f"[yellow]![/yellow] Could not read marginal honesty: {marg['error']}")
+        console.print(f"[yellow]![/yellow] Could not read the marginal basis: {marg['error']}")
     elif marg.get("ok"):
         console.print("[green]OK[/green] Marginal signal: measured (operator key configured)")
     elif marg.get("configured_but_unmapped"):
@@ -884,7 +884,7 @@ def _render_doctor(api: str, checks: dict, ok: bool, json_output: bool) -> None:
     else:
         console.print(
             "[yellow]Usable, with the caveats above.[/yellow] "
-            "CarbonLens degrades to honest estimates when a source is unavailable."
+            "CarbonLens falls back to labelled estimates when a source is unavailable."
         )
 
 
@@ -896,9 +896,9 @@ def doctor(
 ):
     """Preflight self-test: API reachability, live-vs-estimated sources, marginal basis.
 
-    A quick honesty check before you wire CarbonLens into a pipeline: it tells you
-    which signals are live/measured versus modelled/heuristic, so you know what you're
-    acting on. Exits non-zero if the API is unreachable.
+    A quick check before you wire CarbonLens into a pipeline: it tells you which
+    signals are live or measured and which are modelled or heuristic, so you know
+    what you're acting on. Exits non-zero if the API is unreachable.
     """
     api = client.get_api_url()
     checks: dict = {}

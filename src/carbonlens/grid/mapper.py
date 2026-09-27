@@ -47,7 +47,7 @@ class GridMapper:
                 self._by_key[(provider, region_name)] = region
                 bucket.append(region)
 
-        # One representative region per distinct grid zone, sorted by zone.
+        # One representative region per distinct grid zone, sorted by zone
         zone_reps: dict[str, CloudRegion] = {}
         for region in self._regions:
             zone_reps.setdefault(region.grid_zone, region)

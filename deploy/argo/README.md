@@ -2,8 +2,8 @@
 
 Gate flexible **Argo Workflows** work on the grid: a reusable `carbon-gate` step asks
 CarbonLens whether the region is a good time to run and prints `clean`/`dirty`, which
-your workflow branches on with a `when:`. Argo Workflows runs a huge share of k8s-native
-ML/data batch. This makes it carbon-aware with no change to the work itself.
+your workflow branches on with a `when:`. Argo Workflows is widely used for k8s
+batch, and the gate needs no change to the work itself.
 
 ## Install
 

@@ -58,7 +58,7 @@ describe("MiniSparkline", () => {
       />,
     );
     const svg = container.querySelector("svg") as SVGSVGElement;
-    // jsdom has no layout, so stub the rect the pointer math reads.
+    // jsdom has no layout, so stub the rect the pointer math reads
     svg.getBoundingClientRect = () =>
       ({ left: 0, top: 0, width: 224, height: 52, right: 224, bottom: 52, x: 0, y: 0 }) as DOMRect;
     fireEvent.pointerMove(svg, { clientX: 224 }); // far right -> last point

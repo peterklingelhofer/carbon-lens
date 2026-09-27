@@ -38,10 +38,10 @@ def test_unknown_zones_and_negative_flows_ignored():
 
 
 def test_loop_converges():
-    # Mutual exchange between two zones still converges to a fixed point.
+    # Mutual exchange between two zones still converges to a fixed point
     prod_mw = {"A": 200.0, "B": 200.0}
     prod_i = {"A": 400.0, "B": 100.0}
     flows = {("A", "B"): 60.0, ("B", "A"): 40.0}
     c = trace_consumption_intensity(prod_mw, prod_i, flows)
-    # Both finite, A dirtier than B, and each between the two production values.
+    # Both finite, A dirtier than B, and each between the two production values
     assert 100.0 <= c["B"] <= c["A"] <= 400.0

@@ -22,12 +22,12 @@ _TAG_RE = re.compile(r"<[^>]+>")
 
 # Taipower's TLS cert omits the Subject Key Identifier extension, which Python's
 # strict X.509 mode (default on 3.13+) rejects. Relax *only* that strict check
-# so chain and hostname verification stay on. The feed is public, read-only data.
+# so chain and hostname verification stay on. The feed is public, read-only data
 _TLS = ssl.create_default_context()
 _TLS.verify_flags &= ~getattr(ssl, "VERIFY_X509_STRICT", 0)
 
 # Taipower returns an empty 202 unless the request looks like the dashboard's
-# own XHR (Referer + X-Requested-With), so mirror those headers.
+# own XHR (Referer + X-Requested-With), so mirror those headers
 _HEADERS = {
     "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
@@ -105,7 +105,7 @@ class TaiwanCarbonSource:
         resp = await self._client.get(API_URL)
         resp.raise_for_status()
         # Served with a UTF-8 BOM and a text/html content-type, so decode and
-        # parse explicitly rather than relying on resp.json().
+        # parse explicitly rather than relying on resp.json()
         rows = json.loads(resp.content.decode("utf-8-sig")).get("aaData", [])
 
         fuel_mix = fuel_mix_from_rows(rows)

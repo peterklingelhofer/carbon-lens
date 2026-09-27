@@ -1,6 +1,6 @@
 """Canadian grid carbon data: free, no API key required.
 
-Three provinces, three very different public feeds:
+Three provinces, three different public feeds:
   CA-ON  IESO    generation-by-fuel hourly XML (reports-public.ieso.ca)
   CA-AB  AESO    Current Supply Demand HTML report (ets.aeso.ca)
   CA-QC  (est.)  Hydro-Québec is ~99% hydro with no clean real-time fuel feed,
@@ -35,7 +35,7 @@ _IESO_FUEL_MAP = {
 
 _AESO_FUEL_MAP = {
     "COAL": "coal",
-    # Alberta reports gas under several plant-type labels, all gas-fired.
+    # Alberta reports gas under several plant-type labels, all gas-fired
     "GAS": "natural_gas",
     "COGENERATION": "natural_gas",
     "COMBINED CYCLE": "natural_gas",
@@ -50,7 +50,7 @@ _AESO_FUEL_MAP = {
 }
 
 # AESO summary rows: <TR><TD>FUEL</TD><TD>MC</TD><TD>TNG</TD><TD>DCR</TD></TR>
-# (MC = max capability, TNG = total net generation = what we want, DCR = reserve).
+# (MC = max capability, TNG = total net generation = what we want, DCR = reserve)
 _AESO_ROW = re.compile(
     r"<TR>\s*<TD>([A-Z][A-Z ]+?)</TD>\s*<TD>(\d+)</TD>\s*<TD>(\d+)</TD>\s*<TD>(\d+)</TD>\s*</TR>"
 )
@@ -98,7 +98,7 @@ def aeso_fuel_mix(html: str) -> dict[str, float]:
 
 class CanadaCarbonSource:
     def __init__(self) -> None:
-        # IESO's by-fuel XML is several MB, so allow a generous read timeout.
+        # IESO's by-fuel XML is several MB, so allow a generous read timeout
         self._client = shared_client(timeout=30.0)
 
     def can_handle(self, grid_zone: str) -> bool:
@@ -138,7 +138,7 @@ class CanadaCarbonSource:
 
     def _quebec(self) -> CarbonIntensity:
         # Hydro-Québec is ~99% hydro/wind. No clean real-time fuel feed, so this
-        # is an honest fixed estimate (flagged via the _heuristic source suffix).
+        # is a fixed estimate, labelled via the _heuristic source suffix
         return CarbonIntensity(
             grid_zone="CA-QC",
             carbon_intensity_gco2_kwh=30.0,

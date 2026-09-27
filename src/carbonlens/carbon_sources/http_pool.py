@@ -11,7 +11,7 @@ import httpx
 
 # ENTSO-E throttles bursts (HTTP 429) and occasionally 5xx/empties under load,
 # which is why a snapshot run could fetch some zones and silently drop others.
-# Cap how many ENTSO-E requests fly at once, and retry transient failures.
+# Cap how many ENTSO-E requests fly at once, and retry transient failures
 ENTSOE_SEMAPHORE = asyncio.Semaphore(6)
 
 
@@ -49,7 +49,7 @@ async def get_with_retry(
 
 
 # Shared transport pool: reused across all carbon sources.
-# Limits chosen for a single-process API that fans out to ~10 providers.
+# Limits chosen for a single-process API that fans out to ~10 providers
 _transport = httpx.AsyncHTTPTransport(
     retries=1,
     limits=httpx.Limits(

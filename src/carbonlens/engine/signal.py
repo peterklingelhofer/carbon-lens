@@ -29,12 +29,12 @@ def signal_state(intensity: float) -> str:
 
 
 def marginal_note(avg: float, marginal: float | None) -> str | None:
-    """An honest caveat when the marginal picture changes the run-now/wait call.
+    """A caveat for when the marginal picture changes the run-now/wait call.
 
-    Marginal (what an extra kWh emits right now) is what actually responds to
-    shifting load, but the average doesn't. When a grid is clean on average but fossil on the
-    margin, shifting helps more than the average implies. When the margin is already
-    clean, it helps little. Returns None when nothing notable applies."""
+    Marginal (what an extra kWh emits right now) is the figure that moves when load
+    shifts. When a grid is clean on average but fossil on the margin, shifting helps
+    more than the average implies. When the margin is already clean, it helps little.
+    Returns None when nothing notable applies."""
     if marginal is None:
         return None
     if marginal >= 300 and marginal >= avg * 1.3:
@@ -73,28 +73,28 @@ async def build_signal(
     current_intensity = intensities[0]
     state = signal_state(current_intensity)
 
-    # Soonest upcoming hour that's notably cleaner (>= 15% lower) than now.
+    # Soonest upcoming hour that's notably cleaner (>= 15% lower) than now
     cleanest_ahead_idx, cleanest_ahead = 0, current_intensity
     for i in range(1, len(intensities)):
         if intensities[i] < cleanest_ahead:
             cleanest_ahead_idx, cleanest_ahead = i, intensities[i]
     notably_cleaner = cleanest_ahead_idx >= 1 and cleanest_ahead <= current_intensity * 0.85
 
-    # Marginal is what actually responds to shifting load, so surface it (and an
-    # honest caveat) alongside the average-based traffic light. Clean surplus is the
-    # strongest run-now case: renewables abundant, so extra load soaks up would-be
-    # curtailed power.
+    # Marginal is the figure that moves when load shifts, so surface it (with a caveat
+    # when it changes the call) alongside the average-based traffic light. Clean
+    # surplus is the strongest run-now case: renewables abundant, so extra load soaks
+    # up would-be curtailed power
     current = await source.get_carbon_intensity(zone)
     marginal = current.marginal_intensity_gco2_kwh
     marginal_basis = "heuristic"
-    # If the operator configured a measured-marginal source for this zone, prefer it.
+    # If the operator configured a measured-marginal source for this zone, prefer it
     if marginal_source is not None and marginal_source.can_handle(zone):
         measured = await marginal_source.marginal_intensity(zone)
         if measured is not None:
             marginal, marginal_basis = measured, "measured"
     surplus = is_clean_surplus(current.renewable_percentage, current_intensity, marginal)
 
-    # Soonest upcoming clean-surplus window (the highest-value time to shift into).
+    # Soonest upcoming clean-surplus window (the highest-value time to shift into)
     surplus_window = next((h for h in surplus_offsets(points) if h >= 1), None)
 
     if surplus:

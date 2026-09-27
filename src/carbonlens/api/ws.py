@@ -15,10 +15,10 @@ logger = logging.getLogger("carbonlens.ws")
 ws_router = APIRouter()
 
 # Default interval between broadcasts (seconds). Callers may override via the
-# initial subscription message.
+# initial subscription message
 DEFAULT_INTERVAL_SECONDS = 60
 
-# Popular regions used when the client does not specify a subscription list.
+# Popular regions used when the client doesn't specify a subscription list
 DEFAULT_REGIONS: list[dict[str, str]] = [
     {"provider": "aws", "region": "us-east-1"},
     {"provider": "aws", "region": "eu-west-1"},
@@ -48,7 +48,7 @@ async def _build_update(
     mapper = get_grid_mapper()
 
     # Map regions to grid zones, batch-fetch, then reassemble. Unknown regions are
-    # silently skipped (the globe sends a fixed, valid list).
+    # silently skipped (the globe sends a fixed, valid list)
     zone_to_regions = group_regions_by_zone(mapper, regions)
 
     if not zone_to_regions:
@@ -115,7 +115,7 @@ async def carbon_intensity_stream(websocket: WebSocket) -> None:
     interval = DEFAULT_INTERVAL_SECONDS
 
     try:
-        # Give the client a short window to send subscription preferences.
+        # Give the client a short window to send subscription preferences
         raw = await asyncio.wait_for(websocket.receive_text(), timeout=5.0)
         try:
             msg = SubscriptionMessage.model_validate_json(raw)
@@ -126,7 +126,7 @@ async def carbon_intensity_stream(websocket: WebSocket) -> None:
         except Exception:
             logger.warning("Invalid subscription message, using defaults")
     except (TimeoutError, WebSocketDisconnect):
-        # No subscription message, so proceed with defaults.
+        # No subscription message, so proceed with defaults
         pass
 
     logger.info(

@@ -107,8 +107,8 @@ class HybridCarbonSource:
                 logger.warning("%s failed for %s: %s", name, grid_zone, e)
 
         # Mock (static fallback, always succeeds). Reaching here means no real
-        # provider covered the zone or every applicable one failed, so surface it
-        # at INFO: a zone we normally measure going dark is worth seeing.
+        # provider covered the zone or every applicable one failed, so log it at
+        # INFO, where a normally measured zone going dark shows up
         result = await self._mock.get_carbon_intensity(grid_zone)
         logger.info("No live source for %s, using mock fallback", grid_zone)
         return result
@@ -151,7 +151,7 @@ class HybridCarbonSource:
 
         # Mock for anything remaining. These zones had no live/estimated source
         # this run, so log which ones at INFO. This is the signal that surfaces
-        # in snapshot-builder logs when a feed goes dark.
+        # in snapshot-builder logs when a feed goes dark
         remaining = [z for z in grid_zones if z not in results]
         if remaining:
             logger.info(

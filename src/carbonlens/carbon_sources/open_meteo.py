@@ -152,7 +152,7 @@ class OpenMeteoCarbonSource(SingleZoneCarbonSource):
         lat, lon = coords
         wind_speed, solar_radiation = await fetch_weather(lat, lon)
 
-        # Estimate renewable contribution from current weather (shared formula).
+        # Estimate renewable contribution from current weather (shared formula)
         renewable_pct = weather_renewable_fraction(solar_radiation, wind_speed) * 100
 
         # Use baseline if known, otherwise estimate from weather

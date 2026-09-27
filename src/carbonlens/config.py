@@ -37,11 +37,11 @@ class Settings(BaseSettings):
     # Optional MEASURED marginal source (bring your own key). Off by default: when a
     # WattTime token AND a grid-zone -> WattTime-region map are set, the signal reports
     # WattTime's measured MOER instead of the fuel-mix heuristic, labelled "measured".
-    # Map format: "US-CAL-CISO:CAISO_NORTH,US-MIDA-PJM:PJM_DC".
+    # Map format: "US-CAL-CISO:CAISO_NORTH,US-MIDA-PJM:PJM_DC"
     watttime_token: str = ""
     watttime_zone_map: str = ""
     # Electricity Maps marginal (also bring-your-own-key): reuses the EM api key above,
-    # plus a grid-zone -> EM-zone map, e.g. "US-CAL-CISO:US-CAL-CISO,FR:FR".
+    # plus a grid-zone -> EM-zone map, e.g. "US-CAL-CISO:US-CAL-CISO,FR:FR"
     electricity_maps_zone_map: str = ""
 
     # Carbon source mode: "hybrid" (recommended), "mock", "eia", "gridstatus", "electricity_maps"
@@ -49,13 +49,13 @@ class Settings(BaseSettings):
     cache_ttl_seconds: int = 300
 
     # Published snapshot the scheduler reads current intensity from (one cached
-    # fetch of all zones) instead of live-fetching dozens of zones per request.
+    # fetch of all zones) instead of live-fetching dozens of zones per request
     snapshot_url: str = (
         "https://raw.githubusercontent.com/peterklingelhofer/carbon-lens/data/snapshot.json"
     )
 
     # Published rolling history archive (accumulated by the snapshot builder) the
-    # /carbon/history endpoint reads. Set to "" to disable history.
+    # /carbon/history endpoint reads. Set to "" to disable history
     history_url: str = (
         "https://raw.githubusercontent.com/peterklingelhofer/carbon-lens/data/history.json"
     )
@@ -70,7 +70,7 @@ class Settings(BaseSettings):
     # CORS: accepts a JSON array (`["https://a","https://b"]`), a comma-separated
     # list (`https://a,https://b`), or a single bare origin (`https://a`).
     # NoDecode skips pydantic-settings' built-in JSON parsing so the validator
-    # below can handle all three forms (a bare URL is not valid JSON).
+    # below can handle all three forms (a bare URL isn't valid JSON)
     cors_origins: Annotated[list[str], NoDecode] = [
         "http://localhost:5173",
         "http://localhost:3000",

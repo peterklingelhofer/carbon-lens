@@ -153,7 +153,7 @@ async def start_monitor(
 ) -> dict:
     """Start the background SLA monitor for an organization's SLAs.
 
-    Note: the in-process monitor only runs while the API is awake. For durable,
+    The in-process monitor runs only while the API is awake. For durable,
     scheduled checking on a scale-to-zero host, use POST /monitor/run from a cron.
     """
     slas = await repo.list_active_slas(org_id)

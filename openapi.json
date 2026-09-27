@@ -326,7 +326,7 @@
       "CarbonForecast": {
         "properties": {
           "clean_surplus_hours": {
-            "description": "Hour offsets (0 = now) projected to be clean surplus: renewables dominant and very low carbon, so extra load likely soaks up power that would otherwise be curtailed. The highest-value windows to shift flexible load into. A heuristic from the projected mix. Curtailment isn't measured.",
+            "description": "Hour offsets (0 = now) projected to be clean surplus: renewables at 85% or more and intensity at or below 80 gCO2/kWh, so extra load likely soaks up power that would otherwise be curtailed. The highest-value windows to shift flexible load into. A heuristic from the projected mix. Curtailment isn't measured.",
             "items": {
               "type": "integer"
             },
@@ -452,7 +452,7 @@
                 "type": "null"
               }
             ],
-            "description": "Total grid generation/load for the balancing authority in MW (whole grid, all consumers, including load outside the datacenter). None when the source does not report it.",
+            "description": "Total grid generation/load for the balancing authority in MW (whole grid, all consumers, including load outside the datacenter). None when the source doesn't report it.",
             "title": "Grid Load Mw"
           },
           "grid_zone": {
@@ -484,7 +484,7 @@
                 "type": "null"
               }
             ],
-            "description": "Live generation breakdown by fuel type in MW (e.g. {\"wind\": 4200, \"natural_gas\": 1800, \"nuclear\": 9500}). Only the fuels actually generating are listed. None for sources without a real fuel mix (heuristic and weather-based estimates).",
+            "description": "Live generation breakdown by fuel type in MW (e.g. {\"wind\": 4200, \"natural_gas\": 1800, \"nuclear\": 9500}). Only the fuels that are generating are listed. None for sources without a real fuel mix (heuristic and weather-based estimates).",
             "title": "Power Breakdown Mw"
           },
           "provenance": {
@@ -527,7 +527,7 @@
       "CarbonSavingsReport": {
         "properties": {
           "avg_intensity_reduction_gco2_kwh": {
-            "description": "Average per-recommendation carbon-intensity reduction vs the baseline. A rate (gCO2/kWh), not a total: per-kWh intensities aren't additive across workloads, and real grams also depend on each job's energy use.",
+            "description": "Average per-recommendation carbon-intensity reduction vs the baseline, as a rate in gCO2/kWh. Per-kWh intensities aren't additive across workloads, and real grams also depend on each job's energy use.",
             "title": "Avg Intensity Reduction Gco2 Kwh",
             "type": "number"
           },
@@ -563,7 +563,7 @@
         "type": "object"
       },
       "CarbonSignal": {
-        "description": "A one-call decision primitive: should a flexible job run here now, or wait?\n\nDesigned for the carbon-aware-dispatcher and any script/status page that just\nwants a traffic-light answer plus the next cleaner window.",
+        "description": "A one-call run-now-or-wait decision primitive for a flexible job.\n\nDesigned for the carbon-aware-dispatcher and any script or status page that\nwants a traffic-light answer plus the next cleaner window.",
         "properties": {
           "advice": {
             "description": "run_now | wait_for_cleaner",
@@ -572,7 +572,7 @@
           },
           "clean_surplus": {
             "default": false,
-            "description": "True when the grid looks like clean oversupply now: renewables dominant, very low carbon, clean margin, so extra load likely soaks up power that would otherwise be curtailed. The highest-value moment to run flexible jobs. A heuristic from the fuel mix. Curtailment isn't measured.",
+            "description": "True when the grid looks like clean oversupply now: renewables at 85% or more, intensity at or below 80 gCO2/kWh and a marginal estimate (when known) at or below 100, so extra load likely soaks up power that would otherwise be curtailed. The highest-value moment to run flexible jobs. A heuristic from the fuel mix. Curtailment isn't measured.",
             "title": "Clean Surplus",
             "type": "boolean"
           },
@@ -622,7 +622,7 @@
                 "type": "null"
               }
             ],
-            "description": "Estimated emissions of an extra kWh of demand now: the number that actually responds to shifting load. Heuristic from the fuel mix, null when no live fuel mix is available.",
+            "description": "Estimated emissions of an extra kWh of demand now: the number that responds to shifting load. Heuristic from the fuel mix, null when no live fuel mix is available.",
             "title": "Marginal Intensity Gco2 Kwh"
           },
           "marginal_note": {
@@ -1793,7 +1793,7 @@
         "type": "object"
       },
       "Methodology": {
-        "description": "Machine-readable provenance: how each number is derived, and how honest it is.\n\nThe transparency contract, so a user or auditor can see exactly what's measured\nvs estimated, and what the caveats are, without reading the code.",
+        "description": "Machine-readable provenance: how each number is derived and whether it's measured.\n\nThe transparency contract, so a user or auditor can see what's measured, what's\nestimated and what the caveats are, without reading the code.",
         "properties": {
           "fields": {
             "items": {
@@ -1847,7 +1847,7 @@
         "description": "How a carbon number was produced, and what published work backs it.\n\n`source` says where the number came from. This block says why that is a\ndefensible way to compute it, and who says so. Every citekey here resolves\nagainst `docs/CITATIONS.csl.json`, served live at `/api/v1/citations`.",
         "properties": {
           "accounting_basis": {
-            "description": "Which quantity this actually is. production_lifecycle = weighted average over the fuel mix using IPCC AR5 lifecycle factors. production_direct = the operator's own direct-combustion intensity, in which renewables and nuclear score 0. consumption_lifecycle = flow-traced, accounting for imports. none = not a grid-mix computation at all. READ THIS BEFORE COMPARING TWO ZONES: a production_direct number is not the same quantity as a production_lifecycle one.",
+            "description": "Which quantity this is. production_lifecycle = weighted average over the fuel mix using IPCC AR5 lifecycle factors. production_direct = the operator's own direct-combustion intensity, in which renewables and nuclear score 0. consumption_lifecycle = flow-traced, accounting for imports. none = not a grid-mix computation at all. Check it before comparing two zones: a production_direct number and a production_lifecycle one measure different quantities.",
             "title": "Accounting Basis",
             "type": "string"
           },
@@ -1907,7 +1907,7 @@
             "type": "string"
           },
           "source_class": {
-            "description": "live (a real grid-operator response) | modeled (a curve or fixed estimate, no live feed) | estimated (inferred from something that is not generation data) | mock (a labelled fixture)",
+            "description": "live (a real grid-operator response) | modeled (a curve or fixed estimate, no live feed) | estimated (inferred from something other than generation data) | mock (a labelled fixture)",
             "title": "Source Class",
             "type": "string"
           }
@@ -2569,7 +2569,7 @@
           },
           "clean_surplus": {
             "default": false,
-            "description": "True when this slot looks like clean oversupply: renewables dominant, very low carbon, so it's the highest-value time to run (near-zero marginal). Given a bounded ranking edge. A heuristic from the fuel mix. Curtailment isn't measured.",
+            "description": "True when this slot looks like clean oversupply: renewables at 85% or more and intensity at or below 80 gCO2/kWh, so it's the highest-value time to run (near-zero marginal). Given a bounded ranking edge. A heuristic from the fuel mix. Curtailment isn't measured.",
             "title": "Clean Surplus",
             "type": "boolean"
           },
@@ -3017,7 +3017,7 @@
     }
   },
   "info": {
-    "description": "A free, open API for the real-time carbon intensity of cloud regions. No account or API key required. Usage is rate-limited so it stays responsive for everyone.\n\n## Carbon Data API\n- **8 live grid-operator integrations** (UK, EIA, OpenElectricity/AEMO, IESO/AESO, Taipower, GridStatus, ENTSO-E, Electricity Maps) plus labeled heuristic and weather-based estimates, cascading\n- **Grid carbon intensity** for 75+ cloud regions. Every response is tagged with its `source`\n- **Batch queries** for multiple regions in a single call\n\n## Compliance Reporting\n- **GHG-Protocol-structured** Scope 2 (location-based) + Scope 3 Cat 1 reporting\n- Drafts aimed at **CSRD / SEC Climate / SB 253** workflows, without third-party assurance\n- **EU Taxonomy** eligibility flag (simplified screening)\n\n## Green SLA Monitoring (Beta)\n- **Define carbon targets**: max gCO2/kWh, min renewable %\n- **On-demand + background checks** (in-memory state)\n- **Attestation-style summary reports**\n\n## Carbon-Aware Scheduling\n- **Find optimal time windows** for batch jobs, CI/CD, ML training\n- **Multi-region evaluation** across AWS, GCP, Azure\n- **Three strategies**: lowest carbon, highest renewable, balanced\n- Returns a recommendation, but it doesn't run or defer your workload itself",
+    "description": "A free, open API for the real-time carbon intensity of cloud regions. No account or API key required. Usage is rate-limited so it stays responsive for everyone.\n\n## Carbon Data API\n- **8 live grid-operator integrations** (UK, EIA, OpenElectricity/AEMO, IESO/AESO, Taipower, GridStatus, ENTSO-E, Electricity Maps) plus labeled heuristic and weather-based estimates, cascading\n- **Grid carbon intensity** for over a hundred cloud regions. Every response is tagged with its `source`\n- **Batch queries** for multiple regions in a single call\n\n## Compliance Reporting\n- **GHG-Protocol-structured** Scope 2 (location-based) + Scope 3 Cat 1 reporting\n- Drafts aimed at **CSRD / SEC Climate / SB 253** workflows, without third-party assurance\n- **EU Taxonomy** eligibility flag (simplified screening)\n\n## Green SLA Monitoring (Beta)\n- **Define carbon targets**: max gCO2/kWh, min renewable %\n- **On-demand + background checks**, held in memory on the keyless demo and in Postgres when a database is configured\n- **Attestation-style summary reports**\n\n## Carbon-Aware Scheduling\n- **Find optimal time windows** for batch jobs, CI/CD, ML training\n- **Multi-region evaluation** across AWS, GCP, Azure, OVHcloud, Hetzner and Scaleway\n- **Three strategies**: lowest carbon, highest renewable, balanced\n- Returns a recommendation, but it doesn't run or defer your workload itself",
     "title": "Carbon Lens",
     "version": "0.1.0"
   },
@@ -3572,7 +3572,7 @@
     },
     "/api/v1/carbon/methodology": {
       "get": {
-        "description": "How each number is derived, and how honest it is: measured vs estimated.\n\nA machine-readable transparency contract. The marginal entry reflects this\ndeployment's actual config (measured when an operator wired a source, else the\nlabelled heuristic).",
+        "description": "How each number is derived, and whether it's measured or estimated.\n\nA machine-readable transparency contract. The marginal entry reflects this\ndeployment's running config (measured when an operator wired a source, else the\nlabelled heuristic).",
         "operationId": "get_methodology_api_v1_carbon_methodology_get",
         "responses": {
           "200": {
@@ -3702,7 +3702,7 @@
     },
     "/api/v1/carbon/signal/{provider}/{region}": {
       "get": {
-        "description": "One-call traffic-light decision: run a flexible job here now, or wait?\n\nReturns a green/yellow/red state plus, when meaningfully cleaner power is\ncoming, how many hours until that window. The minimal primitive for the\ncarbon-aware-dispatcher or any script, loosely coupled via a stable contract.",
+        "description": "One-call run-now-or-wait decision for a flexible job, as a traffic light.\n\nReturns a green/yellow/red state plus, when meaningfully cleaner power is\ncoming, how many hours until that window. The minimal primitive for the\ncarbon-aware-dispatcher or any script, loosely coupled via a stable contract.",
         "operationId": "get_carbon_signal_api_v1_carbon_signal__provider___region__get",
         "parameters": [
           {
@@ -4680,7 +4680,7 @@
     },
     "/api/v1/healthz/honesty": {
       "get": {
-        "description": "Machine-readable honesty probe: is the marginal signal measured or heuristic?\n\nCheap and deterministic (no upstream calls), so it is safe as a Kubernetes\nreadinessProbe. With ``require_measured=true`` it returns 503 unless an operator\nhas wired a measured marginal source, letting a deployment *enforce* \"don't shift\nload on a guess\" rather than merely report it.",
+        "description": "Machine-readable probe reporting whether the marginal signal is measured or heuristic.\n\nCheap and deterministic (no upstream calls), so it's safe as a Kubernetes\nreadinessProbe. With ``require_measured=true`` it returns 503 unless an operator\nhas wired a measured marginal source, which lets a deployment fail readiness\nuntil the marginal signal is measured.",
         "operationId": "honesty_api_v1_healthz_honesty_get",
         "parameters": [
           {
@@ -5360,7 +5360,7 @@
     },
     "/api/v1/sla/monitor/start": {
       "post": {
-        "description": "Start the background SLA monitor for an organization's SLAs.\n\nNote: the in-process monitor only runs while the API is awake. For durable,\nscheduled checking on a scale-to-zero host, use POST /monitor/run from a cron.",
+        "description": "Start the background SLA monitor for an organization's SLAs.\n\nThe in-process monitor runs only while the API is awake. For durable,\nscheduled checking on a scale-to-zero host, use POST /monitor/run from a cron.",
         "operationId": "start_monitor_api_v1_sla_monitor_start_post",
         "parameters": [
           {
@@ -5995,7 +5995,7 @@
       "name": "Routing"
     },
     {
-      "description": "Explore supported cloud regions across AWS, GCP, and Azure",
+      "description": "Explore supported cloud regions across AWS, GCP, Azure, OVHcloud, Hetzner and Scaleway",
       "name": "Regions"
     },
     {

@@ -16,12 +16,12 @@ from carbonlens.carbon_sources.http_pool import shared_client
 from carbonlens.carbon_sources.xml_safe import entsoe_ns, safe_parse_xml
 
 # Wind onshore (B19), wind offshore (B18), solar (B16): the variable renewables
-# ENTSO-E publishes a day-ahead forecast for.
+# ENTSO-E publishes a day-ahead forecast for
 _VRE_PSR = {"B16", "B18", "B19"}
 
 # Day-ahead forecasts refresh ~hourly, so cache each zone's absolute-hour series
 # across requests. Keyed by zone (not offset) so it stays valid as "now" moves
-# within the TTL, and shared process-wide (the source is built per request).
+# within the TTL, and shared process-wide (the source is built per request)
 _SERIES_TTL_SECONDS = 1800.0
 _SERIES_CACHE: dict[str, tuple[float, dict[datetime, float]]] = {}
 

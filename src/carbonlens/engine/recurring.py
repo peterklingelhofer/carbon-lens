@@ -1,8 +1,8 @@
 """Recommend the greenest hour-of-day to run a *recurring* job.
 
 Most cron jobs (backups, nightly ETL, reports, CI) run at an arbitrary hour picked
-by habit. Moving that fixed schedule to the statistically-cleanest hour is a
-one-time change with permanent, zero-friction savings. This ranks hours by their
+by habit. Moving that fixed schedule to the statistically cleanest hour is a
+one-time change that saves carbon on every later run. This ranks hours by their
 mean carbon intensity, from the rolling history archive when we have it, or the
 forecast curve as a fallback. It's a pure function, so it's easy to test.
 """
