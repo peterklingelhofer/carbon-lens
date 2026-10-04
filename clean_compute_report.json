@@ -1,0 +1,218 @@
+{
+  "generated_at": "2026-10-04T02:30:39.402400+00:00",
+  "days_analyzed": 14,
+  "most_shiftable": [
+    {
+      "grid_zone": "IE",
+      "location": "Ireland",
+      "shift_savings_pct": 90.4,
+      "cleanest_hour_utc": 9,
+      "samples": 74
+    },
+    {
+      "grid_zone": "BE",
+      "location": "Belgium",
+      "shift_savings_pct": 81.5,
+      "cleanest_hour_utc": 12,
+      "samples": 73
+    },
+    {
+      "grid_zone": "DE",
+      "location": "Frankfurt",
+      "shift_savings_pct": 78.6,
+      "cleanest_hour_utc": 9,
+      "samples": 74
+    },
+    {
+      "grid_zone": "GB",
+      "location": "London",
+      "shift_savings_pct": 70.1,
+      "cleanest_hour_utc": 9,
+      "samples": 74
+    },
+    {
+      "grid_zone": "ES",
+      "location": "Spain",
+      "shift_savings_pct": 69.3,
+      "cleanest_hour_utc": 9,
+      "samples": 74
+    },
+    {
+      "grid_zone": "IT-NO",
+      "location": "Milan",
+      "shift_savings_pct": 66.8,
+      "cleanest_hour_utc": 9,
+      "samples": 74
+    },
+    {
+      "grid_zone": "PL",
+      "location": "Warsaw",
+      "shift_savings_pct": 58.0,
+      "cleanest_hour_utc": 11,
+      "samples": 74
+    },
+    {
+      "grid_zone": "AU-NSW",
+      "location": "Sydney",
+      "shift_savings_pct": 54.1,
+      "cleanest_hour_utc": 2,
+      "samples": 74
+    },
+    {
+      "grid_zone": "FR",
+      "location": "Paris",
+      "shift_savings_pct": 52.2,
+      "cleanest_hour_utc": 8,
+      "samples": 74
+    },
+    {
+      "grid_zone": "CH",
+      "location": "Zurich",
+      "shift_savings_pct": 51.9,
+      "cleanest_hour_utc": 2,
+      "samples": 74
+    },
+    {
+      "grid_zone": "CA-ON",
+      "location": "Toronto",
+      "shift_savings_pct": 49.3,
+      "cleanest_hour_utc": 15,
+      "samples": 74
+    },
+    {
+      "grid_zone": "US-NW-BPAT",
+      "location": "Oregon",
+      "shift_savings_pct": 40.6,
+      "cleanest_hour_utc": 9,
+      "samples": 72
+    },
+    {
+      "grid_zone": "NL",
+      "location": "Netherlands",
+      "shift_savings_pct": 39.8,
+      "cleanest_hour_utc": 11,
+      "samples": 74
+    },
+    {
+      "grid_zone": "AU-VIC",
+      "location": "Melbourne",
+      "shift_savings_pct": 36.4,
+      "cleanest_hour_utc": 8,
+      "samples": 74
+    },
+    {
+      "grid_zone": "FI",
+      "location": "Finland",
+      "shift_savings_pct": 35.1,
+      "cleanest_hour_utc": 14,
+      "samples": 74
+    }
+  ],
+  "greenest_regions": [
+    {
+      "provider": "azure",
+      "region": "norwayeast",
+      "location": "Oslo",
+      "typical_gco2_kwh": 24.3,
+      "trend_pct": 1.8
+    },
+    {
+      "provider": "aws",
+      "region": "eu-central-2",
+      "location": "Zurich",
+      "typical_gco2_kwh": 27.1,
+      "trend_pct": 1.0
+    },
+    {
+      "provider": "gcp",
+      "region": "europe-west6",
+      "location": "Zurich",
+      "typical_gco2_kwh": 27.1,
+      "trend_pct": 1.0
+    },
+    {
+      "provider": "azure",
+      "region": "switzerlandnorth",
+      "location": "Zurich",
+      "typical_gco2_kwh": 27.1,
+      "trend_pct": 1.0
+    },
+    {
+      "provider": "aws",
+      "region": "ca-central-1",
+      "location": "Montreal",
+      "typical_gco2_kwh": 30.0,
+      "trend_pct": 0.0
+    },
+    {
+      "provider": "gcp",
+      "region": "northamerica-northeast1",
+      "location": "Montreal",
+      "typical_gco2_kwh": 30.0,
+      "trend_pct": 0.0
+    },
+    {
+      "provider": "azure",
+      "region": "canadaeast",
+      "location": "Quebec City",
+      "typical_gco2_kwh": 30.0,
+      "trend_pct": 0.0
+    },
+    {
+      "provider": "ovh",
+      "region": "bhs",
+      "location": "Beauharnois, Quebec",
+      "typical_gco2_kwh": 30.0,
+      "trend_pct": 0.0
+    },
+    {
+      "provider": "aws",
+      "region": "eu-north-1",
+      "location": "Stockholm",
+      "typical_gco2_kwh": 33.8,
+      "trend_pct": -0.6
+    },
+    {
+      "provider": "azure",
+      "region": "swedencentral",
+      "location": "Stockholm",
+      "typical_gco2_kwh": 33.8,
+      "trend_pct": -0.6
+    },
+    {
+      "provider": "aws",
+      "region": "eu-west-3",
+      "location": "Paris",
+      "typical_gco2_kwh": 45.4,
+      "trend_pct": 11.5
+    },
+    {
+      "provider": "gcp",
+      "region": "europe-west9",
+      "location": "Paris",
+      "typical_gco2_kwh": 45.4,
+      "trend_pct": 11.5
+    },
+    {
+      "provider": "azure",
+      "region": "francecentral",
+      "location": "Paris",
+      "typical_gco2_kwh": 45.4,
+      "trend_pct": 11.5
+    },
+    {
+      "provider": "scaleway",
+      "region": "fr-par",
+      "location": "Paris",
+      "typical_gco2_kwh": 45.4,
+      "trend_pct": 11.5
+    },
+    {
+      "provider": "ovh",
+      "region": "gra",
+      "location": "Gravelines",
+      "typical_gco2_kwh": 45.4,
+      "trend_pct": 11.5
+    }
+  ]
+}
