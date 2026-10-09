@@ -8,6 +8,8 @@ The same workload emits around 20 gCO2/kWh in Paris and around 800 in Cape Town,
 
 **[Live demo](https://carbonlens.peterklingelhofer.com/)** · [API docs](https://carbonlens.peterklingelhofer.com/docs)
 
+The demo and its API are free to use, with no account and no API key (requests are rate-limited per IP). The code is MIT-licensed.
+
 [![CarbonLens: live 3D carbon globe](docs/screenshots/globe.gif)](https://carbonlens.peterklingelhofer.com/)
 
 <sub>Each glowing beam is a cloud region at its datacenter location, colored by **live** grid carbon intensity (green for clean, red for dirty) and sized by renewable share. Real grid-operator data, estimated ones are labeled.</sub>
